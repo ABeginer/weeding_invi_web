@@ -4,11 +4,15 @@ import * as React from "react";
 import { invitationThemeCssVars } from "@/lib/theme";
 import { Envelope } from "./Envelope";
 import { MusicPlayer } from "./MusicPlayer";
-import { useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
 
 interface InvitationShellProps {
   guestName?: string | null;
   children: React.ReactNode;
+  contained?: boolean;
+  externalMusicControl?: boolean;
+  initialOpened?: boolean;
+  onOpenedChange?: (opened: boolean) => void;
 }
 
 const TARGET_VOLUME = 0.6;
@@ -18,10 +22,16 @@ const ENVELOPE_DISMISS_MS = 2100;
 export function InvitationShell({
   guestName,
   children,
+  contained: containedProp,
+  externalMusicControl = false,
+  initialOpened = false,
+  onOpenedChange,
 }: InvitationShellProps) {
   const wedding = useWeddingContent();
-  const [envelopeDismissed, setEnvelopeDismissed] = React.useState(false);
-  const [isOpened, setIsOpened] = React.useState(false);
+  const contextContained = useInvitationContained();
+  const contained = containedProp ?? contextContained;
+  const [envelopeDismissed, setEnvelopeDismissed] = React.useState(initialOpened);
+  const [isOpened, setIsOpened] = React.useState(initialOpened);
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [audioAvailable, setAudioAvailable] = React.useState(
     Boolean(wedding.music?.src)
@@ -88,7 +98,10 @@ export function InvitationShell({
 
   const handleOpenEnvelope = React.useCallback(() => {
     setIsOpened(true);
-    playAudio();
+    onOpenedChange?.(true);
+    if (!externalMusicControl) {
+      playAudio();
+    }
 
     const isReducedMotion =
       typeof window !== "undefined" &&
@@ -97,11 +110,13 @@ export function InvitationShell({
     window.setTimeout(
       () => {
         setEnvelopeDismissed(true);
-        window.scrollTo({ top: 0, behavior: "auto" });
+        if (!contained) {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
       },
       isReducedMotion ? 320 : ENVELOPE_DISMISS_MS
     );
-  }, [playAudio]);
+  }, [contained, externalMusicControl, onOpenedChange, playAudio]);
 
   const handleToggleMusic = React.useCallback(() => {
     const audio = audioRef.current;
@@ -149,6 +164,7 @@ export function InvitationShell({
   React.useEffect(() => {
     const config = wedding.autoScroll;
     if (
+      contained ||
       !envelopeDismissed ||
       !config?.enabled ||
       autoScrollStoppedRef.current
@@ -296,14 +312,22 @@ export function InvitationShell({
     return () => {
       cleanup(false);
     };
-  }, [envelopeDismissed, wedding.autoScroll]);
+  }, [contained, envelopeDismissed, wedding.autoScroll]);
 
   return (
     <div
       style={invitationThemeCssVars as React.CSSProperties}
-      className="invitation-theme relative min-h-dvh bg-inv-bg text-inv-ink"
+      className={
+        contained
+          ? envelopeDismissed
+            ? "invitation-theme relative min-h-full bg-inv-bg text-inv-ink"
+            : "invitation-theme relative h-full overflow-hidden bg-inv-bg text-inv-ink"
+          : envelopeDismissed
+            ? "invitation-theme relative min-h-dvh bg-inv-bg text-inv-ink"
+            : "invitation-theme relative h-dvh max-h-full overflow-hidden bg-inv-bg text-inv-ink"
+      }
     >
-      {wedding.music?.src && audioAvailable && (
+      {!externalMusicControl && wedding.music?.src && audioAvailable && (
         <audio
           ref={audioRef}
           src={wedding.music.src}
@@ -318,28 +342,40 @@ export function InvitationShell({
       )}
 
       {!envelopeDismissed && (
-        <Envelope guestName={guestName} onOpen={handleOpenEnvelope} />
+        <Envelope
+          guestName={guestName}
+          contained={contained}
+          onOpen={handleOpenEnvelope}
+        />
       )}
 
       {/* Khung tờ thiệp chuẩn 500px căn giữa trên màn hình lớn, tràn viền trên di động */}
       <div
         aria-hidden={!isOpened}
         className={
-          envelopeDismissed
-            ? "mx-auto min-h-dvh w-full max-w-[500px] overflow-x-clip bg-inv-bg opacity-100 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
-            : isOpened
-              ? "mx-auto min-h-dvh w-full max-w-[500px] overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
-              : "pointer-events-none mx-auto h-dvh w-full max-w-[500px] overflow-hidden bg-inv-bg opacity-0 motion-safe:translate-y-4"
+          contained
+            ? envelopeDismissed
+              ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100"
+              : isOpened
+                ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300"
+                : "pointer-events-none mx-auto h-full w-full overflow-hidden bg-inv-bg opacity-0"
+            : envelopeDismissed
+              ? "mx-auto min-h-dvh w-full max-w-[500px] overflow-x-clip bg-inv-bg opacity-100 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
+              : isOpened
+                ? "mx-auto min-h-dvh w-full max-w-[500px] overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
+                : "pointer-events-none mx-auto h-dvh w-full max-w-[500px] overflow-hidden bg-inv-bg opacity-0 motion-safe:translate-y-4"
         }
       >
         {children}
       </div>
 
-      <MusicPlayer
-        visible={isOpened && audioAvailable}
-        isPlaying={isPlaying}
-        onToggle={handleToggleMusic}
-      />
+      {!externalMusicControl && (
+        <MusicPlayer
+          visible={isOpened && audioAvailable}
+          isPlaying={isPlaying}
+          onToggle={handleToggleMusic}
+        />
+      )}
     </div>
   );
 }

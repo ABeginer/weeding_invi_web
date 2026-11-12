@@ -7,6 +7,7 @@ import { useWeddingContent } from "./WeddingContentProvider";
 interface EnvelopeProps {
   guestName?: string | null;
   onOpen: () => void;
+  contained?: boolean;
 }
 
 const DOOR_EASE = [0.45, 0, 0.55, 1] as const;
@@ -163,7 +164,7 @@ function BotanicalLineArt() {
   );
 }
 
-export function Envelope({ guestName, onOpen }: EnvelopeProps) {
+export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps) {
   const wedding = useWeddingContent();
   const prefersReducedMotion = useReducedMotion();
   const [opening, setOpening] = React.useState(false);
@@ -183,9 +184,13 @@ export function Envelope({ guestName, onOpen }: EnvelopeProps) {
   return (
     <div
       className={
-        opening
-          ? "pointer-events-none fixed inset-y-0 left-1/2 z-50 h-dvh w-full max-w-[500px] -translate-x-1/2 overflow-hidden"
-          : "fixed inset-y-0 left-1/2 z-50 h-dvh w-full max-w-[500px] -translate-x-1/2 overflow-hidden"
+        contained
+          ? opening
+            ? "pointer-events-none absolute inset-0 z-40 h-full w-full overflow-hidden"
+            : "absolute inset-0 z-40 h-full w-full overflow-hidden"
+          : opening
+            ? "pointer-events-none fixed inset-y-0 left-1/2 z-50 w-full max-w-[500px] -translate-x-1/2 overflow-hidden"
+            : "fixed inset-y-0 left-1/2 z-50 w-full max-w-[500px] -translate-x-1/2 overflow-hidden"
       }
       aria-label="Thiệp mời cưới"
     >

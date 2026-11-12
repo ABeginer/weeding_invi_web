@@ -51,7 +51,11 @@ export default async function PersonalInvitePage({ params }: PageProps) {
 
   return (
     <WeddingContentProvider content={content}>
-      <InvitePageClient slug={slug} weddingSlug={wedding?.slug} />
+      <InvitePageClient
+        slug={slug}
+        weddingSlug={wedding?.slug}
+        templateId={wedding?.templateId}
+      />
     </WeddingContentProvider>
   );
 }

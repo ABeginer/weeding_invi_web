@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useInvitationContained } from "./WeddingContentProvider";
 
 interface RevealSectionProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ export function RevealSection({
   delay = 0,
 }: RevealSectionProps) {
   const prefersReducedMotion = useReducedMotion();
+  const contained = useInvitationContained();
   const [mounted, setMounted] = React.useState(false);
   const ref = React.useRef<HTMLElement | null>(null);
   const [visible, setVisible] = React.useState(false);
@@ -25,7 +27,7 @@ export function RevealSection({
   React.useEffect(() => {
     setMounted(true);
 
-    if (prefersReducedMotion) {
+    if (prefersReducedMotion || contained) {
       setVisible(true);
       return;
     }
@@ -68,7 +70,7 @@ export function RevealSection({
       observer.disconnect();
       window.removeEventListener("scroll", onScroll);
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, contained]);
 
   const reducedMotion = mounted && Boolean(prefersReducedMotion);
 

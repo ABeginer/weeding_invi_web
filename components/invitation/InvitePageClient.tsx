@@ -7,16 +7,20 @@ import { invitationThemeCssVars } from "@/lib/theme";
 import { GuestStatus } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { InvitationShell } from "./InvitationShell";
-import { WeddingInvitationContent } from "./WeddingInvitationContent";
+import { LiveTemplateRenderer } from "@/templates/LiveTemplateRenderer";
 import { useWeddingContent } from "./WeddingContentProvider";
 
 interface InvitePageClientProps {
   slug: string;
   weddingSlug?: string;
+  templateId?: string;
 }
 
-export function InvitePageClient({ slug, weddingSlug }: InvitePageClientProps) {
+export function InvitePageClient({
+  slug,
+  weddingSlug,
+  templateId = "basic-1",
+}: InvitePageClientProps) {
   const wedding = useWeddingContent();
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
@@ -138,12 +142,14 @@ export function InvitePageClient({ slug, weddingSlug }: InvitePageClientProps) {
   }
 
   return (
-    <InvitationShell guestName={invite.name}>
-      <WeddingInvitationContent
-        slug={slug}
-        guestName={invite.name}
-        initialStatus={invite.status}
-      />
-    </InvitationShell>
+    <LiveTemplateRenderer
+      templateId={templateId}
+      content={wedding}
+      inviteSlug={slug}
+      weddingSlug={weddingSlug}
+      invitationMode="personal"
+      guestName={invite.name}
+      initialStatus={invite.status}
+    />
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { ApiError, createWedding } from "@/lib/api";
 import type { Wedding } from "@/lib/types";
 import { validateWeddingSlug, WEDDING_TEMPLATES } from "@/lib/wedding-slug";
@@ -13,26 +14,47 @@ interface CreateWeddingDialogProps {
   open: boolean;
   onClose: () => void;
   onCreated: (wedding: Wedding) => void;
+  initialTemplateId?: string;
+  hasPaidPlan?: boolean;
+}
+
+function resolveInitialTemplateId(candidate?: string): string {
+  if (candidate && WEDDING_TEMPLATES.some((tpl) => tpl.id === candidate)) {
+    return candidate;
+  }
+  return WEDDING_TEMPLATES[0].id;
 }
 
 export function CreateWeddingDialog({
   open,
   onClose,
   onCreated,
+  initialTemplateId,
+  hasPaidPlan = false,
 }: CreateWeddingDialogProps) {
   const { showToast } = useToast();
   const [slug, setSlug] = React.useState("");
-  const [templateId, setTemplateId] = React.useState<string>(WEDDING_TEMPLATES[0].id);
+  const [templateId, setTemplateId] = React.useState<string>(() =>
+    resolveInitialTemplateId(initialTemplateId),
+  );
   const [submitting, setSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (open) {
       setSlug("");
-      setTemplateId(WEDDING_TEMPLATES[0].id);
+      setTemplateId(resolveInitialTemplateId(initialTemplateId));
       setSubmitError(null);
     }
-  }, [open]);
+  }, [open, initialTemplateId]);
+
+  const selectedTemplate = React.useMemo(
+    () => WEDDING_TEMPLATES.find((tpl) => tpl.id === templateId),
+    [templateId],
+  );
+  const requiresUpgrade = Boolean(
+    selectedTemplate && selectedTemplate.plan !== "free" && !hasPaidPlan,
+  );
 
   const slugValidation = React.useMemo(() => {
     if (!slug) return null;
@@ -102,6 +124,18 @@ export function CreateWeddingDialog({
               </option>
             ))}
           </select>
+          {requiresUpgrade && (
+            <p
+              role="alert"
+              className="rounded-xl border border-border bg-surface-muted px-3 py-2 text-xs text-fg"
+            >
+              Mẫu này thuộc gói <strong>Pro</strong>. Tài khoản hiện ở gói Miễn phí — vui lòng chọn một mẫu Miễn phí ở trên hoặc xem{" "}
+              <Link href="/#bang-gia" className="font-semibold underline">
+                Bảng giá nâng cấp
+              </Link>
+              .
+            </p>
+          )}
         </div>
 
         <Input
@@ -130,7 +164,7 @@ export function CreateWeddingDialog({
             type="submit"
             variant="primary"
             loading={submitting}
-            disabled={!slugValidation?.valid}
+            disabled={!slugValidation?.valid || requiresUpgrade}
           >
             Tạo thiệp
           </Button>

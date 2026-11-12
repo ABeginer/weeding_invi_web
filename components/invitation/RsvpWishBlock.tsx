@@ -7,7 +7,7 @@ import { GuestStatus } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
-import { useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationDemoMode, useWeddingContent } from "./WeddingContentProvider";
 
 interface RsvpWishBlockProps {
   slug?: string;
@@ -27,6 +27,7 @@ export function RsvpWishBlock({
   initialStatus = "pending",
 }: RsvpWishBlockProps) {
   const wedding = useWeddingContent();
+  const isDemo = useInvitationDemoMode();
   const isPublicMode = mode === "public";
   const isNameLocked = !isPublicMode && Boolean(guestName && guestName.trim().length > 0);
   const copy = wedding.sections.rsvpWish;
@@ -109,6 +110,18 @@ export function RsvpWishBlock({
       return;
     }
 
+    if (isDemo) {
+      setSubmitting(choice);
+      window.setTimeout(() => {
+        setStatus(choice);
+        setMessage("");
+        setRsvpFeedback({ choice, wishIncluded: trimmedMessage.length > 0 });
+        setIsEditingRsvp(false);
+        setSubmitting(null);
+      }, 250);
+      return;
+    }
+
     setSubmitting(choice);
     let savedSlug = getActiveSlug(trimmedName);
 
@@ -176,6 +189,16 @@ export function RsvpWishBlock({
       return;
     }
 
+    if (isDemo) {
+      setSubmitting("wish");
+      window.setTimeout(() => {
+        setMessage("");
+        setPublicWishSent(true);
+        setSubmitting(null);
+      }, 250);
+      return;
+    }
+
     setSubmitting("wish");
     try {
       await submitWish({
@@ -225,6 +248,16 @@ export function RsvpWishBlock({
     }
     if (trimmedMessage.length > MAX_WISH_LENGTH) {
       setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
+      return;
+    }
+
+    if (isDemo) {
+      setSubmitting("wish");
+      window.setTimeout(() => {
+        setMessage("");
+        setPublicWishSent(true);
+        setSubmitting(null);
+      }, 250);
       return;
     }
 

@@ -1,3 +1,5 @@
+import { SELECTABLE_DASHBOARD_TEMPLATES } from "@/templates/registry";
+
 export const WEDDING_SLUG_RE = /^[a-z0-9-]{3,40}$/;
 
 export const FORBIDDEN_WEDDING_SLUGS = new Set([
@@ -13,13 +15,12 @@ export const FORBIDDEN_WEDDING_SLUGS = new Set([
   "_next",
 ]);
 
-export const WEDDING_TEMPLATES = [
-  {
-    id: "basic-1",
-    name: "Olive Garden (Cơ bản)",
-    description: "Phong cách thanh lịch tối giản với phong bì mở thiệp và tông xanh olive.",
-  },
-] as const;
+export const WEDDING_TEMPLATES = SELECTABLE_DASHBOARD_TEMPLATES.map((tpl) => ({
+  id: tpl.id,
+  name: tpl.plan === "free" ? `${tpl.name} (Miễn phí)` : `${tpl.name} (${tpl.plan.toUpperCase()})`,
+  description: tpl.description,
+  plan: tpl.plan,
+}));
 
 export const FREE_PLAN_MAX_WEDDINGS = 1;
 export const FREE_PLAN_MAX_GUESTS = 20;

@@ -32,6 +32,28 @@
   --color-neutral-fg: #57504b;
   --color-neutral-border: #dcd6ce;
 
+  /* Landing & Demo luxury dark-gold tokens */
+  --color-lnd-bg: var(--lnd-bg);
+  --color-lnd-surface: var(--lnd-surface);
+  --color-lnd-surface-hover: var(--lnd-surface-hover);
+  --color-lnd-border: var(--lnd-border);
+  --color-lnd-gold: var(--lnd-gold);
+  --color-lnd-gold-bright: var(--lnd-gold-bright);
+  --color-lnd-gold-soft: var(--lnd-gold-soft);
+  --color-lnd-gold-tint: var(--lnd-gold-tint);
+  --color-lnd-body: var(--lnd-body);
+  --color-lnd-muted: var(--lnd-muted);
+  --color-lnd-free-bg: var(--lnd-free-bg);
+  --color-lnd-free-border: var(--lnd-free-border);
+  --color-lnd-free-text: var(--lnd-free-text);
+  --color-lnd-soon-bg: var(--lnd-soon-bg);
+  --color-lnd-soon-border: var(--lnd-soon-border);
+  --color-lnd-soon-text: var(--lnd-soon-text);
+  --color-lnd-phone-chassis: var(--lnd-phone-chassis);
+  --color-lnd-phone-bezel: var(--lnd-phone-bezel);
+  --color-lnd-phone-highlight: var(--lnd-phone-highlight);
+  --color-lnd-phone-notch: var(--lnd-phone-notch);
+
   /* Invitation olive-white palette tokens */
   --color-inv-bg: var(--inv-bg);
   --color-inv-paper: var(--inv-paper);
@@ -76,6 +98,28 @@
   --inv-cream-text: #fff8ee;
   --inv-cream-soft: #e3eed8;
   --inv-tap-hint: #294a2d;
+
+  /* Landing & Demo defaults */
+  --lnd-bg: #0b0b0b;
+  --lnd-surface: #151515;
+  --lnd-surface-hover: #1e1e1e;
+  --lnd-border: #2a2a2a;
+  --lnd-gold: #d4af37;
+  --lnd-gold-bright: #e3c35a;
+  --lnd-gold-soft: #8c7a3f;
+  --lnd-gold-tint: #221d11;
+  --lnd-body: #e8dfc8;
+  --lnd-muted: #a89f86;
+  --lnd-free-bg: #182421;
+  --lnd-free-border: #354d46;
+  --lnd-free-text: #a5c6be;
+  --lnd-soon-bg: #222222;
+  --lnd-soon-border: #3a3a3a;
+  --lnd-soon-text: #c2bdb4;
+  --lnd-phone-chassis: #161618;
+  --lnd-phone-bezel: #2e2e32;
+  --lnd-phone-highlight: #3d3a32;
+  --lnd-phone-notch: #080808;
 }
 
 .invitation-theme {
@@ -105,6 +149,45 @@ body:has(.invitation-theme) {
 .invitation-theme ::selection {
   background-color: color-mix(in srgb, var(--inv-olive) 20%, var(--inv-bg));
   color: var(--inv-ink);
+}
+
+.landing-theme {
+  background-color: var(--lnd-bg);
+  color: var(--lnd-body);
+}
+
+html:has(.landing-theme),
+body:has(.landing-theme) {
+  background-color: var(--lnd-bg);
+  color: var(--lnd-body);
+}
+
+.landing-theme ::selection {
+  background-color: color-mix(in srgb, var(--lnd-gold) 28%, var(--lnd-bg));
+  color: var(--lnd-body);
+}
+
+.lnd-phone-float {
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.lnd-phone-float:hover {
+  transform: translate3d(0, -8px, 0);
+}
+
+.lnd-phone-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--lnd-gold-soft) transparent;
+}
+
+.lnd-phone-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lnd-phone-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--lnd-gold-soft);
+  border-radius: 9999px;
 }
 
 @keyframes inv-tap-hint-pulse {
@@ -198,5 +281,11 @@ body:has(.invitation-theme) {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .lnd-phone-float,
+  .lnd-phone-float:hover {
+    transition: none;
+    transform: none;
   }
 }

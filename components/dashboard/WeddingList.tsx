@@ -26,12 +26,17 @@ const PLAN_LABELS: Record<string, string> = {
   vip: "VIP",
 };
 
-export function WeddingList() {
+interface WeddingListProps {
+  initialCreateTemplateId?: string;
+}
+
+export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) {
   const { showToast } = useToast();
   const [weddings, setWeddings] = React.useState<Wedding[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [createOpen, setCreateOpen] = React.useState(false);
+  const initialDialogOpenedRef = React.useRef(false);
 
   const loadWeddings = React.useCallback(async () => {
     setLoading(true);
@@ -58,6 +63,19 @@ export function WeddingList() {
 
   const hasPaidPlan = weddings.some((w) => w.plan === "pro" || w.plan === "vip");
   const reachedFreeLimit = !hasPaidPlan && weddings.length >= FREE_PLAN_MAX_WEDDINGS;
+
+  React.useEffect(() => {
+    if (
+      initialCreateTemplateId &&
+      !loading &&
+      !error &&
+      !reachedFreeLimit &&
+      !initialDialogOpenedRef.current
+    ) {
+      initialDialogOpenedRef.current = true;
+      setCreateOpen(true);
+    }
+  }, [initialCreateTemplateId, loading, error, reachedFreeLimit]);
 
   const handleCopyPublicLink = async (slug: string) => {
     const url = buildWeddingLink(slug);
@@ -225,6 +243,8 @@ export function WeddingList() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={(created) => setWeddings((prev) => [created, ...prev])}
+        initialTemplateId={initialCreateTemplateId}
+        hasPaidPlan={hasPaidPlan}
       />
     </div>
   );

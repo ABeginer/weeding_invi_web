@@ -164,11 +164,17 @@ export function WeddingContentEditor({
                 onChange={(e) => setTemplateId(e.target.value)}
                 className="flex h-11 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-fg focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                {WEDDING_TEMPLATES.map((tpl) => (
-                  <option key={tpl.id} value={tpl.id}>
-                    {tpl.name}
-                  </option>
-                ))}
+                {WEDDING_TEMPLATES.map((tpl) => {
+                  const locked =
+                    tpl.plan !== "free" &&
+                    wedding.plan === "free" &&
+                    tpl.id !== wedding.templateId;
+                  return (
+                    <option key={tpl.id} value={tpl.id} disabled={locked}>
+                      {locked ? `${tpl.name} — cần nâng cấp` : tpl.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

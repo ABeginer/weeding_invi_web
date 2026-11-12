@@ -39,3 +39,51 @@ export const invitationThemeCssVars = {
   "--inv-cream-soft": invitationTheme.creamSoft,
   "--inv-tap-hint": invitationTheme.tapHint,
 } as const;
+
+export const landingTheme = {
+  bg: "#0B0B0B",
+  surface: "#151515",
+  surfaceHover: "#1E1E1E",
+  border: "#2A2A2A",
+  gold: "#D4AF37",
+  goldBright: "#E3C35A",
+  goldSoft: "#8C7A3F",
+  goldTint: "#221D11",
+  textBody: "#E8DFC8",
+  textMuted: "#A89F86",
+  freeBadgeBg: "#182421",
+  freeBadgeBorder: "#354D46",
+  freeBadgeText: "#A5C6BE",
+  soonBadgeBg: "#222222",
+  soonBadgeBorder: "#3A3A3A",
+  soonBadgeText: "#C2BDB4",
+  phoneChassis: "#161618",
+  phoneBezel: "#2E2E32",
+  phoneHighlight: "#3D3A32",
+  phoneNotch: "#080808",
+} as const;
+
+export type LandingTheme = typeof landingTheme;
+
+export const landingThemeCssVars = {
+  "--lnd-bg": landingTheme.bg,
+  "--lnd-surface": landingTheme.surface,
+  "--lnd-surface-hover": landingTheme.surfaceHover,
+  "--lnd-border": landingTheme.border,
+  "--lnd-gold": landingTheme.gold,
+  "--lnd-gold-bright": landingTheme.goldBright,
+  "--lnd-gold-soft": landingTheme.goldSoft,
+  "--lnd-gold-tint": landingTheme.goldTint,
+  "--lnd-body": landingTheme.textBody,
+  "--lnd-muted": landingTheme.textMuted,
+  "--lnd-free-bg": landingTheme.freeBadgeBg,
+  "--lnd-free-border": landingTheme.freeBadgeBorder,
+  "--lnd-free-text": landingTheme.freeBadgeText,
+  "--lnd-soon-bg": landingTheme.soonBadgeBg,
+  "--lnd-soon-border": landingTheme.soonBadgeBorder,
+  "--lnd-soon-text": landingTheme.soonBadgeText,
+  "--lnd-phone-chassis": landingTheme.phoneChassis,
+  "--lnd-phone-bezel": landingTheme.phoneBezel,
+  "--lnd-phone-highlight": landingTheme.phoneHighlight,
+  "--lnd-phone-notch": landingTheme.phoneNotch,
+} as const;

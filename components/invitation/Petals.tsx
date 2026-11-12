@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useInvitationContained } from "./WeddingContentProvider";
 
 interface PetalConfig {
   id: number;
@@ -31,6 +32,7 @@ const ALL_PETALS: PetalConfig[] = [
 
 export function Petals() {
   const prefersReducedMotion = useReducedMotion();
+  const contained = useInvitationContained();
   const [petalCount, setPetalCount] = React.useState(0);
 
   React.useEffect(() => {
@@ -57,7 +59,11 @@ export function Petals() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-20 overflow-hidden"
+      className={
+        contained
+          ? "pointer-events-none absolute inset-0 z-20 overflow-hidden"
+          : "pointer-events-none fixed inset-0 z-20 overflow-hidden"
+      }
     >
       {ALL_PETALS.slice(0, petalCount).map((petal) => (
         <motion.span

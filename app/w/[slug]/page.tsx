@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { InvitationShell } from "@/components/invitation/InvitationShell";
-import { WeddingContentProvider } from "@/components/invitation/WeddingContentProvider";
-import { WeddingInvitationContent } from "@/components/invitation/WeddingInvitationContent";
+import { LiveTemplateRenderer } from "@/templates/LiveTemplateRenderer";
 import { getPublicWeddingBySlug } from "@/lib/server/public-wedding";
 
 export const dynamic = "force-dynamic";
@@ -55,11 +53,12 @@ export default async function PublicWeddingPage({ params }: PageProps) {
   }
 
   return (
-    <WeddingContentProvider content={wedding.content}>
-      <InvitationShell>
-        <WeddingInvitationContent mode="public" weddingSlug={wedding.slug} />
-      </InvitationShell>
-    </WeddingContentProvider>
+    <LiveTemplateRenderer
+      templateId={wedding.templateId}
+      content={wedding.content}
+      weddingSlug={wedding.slug}
+      invitationMode="public"
+    />
   );
 }
 
