@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { Check } from "lucide-react";
 import { LANDING_COPY } from "@/config/landing";
 import { PRICING_ROWS, PRICING_TIERS } from "@/config/pricing";
 import { SITE_LINKS } from "@/config/site";
@@ -37,139 +38,122 @@ export function PricingTable({
           </p>
         </div>
 
-        {/* Bảng so sánh 3 cột (cuộn ngang mượt trên màn nhỏ, cột đầu cố định) */}
-        <div className="mt-7 overflow-x-auto rounded-2xl border border-border bg-surface shadow-lg">
-          <table className="w-full min-w-[680px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-border">
-                <th
-                  scope="col"
-                  className="sticky left-0 z-10 w-[180px] border-r border-border bg-surface px-4 py-4 align-bottom text-xs font-semibold tracking-[0.14em] text-text-muted uppercase sm:w-[210px] sm:px-5"
-                >
-                  {copy.featureColumnHeader}
-                </th>
-                {PRICING_TIERS.map((tier) => (
-                  <th
-                    key={tier.id}
-                    scope="col"
-                    className={cn(
-                      "min-w-[165px] px-4 py-4 align-top sm:px-5",
-                      tier.highlighted
-                        ? "border-x border-accent/60 bg-accent-soft"
-                        : "bg-surface",
-                    )}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-display text-lg font-semibold text-text sm:text-xl">
-                          {tier.name}
-                        </span>
-                        {tier.badge && (
-                          <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold tracking-wide text-accent-fg uppercase">
-                            {tier.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="font-display text-2xl font-semibold text-text">
-                        {tier.price}
-                      </p>
-                      <p className="text-xs font-normal leading-relaxed text-text-muted">
-                        {tier.tagline}
-                      </p>
-                      {tier.pricePendingNote && (
-                        <p className="text-[11px] font-normal text-text-muted">
-                          {tier.pricePendingNote}
-                        </p>
-                      )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
+        {/* 3 thẻ gói nằm ngang trên desktop, xếp dọc gọn gàng trên mobile */}
+        <div className="mt-7 grid grid-cols-1 gap-5 md:grid-cols-3 md:items-stretch">
+          {PRICING_TIERS.map((tier) => (
+            <article
+              key={tier.id}
+              className={cn(
+                "flex flex-col overflow-hidden rounded-2xl border bg-surface transition-shadow",
+                tier.highlighted
+                  ? "border-accent shadow-lg ring-1 ring-accent/35"
+                  : "border-border shadow-sm",
+              )}
+            >
+              {/* Phần đầu thẻ: Tên gói, huy hiệu, giá & mô tả */}
+              <div
+                className={cn(
+                  "border-b border-border p-5 sm:p-6",
+                  tier.highlighted ? "bg-accent-soft/45" : "bg-surface",
+                )}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-display text-xl font-semibold text-text sm:text-2xl">
+                    {tier.name}
+                  </h3>
+                  {tier.badge && (
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent-fg uppercase">
+                      {tier.badge}
+                    </span>
+                  )}
+                </div>
 
-            <tbody className="divide-y divide-border text-sm">
-              {PRICING_ROWS.map((row) => (
-                <tr key={row.id} className="group">
-                  <th
-                    scope="row"
-                    className="sticky left-0 z-10 border-r border-border bg-surface px-4 py-3 text-xs font-semibold text-text group-hover:bg-surface-alt sm:px-5 sm:text-sm"
-                  >
-                    {row.feature}
-                  </th>
-                  {PRICING_TIERS.map((tier) => {
+                <p className="mt-3 font-display text-3xl font-semibold tracking-tight tabular-nums text-text sm:text-4xl">
+                  {tier.price}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-text-muted">
+                  {tier.tagline}
+                </p>
+                {tier.pricePendingNote ? (
+                  <p className="mt-1 text-xs font-normal text-text-muted">
+                    {tier.pricePendingNote}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs font-normal text-text-muted">
+                    Không phát sinh phí ẩn
+                  </p>
+                )}
+              </div>
+
+              {/* Danh sách tính năng xếp theo chiều dọc */}
+              <div className="flex flex-1 flex-col p-5 sm:p-6">
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
+                  {copy.featureColumnHeader}
+                </p>
+
+                <ul className="mt-3.5 flex-1 divide-y divide-border/70">
+                  {PRICING_ROWS.map((row) => {
                     const cell = row.values[tier.id];
                     return (
-                      <td
-                        key={`${row.id}-${tier.id}`}
-                        className={cn(
-                          "px-4 py-3 align-middle text-xs leading-relaxed text-text sm:px-5 sm:text-sm",
-                          tier.highlighted
-                            ? "border-x border-accent/30 bg-accent-soft/45 group-hover:bg-accent-soft/65"
-                            : "group-hover:bg-surface-alt",
-                        )}
+                      <li
+                        key={`${tier.id}-${row.id}`}
+                        className="flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0"
                       >
-                        <span>{cell.text}</span>
-                        {cell.comingSoon && (
-                          <span className="ml-2 inline-flex items-center rounded-full border border-soon-border bg-soon-bg px-2 py-0.5 text-[10px] font-medium whitespace-nowrap text-soon-fg">
-                            {copy.comingSoonBadge}
-                          </span>
-                        )}
-                      </td>
+                        <Check
+                          className="mt-0.5 h-4 w-4 shrink-0 text-accent-text"
+                          aria-hidden="true"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-text-muted">
+                            {row.feature}
+                          </p>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm font-medium leading-snug text-text">
+                            <span>{cell.text}</span>
+                            {cell.comingSoon && (
+                              <span className="inline-flex items-center rounded-full border border-soon-border bg-soon-bg px-2 py-0.5 text-[10px] font-medium whitespace-nowrap text-soon-fg">
+                                {copy.comingSoonBadge}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
                     );
                   })}
-                </tr>
-              ))}
-            </tbody>
+                </ul>
 
-            <tfoot>
-              <tr className="border-t border-border">
-                <th
-                  scope="row"
-                  aria-label="Hành động chọn gói"
-                  className="sticky left-0 z-10 border-r border-border bg-surface px-4 py-4 sm:px-5"
-                />
-                {PRICING_TIERS.map((tier) => (
-                  <td
-                    key={`cta-${tier.id}`}
-                    className={cn(
-                      "px-4 py-4 sm:px-5",
-                      tier.highlighted
-                        ? "border-x border-accent/60 bg-accent-soft/60"
-                        : "bg-surface",
-                    )}
-                  >
-                    {tier.id === "free" ? (
-                      <Link
-                        href={
-                          isAuthenticated
-                            ? SITE_LINKS.dashboard
-                            : SITE_LINKS.createWedding
-                        }
-                        className="inline-flex h-9 w-full items-center justify-center rounded-full border border-text bg-transparent px-4 text-xs font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-sm"
-                      >
-                        {tier.ctaLabel}
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onSelectPaidPlan(tier.id === "vip" ? "vip" : "pro")
-                        }
-                        className={cn(
-                          "inline-flex h-9 w-full cursor-pointer items-center justify-center rounded-full px-4 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-sm",
-                          tier.highlighted
-                            ? "bg-accent text-accent-fg hover:bg-accent-hover"
-                            : "border border-text bg-transparent text-text hover:bg-surface-alt",
-                        )}
-                      >
-                        {tier.ctaLabel}
-                      </button>
-                    )}
-                  </td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
+                {/* Nút chọn gói ghim cuối thẻ để căn thẳng hàng */}
+                <div className="mt-6 border-t border-border pt-5">
+                  {tier.id === "free" ? (
+                    <Link
+                      href={
+                        isAuthenticated
+                          ? SITE_LINKS.dashboard
+                          : SITE_LINKS.createWedding
+                      }
+                      className="inline-flex h-11 w-full items-center justify-center rounded-full border border-text bg-transparent px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    >
+                      {tier.ctaLabel}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectPaidPlan(tier.id === "vip" ? "vip" : "pro")
+                      }
+                      className={cn(
+                        "inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
+                        tier.highlighted
+                          ? "bg-accent text-accent-fg hover:bg-accent-hover"
+                          : "border border-text bg-transparent text-text hover:bg-surface-alt",
+                      )}
+                    >
+                      {tier.ctaLabel}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>
