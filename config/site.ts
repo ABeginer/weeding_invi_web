@@ -28,6 +28,9 @@ export const SITE_COPYRIGHT = `© ${new Date().getFullYear()} ${SITE_NAME}. Bả
 
 export const SITE_LINKS = {
   home: "/",
+  tools: "/cong-cu",
+  toolWeddingCalc: "/cong-cu/bang-tinh-dam-cuoi",
+  toolLunar: "/cong-cu/doi-am-lich",
   createWedding: "/tao-thiep",
   createWeddingSave: "/tao-thiep/luu",
   templatesAnchor: "/#mau-thiep",

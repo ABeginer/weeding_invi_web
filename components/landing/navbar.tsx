@@ -42,15 +42,25 @@ export function LandingNavbar({
           aria-label="Điều hướng chính"
           className="hidden items-center gap-7 md:flex"
         >
-          {LANDING_COPY.navbar.links.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-1 py-1 text-sm text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              {item.label}
-            </a>
-          ))}
+          {LANDING_COPY.navbar.links.map((item) =>
+            item.href.includes("#") ? (
+              <a
+                key={item.href}
+                href={item.href}
+                className="rounded-md px-1 py-1 text-sm text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-md px-1 py-1 text-sm text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                {item.label}
+              </Link>
+            ),
+          )}
         </nav>
 
         <div className="hidden items-center gap-2.5 md:flex">
@@ -115,16 +125,27 @@ export function LandingNavbar({
       {menuOpen && (
         <div className="border-t border-border bg-surface px-4 py-4 md:hidden">
           <nav aria-label="Menu di động" className="flex flex-col gap-2">
-            {LANDING_COPY.navbar.links.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className="rounded-xl px-3 py-2.5 text-sm font-medium text-text transition-colors hover:bg-surface-alt hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-              >
-                {item.label}
-              </a>
-            ))}
+            {LANDING_COPY.navbar.links.map((item) =>
+              item.href.includes("#") ? (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-text transition-colors hover:bg-surface-alt hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl px-3 py-2.5 text-sm font-medium text-text transition-colors hover:bg-surface-alt hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
           </nav>
 
           <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">

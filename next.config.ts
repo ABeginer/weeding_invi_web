@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: "/cong-cu/du-tru-chi-phi",
+        destination: "/cong-cu/bang-tinh-dam-cuoi",
+        statusCode: 301,
+      },
+    ];
+  },
   async headers() {
     return [
       {

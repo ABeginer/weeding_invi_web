@@ -15,6 +15,7 @@ import { LandingNavbar } from "./navbar";
 import { PaymentTransferModal, PlanUpgradeModal } from "./pricing-modals";
 import { PricingTable } from "./pricing-table";
 import { TemplateGrid } from "./template-grid";
+import { ToolsPreviewSection } from "./tools-preview";
 
 interface LandingPageClientProps {
   isAuthenticated: boolean;
@@ -95,6 +96,7 @@ export function LandingPageClient({
       <main>
         <HeroSection />
         <TemplateGrid userPlan={userPlan} onUseTemplate={handleUseTemplate} />
+        <ToolsPreviewSection />
         <HowItWorks />
         <PricingTable
           isAuthenticated={isAuthenticated}

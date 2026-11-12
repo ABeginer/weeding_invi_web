@@ -92,3 +92,19 @@ Tài liệu tổng hợp các mục tạm thời/placeholder, kết quả kiểm
   npx wrangler r2 bucket create thiep-cuoi-photos
   ```
 - [ ] **Ngoài phạm vi đợt này (chưa triển khai)**: Đối soát thanh toán tự động, tên miền riêng, sổ ghi nhận tiền mừng, UI song ngữ, check-in QR tại tiệc, giới hạn tốc độ RSVP theo từng khách, tùy chọn phương tiện di chuyển.
+
+---
+
+## 6. Khu vực Công cụ (`/cong-cu`)
+- [ ] **Bảng đối chiếu âm lịch (`docs/lunar-test-cases.md`)**: **Đang chờ chủ dự án cung cấp** bảng ít nhất 20 ngày đối chiếu từ hai nguồn lịch chính thống (gồm cả tháng nhuận). Theo quy tắc an toàn, mã nguồn thuật toán ([lib/lunar.ts](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/lib/lunar.ts)), giao diện ([LunarConverterClient.tsx](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/components/tools/LunarConverterClient.tsx)) và bộ kiểm thử ([tests/lunar.test.ts](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/tests/lunar.test.ts)) đã sẵn sàng, nhưng **`IS_LUNAR_TOOL_PUBLIC` đang đặt `false`** nên `/cong-cu/doi-am-lich` chưa mở công khai và chưa đưa vào `sitemap.xml`. Khi có file `docs/lunar-test-cases.md` và `node --test tests/lunar.test.ts` đạt 100%, chỉ cần bật `IS_LUNAR_TOOL_PUBLIC = true` trong [config/tools-copy.ts](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/config/tools-copy.ts).
+- [ ] **Xác nhận các giá trị gợi ý mặc định trong Bảng tính đám cưới ([config/tools-copy.ts](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/config/tools-copy.ts) & [WeddingCalcClient.tsx](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/components/tools/WeddingCalcClient.tsx))**:
+  - Tỉ lệ khách đến dự mặc định: `90%` (`attendanceRate`).
+  - Số người đi cùng trung bình mỗi khách đến dự: tạm để `0` (trong đặc tả bị ngắt sau `0.`, nên đặt trung tính `0` — xác nhận nếu muốn đổi sang `0.2` hay `0.5`).
+  - Số khách mỗi bàn: `10` người (`guestsPerTable`).
+  - Dự phòng thêm: `5%` (`reserveRate`).
+  - Số khách mời dự kiến, giá một mâm, các khoản chi khác và tiền mừng trung bình đều để trống khi mở trang.
+- [ ] **SEO, Analytics & Kiểm tra thủ công sau deploy**:
+  - Đăng ký **Google Search Console** cho domain production và gửi `https://<domain>/sitemap.xml`.
+  - Xác nhận biến `NEXT_PUBLIC_CF_ANALYTICS_TOKEN` nếu muốn bật **Cloudflare Web Analytics** (hiện tại `app/layout.tsx` tự chèn script nếu biến này có giá trị và bỏ qua nếu chưa cấu hình).
+  - Kiểm tra dữ liệu có cấu trúc JSON-LD (`WebApplication`, `FAQPage`, `BreadcrumbList`) bằng **Google Rich Results Test** / Schema Markup Validator cho `/cong-cu/bang-tinh-dam-cuoi` sau khi deploy URL công khai và ghi lại kết quả tại đây.
+  - Tính năng ngoài phạm vi đợt 1 (chưa triển khai): mục 2.7 *"Lấy số khách từ danh sách của tôi"* (khi đã đăng nhập) và khu vực Cẩm nang / Thu email.

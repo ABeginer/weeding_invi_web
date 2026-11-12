@@ -25,9 +25,15 @@ export function LandingFooter() {
         </div>
 
         <nav
-          aria-label="Liên kết pháp lý và liên hệ"
+          aria-label="Liên kết công cụ, pháp lý và liên hệ"
           className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm"
         >
+          <Link
+            href={SITE_LINKS.tools}
+            className="text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            {copy.toolsLabel}
+          </Link>
           <Link
             href={SITE_LINKS.privacy}
             className="text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"

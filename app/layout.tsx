@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import Script from "next/script";
 import { Be_Vietnam_Pro, Cormorant_Garamond, Lora } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -73,6 +74,8 @@ export default async function RootLayout({
     cookieStore.get(BRAND_THEME_COOKIE_NAME)?.value,
   );
 
+  const cfAnalyticsToken = process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN?.trim();
+
   return (
     <html
       lang="vi"
@@ -90,6 +93,13 @@ export default async function RootLayout({
         <ToastProvider>
           <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>
         </ToastProvider>
+        {cfAnalyticsToken ? (
+          <Script
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: cfAnalyticsToken })}
+            strategy="afterInteractive"
+          />
+        ) : null}
       </body>
     </html>
   );

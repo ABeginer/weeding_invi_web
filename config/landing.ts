@@ -12,6 +12,7 @@ export const LANDING_COPY = {
     menuCloseLabel: "Đóng menu điều hướng",
     links: [
       { label: "Mẫu thiệp", href: "/#mau-thiep" },
+      { label: "Công cụ", href: "/cong-cu" },
       { label: "Ưu điểm", href: "/#cach-hoat-dong" },
       { label: "Bảng giá", href: "/#bang-gia" },
     ],
@@ -176,6 +177,7 @@ export const LANDING_COPY = {
     backHomeLabel: "Về danh sách mẫu",
   },
   footer: {
+    toolsLabel: "Công cụ",
     privacyLabel: "Chính sách bảo mật",
     termsLabel: "Điều khoản sử dụng",
     contactPrefix: "Liên hệ:",
