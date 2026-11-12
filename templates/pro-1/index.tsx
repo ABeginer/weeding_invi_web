@@ -33,11 +33,15 @@ export default function Pro1Template({
 }: WeddingTemplateProps) {
   const prefersReducedMotion = useReducedMotion();
   const [opened, setOpened] = React.useState(isOpenedProp);
+  const [coverDismissed, setCoverDismissed] = React.useState(isOpenedProp);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const [giftOpen, setGiftOpen] = React.useState(false);
 
   React.useEffect(() => {
     setOpened(isOpenedProp);
+    if (!isOpenedProp) {
+      setCoverDismissed(false);
+    }
   }, [isOpenedProp]);
 
   const primaryEvent = data.events[0];
@@ -67,23 +71,38 @@ export default function Pro1Template({
       className={cn(
         "landing-theme template-pro-obsidian relative w-full bg-lnd-bg text-lnd-body font-sans",
         contained ? "min-h-full" : "min-h-screen-dvh",
-        !opened &&
-        (contained
-          ? "h-full overflow-hidden"
-          : "h-screen-dvh max-h-full overflow-hidden"),
+        !coverDismissed &&
+          (contained
+            ? "h-full overflow-hidden"
+            : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       {/* Pro Double-Curtain Art Deco Gate */}
-      <AnimatePresence>
+      <AnimatePresence
+        onExitComplete={() => {
+          setCoverDismissed(true);
+          if (!contained && typeof window !== "undefined") {
+            window.scrollTo({ top: 0, behavior: "auto" });
+          }
+        }}
+      >
         {!opened && (
           <motion.div
             key="pro1-curtains"
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0.25 : 0.7 }}
+            exit={{ opacity: 1 }}
+            transition={{ duration: prefersReducedMotion ? 0.2 : 0.85 }}
             className={cn(
-              "z-30 flex items-center justify-center overflow-hidden bg-lnd-bg",
-              contained ? "absolute inset-0" : "fixed inset-0",
+              "z-30 flex items-center justify-center overflow-hidden",
+              contained
+                ? "absolute inset-0"
+                : cn(
+                    "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
+                    isDesktopLayout
+                      ? "max-w-[960px] md:border-x md:border-lnd-gold-soft/40 md:shadow-[0_0_50px_rgba(212,175,55,0.14)]"
+                      : "max-w-[460px]",
+                  ),
+              opened && "pointer-events-none",
             )}
           >
             {/* Left curtain */}
@@ -107,12 +126,19 @@ export default function Pro1Template({
               className="absolute inset-y-0 right-0 w-1/2 border-l border-lnd-gold-soft bg-lnd-surface"
             />
 
-            <button
+            <motion.button
               type="button"
               onClick={handleOpen}
+              exit={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, scale: 0.96 }
+              }
+              transition={{ duration: 0.25, ease: "easeOut" }}
               aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayGuest}`}
               className={cn(
-                "group relative z-10 mx-5 flex w-full max-w-[350px] cursor-pointer flex-col items-center rounded-2xl border border-lnd-gold bg-lnd-bg/95 text-center shadow-[0_0_50px_rgba(212,175,55,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold",
+                "group relative z-10 mx-5 flex w-full cursor-pointer flex-col items-center rounded-2xl border border-lnd-gold bg-lnd-bg/95 text-center shadow-[0_0_50px_rgba(212,175,55,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold",
+                isDesktopLayout ? "max-w-[420px]" : "max-w-[350px]",
                 contained ? "px-5 py-7" : "px-6 py-10",
               )}
             >
@@ -165,15 +191,19 @@ export default function Pro1Template({
               >
                 {data.ui.tapHint}
               </span>
-            </button>
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div
         className={cn(
-          "mx-auto w-full bg-lnd-bg",
+          "mx-auto w-full overflow-x-clip bg-lnd-bg",
           isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
+          !coverDismissed &&
+            (contained
+              ? "h-full overflow-hidden"
+              : "h-screen-dvh overflow-hidden"),
         )}
       >
         {/* Hero */}

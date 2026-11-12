@@ -3,7 +3,11 @@
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
+import {
+  useInvitationContained,
+  useInvitationDesktopLayout,
+  useWeddingContent,
+} from "./WeddingContentProvider";
 
 interface EnvelopeProps {
   guestName?: string | null;
@@ -158,6 +162,8 @@ function BotanicalLineArt() {
 export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps) {
   const data = useWeddingContent();
   const isContained = useInvitationContained() || contained;
+  const desktopLayout = useInvitationDesktopLayout();
+  const isDesktopLayout = desktopLayout && !isContained;
   const prefersReducedMotion = useReducedMotion();
   const [opening, setOpening] = React.useState(false);
 
@@ -175,13 +181,17 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
   return (
     <div
       className={
-        contained
+        isContained
           ? opening
             ? "pointer-events-none absolute inset-0 z-40 h-full w-full overflow-hidden"
             : "absolute inset-0 z-40 h-full w-full overflow-hidden"
-          : opening
-            ? "pointer-events-none fixed inset-y-0 left-1/2 z-50 w-full max-w-[500px] -translate-x-1/2 overflow-hidden"
-            : "fixed inset-y-0 left-1/2 z-50 w-full max-w-[500px] -translate-x-1/2 overflow-hidden md:border-x md:border-inv-olive/15 md:shadow-[0_12px_40px_color-mix(in_srgb,var(--inv-olive-deep)_10%,transparent)]"
+          : cn(
+              "fixed inset-y-0 left-1/2 z-50 w-full -translate-x-1/2 overflow-hidden",
+              isDesktopLayout ? "max-w-[960px]" : "max-w-[500px]",
+              opening
+                ? "pointer-events-none md:border-x md:border-inv-olive/15"
+                : "md:border-x md:border-inv-olive/15 md:shadow-[0_12px_40px_color-mix(in_srgb,var(--inv-olive-deep)_10%,transparent)]",
+            )
       }
       aria-label="Thiệp mời cưới"
     >
@@ -217,7 +227,11 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         <div
           className={cn(
             "absolute top-1/2 left-[79.1139%] z-30 -translate-x-1/2 -translate-y-1/2",
-            isContained ? "h-[74px] w-[74px]" : "h-[96px] w-[96px] sm:h-[108px] sm:w-[108px]",
+            isContained
+              ? "h-[74px] w-[74px]"
+              : isDesktopLayout
+                ? "h-[96px] w-[96px] md:h-[116px] md:w-[116px]"
+                : "h-[96px] w-[96px] sm:h-[108px] sm:w-[108px]",
           )}
         >
           <img
@@ -273,7 +287,10 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         <motion.div
           animate={opening ? { opacity: 0, y: -6 } : { opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
-          className="max-w-[340px] px-4 py-2"
+          className={cn(
+            "px-4 py-2",
+            isDesktopLayout ? "max-w-[520px]" : "max-w-[340px]",
+          )}
         >
           <p className="font-inv-serif text-[11px] font-medium uppercase tracking-[0.26em] text-inv-text">
             {data.ui.invitePrefix}
@@ -283,7 +300,9 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
               "mt-2 font-inv-script leading-[1.15] text-inv-olive-deep",
               isContained
                 ? "text-[clamp(24px,9.5cqw,36px)]"
-                : "text-[clamp(32px,9.5vw,44px)]",
+                : isDesktopLayout
+                  ? "text-[clamp(30px,4vw,46px)]"
+                  : "text-[clamp(32px,9.5vw,44px)]",
             )}
           >
             {displayName}

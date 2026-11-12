@@ -32,11 +32,15 @@ export default function Basic2Template({
 }: WeddingTemplateProps) {
   const prefersReducedMotion = useReducedMotion();
   const [opened, setOpened] = React.useState(isOpenedProp);
+  const [coverDismissed, setCoverDismissed] = React.useState(isOpenedProp);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const [giftOpen, setGiftOpen] = React.useState(false);
 
   React.useEffect(() => {
     setOpened(isOpenedProp);
+    if (!isOpenedProp) {
+      setCoverDismissed(false);
+    }
   }, [isOpenedProp]);
 
   const primaryEvent = data.events[0];
@@ -65,37 +69,58 @@ export default function Basic2Template({
       className={cn(
         "relative w-full bg-[#FAF7F0] text-[#1F1D1A] font-sans",
         contained ? "min-h-full" : "min-h-screen-dvh",
-        !opened &&
+        !coverDismissed &&
           (contained
             ? "h-full overflow-hidden"
             : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
-      <AnimatePresence>
+      <AnimatePresence
+        onExitComplete={() => {
+          setCoverDismissed(true);
+          if (!contained && typeof window !== "undefined") {
+            window.scrollTo({ top: 0, behavior: "auto" });
+          }
+        }}
+      >
         {!opened && (
           <motion.div
             key="basic2-cover"
             initial={{ opacity: 1 }}
-            exit={
-              prefersReducedMotion
-                ? { opacity: 0 }
-                : { opacity: 0, y: "-6%" }
-            }
+            exit={{ opacity: 0 }}
             transition={{
               duration: prefersReducedMotion ? 0.2 : 0.65,
               ease: [0.22, 1, 0.36, 1],
             }}
             className={cn(
-              "z-30 flex items-center justify-center bg-[#FAF7F0] p-5",
-              contained ? "absolute inset-0" : "fixed inset-0",
+              "z-30 flex items-center justify-center overflow-hidden bg-[#FAF7F0] p-5",
+              contained
+                ? "absolute inset-0"
+                : cn(
+                    "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
+                    isDesktopLayout
+                      ? "max-w-[960px] md:border-x md:border-[#C6A962]/25 md:shadow-[0_12px_40px_rgba(31,29,26,0.08)]"
+                      : "max-w-[460px]",
+                  ),
+              opened && "pointer-events-none",
             )}
           >
-            <button
+            <motion.button
               type="button"
               onClick={handleOpen}
+              exit={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: -24 }
+              }
+              transition={{
+                duration: prefersReducedMotion ? 0.2 : 0.5,
+                ease: [0.22, 1, 0.36, 1],
+              }}
               aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayGuest}`}
               className={cn(
-                "group relative flex h-full w-full max-w-[380px] cursor-pointer flex-col items-center justify-between border border-[#C6A962] bg-white text-center shadow-[0_18px_45px_rgba(31,29,26,0.08)] transition-colors hover:border-[#9E803B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#706040]",
+                "group relative flex h-full w-full cursor-pointer flex-col items-center justify-between border border-[#C6A962] bg-white text-center shadow-[0_18px_45px_rgba(31,29,26,0.08)] transition-colors hover:border-[#9E803B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#706040]",
+                isDesktopLayout ? "max-w-[440px]" : "max-w-[380px]",
                 contained ? "max-h-[560px] px-5 py-7" : "max-h-[660px] px-6 py-10",
               )}
             >
@@ -150,15 +175,19 @@ export default function Basic2Template({
                 <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>{data.ui.tapHint}</span>
               </span>
-            </button>
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div
         className={cn(
-          "mx-auto w-full bg-[#FAF7F0]",
+          "mx-auto w-full overflow-x-clip bg-[#FAF7F0]",
           isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
+          !coverDismissed &&
+            (contained
+              ? "h-full overflow-hidden"
+              : "h-screen-dvh overflow-hidden"),
         )}
       >
         {/* Hero */}

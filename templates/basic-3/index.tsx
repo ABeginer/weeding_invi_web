@@ -32,11 +32,15 @@ export default function Basic3Template({
 }: WeddingTemplateProps) {
   const prefersReducedMotion = useReducedMotion();
   const [opened, setOpened] = React.useState(isOpenedProp);
+  const [coverDismissed, setCoverDismissed] = React.useState(isOpenedProp);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const [giftOpen, setGiftOpen] = React.useState(false);
 
   React.useEffect(() => {
     setOpened(isOpenedProp);
+    if (!isOpenedProp) {
+      setCoverDismissed(false);
+    }
   }, [isOpenedProp]);
 
   const primaryEvent = data.events[0];
@@ -65,34 +69,52 @@ export default function Basic3Template({
       className={cn(
         "relative w-full bg-[#FCF5F0] text-[#322424] font-sans",
         contained ? "min-h-full" : "min-h-screen-dvh",
-        !opened &&
-        (contained
-          ? "h-full overflow-hidden"
-          : "h-screen-dvh max-h-full overflow-hidden"),
+        !coverDismissed &&
+          (contained
+            ? "h-full overflow-hidden"
+            : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
-      <AnimatePresence>
+      <AnimatePresence
+        onExitComplete={() => {
+          setCoverDismissed(true);
+          if (!contained && typeof window !== "undefined") {
+            window.scrollTo({ top: 0, behavior: "auto" });
+          }
+        }}
+      >
         {!opened && (
           <motion.div
             key="basic3-cover"
             initial={{ opacity: 1 }}
-            exit={
-              prefersReducedMotion
-                ? { opacity: 0 }
-                : { opacity: 0, scale: 1.03 }
-            }
+            exit={{ opacity: 0 }}
             transition={{ duration: prefersReducedMotion ? 0.2 : 0.6 }}
             className={cn(
-              "z-30 flex items-center justify-center bg-gradient-to-b from-[#F4DFD5] via-[#FBF1EA] to-[#EFE1D6] p-5",
-              contained ? "absolute inset-0" : "fixed inset-0",
+              "z-30 flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#F4DFD5] via-[#FBF1EA] to-[#EFE1D6] p-5",
+              contained
+                ? "absolute inset-0"
+                : cn(
+                    "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
+                    isDesktopLayout
+                      ? "max-w-[960px] md:border-x md:border-[#D7B3A5]/45 md:shadow-[0_12px_40px_rgba(122,53,53,0.1)]"
+                      : "max-w-[460px]",
+                  ),
+              opened && "pointer-events-none",
             )}
           >
-            <button
+            <motion.button
               type="button"
               onClick={handleOpen}
+              exit={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, scale: 1.03 }
+              }
+              transition={{ duration: prefersReducedMotion ? 0.2 : 0.5 }}
               aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayGuest}`}
               className={cn(
-                "group relative flex h-full w-full max-w-[380px] cursor-pointer flex-col items-center justify-between rounded-t-full rounded-b-3xl border border-[#CFA89A] bg-[#FFFBF8] text-center shadow-[0_20px_50px_rgba(122,53,53,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A3535]",
+                "group relative flex h-full w-full cursor-pointer flex-col items-center justify-between rounded-t-full rounded-b-3xl border border-[#CFA89A] bg-[#FFFBF8] text-center shadow-[0_20px_50px_rgba(122,53,53,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A3535]",
+                isDesktopLayout ? "max-w-[440px]" : "max-w-[380px]",
                 contained ? "max-h-[560px] px-5 pt-10 pb-7" : "max-h-[660px] px-6 pt-14 pb-9",
               )}
             >
@@ -137,15 +159,19 @@ export default function Basic3Template({
               <span className="inline-flex h-10 items-center rounded-full bg-[#7A3535] px-6 text-xs font-medium tracking-[0.12em] text-white uppercase transition-colors group-hover:bg-[#612828]">
                 {data.ui.tapHint}
               </span>
-            </button>
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div
         className={cn(
-          "mx-auto w-full bg-[#FCF5F0]",
+          "mx-auto w-full overflow-x-clip bg-[#FCF5F0]",
           isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
+          !coverDismissed &&
+            (contained
+              ? "h-full overflow-hidden"
+              : "h-screen-dvh overflow-hidden"),
         )}
       >
         {/* Hero */}
