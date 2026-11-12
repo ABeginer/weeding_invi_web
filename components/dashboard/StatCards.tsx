@@ -207,7 +207,7 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
               <span>Phân bổ theo từng lễ</span>
             </h3>
             <p className="mt-0.5 text-xs text-fg-muted">
-              Khách chưa gán lễ cụ thể sẽ nhìn thấy toàn bộ các lễ trên thiệp cá nhân (/m/&lt;slug&gt;).
+              Khách chưa gán lễ cụ thể sẽ nhìn thấy toàn bộ các lễ trên thiệp mời của mình.
             </p>
           </div>
           <span className="shrink-0 rounded-full border border-neutral-border bg-neutral-bg px-2.5 py-1 text-xs font-medium text-neutral-fg">

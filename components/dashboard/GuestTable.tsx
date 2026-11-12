@@ -340,15 +340,15 @@ export function GuestTable({
         title="Nhấn để phân bổ lễ mời"
       >
         {resolved.length === 0 ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-neutral-border bg-neutral-bg px-2.5 py-0.5 text-[11px] font-medium text-neutral-fg group-hover:border-accent/40 group-hover:text-text">
-            <CalendarHeart className="h-3 w-3" aria-hidden="true" />
+          <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-neutral-border bg-neutral-bg px-2.5 py-1 text-[11px] font-medium text-neutral-fg group-hover:border-accent/40 group-hover:text-text">
+            <CalendarHeart className="h-3 w-3 shrink-0" aria-hidden="true" />
             <span>Tất cả lễ</span>
           </span>
         ) : (
           resolved.map((evt) => (
             <span
               key={evt.id}
-              className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-text"
+              className="shrink-0 whitespace-nowrap rounded-full border border-accent/40 bg-accent-soft px-2.5 py-0.5 text-[11px] font-medium text-text"
             >
               {evt.title}
             </span>
@@ -407,8 +407,8 @@ export function GuestTable({
       )}
 
       <Card className="p-3 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="relative min-w-[220px] flex-1">
             <Search
               className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-fg-muted"
               aria-hidden="true"
@@ -417,7 +417,7 @@ export function GuestTable({
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo tên khách mời hoặc slug..."
+              placeholder="Tìm khách theo tên..."
               aria-label="Tìm khách mời"
               className="h-10 w-full rounded-xl border border-border bg-bg pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             />
@@ -436,7 +436,7 @@ export function GuestTable({
                   type="button"
                   onClick={() => setStatusFilter(opt.value)}
                   className={cn(
-                    "cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                    "cursor-pointer whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
                     active
                       ? "border-accent bg-accent font-semibold text-accent-fg"
                       : "border-border bg-surface text-fg-muted hover:bg-surface-muted hover:text-fg",
@@ -473,11 +473,7 @@ export function GuestTable({
             Chưa có khách mời nào
           </h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-fg-muted">
-            Thêm từng khách hoặc nhập danh sách hàng loạt để tạo link thiệp mời cá nhân{" "}
-            <code className="rounded bg-surface-muted px-1 py-0.5 text-xs text-fg">
-              /m/&lt;slug&gt;
-            </code>
-            .
+            Thêm từng khách hoặc dán danh sách để tạo link thiệp mang tên riêng cho từng người.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <Button variant="outline" onClick={() => setBulkOpen(true)}>
@@ -504,11 +500,11 @@ export function GuestTable({
               <table className="w-full border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-wide text-fg-muted">
-                    <th className="px-4 py-3">Khách mời</th>
-                    <th className="px-4 py-3">Các lễ được mời</th>
-                    <th className="px-4 py-3">Trạng thái</th>
-                    <th className="px-4 py-3">Phản hồi lúc</th>
-                    <th className="px-4 py-3 text-right">Thao tác</th>
+                    <th className="whitespace-nowrap px-4 py-3">Khách mời</th>
+                    <th className="whitespace-nowrap px-4 py-3">Trạng thái</th>
+                    <th className="whitespace-nowrap px-4 py-3">Các lễ được mời</th>
+                    <th className="whitespace-nowrap px-4 py-3">Phản hồi lúc</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/80">
@@ -517,23 +513,20 @@ export function GuestTable({
                     const isInviteCopied = copiedInviteId === guest.id;
                     return (
                       <tr key={guest.id} className="hover:bg-surface-muted/45">
-                        <td className="px-4 py-3.5">
+                        <td className="min-w-[160px] px-4 py-3.5">
                           <div className="font-medium text-fg">{guest.name}</div>
-                          <div className="mt-0.5 text-xs text-fg-muted">
-                            /m/{guest.slug}
-                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3.5">
+                          <StatusBadge status={guest.status} />
+                          {renderGuestExtras(guest)}
                         </td>
                         <td className="px-4 py-3.5">
                           {renderAssignedEventsSummary(guest)}
                         </td>
-                        <td className="px-4 py-3.5">
-                          <StatusBadge status={guest.status} />
-                          {renderGuestExtras(guest)}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs text-fg-muted">
+                        <td className="whitespace-nowrap px-4 py-3.5 text-xs text-fg-muted">
                           {formatDateTimeVi(guest.respondedAt)}
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="whitespace-nowrap px-4 py-3.5">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               variant="outline"
@@ -572,7 +565,7 @@ export function GuestTable({
                               href={`/m/${guest.slug}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              aria-label={`Mở thiệp /m/${guest.slug}`}
+                              aria-label={`Mở thiệp của ${guest.name}`}
                               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:bg-surface-muted hover:text-accent-text"
                             >
                               <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -614,9 +607,6 @@ export function GuestTable({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-fg">{guest.name}</p>
-                      <p className="mt-0.5 truncate text-xs text-fg-muted">
-                        /m/{guest.slug}
-                      </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end">
                       <StatusBadge status={guest.status} />
@@ -676,7 +666,7 @@ export function GuestTable({
                       href={`/m/${guest.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`Mở thiệp /m/${guest.slug}`}
+                      aria-label={`Mở thiệp của ${guest.name}`}
                       className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted hover:bg-surface-muted hover:text-accent-text"
                     >
                       <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -737,7 +727,7 @@ export function GuestTable({
             ? `Các lễ mời cho "${assigningGuest.name}"`
             : "Phân bổ lễ cho khách mời"
         }
-        description="Nếu không chọn lễ nào, khách sẽ mặc định nhìn thấy tất cả các lễ trên thiệp cá nhân (/m/...)."
+        description="Nếu không chọn lễ nào, khách sẽ nhìn thấy tất cả các lễ trên thiệp mời riêng của mình."
       >
         <form onSubmit={handleSaveAssign} className="space-y-4">
           {events.length === 0 ? (
@@ -816,7 +806,7 @@ export function GuestTable({
         open={Boolean(editingGuest)}
         onClose={() => !savingEdit && setEditingGuest(null)}
         title="Sửa tên khách mời"
-        description="Đường dẫn /m/<slug> sẽ giữ nguyên để không làm hỏng link đã gửi."
+        description="Link thiệp đã tạo cho khách vẫn giữ nguyên, bạn có thể yên tâm sửa tên hiển thị."
       >
         <form onSubmit={handleSaveEdit} className="space-y-4">
           <Input
@@ -848,7 +838,7 @@ export function GuestTable({
         title="Xác nhận xóa khách mời"
         description={
           deletingGuest
-            ? `Bạn có chắc muốn xóa "${deletingGuest.name}"? Link /m/${deletingGuest.slug} sẽ không còn hoạt động.`
+            ? `Bạn có chắc muốn xóa "${deletingGuest.name}"? Link thiệp riêng đã gửi cho khách này sẽ không còn mở được nữa.`
             : undefined
         }
       >

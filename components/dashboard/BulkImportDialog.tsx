@@ -163,7 +163,7 @@ export function BulkImportDialog({
           ? "Mỗi dòng một tên khách mời. Hỗ trợ dán trực tiếp từ Google Sheets hoặc Excel (chỉ lấy cột đầu tiên)."
           : step === "preview"
             ? `Xem trước ${parsed.validNames.length} khách mời mới sẽ được tạo link riêng.`
-            : `Đã tạo ${createdGuests.length} khách mời kèm link /m/ và mẫu lời mời sẵn.`
+            : `Đã tạo ${createdGuests.length} khách mời kèm link riêng và mẫu lời mời sẵn.`
       }
       className="max-w-xl"
     >
@@ -296,7 +296,9 @@ export function BulkImportDialog({
                     <p className="truncate text-sm font-semibold text-fg">
                       {guest.name}
                     </p>
-                    <p className="truncate text-xs text-fg-muted">/m/{guest.slug}</p>
+                    <p className="truncate text-xs text-fg-muted">
+                      Đã sẵn sàng link thiệp riêng
+                    </p>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                     <Button

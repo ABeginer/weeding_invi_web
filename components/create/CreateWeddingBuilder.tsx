@@ -494,7 +494,7 @@ export function CreateWeddingBuilder({
 
                 <Input
                   type="datetime-local"
-                  label="Ngày giờ cưới dự kiến (múi giờ Việt Nam +07:00) *"
+                  label="Ngày giờ cưới dự kiến *"
                   value={dateValue}
                   onChange={(e) => {
                     const nextIso = toIsoPlus07(e.target.value);
@@ -528,12 +528,12 @@ export function CreateWeddingBuilder({
 
               <Card className="space-y-4 p-4 sm:p-6">
                 <h2 className="font-sans text-base font-semibold text-text">
-                  3. Đường dẫn thiệp cưới
+                  3. Tên link thiệp cưới
                 </h2>
 
                 <div>
                   <Input
-                    label="Đường dẫn tuỳ chỉnh (/w/<slug>) *"
+                    label="Tên link thiệp dễ nhớ *"
                     value={slug}
                     onChange={(e) => {
                       setSlugManuallyEdited(true);
@@ -552,8 +552,8 @@ export function CreateWeddingBuilder({
                     }
                     hint={
                       slugValidation?.valid && slugStatus.state !== "unavailable"
-                        ? `Link thiệp chung sẽ là: /w/${slugValidation.slug}`
-                        : "Chỉ dùng chữ thường a-z, số 0-9 và dấu gạch ngang (-), dài 3–40 ký tự."
+                        ? `Mã link thiệp chung của bạn: ${slugValidation.slug}`
+                        : "Chỉ dùng chữ thường không dấu a-z, số 0-9 và dấu gạch ngang (-), dài 3–40 ký tự."
                     }
                   />
 

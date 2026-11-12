@@ -421,7 +421,7 @@ export function WeddingInfoEditor({
           </h3>
           <Input
             type="datetime-local"
-            label="Ngày giờ cưới chính (múi giờ Việt Nam +07:00) *"
+            label="Ngày giờ cưới chính *"
             value={dateValue}
             onChange={(e) => {
               const nextIso = toIsoPlus07(e.target.value);
@@ -704,8 +704,11 @@ export function WeddingInfoEditor({
               Xóa thiệp cưới
             </h3>
             <p className="mt-0.5 text-xs text-fg-muted sm:text-sm">
-              Thao tác này sẽ xóa vĩnh viễn thiệp <strong>/w/{wedding.slug}</strong> cùng
-              toàn bộ lễ, ảnh, khách mời và lời chúc liên quan.
+              Thao tác này sẽ xóa vĩnh viễn thiệp{" "}
+              <strong>
+                {draftContent.couple.groomName} &amp; {draftContent.couple.brideName}
+              </strong>{" "}
+              cùng toàn bộ lễ, ảnh, khách mời và lời chúc liên quan.
             </p>
           </div>
           <Button
@@ -724,7 +727,7 @@ export function WeddingInfoEditor({
         open={deleteOpen}
         onClose={() => !deleting && setDeleteOpen(false)}
         title="Xác nhận xóa thiệp cưới"
-        description={`Bạn có chắc muốn xóa thiệp /w/${wedding.slug}? Toàn bộ dữ liệu lễ, ảnh cưới, khách mời và lời chúc sẽ bị mất và không thể khôi phục.`}
+        description={`Bạn có chắc muốn xóa thiệp "${draftContent.couple.groomName} & ${draftContent.couple.brideName}"? Toàn bộ dữ liệu lễ, ảnh cưới, khách mời và lời chúc sẽ bị mất và không thể khôi phục.`}
       >
         <div className="flex justify-end gap-2 pt-2">
           <Button

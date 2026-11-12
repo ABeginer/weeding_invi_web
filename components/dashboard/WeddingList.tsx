@@ -198,7 +198,7 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
                         {wedding.content.couple.brideName}
                       </h2>
                       <p className="mt-0.5 truncate text-xs text-fg-muted">
-                        /w/{wedding.slug}
+                        Mã link: {wedding.slug}
                       </p>
                     </div>
                     <span
@@ -235,7 +235,7 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
                     variant="outline"
                     size="sm"
                     onClick={() => handleCopyPublicLink(wedding.slug)}
-                    aria-label={`Sao chép link /w/${wedding.slug}`}
+                    aria-label={`Sao chép link thiệp ${wedding.content.couple.groomName} & ${wedding.content.couple.brideName}`}
                   >
                     <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>Link chung</span>
@@ -244,7 +244,7 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
                     href={`/w/${wedding.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Mở thiệp /w/${wedding.slug}`}
+                    aria-label={`Mở trang thiệp ${wedding.content.couple.groomName} & ${wedding.content.couple.brideName}`}
                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg transition-colors hover:bg-surface-muted hover:text-accent-text"
                   >
                     <ExternalLink className="h-4 w-4" aria-hidden="true" />

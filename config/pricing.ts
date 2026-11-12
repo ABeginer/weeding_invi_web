@@ -90,7 +90,7 @@ export const PRICING_ROWS: PricingRow[] = [
   },
   {
     id: "rsvp-wishes",
-    feature: "Quản lý RSVP và lời chúc",
+    feature: "Quản lý xác nhận tham dự và lời chúc",
     values: {
       free: { text: "Xem cơ bản" },
       pro: { text: "Xuất file Excel danh sách, lọc lời chúc" },

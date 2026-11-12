@@ -103,7 +103,7 @@ export function CreateWeddingDialog({
       open={open}
       onClose={onClose}
       title="Tạo thiệp cưới mới"
-      description="Chọn mẫu thiệp và đường dẫn công khai (/w/<slug>) cho thiệp của bạn."
+      description="Chọn mẫu thiệp và tên link dễ nhớ cho thiệp cưới của bạn."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
@@ -140,7 +140,7 @@ export function CreateWeddingDialog({
         </div>
 
         <Input
-          label="Đường dẫn thiệp (slug)"
+          label="Tên link thiệp *"
           placeholder="vi-du: minh-anh-2027"
           value={slug}
           onChange={handleSlugChange}
@@ -152,8 +152,8 @@ export function CreateWeddingDialog({
           }
           hint={
             slugValidation?.valid
-              ? `Link thiệp chung sẽ là: /w/${slugValidation.slug}`
-              : "Chỉ dùng chữ thường a-z, số 0-9 và dấu gạch ngang (-), dài 3–40 ký tự."
+              ? `Tên link hợp lệ — mã thiệp chung: ${slugValidation.slug}`
+              : "Chỉ dùng chữ thường không dấu a-z, số 0-9 và dấu gạch ngang (-), dài 3–40 ký tự."
           }
         />
 

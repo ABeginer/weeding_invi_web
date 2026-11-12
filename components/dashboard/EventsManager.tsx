@@ -8,7 +8,6 @@ import {
   CalendarHeart,
   ExternalLink,
   GripVertical,
-  HelpCircle,
   MapPin,
   Pencil,
   Plus,
@@ -32,7 +31,6 @@ import {
   EVENT_TITLE_MAX_LENGTH,
   EVENT_URL_MAX_LENGTH,
   EVENT_VENUE_MAX_LENGTH,
-  extractMapEmbedSrc,
   toIsoPlus07,
   weddingEventInputSchema,
   type WeddingEvent,
@@ -60,7 +58,6 @@ interface EventFormState {
   lunarDate: string;
   venueName: string;
   venueAddress: string;
-  mapEmbedUrl: string;
   mapDirectionsUrl: string;
 }
 
@@ -71,7 +68,6 @@ function createEmptyEventForm(defaultDateIso: string): EventFormState {
     lunarDate: "",
     venueName: "",
     venueAddress: "",
-    mapEmbedUrl: "",
     mapDirectionsUrl: "",
   };
 }
@@ -83,7 +79,6 @@ function toEventFormState(event: WeddingEvent): EventFormState {
     lunarDate: event.lunarDate,
     venueName: event.venueName,
     venueAddress: event.venueAddress,
-    mapEmbedUrl: event.mapEmbedUrl ?? "",
     mapDirectionsUrl: event.mapDirectionsUrl ?? "",
   };
 }
@@ -108,7 +103,6 @@ export function EventsManager({
   const [formError, setFormError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
-  const [mapGuideOpen, setMapGuideOpen] = React.useState(false);
   const [deletingEvent, setDeletingEvent] = React.useState<WeddingEvent | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
@@ -131,13 +125,6 @@ export function EventsManager({
     setFormOpen(true);
   };
 
-  const handleMapEmbedChange = (value: string) => {
-    const processed = /<iframe\b/i.test(value)
-      ? extractMapEmbedSrc(value)
-      : value;
-    setForm((prev) => ({ ...prev, mapEmbedUrl: processed }));
-  };
-
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
@@ -149,7 +136,7 @@ export function EventsManager({
       lunarDate: form.lunarDate,
       venueName: form.venueName,
       venueAddress: form.venueAddress,
-      mapEmbedUrl: extractMapEmbedSrc(form.mapEmbedUrl) || null,
+      mapEmbedUrl: editingEvent?.mapEmbedUrl ?? null,
       mapDirectionsUrl: form.mapDirectionsUrl.trim() || null,
     };
 
@@ -422,14 +409,14 @@ export function EventsManager({
                         <span
                           className={cn(
                             "inline-flex items-center gap-1 text-[11px]",
-                            evt.mapEmbedUrl ? "text-success-fg" : "text-fg-muted",
+                            evt.mapDirectionsUrl ? "text-success-fg" : "text-fg-muted",
                           )}
                         >
                           <MapPin className="h-3 w-3" aria-hidden="true" />
                           <span>
-                            {evt.mapEmbedUrl
-                              ? "Đã gắn bản đồ nhúng"
-                              : "Chưa gắn bản đồ nhúng"}
+                            {evt.mapDirectionsUrl
+                              ? "Đã gắn link chỉ đường Google Maps"
+                              : "Chưa gắn link chỉ đường Google Maps"}
                           </span>
                         </span>
                         {evt.mapDirectionsUrl && (
@@ -439,7 +426,7 @@ export function EventsManager({
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] font-medium text-accent-text underline underline-offset-4 hover:text-accent-hover"
                           >
-                            <span>Mở link chỉ đường</span>
+                            <span>Mở Google Maps</span>
                             <ExternalLink className="h-3 w-3" aria-hidden="true" />
                           </a>
                         )}
@@ -475,7 +462,7 @@ export function EventsManager({
           <div className="grid gap-3 sm:grid-cols-2">
             <Input
               type="datetime-local"
-              label="Ngày giờ bắt đầu (+07:00) *"
+              label="Ngày giờ bắt đầu *"
               value={form.startsAtLocal}
               onChange={(e) =>
                 setForm((p) => ({ ...p, startsAtLocal: e.target.value }))
@@ -510,40 +497,6 @@ export function EventsManager({
             error={fieldErrors.venueAddress}
           />
 
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <label
-                htmlFor="event-map-embed"
-                className="block text-sm font-medium text-fg"
-              >
-                Link nhúng Google Maps (tùy chọn)
-              </label>
-              <button
-                type="button"
-                onClick={() => setMapGuideOpen(true)}
-                className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-accent-text underline underline-offset-4 hover:text-accent-hover"
-              >
-                <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Lấy link nhúng từ Google Maps</span>
-              </button>
-            </div>
-            <Input
-              id="event-map-embed"
-              value={form.mapEmbedUrl}
-              onChange={(e) => handleMapEmbedChange(e.target.value)}
-              onBlur={(e) =>
-                setForm((p) => ({
-                  ...p,
-                  mapEmbedUrl: extractMapEmbedSrc(e.target.value),
-                }))
-              }
-              maxLength={EVENT_URL_MAX_LENGTH}
-              placeholder="https://www.google.com/maps/embed?pb=... hoặc dán nguyên thẻ <iframe>"
-              hint="Dán nguyên thẻ <iframe> hoặc URL bắt đầu bằng https://."
-              error={fieldErrors.mapEmbedUrl}
-            />
-          </div>
-
           <Input
             label="Link chỉ đường Google Maps (tùy chọn)"
             value={form.mapDirectionsUrl}
@@ -551,7 +504,8 @@ export function EventsManager({
               setForm((p) => ({ ...p, mapDirectionsUrl: e.target.value }))
             }
             maxLength={EVENT_URL_MAX_LENGTH}
-            placeholder="https://maps.app.goo.gl/... hoặc https://www.google.com/maps/..."
+            placeholder="Dán link chia sẻ địa điểm từ Google Maps"
+            hint="Mở Google Maps → chọn địa điểm → bấm Chia sẻ → Sao chép liên kết."
             error={fieldErrors.mapDirectionsUrl}
           />
 
@@ -577,49 +531,6 @@ export function EventsManager({
             </Button>
           </div>
         </form>
-      </Dialog>
-
-      {/* Modal hướng dẫn lấy link nhúng Google Maps */}
-      <Dialog
-        open={mapGuideOpen}
-        onClose={() => setMapGuideOpen(false)}
-        title="Cách lấy link nhúng Google Maps"
-        description="Bản đồ tương tác sẽ hiển thị trực tiếp bên trong thiệp cưới."
-      >
-        <ol className="list-decimal space-y-2.5 pl-4 text-sm leading-relaxed text-fg">
-          <li>
-            Mở{" "}
-            <a
-              href="https://maps.google.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-accent-text underline"
-            >
-              Google Maps
-            </a>{" "}
-            trên máy tính và tìm tên nhà hàng / địa điểm tổ chức.
-          </li>
-          <li>
-            Bấm nút <strong>Chia sẻ (Share)</strong>, sau đó chọn thẻ{" "}
-            <strong>Nhúng bản đồ (Embed a map)</strong>.
-          </li>
-          <li>
-            Bấm <strong>Sao chép HTML (Copy HTML)</strong>.
-          </li>
-          <li>
-            Dán trực tiếp đoạn mã vừa sao chép vào ô{" "}
-            <strong>Link nhúng Google Maps</strong> — hệ thống sẽ tự trích xuất đúng liên kết{" "}
-            <code className="rounded bg-surface-muted px-1 py-0.5 text-xs text-text">
-              https://...
-            </code>
-            .
-          </li>
-        </ol>
-        <div className="mt-5 flex justify-end">
-          <Button variant="primary" onClick={() => setMapGuideOpen(false)}>
-            Đã hiểu
-          </Button>
-        </div>
       </Dialog>
 
       {/* Modal xác nhận xóa lễ */}

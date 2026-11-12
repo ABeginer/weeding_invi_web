@@ -63,8 +63,8 @@ const SINGLE_SLOTS: SlotMeta[] = [
   {
     slot: "hero",
     kind: "banner",
-    title: "Ảnh bìa chính (Hero)",
-    description: "Hiển thị ở phần mở đầu thiệp cưới và ảnh đại diện chia sẻ link.",
+    title: "Ảnh bìa chính",
+    description: "Hiển thị ở phần mở đầu thiệp cưới và ảnh đại diện khi gửi link.",
   },
   {
     slot: "groom",
@@ -404,7 +404,7 @@ export function PhotosManager({
           Quản lý ảnh cưới
         </h2>
         <p className="text-xs text-fg-muted sm:text-sm">
-          Hỗ trợ JPG, PNG, WebP tối đa 5 MB. Ảnh tự động thu gọn về cạnh dài 1600px (WebP) để tải nhanh trên di động.
+          Chọn ảnh từ điện thoại hoặc máy tính (tối đa 5 MB mỗi ảnh). Hệ thống tự tối ưu kích thước để thiệp mở nhanh.
         </p>
       </div>
 

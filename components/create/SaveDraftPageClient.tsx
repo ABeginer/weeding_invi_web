@@ -213,24 +213,24 @@ export function SaveDraftPageClient({ userEmail }: SaveDraftPageClientProps) {
           <Card className="space-y-5 p-6 sm:p-8">
             <div className="space-y-1.5">
               <p className="text-xs font-semibold tracking-[0.16em] text-accent-text uppercase">
-                Đổi đường dẫn thiệp
+                Đổi tên link thiệp
               </p>
               <h1 className="font-display text-2xl font-semibold text-text">
-                Đường dẫn /w/{draft.slug} vừa có người dùng
+                Tên link &ldquo;{draft.slug}&rdquo; vừa có người dùng
               </h1>
               <p className="text-sm text-text-muted">
                 Nội dung thiệp cho{" "}
                 <strong className="text-text">
                   {draft.groomName} &amp; {draft.brideName}
                 </strong>{" "}
-                vẫn được giữ nguyên. Hãy chọn đường dẫn mới để lưu thiệp ngay.
+                vẫn được giữ nguyên. Hãy chọn tên link mới để lưu thiệp ngay.
               </p>
             </div>
 
             <form onSubmit={handleRetryWithSlug} className="space-y-4" noValidate>
               <div>
                 <Input
-                  label="Đường dẫn mới (/w/<slug>)"
+                  label="Tên link thiệp mới"
                   value={slugInput}
                   onChange={(e) => {
                     setSlugInput(e.target.value.toLowerCase());

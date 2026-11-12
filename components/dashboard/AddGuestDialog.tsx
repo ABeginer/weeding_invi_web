@@ -65,7 +65,7 @@ export function AddGuestDialog({
       open={open}
       onClose={onClose}
       title="Thêm khách mời"
-      description="Hệ thống sẽ tự tạo đường dẫn thiệp cá nhân (/m/<slug>) cho khách mời này."
+      description="Hệ thống sẽ tự tạo một link thiệp mang tên riêng cho khách mời này."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input

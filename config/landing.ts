@@ -69,7 +69,7 @@ export const LANDING_COPY = {
         description:
           "Tiết kiệm công sức ghi tay và chi phí in lại khi sai tên. Mỗi khách mời nhận một liên kết mang đúng tên riêng đầy trân trọng.",
         bullets: [
-          "Nhập nhanh danh sách khách hàng loạt trong vài giây (Bulk Import)",
+          "Dán nhanh cả danh sách khách mời từ Excel hoặc Google Sheets trong vài giây",
           "Tự sinh link mời cá nhân & tin nhắn mẫu copy 1 chạm gửi Zalo/SMS",
           "Phân quyền mời riêng theo từng buổi lễ (Thành hôn hoặc Tiệc cưới)",
         ],
@@ -163,9 +163,9 @@ export const LANDING_COPY = {
     musicTrackLabel: "Nhạc nền đi kèm",
     highlightsTitle: "Điểm nổi bật sẵn có",
     highlights: [
-      "Mở thiệp tương tác, cuộn mượt chuẩn màn hình di động 390px",
+      "Mở thiệp tương tác, cuộn mượt chuẩn màn hình điện thoại",
       "Quản lý nhiều lễ & địa điểm kèm chỉ đường Google Maps",
-      "Tự tải ảnh cưới, phân quyền lễ cho từng khách và nhận RSVP",
+      "Tự tải ảnh cưới, chọn lễ mời cho từng khách và nhận xác nhận tham dự",
     ],
     musicPlayLabel: "Phát nhạc",
     musicPauseLabel: "Tắt nhạc",

@@ -122,7 +122,7 @@ export function WishList({ weddingId }: WishListProps) {
             Chưa có lời chúc nào
           </h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-fg-muted">
-            Lời chúc gửi từ thiệp cá nhân (/m/...) và trang thiệp chung (/w/...) sẽ xuất hiện tại đây.
+            Lời chúc khách gửi qua thiệp mời riêng và trang thiệp chung sẽ xuất hiện tại đây.
           </p>
         </Card>
       ) : filteredWishes.length === 0 ? (
