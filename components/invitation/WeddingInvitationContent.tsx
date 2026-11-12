@@ -22,6 +22,7 @@ interface WeddingInvitationContentProps {
   initialStatus?: GuestStatus;
   initialPlusOnes?: number;
   initialDiet?: GuestDiet | null;
+  onOpenGift?: () => void;
 }
 
 export function WeddingInvitationContent({
@@ -32,6 +33,7 @@ export function WeddingInvitationContent({
   initialStatus = "pending",
   initialPlusOnes = 0,
   initialDiet = null,
+  onOpenGift,
 }: WeddingInvitationContentProps) {
   return (
     <>
@@ -49,9 +51,11 @@ export function WeddingInvitationContent({
         <PhotoTriptych />
         {/* #7 Sự kiện */}
         <EventDetails />
-        {/* #8 Thư viện ảnh */}
+        {/* #8 Đếm ngược */}
+        <Countdown />
+        {/* #9 Thư viện ảnh */}
         <Gallery />
-        {/* #9 Xác nhận tham dự & Gửi lời chúc */}
+        {/* #10 Xác nhận tham dự & Gửi lời chúc */}
         <RsvpWishBlock
           slug={slug}
           weddingSlug={weddingSlug}
@@ -61,10 +65,8 @@ export function WeddingInvitationContent({
           initialPlusOnes={initialPlusOnes}
           initialDiet={initialDiet}
         />
-        {/* #10 Mừng cưới */}
-        <GiftQR />
-        {/* #11 Đếm ngược */}
-        <Countdown />
+        {/* #11 Mừng cưới (sau khi xác nhận) */}
+        <GiftQR onOpenGift={onOpenGift} />
       </main>
       {/* #12 Lời cảm ơn */}
       <Footer />

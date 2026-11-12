@@ -69,7 +69,7 @@ export function HeroSection() {
         className="pointer-events-none absolute -top-24 left-1/2 hidden h-96 w-[760px] -translate-x-1/2 rounded-full bg-accent-soft opacity-45 blur-3xl md:block"
       />
 
-      <div className="relative mx-auto grid max-w-5xl grid-cols-1 items-start gap-7 px-4 pt-4 pb-8 sm:px-6 md:grid-cols-12 md:gap-8 md:pt-5 md:pb-8 lg:gap-10 lg:pt-6">
+      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-start gap-7 px-4 pt-4 pb-8 sm:px-6 md:grid-cols-12 md:gap-8 md:pt-5 md:pb-8 lg:gap-10 lg:pt-6">
         {/* Cột trái (desktop/tablet) / Phía trên (mobile) */}
         <div className="space-y-4 text-center md:col-span-7 md:pt-1 md:text-left">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
@@ -154,7 +154,7 @@ export function HeroSection() {
               scrollRef={phoneScrollRef}
               enableFloat
               lockedScroll={!isOpened}
-              desktopOffsetPx={136}
+              desktopOffsetPx={116}
             >
               <TemplatePreviewRenderer
                 key={activeTemplate.id}

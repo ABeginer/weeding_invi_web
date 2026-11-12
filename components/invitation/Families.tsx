@@ -2,12 +2,25 @@
 
 import { cn } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
-import { useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
+import {
+  useInvitationContained,
+  useInvitationDesktopLayout,
+  useWeddingContent,
+} from "./WeddingContentProvider";
 
-function renderParentLines(parents: string) {
+function renderParentLines(parents: string, isContained: boolean) {
+  const lineClass = cn(
+    "font-inv-serif leading-[1.4] tracking-[0.01em] text-inv-ink uppercase break-words",
+    isContained ? "text-[11px]" : "text-[11px] sm:text-[12.5px]",
+  );
   if (!parents.trim()) {
     return (
-      <p className="font-inv-serif text-[11px] italic leading-[1.4] text-inv-muted sm:text-[12.5px]">
+      <p
+        className={cn(
+          "font-inv-serif italic leading-[1.4] text-inv-muted",
+          isContained ? "text-[11px]" : "text-[11px] sm:text-[12.5px]",
+        )}
+      >
         Gia đình nhà hàng lễ cưới
       </p>
     );
@@ -16,20 +29,12 @@ function renderParentLines(parents: string) {
   if (parts.length === 2 && parts[0] && parts[1]) {
     return (
       <>
-        <p className="font-inv-serif text-[11px] leading-[1.4] tracking-[0.01em] text-inv-ink uppercase sm:text-[12.5px]">
-          {parts[0].trim()}
-        </p>
-        <p className="mt-0.5 font-inv-serif text-[11px] leading-[1.4] tracking-[0.01em] text-inv-ink uppercase sm:text-[12.5px]">
-          {parts[1].trim()}
-        </p>
+        <p className={lineClass}>{parts[0].trim()}</p>
+        <p className={cn(lineClass, "mt-0.5")}>{parts[1].trim()}</p>
       </>
     );
   }
-  return (
-    <p className="font-inv-serif text-[11px] leading-[1.4] tracking-[0.01em] text-inv-ink uppercase sm:text-[12.5px]">
-      {parents}
-    </p>
-  );
+  return <p className={lineClass}>{parents}</p>;
 }
 
 function HandDrawnHeart() {
@@ -51,6 +56,7 @@ function HandDrawnHeart() {
 
 export function Families() {
   const data = useWeddingContent();
+  const isContained = useInvitationContained();
   const isDesktopLayout = useInvitationDesktopLayout();
   const { groomParents, brideParents } = data.couple;
   const hasParents = Boolean(groomParents || brideParents);
@@ -58,14 +64,18 @@ export function Families() {
   return (
     <RevealSection
       className={cn(
-        "bg-inv-bg px-4 pt-8 pb-3 text-center sm:px-6",
+        "bg-inv-bg pt-8 pb-3 text-center",
+        isContained ? "px-3.5" : "px-4 sm:px-6",
         isDesktopLayout && "md:border-t md:border-inv-olive/15 md:px-8 md:pt-10",
       )}
     >
       {data.quote && (
         <blockquote
           className={cn(
-            "mx-auto mb-7 max-w-[420px] font-inv-quote text-[21px] leading-[1.4] text-inv-text sm:text-[23px]",
+            "mx-auto mb-7 max-w-[420px] font-inv-quote leading-[1.4] text-inv-text",
+            isContained
+              ? "text-[clamp(17px,5.6cqw,21px)]"
+              : "text-[21px] sm:text-[23px]",
             isDesktopLayout && "md:max-w-[580px] md:text-2xl",
           )}
         >
@@ -76,22 +86,33 @@ export function Families() {
       {hasParents && (
         <div
           className={cn(
-            "grid grid-cols-2 gap-3 sm:gap-5",
+            "grid grid-cols-2",
+            isContained ? "gap-2.5" : "gap-3 sm:gap-5",
             isDesktopLayout && "mx-auto max-w-[680px] md:gap-8",
           )}
         >
           <div className="min-w-0">
-            <h2 className="mb-2 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
+            <h2
+              className={cn(
+                "mb-2 font-inv-serif font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase",
+                isContained ? "text-[11.5px]" : "text-[12px] sm:text-[13px]",
+              )}
+            >
               NHÀ TRAI
             </h2>
-            {renderParentLines(groomParents)}
+            {renderParentLines(groomParents, isContained)}
           </div>
 
           <div className="min-w-0">
-            <h2 className="mb-2 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
+            <h2
+              className={cn(
+                "mb-2 font-inv-serif font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase",
+                isContained ? "text-[11.5px]" : "text-[12px] sm:text-[13px]",
+              )}
+            >
               NHÀ GÁI
             </h2>
-            {renderParentLines(brideParents)}
+            {renderParentLines(brideParents, isContained)}
           </div>
         </div>
       )}

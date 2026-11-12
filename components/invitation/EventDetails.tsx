@@ -38,7 +38,8 @@ export function EventDetails() {
   return (
     <RevealSection
       className={cn(
-        "bg-inv-bg px-5 pt-2 pb-14 text-center",
+        "bg-inv-bg pt-2 text-center",
+        isContained ? "px-3.5 pb-12" : "px-5 pb-14",
         isDesktopLayout && "md:px-8",
       )}
     >
@@ -71,43 +72,89 @@ export function EventDetails() {
                 )}
               >
                 <article className="text-center">
-                  <h2 className="font-inv-serif text-[18px] leading-[1.2] font-semibold tracking-[0.02em] text-inv-olive-btn uppercase sm:text-[20px]">
+                  <h2
+                    className={cn(
+                      "font-inv-serif leading-[1.2] font-semibold tracking-[0.02em] text-inv-olive-btn uppercase break-words",
+                      isContained ? "text-[17px]" : "text-[18px] sm:text-[20px]",
+                    )}
+                  >
                     {event.title}
                   </h2>
 
-                  <p className="mt-2 font-inv-serif text-[14px] leading-[1.35] text-inv-olive-btn uppercase sm:text-[15px]">
+                  <p
+                    className={cn(
+                      "mt-2 font-inv-serif leading-[1.35] text-inv-olive-btn uppercase",
+                      isContained ? "text-[12.5px]" : "text-[14px] sm:text-[15px]",
+                    )}
+                  >
                     VÀO LÚC {dateParts.time}, {dateParts.weekday}
                   </p>
 
-                  <div className="mx-auto mt-3.5 mb-4 grid max-w-[400px] grid-cols-[1fr_1.08fr_1fr] items-center gap-2 text-inv-text">
-                    <span className="block border-y border-inv-olive/60 py-1.5 font-inv-serif text-[15px] leading-none whitespace-nowrap uppercase sm:text-[17px]">
+                  <div
+                    className={cn(
+                      "mx-auto mt-3.5 mb-4 grid max-w-[400px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center text-inv-text",
+                      isContained ? "gap-1.5" : "gap-2",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "block border-y border-inv-olive/60 py-1.5 font-inv-serif leading-none whitespace-nowrap uppercase",
+                        isContained
+                          ? "text-[clamp(10px,3.6cqw,14px)]"
+                          : "text-[13.5px] sm:text-[17px]",
+                      )}
+                    >
                       THÁNG {dateParts.month}
                     </span>
                     <strong
                       className={cn(
-                        "font-inv-serif leading-[0.88] font-normal text-inv-ink",
-                        isContained ? "text-[clamp(40px,14cqw,58px)]" : "text-[clamp(52px,14vw,70px)]",
+                        "px-1 font-inv-serif leading-[0.88] font-normal text-inv-ink",
+                        isContained
+                          ? "text-[clamp(36px,13.5cqw,54px)]"
+                          : "text-[clamp(50px,14vw,70px)]",
                       )}
                     >
                       {dateParts.day}
                     </strong>
-                    <span className="block border-y border-inv-olive/60 py-1.5 font-inv-serif text-[15px] leading-none whitespace-nowrap uppercase sm:text-[17px]">
+                    <span
+                      className={cn(
+                        "block border-y border-inv-olive/60 py-1.5 font-inv-serif leading-none whitespace-nowrap uppercase",
+                        isContained
+                          ? "text-[clamp(10px,3.6cqw,14px)]"
+                          : "text-[13.5px] sm:text-[17px]",
+                      )}
+                    >
                       NĂM {dateParts.year}
                     </span>
                   </div>
 
                   {event.lunarDate && (
-                    <p className="font-inv-serif text-[13.5px] leading-[1.35] italic text-inv-text sm:text-[14.5px]">
+                    <p
+                      className={cn(
+                        "font-inv-serif leading-[1.35] italic text-inv-text",
+                        isContained ? "text-[12.5px]" : "text-[13.5px] sm:text-[14.5px]",
+                      )}
+                    >
                       (Nhằm {event.lunarDate})
                     </p>
                   )}
 
-                  <h3 className="mt-4 font-inv-serif text-[15px] leading-[1.3] font-semibold tracking-[0.02em] text-inv-olive-btn uppercase text-balance sm:text-[17px]">
+                  <h3
+                    className={cn(
+                      "mt-4 font-inv-serif leading-[1.3] font-semibold tracking-[0.02em] text-inv-olive-btn uppercase text-balance break-words",
+                      isContained ? "text-[14px]" : "text-[15px] sm:text-[17px]",
+                    )}
+                  >
                     {event.venueName}
                   </h3>
 
                   {event.venueAddress && (
-                    <p className="mx-auto mt-1.5 max-w-[350px] font-inv-serif text-[14px] leading-[1.45] text-inv-text sm:text-[15.5px]">
+                    <p
+                      className={cn(
+                        "mx-auto mt-1.5 max-w-[350px] font-inv-serif leading-[1.45] text-inv-text break-words",
+                        isContained ? "text-[12.5px]" : "text-[14px] sm:text-[15.5px]",
+                      )}
+                    >
                       {event.venueAddress}
                     </p>
                   )}
@@ -130,7 +177,12 @@ export function EventDetails() {
                         href={event.mapDirectionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex min-w-[220px] items-center justify-center rounded-full bg-inv-olive-btn px-7 py-2.5 font-inv-serif text-[14px] tracking-[0.04em] text-white uppercase transition-colors hover:bg-inv-olive-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg motion-safe:animate-[inv-pill-pulse_2.8s_ease-in-out_infinite]"
+                        className={cn(
+                          "inline-flex items-center justify-center rounded-full bg-inv-olive-btn font-inv-serif tracking-[0.04em] text-white uppercase transition-colors hover:bg-inv-olive-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg motion-safe:animate-[inv-pill-pulse_2.8s_ease-in-out_infinite]",
+                          isContained
+                            ? "w-full max-w-[205px] px-4 py-2 text-[12.5px]"
+                            : "min-w-[210px] max-w-full px-7 py-2.5 text-[14px]",
+                        )}
                       >
                         {data.ui.directionsButtonLabel}
                       </a>

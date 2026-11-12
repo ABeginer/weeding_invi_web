@@ -67,7 +67,12 @@ export function Countdown() {
       ];
 
   return (
-    <RevealSection className="bg-inv-bg px-5 pt-4 pb-11 text-center">
+    <RevealSection
+      className={cn(
+        "bg-inv-bg pt-4 text-center",
+        isContained ? "px-3.5 pb-8" : "px-5 pb-11",
+      )}
+    >
       <p className="font-inv-serif text-[10px] font-semibold uppercase tracking-[0.26em] text-inv-muted">
         {data.ui.countdownEyebrow}
       </p>
@@ -75,18 +80,28 @@ export function Countdown() {
       <h2
         className={cn(
           "mt-1.5 font-inv-script leading-[1.15] font-normal text-inv-olive-btn",
-          isContained ? "text-[clamp(28px,9.5cqw,40px)]" : "text-[clamp(36px,9.5vw,48px)]",
+          isContained ? "text-[clamp(26px,9cqw,38px)]" : "text-[clamp(36px,9.5vw,48px)]",
         )}
       >
         {data.ui.countdownTitle}
       </h2>
 
       {timeLeft?.finished ? (
-        <p className="mt-6 font-inv-serif text-[22px] italic text-inv-olive-deep sm:text-[26px]">
+        <p
+          className={cn(
+            "mt-6 font-inv-serif italic text-inv-olive-deep",
+            isContained ? "text-[18px]" : "text-[22px] sm:text-[26px]",
+          )}
+        >
           {data.ui.countdownFinished}
         </p>
       ) : (
-        <div className="mx-auto mt-6 grid max-w-[370px] grid-cols-4 gap-2 sm:gap-4">
+        <div
+          className={cn(
+            "mx-auto mt-6 grid max-w-[370px] grid-cols-4",
+            isContained ? "gap-1.5" : "gap-2 sm:gap-4",
+          )}
+        >
           {units.map((unit) => (
             <div
               key={unit.label}
@@ -95,12 +110,17 @@ export function Countdown() {
               <span
                 className={cn(
                   "font-inv-serif leading-none font-normal tabular-nums text-inv-olive-btn",
-                  isContained ? "text-[clamp(26px,8.8cqw,36px)]" : "text-[clamp(32px,8.8vw,44px)]",
+                  isContained ? "text-[clamp(24px,8.5cqw,34px)]" : "text-[clamp(32px,8.8vw,44px)]",
                 )}
               >
                 {unit.value}
               </span>
-              <span className="mt-2 font-inv-serif text-[14px] text-inv-olive-btn sm:text-[15px]">
+              <span
+                className={cn(
+                  "mt-2 font-inv-serif text-inv-olive-btn",
+                  isContained ? "text-[12.5px]" : "text-[14px] sm:text-[15px]",
+                )}
+              >
                 {unit.label}
               </span>
             </div>

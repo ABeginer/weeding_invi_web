@@ -218,7 +218,7 @@ export function TemplateDemoViewer({
             </div>
           </div>
         ) : viewport === "phone" ? (
-          <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 px-1 md:grid-cols-12 md:gap-8 lg:gap-10">
+          <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-6 px-1 md:grid-cols-12 md:gap-8 lg:gap-10">
             {/* Cột trái trên desktop: Giới thiệu mẫu thiệp đang xem thử (ẩn trên mobile để giữ nguyên giao diện mobile) */}
             <aside className="hidden space-y-4 text-left md:col-span-7 md:block md:pt-1">
               <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
@@ -329,7 +329,7 @@ export function TemplateDemoViewer({
                   scrollRef={phoneScrollRef}
                   enableFloat={false}
                   lockedScroll={!isOpened}
-                  desktopOffsetPx={116}
+                  desktopOffsetPx={104}
                 >
                   <TemplatePreviewRenderer
                     key={`${template.id}-phone`}

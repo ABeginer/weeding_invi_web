@@ -13,6 +13,7 @@ interface TemplateRsvpSectionProps {
   data: TemplateData;
   mode: TemplateRenderMode;
   tone: TemplateTone;
+  contained?: boolean;
   inviteSlug?: string;
   weddingSlug?: string;
   invitationMode?: "personal" | "public";
@@ -29,6 +30,7 @@ export function TemplateRsvpSection({
   data,
   mode,
   tone,
+  contained = false,
   inviteSlug,
   weddingSlug,
   invitationMode = "personal",
@@ -152,24 +154,24 @@ export function TemplateRsvpSection({
       const res = await submitRsvp(
         savedSlug
           ? {
-              slug: savedSlug,
-              status: selectedChoice,
-              plusOnes: nextPlusOnes,
-              diet: nextDiet,
-              wish: trimmedMessage || undefined,
-              turnstileToken: turnstileToken ?? undefined,
-              website: honeypot,
-            }
+            slug: savedSlug,
+            status: selectedChoice,
+            plusOnes: nextPlusOnes,
+            diet: nextDiet,
+            wish: trimmedMessage || undefined,
+            turnstileToken: turnstileToken ?? undefined,
+            website: honeypot,
+          }
           : {
-              weddingSlug: effectiveWeddingSlug,
-              name: trimmedName,
-              status: selectedChoice,
-              plusOnes: nextPlusOnes,
-              diet: nextDiet,
-              wish: trimmedMessage || undefined,
-              turnstileToken: turnstileToken ?? undefined,
-              website: honeypot,
-            },
+            weddingSlug: effectiveWeddingSlug,
+            name: trimmedName,
+            status: selectedChoice,
+            plusOnes: nextPlusOnes,
+            diet: nextDiet,
+            wish: trimmedMessage || undefined,
+            turnstileToken: turnstileToken ?? undefined,
+            website: honeypot,
+          },
       );
       if (!savedSlug && res.slug) {
         setWalkInGuest({ slug: res.slug, name: trimmedName });
@@ -252,64 +254,83 @@ export function TemplateRsvpSection({
   const styles =
     tone === "obsidian"
       ? {
-          wrap: "bg-lnd-surface border-y border-lnd-border text-lnd-body",
-          eyebrow: "text-lnd-gold",
-          heading: "text-lnd-gold font-display",
-          subtext: "text-lnd-muted",
-          card: "border border-lnd-border bg-lnd-bg text-lnd-body",
-          input:
-            "border border-lnd-border bg-lnd-bg text-lnd-body placeholder:text-lnd-muted focus:border-lnd-gold focus:ring-lnd-gold",
-          primaryBtn:
-            "bg-lnd-gold text-lnd-bg hover:bg-lnd-gold-bright font-semibold",
-          outlineBtn:
-            "border border-lnd-gold-soft bg-transparent text-lnd-body hover:border-lnd-gold hover:text-lnd-gold",
-          alert: "border-lnd-gold-soft bg-lnd-gold-tint text-lnd-body",
-          badge: "border-lnd-gold-soft bg-lnd-surface text-lnd-body",
-        }
+        wrap: "bg-lnd-surface border-y border-lnd-border text-lnd-body",
+        eyebrow: "text-lnd-gold",
+        heading: "text-lnd-gold font-display",
+        subtext: "text-lnd-muted",
+        card: "border border-lnd-border bg-lnd-bg text-lnd-body",
+        input:
+          "border border-lnd-border bg-lnd-bg text-lnd-body placeholder:text-lnd-muted focus:border-lnd-gold focus:ring-lnd-gold",
+        primaryBtn:
+          "bg-lnd-gold text-lnd-bg hover:bg-lnd-gold-bright font-semibold",
+        outlineBtn:
+          "border border-lnd-gold-soft bg-transparent text-lnd-body hover:border-lnd-gold hover:text-lnd-gold",
+        alert: "border-lnd-gold-soft bg-lnd-gold-tint text-lnd-body",
+        badge: "border-lnd-gold-soft bg-lnd-surface text-lnd-body",
+      }
       : tone === "sunset"
         ? {
-            wrap: "bg-[#FBF3ED] border-y border-[#E7CFC3] text-[#322424]",
-            eyebrow: "text-[#8A4444]",
-            heading: "text-[#7A3535] font-display",
-            subtext: "text-[#6B504B]",
-            card: "border border-[#E7CFC3] bg-white text-[#322424]",
-            input:
-              "border border-[#D5B2A3] bg-white text-[#322424] placeholder:text-[#8E6F68] focus:border-[#7A3535] focus:ring-[#7A3535]",
-            primaryBtn: "bg-[#7A3535] text-white hover:bg-[#612828] font-medium",
-            outlineBtn:
-              "border border-[#B77C72] bg-white text-[#6A2E2E] hover:bg-[#F5E6DF]",
-            alert: "border-[#D5B2A3] bg-[#F5E6DF] text-[#4B2626]",
-            badge: "border-[#E7CFC3] bg-[#FCF5F0] text-[#5C2626]",
-          }
+          wrap: "bg-[#FBF3ED] border-y border-[#E7CFC3] text-[#322424]",
+          eyebrow: "text-[#8A4444]",
+          heading: "text-[#7A3535] font-display",
+          subtext: "text-[#6B504B]",
+          card: "border border-[#E7CFC3] bg-white text-[#322424]",
+          input:
+            "border border-[#D5B2A3] bg-white text-[#322424] placeholder:text-[#8E6F68] focus:border-[#7A3535] focus:ring-[#7A3535]",
+          primaryBtn: "bg-[#7A3535] text-white hover:bg-[#612828] font-medium",
+          outlineBtn:
+            "border border-[#B77C72] bg-white text-[#6A2E2E] hover:bg-[#F5E6DF]",
+          alert: "border-[#D5B2A3] bg-[#F5E6DF] text-[#4B2626]",
+          badge: "border-[#E7CFC3] bg-[#FCF5F0] text-[#5C2626]",
+        }
         : {
-            wrap: "bg-[#F6F3EC] border-y border-[#E2D9C8] text-[#1F1D1A]",
-            eyebrow: "text-[#706040]",
-            heading: "text-[#1F1D1A] font-display",
-            subtext: "text-[#5E574B]",
-            card: "border border-[#DFD5C3] bg-white text-[#1F1D1A]",
-            input:
-              "border border-[#C9BFA9] bg-white text-[#1F1D1A] placeholder:text-[#786E5C] focus:border-[#706040] focus:ring-[#706040]",
-            primaryBtn: "bg-[#23201C] text-[#FAF7F0] hover:bg-[#3A342D] font-medium",
-            outlineBtn:
-              "border border-[#9A8966] bg-white text-[#23201C] hover:bg-[#EFEAE0]",
-            alert: "border-[#D4C7AE] bg-[#EFEAE0] text-[#23201C]",
-            badge: "border-[#DFD5C3] bg-[#FAF7F0] text-[#23201C]",
-          };
+          wrap: "bg-[#F6F3EC] border-y border-[#E2D9C8] text-[#1F1D1A]",
+          eyebrow: "text-[#706040]",
+          heading: "text-[#1F1D1A] font-display",
+          subtext: "text-[#5E574B]",
+          card: "border border-[#DFD5C3] bg-white text-[#1F1D1A]",
+          input:
+            "border border-[#C9BFA9] bg-white text-[#1F1D1A] placeholder:text-[#786E5C] focus:border-[#706040] focus:ring-[#706040]",
+          primaryBtn: "bg-[#23201C] text-[#FAF7F0] hover:bg-[#3A342D] font-medium",
+          outlineBtn:
+            "border border-[#9A8966] bg-white text-[#23201C] hover:bg-[#EFEAE0]",
+          alert: "border-[#D4C7AE] bg-[#EFEAE0] text-[#23201C]",
+          badge: "border-[#DFD5C3] bg-[#FAF7F0] text-[#23201C]",
+        };
 
   const turnstileTheme = tone === "obsidian" ? "dark" : "light";
 
   if (isPublicMode) {
     return (
-      <section id="rsvp-wishes" className={cn("scroll-mt-10 px-5 py-10", styles.wrap)}>
+      <section
+        id="rsvp-wishes"
+        className={cn(
+          "scroll-mt-10",
+          contained ? "px-3.5 py-8" : "px-5 py-10",
+          styles.wrap,
+        )}
+      >
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
             <p className={cn("text-[11px] font-medium uppercase tracking-[0.2em]", styles.eyebrow)}>
               Phản Hồi &amp; Chúc Phúc
             </p>
-            <h2 className={cn("mt-1.5 text-3xl font-semibold", styles.heading)}>
+            <h2
+              className={cn(
+                "mt-1.5 font-semibold",
+                contained ? "text-2xl" : "text-3xl",
+                styles.heading,
+              )}
+            >
               Gửi Lời Chúc Phúc
             </h2>
-            <p className={cn("mx-auto mt-2 max-w-[380px] text-sm leading-relaxed", styles.subtext)}>
+            <p
+              className={cn(
+                "mx-auto mt-2 max-w-[380px] leading-relaxed",
+                contained ? "text-xs" : "text-sm",
+                styles.subtext,
+              )}
+            >
               Gửi đôi lời yêu thương để cùng lưu giữ những kỷ niệm đẹp nhất trong ngày cưới của chúng mình.
             </p>
           </div>
@@ -416,16 +437,35 @@ export function TemplateRsvpSection({
   const summaryDiet = rsvpFeedback?.diet ?? diet;
 
   return (
-    <section id="rsvp-wishes" className={cn("scroll-mt-10 px-5 py-10", styles.wrap)}>
+    <section
+      id="rsvp-wishes"
+      className={cn(
+        "scroll-mt-10",
+        contained ? "px-3.5 py-8" : "px-5 py-10",
+        styles.wrap,
+      )}
+    >
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
           <p className={cn("text-[11px] font-medium uppercase tracking-[0.2em]", styles.eyebrow)}>
             Phản Hồi &amp; Chúc Phúc
           </p>
-          <h2 className={cn("mt-1.5 text-3xl font-semibold", styles.heading)}>
+          <h2
+            className={cn(
+              "mt-1.5 font-semibold",
+              contained ? "text-2xl" : "text-3xl",
+              styles.heading,
+            )}
+          >
             Xác Nhận Tham Dự &amp; Gửi Lời Chúc
           </h2>
-          <p className={cn("mx-auto mt-2 max-w-[380px] text-sm leading-relaxed", styles.subtext)}>
+          <p
+            className={cn(
+              "mx-auto mt-2 max-w-[380px] leading-relaxed",
+              contained ? "text-xs" : "text-sm",
+              styles.subtext,
+            )}
+          >
             Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới.
           </p>
         </div>
@@ -533,7 +573,10 @@ export function TemplateRsvpSection({
             <div
               role="group"
               aria-label="Lựa chọn tham dự"
-              className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+              className={cn(
+                "grid grid-cols-1 gap-2",
+                !contained && "sm:grid-cols-2",
+              )}
             >
               <button
                 type="button"
@@ -544,7 +587,7 @@ export function TemplateRsvpSection({
                   setSelectedChoice("accepted");
                 }}
                 className={cn(
-                  "inline-flex h-11 cursor-pointer items-center justify-center rounded-full px-4 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
+                  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-center text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
                   selectedChoice === "accepted" ? styles.primaryBtn : styles.outlineBtn,
                 )}
               >
@@ -559,7 +602,7 @@ export function TemplateRsvpSection({
                   setSelectedChoice("declined");
                 }}
                 className={cn(
-                  "inline-flex h-11 cursor-pointer items-center justify-center rounded-full px-4 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
+                  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-center text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
                   selectedChoice === "declined" ? styles.primaryBtn : styles.outlineBtn,
                 )}
               >

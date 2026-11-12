@@ -3,9 +3,10 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CalendarHeart, MapPin } from "lucide-react";
-import { GiftFloatingTrigger, GiftModal } from "@/components/invitation/GiftModal";
+import { GiftModal } from "@/components/invitation/GiftModal";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
+import { TemplateGiftSection } from "../shared/TemplateGiftSection";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -147,8 +148,8 @@ export default function Basic3Template({
         {/* Hero */}
         <header
           className={cn(
-            "bg-gradient-to-b from-[#F5E0D5] to-[#FCF5F0] text-center sm:px-8",
-            contained ? "px-4 pt-7 pb-6" : "px-5 pt-10 pb-8",
+            "bg-gradient-to-b from-[#F5E0D5] to-[#FCF5F0] text-center",
+            contained ? "px-3.5 pt-9 pb-6" : "px-5 pt-10 pb-8 sm:px-8",
             isDesktopLayout &&
             "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
           )}
@@ -214,35 +215,60 @@ export default function Basic3Template({
         </header>
 
         {/* Quote & Families & Couple */}
-        <section className="px-5 py-8 text-center sm:px-8">
+        <section className={cn("text-center", contained ? "px-3.5 py-7" : "px-5 py-8 sm:px-8")}>
           {data.quote && (
-            <p className="mx-auto max-w-[520px] rounded-2xl border border-[#E7CFC3] bg-white px-5 py-5 font-display text-lg leading-relaxed italic text-[#5C2626] sm:text-xl">
+            <p
+              className={cn(
+                "mx-auto max-w-[520px] rounded-2xl border border-[#E7CFC3] bg-white px-4 py-4 font-display leading-relaxed italic text-[#5C2626]",
+                contained ? "text-base" : "px-5 py-5 text-lg sm:text-xl",
+              )}
+            >
               “{data.quote}”
             </p>
           )}
 
           {hasFamilies && (
-            <div className="mx-auto mt-7 grid max-w-[680px] grid-cols-2 gap-3 sm:gap-6">
-              <div className="rounded-2xl border border-[#E7CFC3] bg-white p-4">
+            <div
+              className={cn(
+                "mx-auto mt-7 grid max-w-[680px] grid-cols-2",
+                contained ? "gap-2.5" : "gap-3 sm:gap-6",
+              )}
+            >
+              <div className={cn("min-w-0 rounded-2xl border border-[#E7CFC3] bg-white", contained ? "p-3" : "p-4")}>
                 <p className="text-[11px] font-semibold tracking-[0.16em] text-[#8A4444] uppercase">
                   NHÀ TRAI
                 </p>
-                <p className="mt-1.5 text-xs font-medium text-[#322424] sm:text-sm">
+                <p
+                  className={cn(
+                    "mt-1.5 font-medium text-[#322424] break-words",
+                    contained ? "text-xs" : "text-xs sm:text-sm",
+                  )}
+                >
                   {data.couple.groomParents || "Gia đình nhà trai"}
                 </p>
               </div>
-              <div className="rounded-2xl border border-[#E7CFC3] bg-white p-4">
+              <div className={cn("min-w-0 rounded-2xl border border-[#E7CFC3] bg-white", contained ? "p-3" : "p-4")}>
                 <p className="text-[11px] font-semibold tracking-[0.16em] text-[#8A4444] uppercase">
                   NHÀ GÁI
                 </p>
-                <p className="mt-1.5 text-xs font-medium text-[#322424] sm:text-sm">
+                <p
+                  className={cn(
+                    "mt-1.5 font-medium text-[#322424] break-words",
+                    contained ? "text-xs" : "text-xs sm:text-sm",
+                  )}
+                >
                   {data.couple.brideParents || "Gia đình nhà gái"}
                 </p>
               </div>
             </div>
           )}
 
-          <div className="mx-auto mt-6 grid max-w-[680px] grid-cols-2 gap-3 sm:gap-6">
+          <div
+            className={cn(
+              "mx-auto mt-6 grid max-w-[680px] grid-cols-2",
+              contained ? "gap-2.5" : "gap-3 sm:gap-6",
+            )}
+          >
             {[
               {
                 label: "CHÚ RỂ",
@@ -257,7 +283,7 @@ export default function Basic3Template({
             ].map((person) => (
               <div
                 key={person.label}
-                className="overflow-hidden rounded-2xl border border-[#E7CFC3] bg-white"
+                className="min-w-0 overflow-hidden rounded-2xl border border-[#E7CFC3] bg-white"
               >
                 {person.photoUrl ? (
                   <img
@@ -272,11 +298,16 @@ export default function Basic3Template({
                 ) : (
                   <TemplatePhotoPlaceholder />
                 )}
-                <div className="p-3 text-center">
+                <div className="p-2.5 text-center sm:p-3">
                   <p className="text-[10px] font-semibold tracking-[0.14em] text-[#8A4444] uppercase">
                     {person.label}
                   </p>
-                  <p className="mt-0.5 font-display text-lg font-semibold text-[#5C2626]">
+                  <p
+                    className={cn(
+                      "mt-0.5 font-display font-semibold text-[#5C2626] break-words",
+                      contained ? "text-base" : "text-lg",
+                    )}
+                  >
                     {person.fullName}
                   </p>
                 </div>
@@ -286,10 +317,20 @@ export default function Basic3Template({
         </section>
 
         {/* Events & Countdown */}
-        <section className="px-5 py-8 text-center sm:px-8">
-          <div className="mx-auto max-w-[780px] rounded-3xl border border-[#E7CFC3] bg-white p-5 sm:p-8">
+        <section className={cn("text-center", contained ? "px-3.5 py-7" : "px-5 py-8 sm:px-8")}>
+          <div
+            className={cn(
+              "mx-auto max-w-[780px] rounded-3xl border border-[#E7CFC3] bg-white",
+              contained ? "p-4" : "p-5 sm:p-8",
+            )}
+          >
             <CalendarHeart className="mx-auto h-5 w-5 text-[#7A3535]" aria-hidden="true" />
-            <h2 className="mt-2 font-display text-3xl font-semibold text-[#5C2626]">
+            <h2
+              className={cn(
+                "mt-2 font-display font-semibold text-[#5C2626]",
+                contained ? "text-2xl" : "text-3xl",
+              )}
+            >
               {data.ui.eventsTitle}
             </h2>
 
@@ -390,8 +431,13 @@ export default function Basic3Template({
         </section>
 
         {/* Gallery */}
-        <section className="px-5 py-8 text-center sm:px-8">
-          <h2 className="font-display text-3xl font-semibold text-[#5C2626]">
+        <section className={cn("text-center", contained ? "px-3.5 py-7" : "px-5 py-8 sm:px-8")}>
+          <h2
+            className={cn(
+              "font-display font-semibold text-[#5C2626]",
+              contained ? "text-2xl" : "text-3xl",
+            )}
+          >
             {data.ui.galleryTitle}
           </h2>
           <p className="mt-1 text-xs text-[#6B504B]">{data.ui.gallerySubtitle}</p>
@@ -435,6 +481,7 @@ export default function Basic3Template({
           data={data}
           mode={mode}
           tone="sunset"
+          contained={contained}
           inviteSlug={inviteSlug}
           weddingSlug={weddingSlug}
           invitationMode={invitationMode}
@@ -442,6 +489,13 @@ export default function Basic3Template({
           initialStatus={initialStatus}
           initialPlusOnes={initialPlusOnes}
           initialDiet={initialDiet}
+        />
+
+        {/* Gift (sau khi xác nhận) */}
+        <TemplateGiftSection
+          tone="sunset"
+          contained={contained}
+          onOpenGift={() => setGiftOpen(true)}
         />
 
         <footer className="bg-gradient-to-t from-[#5C2626] to-[#7A3535] px-5 py-10 text-center text-[#FFF8F4]">
@@ -462,13 +516,6 @@ export default function Basic3Template({
         activeIndex={lightboxIndex}
         onClose={() => setLightboxIndex(null)}
         onChangeIndex={setLightboxIndex}
-      />
-
-      <GiftFloatingTrigger
-        visible={opened}
-        onClick={() => setGiftOpen(true)}
-        tone="sunset"
-        contained={contained}
       />
 
       <GiftModal

@@ -3,9 +3,10 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Heart, MapPin, Sparkles } from "lucide-react";
-import { GiftFloatingTrigger, GiftModal } from "@/components/invitation/GiftModal";
+import { GiftModal } from "@/components/invitation/GiftModal";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
+import { TemplateGiftSection } from "../shared/TemplateGiftSection";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -161,7 +162,7 @@ export default function Basic2Template({
         <header
           className={cn(
             "text-center",
-            contained ? "px-4 pt-7 pb-6" : "px-5 pt-10 pb-8",
+            contained ? "px-3.5 pt-9 pb-6" : "px-5 pt-10 pb-8",
             isDesktopLayout &&
               "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
           )}
@@ -228,28 +229,53 @@ export default function Basic2Template({
 
         {/* Quote & Families */}
         {(data.quote || hasFamilies) && (
-          <section className="border-t border-[#E2D9C8] px-5 py-9 text-center sm:px-8">
+          <section
+            className={cn(
+              "border-t border-[#E2D9C8] text-center",
+              contained ? "px-3.5 py-7" : "px-5 py-9 sm:px-8",
+            )}
+          >
             {data.quote && (
-              <blockquote className="mx-auto max-w-[540px] font-display text-xl leading-relaxed italic text-[#3F382E] sm:text-2xl">
+              <blockquote
+                className={cn(
+                  "mx-auto max-w-[540px] font-display leading-relaxed italic text-[#3F382E]",
+                  contained ? "text-lg" : "text-xl sm:text-2xl",
+                )}
+              >
                 “{data.quote}”
               </blockquote>
             )}
 
             {hasFamilies && (
-              <div className="mx-auto mt-8 grid max-w-[680px] grid-cols-2 gap-4 text-center sm:gap-8">
-                <div className="border border-[#E2D9C8] bg-white p-4">
+              <div
+                className={cn(
+                  "mx-auto mt-7 grid max-w-[680px] grid-cols-2 text-center",
+                  contained ? "gap-2.5" : "gap-4 sm:gap-8",
+                )}
+              >
+                <div className={cn("min-w-0 border border-[#E2D9C8] bg-white", contained ? "p-3" : "p-4")}>
                   <p className="text-[11px] font-semibold tracking-[0.16em] text-[#706040] uppercase">
                     NHÀ TRAI
                   </p>
-                  <p className="mt-2 text-xs font-medium leading-relaxed text-[#1F1D1A] sm:text-sm">
+                  <p
+                    className={cn(
+                      "mt-2 font-medium leading-relaxed text-[#1F1D1A] break-words",
+                      contained ? "text-xs" : "text-xs sm:text-sm",
+                    )}
+                  >
                     {data.couple.groomParents || "Gia đình nhà trai"}
                   </p>
                 </div>
-                <div className="border border-[#E2D9C8] bg-white p-4">
+                <div className={cn("min-w-0 border border-[#E2D9C8] bg-white", contained ? "p-3" : "p-4")}>
                   <p className="text-[11px] font-semibold tracking-[0.16em] text-[#706040] uppercase">
                     NHÀ GÁI
                   </p>
-                  <p className="mt-2 text-xs font-medium leading-relaxed text-[#1F1D1A] sm:text-sm">
+                  <p
+                    className={cn(
+                      "mt-2 font-medium leading-relaxed text-[#1F1D1A] break-words",
+                      contained ? "text-xs" : "text-xs sm:text-sm",
+                    )}
+                  >
                     {data.couple.brideParents || "Gia đình nhà gái"}
                   </p>
                 </div>
@@ -259,8 +285,13 @@ export default function Basic2Template({
         )}
 
         {/* Couple */}
-        <section className="px-5 py-8 sm:px-8">
-          <div className="mx-auto grid max-w-[720px] grid-cols-2 gap-3 sm:gap-6">
+        <section className={cn(contained ? "px-3.5 py-7" : "px-5 py-8 sm:px-8")}>
+          <div
+            className={cn(
+              "mx-auto grid max-w-[720px] grid-cols-2",
+              contained ? "gap-2.5" : "gap-3 sm:gap-6",
+            )}
+          >
             {[
               {
                 label: "CHÚ RỂ",
@@ -275,7 +306,7 @@ export default function Basic2Template({
             ].map((person) => (
               <div
                 key={person.label}
-                className="border border-[#E2D9C8] bg-white p-2.5 shadow-xs"
+                className={cn("min-w-0 border border-[#E2D9C8] bg-white shadow-xs", contained ? "p-2" : "p-2.5")}
               >
                 {person.photoUrl ? (
                   <img
@@ -290,11 +321,16 @@ export default function Basic2Template({
                 ) : (
                   <TemplatePhotoPlaceholder />
                 )}
-                <div className="px-1 pt-3 pb-1 text-center">
+                <div className="px-1 pt-2.5 pb-1 text-center">
                   <p className="text-[10px] font-semibold tracking-[0.16em] text-[#706040] uppercase">
                     {person.label}
                   </p>
-                  <p className="mt-1 font-display text-lg font-semibold text-[#1F1D1A] sm:text-xl">
+                  <p
+                    className={cn(
+                      "mt-1 font-display font-semibold text-[#1F1D1A] break-words",
+                      contained ? "text-base" : "text-lg sm:text-xl",
+                    )}
+                  >
                     {person.fullName}
                   </p>
                 </div>
@@ -304,11 +340,21 @@ export default function Basic2Template({
         </section>
 
         {/* Events & Countdown */}
-        <section className="border-t border-[#E2D9C8] px-5 py-9 text-center sm:px-8">
+        <section
+          className={cn(
+            "border-t border-[#E2D9C8] text-center",
+            contained ? "px-3.5 py-7" : "px-5 py-9 sm:px-8",
+          )}
+        >
           <p className="text-[11px] font-semibold tracking-[0.2em] text-[#706040] uppercase">
             {data.ui.eventsEyebrow}
           </p>
-          <h2 className="mt-1 font-display text-3xl font-semibold text-[#1F1D1A]">
+          <h2
+            className={cn(
+              "mt-1 font-display font-semibold text-[#1F1D1A]",
+              contained ? "text-2xl" : "text-3xl",
+            )}
+          >
             {data.ui.eventsTitle}
           </h2>
 
@@ -425,11 +471,16 @@ export default function Basic2Template({
         </section>
 
         {/* Gallery */}
-        <section className="px-5 py-9 text-center sm:px-8">
+        <section className={cn("text-center", contained ? "px-3.5 py-7" : "px-5 py-9 sm:px-8")}>
           <p className="text-[11px] font-semibold tracking-[0.2em] text-[#706040] uppercase">
             {data.ui.galleryEyebrow}
           </p>
-          <h2 className="mt-1 font-display text-3xl font-semibold text-[#1F1D1A]">
+          <h2
+            className={cn(
+              "mt-1 font-display font-semibold text-[#1F1D1A]",
+              contained ? "text-2xl" : "text-3xl",
+            )}
+          >
             {data.ui.galleryTitle}
           </h2>
           <p className="mt-1.5 text-xs text-[#5E574B]">{data.ui.gallerySubtitle}</p>
@@ -473,6 +524,7 @@ export default function Basic2Template({
           data={data}
           mode={mode}
           tone="minimal"
+          contained={contained}
           inviteSlug={inviteSlug}
           weddingSlug={weddingSlug}
           invitationMode={invitationMode}
@@ -480,6 +532,13 @@ export default function Basic2Template({
           initialStatus={initialStatus}
           initialPlusOnes={initialPlusOnes}
           initialDiet={initialDiet}
+        />
+
+        {/* Gift (sau khi xác nhận) */}
+        <TemplateGiftSection
+          tone="minimal"
+          contained={contained}
+          onOpenGift={() => setGiftOpen(true)}
         />
 
         <footer className="border-t border-[#E2D9C8] bg-[#23201C] px-5 py-10 text-center text-[#FAF7F0]">
@@ -501,13 +560,6 @@ export default function Basic2Template({
         activeIndex={lightboxIndex}
         onClose={() => setLightboxIndex(null)}
         onChangeIndex={setLightboxIndex}
-      />
-
-      <GiftFloatingTrigger
-        visible={opened}
-        onClick={() => setGiftOpen(true)}
-        tone="minimal"
-        contained={contained}
       />
 
       <GiftModal

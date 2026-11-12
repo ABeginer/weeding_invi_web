@@ -2,58 +2,12 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Download, Gift, HeartHandshake, X } from "lucide-react";
+import { Check, Copy, Download, HeartHandshake, X } from "lucide-react";
 import { invitationThemeCssVars, landingThemeCssVars } from "@/lib/theme";
 import type { TemplateData, WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export type GiftTone = "olive" | "minimal" | "sunset" | "obsidian";
-
-interface GiftFloatingTriggerProps {
-  visible: boolean;
-  onClick: () => void;
-  tone?: GiftTone;
-  contained?: boolean;
-}
-
-export function GiftFloatingTrigger({
-  visible,
-  onClick,
-  tone = "olive",
-  contained = false,
-}: GiftFloatingTriggerProps) {
-  if (!visible) return null;
-
-  const toneClasses: Record<GiftTone, string> = {
-    olive:
-      "border-inv-olive/45 bg-inv-cream text-inv-olive-deep shadow-md hover:bg-inv-tint focus-visible:ring-inv-olive-deep",
-    minimal:
-      "border-stone-400 bg-stone-50 text-stone-900 shadow-md hover:bg-stone-100 focus-visible:ring-stone-700",
-    sunset:
-      "border-rose-300 bg-rose-50 text-rose-950 shadow-md hover:bg-rose-100 focus-visible:ring-rose-800",
-    obsidian:
-      "border-lnd-gold-soft bg-lnd-bg text-lnd-gold shadow-lg hover:border-lnd-gold focus-visible:ring-lnd-gold",
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Gửi lời chúc & quà mừng"
-      className={cn(
-        "fixed z-40 inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2",
-        contained
-          ? "bottom-3 left-3"
-          : "bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-3 sm:bottom-6 sm:left-6",
-        toneClasses[tone],
-      )}
-    >
-      <Gift className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <span className="sm:hidden">Quà mừng</span>
-      <span className="hidden sm:inline">Gửi lời chúc &amp; quà mừng</span>
-    </button>
-  );
-}
 
 interface GiftModalProps {
   open: boolean;
@@ -452,3 +406,4 @@ export function GiftModal({
     document.body,
   );
 }
+

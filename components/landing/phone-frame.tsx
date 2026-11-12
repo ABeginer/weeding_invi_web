@@ -30,7 +30,7 @@ export function PhoneFrame({
         } as React.CSSProperties
       }
       className={cn(
-        "relative mx-auto w-full max-w-[332px] select-none sm:max-w-[352px] md:w-[clamp(245px,calc((100dvh-var(--phone-offset,136px))*390/844),336px)] md:max-w-none",
+        "relative mx-auto w-full max-w-[332px] select-none sm:max-w-[360px] md:w-[clamp(264px,calc((100dvh-var(--phone-offset,120px))*390/844),404px)] md:max-w-full",
         enableFloat && "lnd-phone-float",
         className,
       )}

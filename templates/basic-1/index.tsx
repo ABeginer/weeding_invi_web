@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { GiftFloatingTrigger, GiftModal } from "@/components/invitation/GiftModal";
+import { GiftModal } from "@/components/invitation/GiftModal";
 import { InvitationShell } from "@/components/invitation/InvitationShell";
 import { WeddingContentProvider } from "@/components/invitation/WeddingContentProvider";
 import { WeddingInvitationContent } from "@/components/invitation/WeddingInvitationContent";
@@ -25,15 +25,9 @@ export default function Basic1Template({
 }: WeddingTemplateProps) {
   const isReadOnlyPreview = mode === "demo" || mode === "preview";
   const resolvedExternalMusic = externalMusicControl ?? isReadOnlyPreview;
-  const [opened, setOpened] = React.useState(isOpened);
   const [giftOpen, setGiftOpen] = React.useState(false);
 
-  React.useEffect(() => {
-    setOpened(isOpened);
-  }, [isOpened]);
-
   const handleOpenedChange = (next: boolean) => {
-    setOpened(next);
     onOpenedChange?.(next);
   };
 
@@ -73,15 +67,9 @@ export default function Basic1Template({
             initialStatus={initialStatus}
             initialPlusOnes={initialPlusOnes}
             initialDiet={initialDiet}
+            onOpenGift={() => setGiftOpen(true)}
           />
         </InvitationShell>
-
-        <GiftFloatingTrigger
-          visible={opened}
-          onClick={() => setGiftOpen(true)}
-          tone="olive"
-          contained={contained}
-        />
 
         <GiftModal
           open={giftOpen}

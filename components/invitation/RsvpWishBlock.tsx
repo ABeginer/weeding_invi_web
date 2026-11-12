@@ -9,7 +9,11 @@ import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidge
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
-import { useInvitationReadOnly, useWeddingContent } from "./WeddingContentProvider";
+import {
+  useInvitationContained,
+  useInvitationReadOnly,
+  useWeddingContent,
+} from "./WeddingContentProvider";
 
 interface RsvpWishBlockProps {
   slug?: string;
@@ -34,6 +38,7 @@ export function RsvpWishBlock({
   initialDiet = null,
 }: RsvpWishBlockProps) {
   const data = useWeddingContent();
+  const isContained = useInvitationContained();
   const isReadOnlyPreview = useInvitationReadOnly();
   const isPublicMode = !isReadOnlyPreview && mode === "public";
   const isNameLocked = !isPublicMode && Boolean(guestName && guestName.trim().length > 0);
@@ -157,24 +162,24 @@ export function RsvpWishBlock({
       const res = await submitRsvp(
         savedSlug
           ? {
-              slug: savedSlug,
-              status: selectedChoice,
-              plusOnes: nextPlusOnes,
-              diet: nextDiet,
-              wish: trimmedMessage || undefined,
-              turnstileToken: turnstileToken ?? undefined,
-              website: honeypot,
-            }
+            slug: savedSlug,
+            status: selectedChoice,
+            plusOnes: nextPlusOnes,
+            diet: nextDiet,
+            wish: trimmedMessage || undefined,
+            turnstileToken: turnstileToken ?? undefined,
+            website: honeypot,
+          }
           : {
-              weddingSlug: effectiveWeddingSlug,
-              name: trimmedName,
-              status: selectedChoice,
-              plusOnes: nextPlusOnes,
-              diet: nextDiet,
-              wish: trimmedMessage || undefined,
-              turnstileToken: turnstileToken ?? undefined,
-              website: honeypot,
-            },
+            weddingSlug: effectiveWeddingSlug,
+            name: trimmedName,
+            status: selectedChoice,
+            plusOnes: nextPlusOnes,
+            diet: nextDiet,
+            wish: trimmedMessage || undefined,
+            turnstileToken: turnstileToken ?? undefined,
+            website: honeypot,
+          },
       );
       if (!savedSlug && res.slug) {
         setWalkInGuest({ slug: res.slug, name: trimmedName });
@@ -263,13 +268,31 @@ export function RsvpWishBlock({
 
   if (isPublicMode) {
     return (
-      <RevealSection id="rsvp-wishes" className="scroll-mt-10 bg-inv-bg px-5 pt-10 pb-6">
+      <RevealSection
+        id="rsvp-wishes"
+        className={cn(
+          "scroll-mt-10 bg-inv-bg pb-6",
+          isContained ? "px-3.5 pt-8" : "px-5 pt-10",
+        )}
+      >
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
-            <h2 className="font-inv-script text-[clamp(32px,8.8vw,46px)] leading-[1.2] font-normal text-inv-olive-deep">
+            <h2
+              className={cn(
+                "font-inv-script leading-[1.2] font-normal text-inv-olive-deep",
+                isContained
+                  ? "text-[clamp(26px,9cqw,38px)]"
+                  : "text-[clamp(32px,8.8vw,46px)]",
+              )}
+            >
               Gửi Lời Chúc
             </h2>
-            <p className="mx-auto mt-2.5 max-w-[390px] font-inv-serif text-[14px] leading-[1.55] text-inv-olive-btn sm:text-[15px]">
+            <p
+              className={cn(
+                "mx-auto mt-2.5 max-w-[390px] font-inv-serif leading-[1.55] text-inv-olive-btn",
+                isContained ? "text-[13px]" : "text-[14px] sm:text-[15px]",
+              )}
+            >
               Gửi đôi lời yêu thương để cùng lưu giữ những kỷ niệm đẹp nhất trong ngày cưới của chúng mình.
             </p>
           </div>
@@ -401,13 +424,31 @@ export function RsvpWishBlock({
   const summaryDiet = rsvpFeedback?.diet ?? diet;
 
   return (
-    <RevealSection id="rsvp-wishes" className="scroll-mt-10 bg-inv-bg px-5 pt-10 pb-6">
+    <RevealSection
+      id="rsvp-wishes"
+      className={cn(
+        "scroll-mt-10 bg-inv-bg pb-6",
+        isContained ? "px-3.5 pt-8" : "px-5 pt-10",
+      )}
+    >
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
-          <h2 className="font-inv-script text-[clamp(32px,8.8vw,46px)] leading-[1.2] font-normal text-inv-olive-deep">
+          <h2
+            className={cn(
+              "font-inv-script leading-[1.2] font-normal text-inv-olive-deep",
+              isContained
+                ? "text-[clamp(26px,9cqw,38px)]"
+                : "text-[clamp(32px,8.8vw,46px)]",
+            )}
+          >
             Xác Nhận Tham Dự
           </h2>
-          <p className="mx-auto mt-2.5 max-w-[390px] font-inv-serif text-[14px] leading-[1.55] text-inv-olive-btn sm:text-[15px]">
+          <p
+            className={cn(
+              "mx-auto mt-2.5 max-w-[390px] font-inv-serif leading-[1.55] text-inv-olive-btn",
+              isContained ? "text-[13px]" : "text-[14px] sm:text-[15px]",
+            )}
+          >
             Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới.
           </p>
         </div>
@@ -528,7 +569,10 @@ export function RsvpWishBlock({
             <div
               role="group"
               aria-label="Lựa chọn tham dự"
-              className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+              className={cn(
+                "grid grid-cols-1 gap-2",
+                !isContained && "sm:grid-cols-2",
+              )}
             >
               <button
                 type="button"
@@ -539,7 +583,7 @@ export function RsvpWishBlock({
                   setSelectedChoice("accepted");
                 }}
                 className={cn(
-                  "flex h-11 cursor-pointer items-center justify-center rounded-full border px-4 font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                  "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                   selectedChoice === "accepted"
                     ? "border-inv-olive-deep bg-inv-olive-btn font-semibold text-white"
                     : "border-inv-olive-btn bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
@@ -556,7 +600,7 @@ export function RsvpWishBlock({
                   setSelectedChoice("declined");
                 }}
                 className={cn(
-                  "flex h-11 cursor-pointer items-center justify-center rounded-full border px-4 font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                  "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                   selectedChoice === "declined"
                     ? "border-inv-olive-deep bg-inv-olive-deep font-semibold text-white"
                     : "border-inv-olive/50 bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",

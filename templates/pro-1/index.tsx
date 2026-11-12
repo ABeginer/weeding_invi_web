@@ -3,10 +3,11 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Diamond, MapPin } from "lucide-react";
-import { GiftFloatingTrigger, GiftModal } from "@/components/invitation/GiftModal";
+import { GiftModal } from "@/components/invitation/GiftModal";
 import { landingThemeCssVars } from "@/lib/theme";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
+import { TemplateGiftSection } from "../shared/TemplateGiftSection";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -66,9 +67,9 @@ export default function Pro1Template({
         "landing-theme template-pro-obsidian relative w-full bg-lnd-bg text-lnd-body font-sans",
         contained ? "min-h-full" : "min-h-screen-dvh",
         !opened &&
-          (contained
-            ? "h-full overflow-hidden"
-            : "h-screen-dvh max-h-full overflow-hidden"),
+        (contained
+          ? "h-full overflow-hidden"
+          : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       {/* Pro Double-Curtain Art Deco Gate */}
@@ -176,9 +177,9 @@ export default function Pro1Template({
         <header
           className={cn(
             "relative overflow-hidden text-center",
-            contained ? "px-4 pt-7 pb-6" : "px-5 pt-11 pb-10",
+            contained ? "px-3.5 pt-9 pb-6" : "px-5 pt-11 pb-10",
             isDesktopLayout &&
-              "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
+            "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
           )}
         >
           <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-3.5" : "space-y-3.5")}>
@@ -252,28 +253,53 @@ export default function Pro1Template({
 
         {/* Quote & Families */}
         {(data.quote || hasFamilies) && (
-          <section className="border-t border-lnd-border bg-lnd-surface px-5 py-9 text-center sm:px-8">
+          <section
+            className={cn(
+              "border-t border-lnd-border bg-lnd-surface text-center",
+              contained ? "px-3.5 py-7" : "px-5 py-9 sm:px-8",
+            )}
+          >
             {data.quote && (
-              <blockquote className="mx-auto max-w-[540px] font-display text-xl leading-relaxed italic text-lnd-body sm:text-2xl">
+              <blockquote
+                className={cn(
+                  "mx-auto max-w-[540px] font-display leading-relaxed italic text-lnd-body",
+                  contained ? "text-lg" : "text-xl sm:text-2xl",
+                )}
+              >
                 “{data.quote}”
               </blockquote>
             )}
 
             {hasFamilies && (
-              <div className="mx-auto mt-8 grid max-w-[700px] grid-cols-2 gap-3 sm:gap-6">
-                <div className="rounded-xl border border-lnd-gold-soft/70 bg-lnd-bg p-4">
+              <div
+                className={cn(
+                  "mx-auto mt-7 grid max-w-[700px] grid-cols-2",
+                  contained ? "gap-2.5" : "gap-3 sm:gap-6",
+                )}
+              >
+                <div className={cn("min-w-0 rounded-xl border border-lnd-gold-soft/70 bg-lnd-bg", contained ? "p-3" : "p-4")}>
                   <p className="text-[11px] font-semibold tracking-[0.18em] text-lnd-gold uppercase">
                     NHÀ TRAI
                   </p>
-                  <p className="mt-2 text-xs font-medium text-lnd-body sm:text-sm">
+                  <p
+                    className={cn(
+                      "mt-2 font-medium text-lnd-body break-words",
+                      contained ? "text-xs" : "text-xs sm:text-sm",
+                    )}
+                  >
                     {data.couple.groomParents || "Gia đình nhà trai"}
                   </p>
                 </div>
-                <div className="rounded-xl border border-lnd-gold-soft/70 bg-lnd-bg p-4">
+                <div className={cn("min-w-0 rounded-xl border border-lnd-gold-soft/70 bg-lnd-bg", contained ? "p-3" : "p-4")}>
                   <p className="text-[11px] font-semibold tracking-[0.18em] text-lnd-gold uppercase">
                     NHÀ GÁI
                   </p>
-                  <p className="mt-2 text-xs font-medium text-lnd-body sm:text-sm">
+                  <p
+                    className={cn(
+                      "mt-2 font-medium text-lnd-body break-words",
+                      contained ? "text-xs" : "text-xs sm:text-sm",
+                    )}
+                  >
                     {data.couple.brideParents || "Gia đình nhà gái"}
                   </p>
                 </div>
@@ -283,8 +309,13 @@ export default function Pro1Template({
         )}
 
         {/* Couple */}
-        <section className="px-5 py-9 sm:px-8">
-          <div className="mx-auto grid max-w-[700px] grid-cols-2 gap-3 sm:gap-6">
+        <section className={cn(contained ? "px-3.5 py-7" : "px-5 py-9 sm:px-8")}>
+          <div
+            className={cn(
+              "mx-auto grid max-w-[700px] grid-cols-2",
+              contained ? "gap-2.5" : "gap-3 sm:gap-6",
+            )}
+          >
             {[
               {
                 label: "CHÚ RỂ",
@@ -299,7 +330,7 @@ export default function Pro1Template({
             ].map((person) => (
               <div
                 key={person.label}
-                className="overflow-hidden rounded-xl border border-lnd-gold-soft/70 bg-lnd-surface p-2"
+                className="min-w-0 overflow-hidden rounded-xl border border-lnd-gold-soft/70 bg-lnd-surface p-2"
               >
                 {person.photoUrl ? (
                   <img
@@ -314,11 +345,16 @@ export default function Pro1Template({
                 ) : (
                   <TemplatePhotoPlaceholder className="rounded-lg" />
                 )}
-                <div className="pt-3 pb-1 text-center">
+                <div className="pt-2.5 pb-1 text-center">
                   <p className="text-[10px] font-semibold tracking-[0.18em] text-lnd-gold uppercase">
                     {person.label}
                   </p>
-                  <p className="mt-1 font-display text-lg font-semibold text-lnd-body sm:text-xl">
+                  <p
+                    className={cn(
+                      "mt-1 font-display font-semibold text-lnd-body break-words",
+                      contained ? "text-base" : "text-lg sm:text-xl",
+                    )}
+                  >
                     {person.fullName}
                   </p>
                 </div>
@@ -328,11 +364,21 @@ export default function Pro1Template({
         </section>
 
         {/* Events & Countdown */}
-        <section className="border-t border-lnd-border bg-lnd-surface px-5 py-9 text-center sm:px-8">
+        <section
+          className={cn(
+            "border-t border-lnd-border bg-lnd-surface text-center",
+            contained ? "px-3.5 py-7" : "px-5 py-9 sm:px-8",
+          )}
+        >
           <p className="text-[11px] font-semibold tracking-[0.2em] text-lnd-gold uppercase">
             {data.ui.eventsEyebrow}
           </p>
-          <h2 className="mt-1 font-display text-3xl font-semibold text-lnd-body">
+          <h2
+            className={cn(
+              "mt-1 font-display font-semibold text-lnd-body",
+              contained ? "text-2xl" : "text-3xl",
+            )}
+          >
             {data.ui.eventsTitle}
           </h2>
 
@@ -437,11 +483,16 @@ export default function Pro1Template({
         </section>
 
         {/* Gallery */}
-        <section className="px-5 py-9 text-center sm:px-8">
+        <section className={cn("text-center", contained ? "px-3.5 py-7" : "px-5 py-9 sm:px-8")}>
           <p className="text-[11px] font-semibold tracking-[0.2em] text-lnd-gold uppercase">
             {data.ui.galleryEyebrow}
           </p>
-          <h2 className="mt-1 font-display text-3xl font-semibold text-lnd-body">
+          <h2
+            className={cn(
+              "mt-1 font-display font-semibold text-lnd-body",
+              contained ? "text-2xl" : "text-3xl",
+            )}
+          >
             {data.ui.galleryTitle}
           </h2>
           <p className="mt-1 text-xs text-lnd-muted">{data.ui.gallerySubtitle}</p>
@@ -485,6 +536,7 @@ export default function Pro1Template({
           data={data}
           mode={mode}
           tone="obsidian"
+          contained={contained}
           inviteSlug={inviteSlug}
           weddingSlug={weddingSlug}
           invitationMode={invitationMode}
@@ -492,6 +544,13 @@ export default function Pro1Template({
           initialStatus={initialStatus}
           initialPlusOnes={initialPlusOnes}
           initialDiet={initialDiet}
+        />
+
+        {/* Gift (sau khi xác nhận) */}
+        <TemplateGiftSection
+          tone="obsidian"
+          contained={contained}
+          onOpenGift={() => setGiftOpen(true)}
         />
 
         <footer className="border-t border-lnd-border bg-lnd-surface px-5 py-10 text-center">
@@ -513,13 +572,6 @@ export default function Pro1Template({
         activeIndex={lightboxIndex}
         onClose={() => setLightboxIndex(null)}
         onChangeIndex={setLightboxIndex}
-      />
-
-      <GiftFloatingTrigger
-        visible={opened}
-        onClick={() => setGiftOpen(true)}
-        tone="obsidian"
-        contained={contained}
       />
 
       <GiftModal

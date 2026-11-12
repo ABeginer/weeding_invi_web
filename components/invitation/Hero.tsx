@@ -37,7 +37,7 @@ export function Hero({ guestName }: HeroProps) {
       className={cn(
         "relative mx-auto w-full bg-inv-bg text-center",
         isContained
-          ? "px-3.5 pt-7 pb-3"
+          ? "px-3.5 pt-9 pb-3"
           : "px-4 pt-10 pb-4 sm:px-6 sm:pt-12 sm:pb-6",
         isDesktopLayout &&
         "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-8 md:text-left",
