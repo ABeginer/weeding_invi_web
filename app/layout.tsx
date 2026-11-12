@@ -1,13 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Be_Vietnam_Pro,
-  Cormorant_Garamond,
-  Great_Vibes,
-  Lora,
-  Pinyon_Script,
-} from "next/font/google";
+import { cookies } from "next/headers";
+import { Be_Vietnam_Pro, Cormorant_Garamond, Lora } from "next/font/google";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ToastProvider } from "@/components/ui/Toast";
-import { invitationTheme } from "@/lib/theme";
+import { resolveAppBaseUrl, SITE_NAME } from "@/config/site";
+import {
+  BRAND_THEME_COOKIE_NAME,
+  brandDarkTheme,
+  brandLightTheme,
+  generateBrandThemeCss,
+  parseBrandTheme,
+} from "@/lib/brand-theme";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -33,55 +36,60 @@ const lora = Lora({
   display: "swap",
 });
 
-const greatVibes = Great_Vibes({
-  subsets: ["vietnamese", "latin"],
-  weight: "400",
-  variable: "--font-great-vibes",
-  display: "swap",
-});
-
-const pinyonScript = Pinyon_Script({
-  subsets: ["vietnamese", "latin"],
-  weight: "400",
-  variable: "--font-pinyon",
-  display: "swap",
-});
-
 function resolveMetadataBase(): URL | undefined {
-  const raw = process.env.APP_BASE_URL;
-  if (!raw) return undefined;
   try {
-    return new URL(raw);
+    return new URL(resolveAppBaseUrl());
   } catch {
     return undefined;
   }
 }
 
+const brandThemeCss = generateBrandThemeCss();
+
 export const metadata: Metadata = {
   metadataBase: resolveMetadataBase(),
-  title: "Thiệp Cưới Online",
-  description: "Nền tảng tạo và quản lý thiệp cưới cá nhân hóa trực tuyến.",
+  title: `Thiệp Cưới Online | ${SITE_NAME}`,
+  description:
+    "Nền tảng tạo và quản lý thiệp cưới online cá nhân hóa tên từng vị khách.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: invitationTheme.bg,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: brandLightTheme.bg },
+    { media: "(prefers-color-scheme: dark)", color: brandDarkTheme.bg },
+  ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const initialTheme = parseBrandTheme(
+    cookieStore.get(BRAND_THEME_COOKIE_NAME)?.value,
+  );
+
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} ${cormorantGaramond.variable} ${lora.variable} ${greatVibes.variable} ${pinyonScript.variable}`}
+      data-theme={initialTheme}
+      className={`${beVietnamPro.variable} ${cormorantGaramond.variable} ${lora.variable}`}
+      suppressHydrationWarning
     >
-      <body className="min-h-screen bg-bg text-fg antialiased">
-        <ToastProvider>{children}</ToastProvider>
+      <head>
+        <style
+          id="brand-theme-css"
+          dangerouslySetInnerHTML={{ __html: brandThemeCss }}
+        />
+      </head>
+      <body className="min-h-screen-dvh bg-bg text-text antialiased">
+        <ToastProvider>
+          <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>
+        </ToastProvider>
       </body>
     </html>
   );

@@ -7,9 +7,9 @@ import type { WeddingTemplateProps } from "./types";
 
 function TemplateLoadingFallback() {
   return (
-    <div className="flex min-h-[540px] w-full flex-col items-center justify-center gap-3 bg-lnd-surface px-6 py-16 text-center text-lnd-body">
-      <div className="h-9 w-9 animate-spin rounded-full border-2 border-lnd-border border-t-lnd-gold motion-reduce:animate-none" />
-      <p className="text-xs tracking-[0.14em] text-lnd-muted uppercase">
+    <div className="flex min-h-[540px] w-full flex-col items-center justify-center gap-3 bg-surface px-6 py-16 text-center text-text">
+      <div className="h-9 w-9 animate-spin rounded-full border-2 border-border border-t-accent motion-reduce:animate-none" />
+      <p className="text-xs tracking-[0.14em] text-text-muted uppercase">
         {LANDING_COPY.hero.phoneLoadingLabel}
       </p>
     </div>

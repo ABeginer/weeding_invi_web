@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { GuestStatus, TemplateData } from "@/lib/types";
+import type { GuestDiet, GuestStatus, TemplateData } from "@/lib/types";
 import Basic1Template from "./basic-1";
 import { TemplatePreviewRenderer } from "./TemplatePreviewRenderer";
 
@@ -13,6 +13,8 @@ interface LiveTemplateRendererProps {
   invitationMode: "personal" | "public";
   guestName?: string | null;
   initialStatus?: GuestStatus;
+  initialPlusOnes?: number;
+  initialDiet?: GuestDiet | null;
 }
 
 export function LiveTemplateRenderer({
@@ -23,6 +25,8 @@ export function LiveTemplateRenderer({
   invitationMode,
   guestName,
   initialStatus = "pending",
+  initialPlusOnes = 0,
+  initialDiet = null,
 }: LiveTemplateRendererProps) {
   if (
     templateId === "basic-2" ||
@@ -42,6 +46,8 @@ export function LiveTemplateRenderer({
         invitationMode={invitationMode}
         guestName={guestName}
         initialStatus={initialStatus}
+        initialPlusOnes={initialPlusOnes}
+        initialDiet={initialDiet}
       />
     );
   }
@@ -51,13 +57,15 @@ export function LiveTemplateRenderer({
       data={data}
       mode="live"
       contained={false}
-      viewport="phone"
+      viewport="desktop"
       externalMusicControl={false}
       inviteSlug={inviteSlug}
       weddingSlug={weddingSlug}
       invitationMode={invitationMode}
       guestName={guestName}
       initialStatus={initialStatus}
+      initialPlusOnes={initialPlusOnes}
+      initialDiet={initialDiet}
     />
   );
 }

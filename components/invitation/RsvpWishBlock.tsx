@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, CheckCircle2, Lock, Send, XCircle } from "lucide-react";
+import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
 import { submitRsvp, submitWish } from "@/lib/api";
-import type { GuestStatus } from "@/lib/types";
+import type { GuestDiet, GuestStatus } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
@@ -15,9 +17,12 @@ interface RsvpWishBlockProps {
   mode?: "personal" | "public";
   guestName?: string;
   initialStatus?: GuestStatus;
+  initialPlusOnes?: number;
+  initialDiet?: GuestDiet | null;
 }
 
 const MAX_WISH_LENGTH = 500;
+const PLUS_ONES_OPTIONS = Array.from({ length: 11 }, (_, idx) => idx);
 
 export function RsvpWishBlock({
   slug,
@@ -25,6 +30,8 @@ export function RsvpWishBlock({
   mode = "personal",
   guestName,
   initialStatus = "pending",
+  initialPlusOnes = 0,
+  initialDiet = null,
 }: RsvpWishBlockProps) {
   const data = useWeddingContent();
   const isReadOnlyPreview = useInvitationReadOnly();
@@ -33,6 +40,12 @@ export function RsvpWishBlock({
   const effectiveWeddingSlug = weddingSlug ?? data.weddingSlug;
 
   const [status, setStatus] = React.useState<GuestStatus>(initialStatus);
+  const [selectedChoice, setSelectedChoice] = React.useState<
+    "accepted" | "declined" | null
+  >(initialStatus !== "pending" ? initialStatus : null);
+  const [plusOnes, setPlusOnes] = React.useState<number>(initialPlusOnes);
+  const [diet, setDiet] = React.useState<GuestDiet | null>(initialDiet);
+
   const [isEditingRsvp, setIsEditingRsvp] = React.useState(
     initialStatus === "pending",
   );
@@ -44,26 +57,35 @@ export function RsvpWishBlock({
   const [name, setName] = React.useState(guestName ?? "");
   const [message, setMessage] = React.useState("");
   const [honeypot, setHoneypot] = React.useState("");
+  const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
 
-  const [submitting, setSubmitting] = React.useState<
-    "accepted" | "declined" | "wish" | null
-  >(null);
+  const [submitting, setSubmitting] = React.useState<"rsvp" | "wish" | null>(null);
 
   const [rsvpFeedback, setRsvpFeedback] = React.useState<{
     choice: "accepted" | "declined";
+    plusOnes: number;
+    diet: GuestDiet | null;
     wishIncluded: boolean;
   } | null>(null);
 
   const [rsvpError, setRsvpError] = React.useState<string | null>(null);
   const [wishError, setWishError] = React.useState<string | null>(null);
-  const [rsvpSavedBeforeWishFailed, setRsvpSavedBeforeWishFailed] =
-    React.useState(false);
   const [publicWishSent, setPublicWishSent] = React.useState(false);
 
   React.useEffect(() => {
     setStatus(initialStatus);
+    setSelectedChoice(initialStatus !== "pending" ? initialStatus : null);
     setIsEditingRsvp(initialStatus === "pending");
   }, [initialStatus]);
+
+  React.useEffect(() => {
+    setPlusOnes(initialPlusOnes);
+  }, [initialPlusOnes]);
+
+  React.useEffect(() => {
+    setDiet(initialDiet);
+  }, [initialDiet]);
 
   React.useEffect(() => {
     if (guestName) {
@@ -74,7 +96,6 @@ export function RsvpWishBlock({
   const clearAlerts = () => {
     setRsvpError(null);
     setWishError(null);
-    setRsvpSavedBeforeWishFailed(false);
   };
 
   const getActiveSlug = (trimmedName: string): string | undefined => {
@@ -85,7 +106,8 @@ export function RsvpWishBlock({
     return undefined;
   };
 
-  const handleRespond = async (choice: "accepted" | "declined") => {
+  const handleRsvpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (isReadOnlyPreview) return;
     clearAlerts();
     setRsvpFeedback(null);
@@ -93,11 +115,21 @@ export function RsvpWishBlock({
     const trimmedName = name.trim();
     const trimmedMessage = message.trim();
 
+    if (!selectedChoice) {
+      setRsvpError("Vui lòng chọn bạn sẽ tham dự hay không.");
+      return;
+    }
+
     // Honeypot chống spam tự động
     if (honeypot.trim().length > 0) {
-      setStatus(choice);
+      setStatus(selectedChoice);
       setMessage("");
-      setRsvpFeedback({ choice, wishIncluded: trimmedMessage.length > 0 });
+      setRsvpFeedback({
+        choice: selectedChoice,
+        plusOnes: selectedChoice === "accepted" ? plusOnes : 0,
+        diet: selectedChoice === "accepted" ? diet : null,
+        wishIncluded: trimmedMessage.length > 0,
+      });
       setIsEditingRsvp(false);
       return;
     }
@@ -110,103 +142,61 @@ export function RsvpWishBlock({
       setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
       return;
     }
+    if (isTurnstileEnabled() && !turnstileToken) {
+      setRsvpError("Vui lòng hoàn tất xác thực bảo mật trước khi gửi.");
+      return;
+    }
 
-    setSubmitting(choice);
-    let savedSlug = getActiveSlug(trimmedName);
+    const nextPlusOnes = selectedChoice === "accepted" ? plusOnes : 0;
+    const nextDiet = selectedChoice === "accepted" ? diet : null;
+
+    setSubmitting("rsvp");
+    const savedSlug = getActiveSlug(trimmedName);
 
     try {
       const res = await submitRsvp(
         savedSlug
-          ? { slug: savedSlug, status: choice, website: honeypot }
+          ? {
+              slug: savedSlug,
+              status: selectedChoice,
+              plusOnes: nextPlusOnes,
+              diet: nextDiet,
+              wish: trimmedMessage || undefined,
+              turnstileToken: turnstileToken ?? undefined,
+              website: honeypot,
+            }
           : {
               weddingSlug: effectiveWeddingSlug,
               name: trimmedName,
-              status: choice,
+              status: selectedChoice,
+              plusOnes: nextPlusOnes,
+              diet: nextDiet,
+              wish: trimmedMessage || undefined,
+              turnstileToken: turnstileToken ?? undefined,
               website: honeypot,
             },
       );
       if (!savedSlug && res.slug) {
-        savedSlug = res.slug;
         setWalkInGuest({ slug: res.slug, name: trimmedName });
       }
-      setStatus(choice);
+      setStatus(selectedChoice);
+      setMessage("");
+      setRsvpFeedback({
+        choice: selectedChoice,
+        plusOnes: nextPlusOnes,
+        diet: nextDiet,
+        wishIncluded: Boolean(trimmedMessage && (res.wishSaved ?? true)),
+      });
+      setIsEditingRsvp(false);
     } catch (err) {
       setRsvpError(
         err instanceof Error
           ? err.message
           : "Không thể gửi xác nhận tham dự lúc này. Vui lòng thử lại.",
       );
-      setSubmitting(null);
-      return;
-    }
-
-    if (trimmedMessage.length > 0) {
-      try {
-        await submitWish({
-          slug: savedSlug,
-          name: trimmedName,
-          message: trimmedMessage,
-          website: honeypot,
-        });
-        setMessage("");
-        setRsvpFeedback({ choice, wishIncluded: true });
-        setIsEditingRsvp(false);
-      } catch (err) {
-        setRsvpSavedBeforeWishFailed(true);
-        setWishError(
-          err instanceof Error
-            ? `Đã ghi nhận xác nhận tham dự, nhưng chưa gửi được lời chúc: ${err.message}`
-            : "Đã ghi nhận xác nhận tham dự, nhưng chưa gửi được lời chúc. Vui lòng thử gửi lại.",
-        );
-      } finally {
-        setSubmitting(null);
-      }
-      return;
-    }
-
-    setRsvpFeedback({ choice, wishIncluded: false });
-    setIsEditingRsvp(false);
-    setSubmitting(null);
-  };
-
-  const handleRetryWish = async () => {
-    if (isReadOnlyPreview) return;
-    clearAlerts();
-    const trimmedName = name.trim();
-    const trimmedMessage = message.trim();
-
-    if (!trimmedName || !trimmedMessage) {
-      setWishError("Vui lòng nhập đầy đủ tên và lời chúc trước khi gửi lại.");
-      return;
-    }
-    if (trimmedMessage.length > MAX_WISH_LENGTH) {
-      setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
-      return;
-    }
-
-    setSubmitting("wish");
-    try {
-      await submitWish({
-        slug: getActiveSlug(trimmedName),
-        name: trimmedName,
-        message: trimmedMessage,
-        website: honeypot,
-      });
-      setMessage("");
-      setRsvpFeedback({
-        choice: status === "declined" ? "declined" : "accepted",
-        wishIncluded: true,
-      });
-      setIsEditingRsvp(false);
-    } catch (err) {
-      setRsvpSavedBeforeWishFailed(true);
-      setWishError(
-        err instanceof Error
-          ? err.message
-          : "Không thể gửi lời chúc lúc này. Vui lòng thử lại.",
-      );
     } finally {
       setSubmitting(null);
+      setTurnstileResetSignal((prev) => prev + 1);
     }
   };
 
@@ -236,6 +226,10 @@ export function RsvpWishBlock({
       setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
       return;
     }
+    if (isTurnstileEnabled() && !turnstileToken) {
+      setWishError("Vui lòng hoàn tất xác thực bảo mật trước khi gửi.");
+      return;
+    }
 
     setSubmitting("wish");
     try {
@@ -243,6 +237,7 @@ export function RsvpWishBlock({
         weddingSlug: effectiveWeddingSlug,
         name: trimmedName,
         message: trimmedMessage,
+        turnstileToken: turnstileToken ?? undefined,
         website: honeypot,
       });
       setMessage("");
@@ -255,18 +250,20 @@ export function RsvpWishBlock({
       );
     } finally {
       setSubmitting(null);
+      setTurnstileResetSignal((prev) => prev + 1);
     }
   };
 
   const handleOpenEdit = () => {
     clearAlerts();
     setRsvpFeedback(null);
+    setSelectedChoice(status !== "pending" ? status : selectedChoice);
     setIsEditingRsvp(true);
   };
 
   if (isPublicMode) {
     return (
-      <RevealSection className="bg-inv-bg px-5 pt-10 pb-6">
+      <RevealSection id="rsvp-wishes" className="scroll-mt-10 bg-inv-bg px-5 pt-10 pb-6">
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
             <h2 className="font-inv-script text-[clamp(32px,8.8vw,46px)] leading-[1.2] font-normal text-inv-olive-deep">
@@ -357,6 +354,13 @@ export function RsvpWishBlock({
                 </div>
               </div>
 
+              <TurnstileWidget
+                onTokenChange={setTurnstileToken}
+                resetSignal={turnstileResetSignal}
+                theme="light"
+                className="flex justify-center pt-1"
+              />
+
               {wishError && (
                 <p
                   role="alert"
@@ -389,14 +393,15 @@ export function RsvpWishBlock({
   const showSavedSummary =
     !isReadOnlyPreview &&
     !isEditingRsvp &&
-    status !== "pending" &&
-    !rsvpSavedBeforeWishFailed;
+    status !== "pending";
 
   const activeChoice =
     rsvpFeedback?.choice ?? (status !== "pending" ? status : null);
+  const summaryPlusOnes = rsvpFeedback?.plusOnes ?? plusOnes;
+  const summaryDiet = rsvpFeedback?.diet ?? diet;
 
   return (
-    <RevealSection className="bg-inv-bg px-5 pt-10 pb-6">
+    <RevealSection id="rsvp-wishes" className="scroll-mt-10 bg-inv-bg px-5 pt-10 pb-6">
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
           <h2 className="font-inv-script text-[clamp(32px,8.8vw,46px)] leading-[1.2] font-normal text-inv-olive-deep">
@@ -433,6 +438,23 @@ export function RsvpWishBlock({
                   ? "Cảm ơn bạn đã nhận lời! Chúng mình rất mong chờ được đón tiếp và nâng ly cùng bạn trong ngày vui."
                   : "Rất tiếc vì bạn chưa thể sắp xếp tham dự, nhưng tấm lòng của bạn luôn đáng quý với chúng mình!"}
               </p>
+
+              {activeChoice === "accepted" &&
+                (summaryPlusOnes > 0 || summaryDiet) && (
+                  <div className="mt-3 flex flex-wrap justify-center gap-2 border-t border-inv-olive/20 pt-2.5 font-inv-serif text-xs text-inv-olive-deep">
+                    {summaryPlusOnes > 0 && (
+                      <span className="rounded-full border border-inv-olive/30 bg-inv-bg px-2.5 py-0.5 font-medium">
+                        +{summaryPlusOnes} người đi cùng
+                      </span>
+                    )}
+                    {summaryDiet && (
+                      <span className="rounded-full border border-inv-olive/30 bg-inv-bg px-2.5 py-0.5 font-medium">
+                        Chế độ ăn: {summaryDiet === "veg" ? "Chay" : "Mặn"}
+                      </span>
+                    )}
+                  </div>
+                )}
+
               {rsvpFeedback?.wishIncluded && (
                 <p className="mt-2.5 border-t border-inv-olive/20 pt-2.5 font-inv-serif text-xs font-medium text-inv-olive-deep">
                   Lời chúc của bạn cũng đã được gửi tới cô dâu &amp; chú rể.
@@ -454,8 +476,8 @@ export function RsvpWishBlock({
           </div>
         ) : (
           <form
-            onSubmit={(e) => e.preventDefault()}
-            className="mt-7 space-y-3"
+            onSubmit={handleRsvpSubmit}
+            className="mt-7 space-y-3.5"
             noValidate
           >
             {/* Trường honeypot ẩn chống spam */}
@@ -503,16 +525,120 @@ export function RsvpWishBlock({
               )}
             </div>
 
+            <div
+              role="group"
+              aria-label="Lựa chọn tham dự"
+              className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+            >
+              <button
+                type="button"
+                disabled={isReadOnlyPreview || submitting !== null}
+                aria-pressed={selectedChoice === "accepted"}
+                onClick={() => {
+                  clearAlerts();
+                  setSelectedChoice("accepted");
+                }}
+                className={cn(
+                  "flex h-11 cursor-pointer items-center justify-center rounded-full border px-4 font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                  selectedChoice === "accepted"
+                    ? "border-inv-olive-deep bg-inv-olive-btn font-semibold text-white"
+                    : "border-inv-olive-btn bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                )}
+              >
+                Tôi sẽ tham dự
+              </button>
+              <button
+                type="button"
+                disabled={isReadOnlyPreview || submitting !== null}
+                aria-pressed={selectedChoice === "declined"}
+                onClick={() => {
+                  clearAlerts();
+                  setSelectedChoice("declined");
+                }}
+                className={cn(
+                  "flex h-11 cursor-pointer items-center justify-center rounded-full border px-4 font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                  selectedChoice === "declined"
+                    ? "border-inv-olive-deep bg-inv-olive-deep font-semibold text-white"
+                    : "border-inv-olive/50 bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                )}
+              >
+                Tiếc quá, mình bận mất rồi
+              </button>
+            </div>
+
+            {selectedChoice === "accepted" && !isReadOnlyPreview && (
+              <div className="space-y-3 rounded-2xl border border-inv-olive/30 bg-inv-tint p-4">
+                <div>
+                  <label
+                    htmlFor="olive-plus-ones"
+                    className="block font-inv-serif text-xs font-semibold text-inv-ink"
+                  >
+                    Số người đi cùng
+                  </label>
+                  <select
+                    id="olive-plus-ones"
+                    value={plusOnes}
+                    onChange={(e) => setPlusOnes(Number(e.target.value))}
+                    disabled={submitting !== null}
+                    className="mt-1.5 h-10 w-full rounded-xl border border-inv-olive/45 bg-inv-bg px-3 font-inv-serif text-sm text-inv-ink focus:border-inv-olive-deep focus:outline-none focus:ring-2 focus:ring-inv-olive"
+                  >
+                    {PLUS_ONES_OPTIONS.map((count) => (
+                      <option key={count} value={count}>
+                        {count === 0
+                          ? "Chỉ mình tôi (0 người đi cùng)"
+                          : `+${count} người đi cùng (tổng ${count + 1} người)`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <span className="block font-inv-serif text-xs font-semibold text-inv-ink">
+                    Chế độ ăn
+                  </span>
+                  <div className="mt-1.5 grid grid-cols-2 gap-2">
+                    {[
+                      { value: "meat" as const, label: "Mặn" },
+                      { value: "veg" as const, label: "Chay" },
+                    ].map((opt) => {
+                      const active = diet === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          disabled={submitting !== null}
+                          aria-pressed={active}
+                          onClick={() =>
+                            setDiet((prev) =>
+                              prev === opt.value ? null : opt.value,
+                            )
+                          }
+                          className={cn(
+                            "flex h-9 cursor-pointer items-center justify-center rounded-xl border font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                            active
+                              ? "border-inv-olive-deep bg-inv-olive-btn font-semibold text-white"
+                              : "border-inv-olive/40 bg-inv-bg text-inv-ink hover:bg-white",
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <Textarea
                 aria-label="Lời chúc dành cho cô dâu & chú rể (không bắt buộc)"
-                placeholder="Viết lời chúc tốt đẹp của bạn tại đây..."
+                placeholder="Viết lời chúc tốt đẹp của bạn tại đây (không bắt buộc)..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={MAX_WISH_LENGTH}
                 disabled={isReadOnlyPreview || submitting !== null}
-                className="min-h-[104px] rounded-[19px] border-inv-olive-btn bg-inv-bg px-4 py-3 font-inv-serif text-base text-inv-ink placeholder:text-inv-olive-btn/80 focus-visible:border-inv-olive-deep focus-visible:ring-inv-olive sm:text-sm"
-                rows={4}
+                className="min-h-[96px] rounded-[19px] border-inv-olive-btn bg-inv-bg px-4 py-3 font-inv-serif text-base text-inv-ink placeholder:text-inv-olive-btn/80 focus-visible:border-inv-olive-deep focus-visible:ring-inv-olive sm:text-sm"
+                rows={3}
               />
               <div className="mt-1 flex justify-end px-2">
                 <span
@@ -527,86 +653,35 @@ export function RsvpWishBlock({
               </div>
             </div>
 
-            {rsvpError && (
+            {!isReadOnlyPreview && (
+              <TurnstileWidget
+                onTokenChange={setTurnstileToken}
+                resetSignal={turnstileResetSignal}
+                theme="light"
+                className="flex justify-center"
+              />
+            )}
+
+            {(rsvpError || wishError) && (
               <p
                 role="alert"
                 className="rounded-2xl border border-inv-olive/35 bg-inv-tint px-4 py-2.5 font-inv-serif text-sm text-inv-ink"
               >
-                {rsvpError}
+                {rsvpError ?? wishError}
               </p>
             )}
 
-            {wishError && (
-              <div
-                role="alert"
-                className="rounded-2xl border border-inv-olive/35 bg-inv-tint px-4 py-3 font-inv-serif text-sm text-inv-ink"
+            <div className="space-y-2.5 pt-1">
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                loading={submitting === "rsvp"}
+                disabled={isReadOnlyPreview || submitting !== null}
+                className="h-11 w-full rounded-full bg-inv-olive-btn font-inv-serif text-sm tracking-[0.02em] text-white hover:bg-inv-olive-hover"
               >
-                <div className="flex items-start gap-2">
-                  {rsvpSavedBeforeWishFailed && (
-                    <AlertTriangle
-                      className="mt-0.5 h-4 w-4 shrink-0 text-inv-olive-deep"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <p className="flex-1 leading-relaxed">{wishError}</p>
-                </div>
-                {rsvpSavedBeforeWishFailed && (
-                  <div className="mt-2.5 flex justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      loading={submitting === "wish"}
-                      disabled={submitting !== null}
-                      className="rounded-full border-inv-olive/45 bg-inv-bg px-4 font-inv-serif text-inv-olive-deep hover:bg-inv-tint"
-                      onClick={handleRetryWish}
-                    >
-                      <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>Thử gửi lại lời chúc</span>
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-3 pt-1">
-              {!isReadOnlyPreview &&
-                status !== "pending" &&
-                !rsvpSavedBeforeWishFailed && (
-                  <p className="text-center font-inv-serif text-xs text-inv-muted">
-                    Trạng thái hiện tại:{" "}
-                    <strong className="font-semibold text-inv-ink">
-                      {status === "accepted"
-                        ? "Bạn đã xác nhận sẽ tham dự"
-                        : "Bạn đã báo bận không thể tham dự"}
-                    </strong>
-                  </p>
-                )}
-
-              <div className="flex flex-col gap-2.5 sm:flex-row">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="lg"
-                  loading={submitting === "accepted"}
-                  disabled={isReadOnlyPreview || submitting !== null}
-                  onClick={() => handleRespond("accepted")}
-                  className="h-11 w-full rounded-full bg-inv-olive-btn font-inv-serif text-sm tracking-[0.02em] text-white hover:bg-inv-olive-hover sm:flex-1"
-                >
-                  Tôi sẽ tham dự
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  loading={submitting === "declined"}
-                  disabled={isReadOnlyPreview || submitting !== null}
-                  onClick={() => handleRespond("declined")}
-                  className="h-11 w-full rounded-full border-inv-olive-btn bg-inv-bg font-inv-serif text-sm tracking-[0.02em] text-inv-olive-deep hover:bg-inv-tint sm:flex-1"
-                >
-                  Tiếc quá, mình bận mất rồi
-                </Button>
-              </div>
+                <span>Gửi xác nhận</span>
+              </Button>
 
               {isReadOnlyPreview && (
                 <p className="text-center font-inv-serif text-xs italic text-inv-muted">
@@ -614,22 +689,20 @@ export function RsvpWishBlock({
                 </p>
               )}
 
-              {!isReadOnlyPreview &&
-                status !== "pending" &&
-                !rsvpSavedBeforeWishFailed && (
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        clearAlerts();
-                        setIsEditingRsvp(false);
-                      }}
-                      className="cursor-pointer font-inv-serif text-xs font-medium text-inv-olive-deep underline underline-offset-4 hover:opacity-80"
-                    >
-                      Giữ nguyên lựa chọn trước đó
-                    </button>
-                  </div>
-                )}
+              {!isReadOnlyPreview && status !== "pending" && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearAlerts();
+                      setIsEditingRsvp(false);
+                    }}
+                    className="cursor-pointer font-inv-serif text-xs font-medium text-inv-olive-deep underline underline-offset-4 hover:opacity-80"
+                  >
+                    Giữ nguyên lựa chọn trước đó
+                  </button>
+                </div>
+              )}
             </div>
           </form>
         )}

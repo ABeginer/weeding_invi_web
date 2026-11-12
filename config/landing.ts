@@ -4,31 +4,31 @@ export const LANDING_COPY = {
   seo: {
     title: `Thiệp cưới online | ${SITE_NAME}`,
     description:
-      "Thiết kế thiệp cưới online tinh tế, trải nghiệm trực tiếp trên khung điện thoại, gửi link mời cá nhân hóa và quản lý RSVP dễ dàng.",
+      "Tạo thiệp cưới online cá nhân hóa tên từng khách, chỉ trong vài phút. Miễn phí cho 20 khách, không cần thẻ.",
     ogAlt: `Thiệp cưới online ${SITE_NAME}`,
   },
   navbar: {
     menuOpenLabel: "Mở menu điều hướng",
     menuCloseLabel: "Đóng menu điều hướng",
     links: [
-      { label: "Mẫu thiệp", href: "#mau-thiep" },
-      { label: "Bảng giá", href: "#bang-gia" },
-      { label: "Cách hoạt động", href: "#cach-hoat-dong" },
+      { label: "Mẫu thiệp", href: "/#mau-thiep" },
+      { label: "Ưu điểm", href: "/#cach-hoat-dong" },
+      { label: "Bảng giá", href: "/#bang-gia" },
     ],
     loginLabel: "Đăng nhập",
-    startLabel: "Dùng ngay",
-    dashboardLabel: "Bảng điều khiển",
+    startLabel: "Tạo thiệp miễn phí",
+    dashboardLabel: "Dashboard",
     logoutLabel: "Đăng xuất",
   },
   hero: {
-    eyebrow: "THIỆP CƯỚI TRỰC TUYẾN CAO CẤP",
-    title: "Thiệp cưới online, đẹp như bạn mong đợi",
+    eyebrow: "THIỆP CƯỚI TRỰC TUYẾN",
+    title: "Trao gửi lời mời trân trọng đến từng vị khách quý",
     description:
-      "Chạm mở phong bì, cuộn xem từng trang thiệp ngay trên điện thoại và gửi lời mời mang tên riêng từng vị khách.",
-    primaryCta: "Dùng ngay miễn phí",
+      "Tạo thiệp cưới online cá nhân hóa tên từng khách, chỉ trong vài phút. Miễn phí cho 20 khách, không cần thẻ.",
+    primaryCta: "Tạo thiệp miễn phí",
     secondaryCta: "Xem mẫu thiệp",
-    authenticatedCta: "Vào trang quản lý",
-    noCardNote: "Gói miễn phí không cần thẻ",
+    authenticatedCta: "Tạo thiệp miễn phí",
+    noCardNote: "Miễn phí cho 20 khách, không cần thẻ",
     phoneFrameAriaLabel: "Khung xem thử mẫu thiệp cưới tương tác trên màn hình điện thoại",
     phoneLoadingLabel: "Đang tải mẫu thiệp...",
     phoneHelperHint: "Vuốt hoặc cuộn ngay trong khung để xem thử",
@@ -58,26 +58,32 @@ export const LANDING_COPY = {
     emptyFilterLabel: "Chưa có mẫu nào trong nhóm này.",
   },
   howItWorks: {
-    eyebrow: "QUY TRÌNH 3 BƯỚC",
-    title: "Tạo thiệp trong vài phút",
+    eyebrow: "TRỌN VẸN CHO NGÀY CƯỚI",
+    title: "Giải quyết gọn nhẹ mọi khâu mời khách",
     steps: [
       {
         number: "01",
-        title: "Chọn mẫu",
+        title: "Đúng tên từng khách",
         description:
-          "Xem thử trực tiếp trên khung điện thoại và chọn phong cách phù hợp nhất với buổi lễ của hai bạn.",
+          "Nhập danh sách một lần, mỗi khách một link riêng.",
       },
       {
         number: "02",
-        title: "Điền thông tin và ảnh cưới",
+        title: "Biết ai sẽ đến",
         description:
-          "Nhập tên cô dâu chú rể, lịch tiệc, lời ngỏ và thông tin hai bên gia đình trong trang quản lý gọn nhẹ.",
+          "Xác nhận tham dự, số người đi cùng, chế độ ăn, thống kê trong dashboard.",
       },
       {
         number: "03",
-        title: "Gửi link cho khách",
+        title: "Chỉ đường và mừng cưới",
         description:
-          "Sao chép từng đường dẫn cá nhân có sẵn tên khách mời hoặc link chung để gửi qua Zalo, Messenger.",
+          "Bản đồ, chỉ đường một chạm, quà mừng hiện khi khách muốn xem.",
+      },
+      {
+        number: "04",
+        title: "Lời chúc được lưu lại",
+        description:
+          "Mọi lời chúc hiện trong thiệp và dashboard.",
       },
     ],
   },
@@ -124,6 +130,16 @@ export const LANDING_COPY = {
     desktopViewLabel: "Máy tính",
     viewSwitcherAriaLabel: "Chuyển góc nhìn xem mẫu",
     useNowLabel: "Dùng mẫu này ngay",
+    switchToDesktopLabel: "Xem bản Máy tính",
+    previewEyebrow: "XEM THỬ TRỰC TIẾP TRÊN ĐIỆN THOẠI",
+    sampleCoupleLabel: "Cặp đôi minh họa",
+    musicTrackLabel: "Nhạc nền đi kèm",
+    highlightsTitle: "Điểm nổi bật sẵn có",
+    highlights: [
+      "Mở thiệp tương tác, cuộn mượt chuẩn màn hình di động 390px",
+      "Quản lý nhiều lễ & địa điểm kèm chỉ đường Google Maps",
+      "Tự tải ảnh cưới, phân quyền lễ cho từng khách và nhận RSVP",
+    ],
     musicPlayLabel: "Phát nhạc",
     musicPauseLabel: "Tắt nhạc",
     musicLoadingLabel: "Đang tải...",
@@ -145,4 +161,3 @@ export const LANDING_COPY = {
     backHomeLabel: "← Quay lại trang chủ",
   },
 } as const;
-

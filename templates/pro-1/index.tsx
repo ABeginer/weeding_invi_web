@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Diamond, MapPin } from "lucide-react";
+import { GiftFloatingTrigger, GiftModal } from "@/components/invitation/GiftModal";
 import { landingThemeCssVars } from "@/lib/theme";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
@@ -24,11 +25,14 @@ export default function Pro1Template({
   invitationMode = "personal",
   guestName,
   initialStatus = "pending",
+  initialPlusOnes = 0,
+  initialDiet = null,
   externalMusicControl,
 }: WeddingTemplateProps) {
   const prefersReducedMotion = useReducedMotion();
   const [opened, setOpened] = React.useState(isOpenedProp);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+  const [giftOpen, setGiftOpen] = React.useState(false);
 
   React.useEffect(() => {
     setOpened(isOpenedProp);
@@ -59,10 +63,12 @@ export default function Pro1Template({
     <div
       style={landingThemeCssVars as React.CSSProperties}
       className={cn(
-        "landing-theme relative w-full bg-lnd-bg text-lnd-body font-sans",
-        contained ? "min-h-full" : "min-h-dvh",
+        "landing-theme template-pro-obsidian relative w-full bg-lnd-bg text-lnd-body font-sans",
+        contained ? "min-h-full" : "min-h-screen-dvh",
         !opened &&
-          (contained ? "h-full overflow-hidden" : "h-dvh max-h-full overflow-hidden"),
+          (contained
+            ? "h-full overflow-hidden"
+            : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       {/* Pro Double-Curtain Art Deco Gate */}
@@ -441,6 +447,8 @@ export default function Pro1Template({
           invitationMode={invitationMode}
           guestName={guestName}
           initialStatus={initialStatus}
+          initialPlusOnes={initialPlusOnes}
+          initialDiet={initialDiet}
         />
 
         <footer className="border-t border-lnd-border bg-lnd-surface px-5 py-10 text-center">
@@ -464,11 +472,28 @@ export default function Pro1Template({
         onChangeIndex={setLightboxIndex}
       />
 
+      <GiftFloatingTrigger
+        visible={opened}
+        onClick={() => setGiftOpen(true)}
+        tone="obsidian"
+        contained={contained}
+      />
+
+      <GiftModal
+        open={giftOpen}
+        onClose={() => setGiftOpen(false)}
+        gift={data.gift}
+        plan={data.plan}
+        tone="obsidian"
+        wishAnchorId="rsvp-wishes"
+      />
+
       {mode === "live" && !externalMusicControl && (
         <LiveMusicFloatingButton
           src={data.music.src}
           title={data.music.title}
           visible={opened}
+          tone="obsidian"
         />
       )}
     </div>

@@ -24,8 +24,15 @@ import {
 
 type Ctx = { params: Promise<{ id: string }> };
 
-const VALID_KINDS = new Set<PhotoKind>(["banner", "couple", "gallery"]);
-const VALID_SLOTS = new Set<PhotoSlot>(["hero", "groom", "bride"]);
+const VALID_KINDS = new Set<PhotoKind>(["banner", "couple", "gallery", "og", "gift"]);
+const VALID_SLOTS = new Set<PhotoSlot>([
+  "hero",
+  "groom",
+  "bride",
+  "og",
+  "gift-groom",
+  "gift-bride",
+]);
 
 function isAllowedMime(value: string): value is AllowedUploadMimeType {
   return (UPLOAD_ALLOWED_MIME_TYPES as readonly string[]).includes(value);
@@ -59,7 +66,7 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
       : null;
 
   if (!kind) {
-    return fail("Loại ảnh (kind) phải là banner, couple hoặc gallery.");
+    return fail("Loại ảnh (kind) phải là banner, couple, gallery, og hoặc gift.");
   }
 
   const rawSlot = formData.get("slot");
@@ -67,6 +74,10 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
     typeof rawSlot === "string" && VALID_SLOTS.has(rawSlot as PhotoSlot)
       ? (rawSlot as PhotoSlot)
       : null;
+
+  if (kind === "gift" && slot !== "gift-groom" && slot !== "gift-bride") {
+    return fail("Ảnh QR quà mừng cần chọn vị trí nhà trai (gift-groom) hoặc nhà gái (gift-bride).");
+  }
 
   const fileEntry = formData.get("file");
   if (
@@ -92,7 +103,7 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
   const client = db();
   const { data: existingRows, error: listError } = await client
     .from("photos")
-    .select("id, position")
+    .select("id, position, storage_key")
     .eq("wedding_id", wedding.id)
     .eq("kind", kind);
 
@@ -100,7 +111,33 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
 
   const maxForKind = getPlanLimits(wedding.plan).photos[kind];
   const currentRows = existingRows ?? [];
-  if (currentRows.length >= maxForKind) {
+
+  if (maxForKind <= 0) {
+    return fail(getPhotoLimitMessage(wedding.plan, kind), 403);
+  }
+
+  const replaceTargetIds = new Set<string>();
+  const replaceStorageKeys: string[] = [];
+
+  if (kind === "og") {
+    for (const row of currentRows) {
+      replaceTargetIds.add(String(row.id));
+      if (row.storage_key) replaceStorageKeys.push(String(row.storage_key));
+    }
+  } else if (kind === "gift") {
+    const targetPosition = slot === "gift-groom" ? 0 : 1;
+    const rowsToReplace = currentRows.filter(
+      (row) => Number(row.position) === targetPosition,
+    );
+    for (const row of rowsToReplace) {
+      replaceTargetIds.add(String(row.id));
+      if (row.storage_key) replaceStorageKeys.push(String(row.storage_key));
+    }
+    const remainingCount = currentRows.length - rowsToReplace.length;
+    if (remainingCount >= maxForKind) {
+      return fail(getPhotoLimitMessage(wedding.plan, kind), 403);
+    }
+  } else if (currentRows.length >= maxForKind) {
     return fail(getPhotoLimitMessage(wedding.plan, kind), 403);
   }
 
@@ -115,10 +152,16 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
   }
 
   const nextPosition =
-    currentRows.reduce(
-      (max, row) => Math.max(max, Number(row.position ?? 0)),
-      -1,
-    ) + 1;
+    kind === "og"
+      ? 0
+      : kind === "gift"
+        ? slot === "gift-groom"
+          ? 0
+          : 1
+        : currentRows.reduce(
+            (max, row) => Math.max(max, Number(row.position ?? 0)),
+            -1,
+          ) + 1;
 
   const storageKey = buildPhotoStorageKey(wedding.id, kind);
   await putPhotoObject(storageKey, bytes, detectedMime);
@@ -137,6 +180,17 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
   if (insertError) {
     await deletePhotoObject(storageKey).catch(() => undefined);
     throw insertError;
+  }
+
+  if (replaceTargetIds.size > 0) {
+    await client
+      .from("photos")
+      .delete()
+      .eq("wedding_id", wedding.id)
+      .in("id", Array.from(replaceTargetIds));
+    await Promise.allSettled(
+      replaceStorageKeys.map((key) => deletePhotoObject(key)),
+    );
   }
 
   const photo = toPhoto(inserted as PhotoRow);

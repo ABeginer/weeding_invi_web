@@ -6,17 +6,21 @@ export type {
   TemplatePhotoItem,
   WeddingContent,
   WeddingEvent,
+  WeddingGiftInfo,
   WeddingPhoto,
   WeddingPlan,
 } from "./wedding-types";
 
 export {
+  emptyGiftInfo,
   EVENT_ADDRESS_MAX_LENGTH,
   EVENT_LUNAR_MAX_LENGTH,
   EVENT_TITLE_MAX_LENGTH,
   EVENT_URL_MAX_LENGTH,
   EVENT_VENUE_MAX_LENGTH,
   extractMapEmbedSrc,
+  GIFT_ACCOUNT_MAX_LENGTH,
+  GIFT_TEXT_MAX_LENGTH,
   guestEventsInputSchema,
   isValidHttpsUrl,
   isValidIsoPlus07,
@@ -27,8 +31,10 @@ export {
   weddingContentInputSchema,
   weddingContentPatchSchema,
   weddingEventInputSchema,
+  weddingGiftInputSchema,
 } from "./wedding-types";
 
+import type { BrandThemeMode } from "./brand-theme";
 import type {
   WeddingContent,
   WeddingEvent,
@@ -37,10 +43,12 @@ import type {
 } from "./wedding-types";
 
 export type GuestStatus = "pending" | "accepted" | "declined";
+export type GuestDiet = "meat" | "veg";
 
 export interface UserProfile {
   id: string;
   email: string | null;
+  theme?: BrandThemeMode;
   createdAt?: string;
 }
 
@@ -66,6 +74,8 @@ export interface Guest {
   name: string;
   slug: string;
   status: GuestStatus;
+  plusOnes?: number;
+  diet?: GuestDiet | null;
   respondedAt: string | null;
   createdAt: string;
   eventIds?: string[];
@@ -93,6 +103,9 @@ export interface Stats {
   declined: number;
   pending: number;
   wishes: number;
+  acceptedHeadcount?: number;
+  meatCount?: number;
+  vegCount?: number;
   unassignedCount?: number;
   eventCounts?: EventGuestCount[];
 }
@@ -100,6 +113,7 @@ export interface Stats {
 export interface PublicWeddingPayload {
   slug: string;
   templateId: string;
+  plan?: WeddingPlan;
   content: WeddingContent;
   events: WeddingEvent[];
   photos: WeddingPhoto[];
@@ -108,5 +122,7 @@ export interface PublicWeddingPayload {
 export interface InviteResponse {
   name: string;
   status: GuestStatus;
+  plusOnes?: number;
+  diet?: GuestDiet | null;
   events?: WeddingEvent[];
 }

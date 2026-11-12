@@ -56,7 +56,7 @@ export function Dialog({
       aria-labelledby={titleId}
     >
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/75 sm:backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -81,7 +81,7 @@ export function Dialog({
             type="button"
             onClick={onClose}
             aria-label="Đóng hộp thoại"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-muted hover:bg-surface-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-muted hover:bg-surface-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring cursor-pointer"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>

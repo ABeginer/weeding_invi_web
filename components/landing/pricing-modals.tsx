@@ -14,7 +14,10 @@ interface PaymentTransferModalProps {
   onClose: () => void;
 }
 
-export function PaymentTransferModal({ plan, onClose }: PaymentTransferModalProps) {
+export function PaymentTransferModal({
+  plan,
+  onClose,
+}: PaymentTransferModalProps) {
   const closeRef = React.useRef<HTMLButtonElement | null>(null);
   const titleId = React.useId();
   const [copied, setCopied] = React.useState(false);
@@ -74,16 +77,19 @@ export function PaymentTransferModal({ plan, onClose }: PaymentTransferModalProp
       <div
         aria-hidden="true"
         onClick={onClose}
-        className="fixed inset-0 bg-lnd-bg/80 backdrop-blur-xs"
+        className="fixed inset-0 bg-bg/85 sm:backdrop-blur-xs"
       />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-lnd-gold-soft bg-lnd-surface p-5 text-lnd-body shadow-2xl sm:p-6">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-surface p-5 text-text shadow-2xl sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-lnd-gold-soft bg-lnd-gold-tint text-lnd-gold">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-accent-soft text-text">
               <CreditCard className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
-              <h2 id={titleId} className="font-display text-2xl font-semibold text-lnd-gold">
+              <h2
+                id={titleId}
+                className="font-display text-2xl font-semibold text-accent-text"
+              >
                 {copy.title}
               </h2>
             </div>
@@ -93,40 +99,43 @@ export function PaymentTransferModal({ plan, onClose }: PaymentTransferModalProp
             type="button"
             onClick={onClose}
             aria-label={copy.closeLabel}
-            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-lnd-border text-lnd-muted transition-colors hover:border-lnd-gold hover:text-lnd-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-border text-text-muted transition-colors hover:border-accent hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
-        <p className="mt-3 text-xs leading-relaxed text-lnd-muted sm:text-sm">
+        <p className="mt-3 text-xs leading-relaxed text-text-muted sm:text-sm">
           {copy.description}
         </p>
 
-        <dl className="mt-4 space-y-2.5 rounded-xl border border-lnd-border bg-lnd-bg p-4 text-xs sm:text-sm">
+        <dl className="mt-4 space-y-2.5 rounded-xl border border-border bg-bg p-4 text-xs sm:text-sm">
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-lnd-muted">{copy.planLabel}</dt>
-            <dd className="font-semibold text-lnd-body">{tier?.name}</dd>
+            <dt className="text-text-muted">{copy.planLabel}</dt>
+            <dd className="font-semibold text-text">{tier?.name}</dd>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-lnd-muted">{copy.amountLabel}</dt>
-            <dd className="font-semibold text-lnd-gold">{tier?.price}</dd>
+            <dt className="text-text-muted">{copy.amountLabel}</dt>
+            <dd className="font-semibold text-accent-text">{tier?.price}</dd>
           </div>
-          <div className="flex items-center justify-between gap-3 border-t border-lnd-border pt-2.5">
-            <dt className="text-lnd-muted">{copy.orderCodeLabel}</dt>
+          <div className="flex items-center justify-between gap-3 border-t border-border pt-2.5">
+            <dt className="text-text-muted">{copy.orderCodeLabel}</dt>
             <dd className="flex items-center gap-2">
-              <code className="rounded bg-lnd-surface px-2 py-0.5 font-mono text-xs font-semibold text-lnd-gold">
+              <code className="rounded bg-surface px-2 py-0.5 font-mono text-xs font-semibold text-accent-text">
                 {orderCode}
               </code>
               <button
                 type="button"
                 onClick={handleCopyCode}
                 aria-label={copy.copyCodeLabel}
-                className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-lnd-border bg-lnd-surface px-2 text-[11px] font-medium text-lnd-body transition-colors hover:border-lnd-gold hover:text-lnd-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+                className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-border bg-surface px-2 text-[11px] font-medium text-text transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 {copied ? (
                   <>
-                    <Check className="h-3 w-3 text-lnd-gold" aria-hidden="true" />
+                    <Check
+                      className="h-3 w-3 text-accent-text"
+                      aria-hidden="true"
+                    />
                     <span>{copy.copiedCodeLabel}</span>
                   </>
                 ) : (
@@ -138,36 +147,36 @@ export function PaymentTransferModal({ plan, onClose }: PaymentTransferModalProp
               </button>
             </dd>
           </div>
-          <div className="flex items-center justify-between gap-3 border-t border-lnd-border pt-2.5">
-            <dt className="text-lnd-muted">{copy.bankLabel}</dt>
-            <dd className="text-lnd-body">
+          <div className="flex items-center justify-between gap-3 border-t border-border pt-2.5">
+            <dt className="text-text-muted">{copy.bankLabel}</dt>
+            <dd className="text-text">
               {BANK_TRANSFER_INFO.bankName || copy.emptyValuePlaceholder}
             </dd>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-lnd-muted">{copy.accountNumberLabel}</dt>
-            <dd className="font-mono text-lnd-body">
+            <dt className="text-text-muted">{copy.accountNumberLabel}</dt>
+            <dd className="font-mono text-text">
               {BANK_TRANSFER_INFO.accountNumber || copy.emptyValuePlaceholder}
             </dd>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-lnd-muted">{copy.accountHolderLabel}</dt>
-            <dd className="text-lnd-body">
+            <dt className="text-text-muted">{copy.accountHolderLabel}</dt>
+            <dd className="text-text">
               {BANK_TRANSFER_INFO.accountHolder || copy.emptyValuePlaceholder}
             </dd>
           </div>
         </dl>
 
-        <p className="mt-3 rounded-lg border border-lnd-border bg-lnd-bg/60 px-3 py-2 text-[11px] leading-relaxed text-lnd-muted">
+        <p className="mt-3 rounded-lg border border-border bg-surface-alt px-3 py-2 text-[11px] leading-relaxed text-text-muted">
           {BANK_TRANSFER_INFO.qrPlaceholderNote}
         </p>
-        <p className="mt-2 text-[11px] text-lnd-muted">{copy.notice}</p>
+        <p className="mt-2 text-[11px] text-text-muted">{copy.notice}</p>
 
         <div className="mt-5 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full bg-lnd-gold px-6 text-xs font-semibold text-lnd-bg transition-colors hover:bg-lnd-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full bg-accent px-6 text-xs font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {copy.closeLabel}
           </button>
@@ -223,15 +232,18 @@ export function PlanUpgradeModal({
       <div
         aria-hidden="true"
         onClick={onClose}
-        className="fixed inset-0 bg-lnd-bg/80 backdrop-blur-xs"
+        className="fixed inset-0 bg-bg/85 sm:backdrop-blur-xs"
       />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-lnd-gold-soft bg-lnd-surface p-5 text-lnd-body shadow-2xl sm:p-6">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-surface p-5 text-text shadow-2xl sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-lnd-gold-soft bg-lnd-gold-tint text-lnd-gold">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-accent-soft text-text">
               <Crown className="h-4 w-4" aria-hidden="true" />
             </span>
-            <h2 id={titleId} className="font-display text-2xl font-semibold text-lnd-gold">
+            <h2
+              id={titleId}
+              className="font-display text-2xl font-semibold text-accent-text"
+            >
               {copy.title}
             </h2>
           </div>
@@ -240,17 +252,19 @@ export function PlanUpgradeModal({
             type="button"
             onClick={onClose}
             aria-label={copy.closeLabel}
-            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-lnd-border text-lnd-muted transition-colors hover:border-lnd-gold hover:text-lnd-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-border text-text-muted transition-colors hover:border-accent hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
-        <p className="mt-3 text-sm leading-relaxed text-lnd-body">
+        <p className="mt-3 text-sm leading-relaxed text-text">
           {copy.descriptionPrefix}{" "}
-          <strong className="font-semibold text-lnd-gold">{template.name}</strong>{" "}
+          <strong className="font-semibold text-accent-text">
+            {template.name}
+          </strong>{" "}
           {copy.descriptionMiddle}{" "}
-          <strong className="font-semibold text-lnd-gold">{planName}</strong>{" "}
+          <strong className="font-semibold text-accent-text">{planName}</strong>{" "}
           {copy.descriptionSuffix}
         </p>
 
@@ -261,14 +275,14 @@ export function PlanUpgradeModal({
               onClose();
               onSelectPlan(targetPlan);
             }}
-            className="inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full bg-lnd-gold px-5 text-sm font-semibold text-lnd-bg transition-colors hover:bg-lnd-gold-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full bg-accent px-5 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {targetPlan === "vip" ? copy.chooseVipLabel : copy.chooseProLabel}
           </button>
           <a
             href={SITE_LINKS.templatesAnchor}
             onClick={onClose}
-            className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-lnd-gold-soft px-5 text-sm font-medium text-lnd-body transition-colors hover:border-lnd-gold hover:text-lnd-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-text bg-transparent px-5 text-sm font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {copy.chooseFreeInsteadLabel}
           </a>
@@ -277,4 +291,3 @@ export function PlanUpgradeModal({
     </div>
   );
 }
-

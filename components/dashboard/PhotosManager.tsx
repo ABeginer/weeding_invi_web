@@ -23,7 +23,7 @@ import {
   reorderPhotos,
   uploadPhoto,
 } from "@/lib/api";
-import { compressImageFile } from "@/lib/image-compress";
+import { compressImageFile, createOgCoverImage } from "@/lib/image-compress";
 import type {
   PhotoKind,
   PhotoSlot,
@@ -50,8 +50,10 @@ interface PhotosManagerProps {
   ) => void;
 }
 
+type MainPhotoSlot = Extract<PhotoSlot, "hero" | "groom" | "bride">;
+
 type SlotMeta = {
-  slot: PhotoSlot;
+  slot: MainPhotoSlot;
   kind: Extract<PhotoKind, "banner" | "couple">;
   title: string;
   description: string;
@@ -89,7 +91,7 @@ export function PhotosManager({
   const limits = getPlanLimits(plan);
 
   const [slotStatus, setSlotStatus] = React.useState<
-    Partial<Record<PhotoSlot, string>>
+    Partial<Record<MainPhotoSlot, string>>
   >({});
   const [slotError, setSlotError] = React.useState<string | null>(null);
 
@@ -114,7 +116,10 @@ export function PhotosManager({
   const brideInputRef = React.useRef<HTMLInputElement | null>(null);
   const galleryInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  const inputRefs: Record<PhotoSlot, React.RefObject<HTMLInputElement | null>> = {
+  const inputRefs: Record<
+    MainPhotoSlot,
+    React.RefObject<HTMLInputElement | null>
+  > = {
     hero: heroInputRef,
     groom: groomInputRef,
     bride: brideInputRef,
@@ -194,7 +199,28 @@ export function PhotosManager({
         meta.slot,
       );
 
-      const nextPhotos = [...workingPhotos, uploaded.photo];
+      let nextPhotos = [...workingPhotos, uploaded.photo];
+
+      if (meta.slot === "hero") {
+        setSlotStatus((prev) => ({
+          ...prev,
+          [meta.slot]: "Đang tạo ảnh chia sẻ...",
+        }));
+        try {
+          const ogFile = await createOgCoverImage(file);
+          const ogUploaded = await uploadPhoto(weddingId, ogFile, "og", "og");
+          nextPhotos = [
+            ...nextPhotos.filter((p) => p.kind !== "og"),
+            ogUploaded.photo,
+          ];
+        } catch {
+          showToast(
+            "Đã lưu ảnh bìa, nhưng chưa tạo được ảnh thu gọn khi chia sẻ link.",
+            "info",
+          );
+        }
+      }
+
       onPhotosStateChange(nextPhotos, uploaded.content);
       showToast(`Đã cập nhật ${meta.title.toLowerCase()}`, "success");
     } catch (err) {
@@ -276,7 +302,11 @@ export function PhotosManager({
     setDeleting(true);
     try {
       const res = await deletePhoto(weddingId, deletingTarget.photo.id);
-      const nextPhotos = photos.filter((p) => p.id !== deletingTarget.photo.id);
+      const nextPhotos = photos.filter((p) => {
+        if (p.id === deletingTarget.photo.id) return false;
+        if (deletingTarget.photo.kind === "banner" && p.kind === "og") return false;
+        return true;
+      });
       onPhotosStateChange(nextPhotos, res.content);
       showToast(`Đã xóa ${deletingTarget.label.toLowerCase()}`, "success");
       setDeletingTarget(null);
@@ -415,7 +445,7 @@ export function PhotosManager({
                       <button
                         type="button"
                         onClick={() => openSingleLightbox(currentPhoto, meta.title)}
-                        className="block h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        className="block h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                         aria-label={`Phóng to ${meta.title}`}
                       >
                         <img
@@ -426,13 +456,13 @@ export function PhotosManager({
                       </button>
                     ) : (
                       <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-3 text-center text-fg-muted">
-                        <ImageOff className="h-6 w-6 text-accent/70" aria-hidden="true" />
+                        <ImageOff className="h-6 w-6 text-accent-text" aria-hidden="true" />
                         <span className="text-xs font-medium">Chưa có ảnh</span>
                       </div>
                     )}
 
                     {busyText && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/75 px-3 text-center text-xs font-medium text-fg">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/75 px-3 text-center text-xs font-medium text-white">
                         <Loader2 className="h-5 w-5 animate-spin text-accent" aria-hidden="true" />
                         <span>{busyText}</span>
                       </div>
@@ -525,9 +555,9 @@ export function PhotosManager({
         </div>
 
         {reachedGalleryLimit && (
-          <div className="rounded-xl border border-accent/35 bg-accent-soft px-4 py-3 text-xs text-fg">
+          <div className="rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-xs text-text">
             {getPhotoLimitMessage(plan, "gallery")}{" "}
-            <Link href="/#bang-gia" className="font-semibold text-accent underline">
+            <Link href="/#bang-gia" className="font-semibold text-text underline">
               Nâng cấp gói
             </Link>
           </div>
@@ -544,7 +574,7 @@ export function PhotosManager({
 
         {galleryPhotos.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-bg p-8 text-center">
-            <ImageOff className="mx-auto h-7 w-7 text-accent/75" aria-hidden="true" />
+            <ImageOff className="mx-auto h-7 w-7 text-accent-text" aria-hidden="true" />
             <p className="mt-2 text-sm font-medium text-fg">
               Chưa có ảnh trong thư viện
             </p>
@@ -571,7 +601,7 @@ export function PhotosManager({
                   <button
                     type="button"
                     onClick={() => openGalleryLightbox(index)}
-                    className="block h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    className="block h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                     aria-label={`Xem ảnh thư viện #${index + 1}`}
                   >
                     <img
@@ -582,7 +612,7 @@ export function PhotosManager({
                     />
                   </button>
 
-                  <span className="pointer-events-none absolute top-2 left-2 rounded-full border border-border bg-bg/90 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                  <span className="pointer-events-none absolute top-2 left-2 rounded-full border border-border bg-bg/90 px-2 py-0.5 text-[10px] font-semibold text-accent-text">
                     #{index + 1}
                   </span>
 

@@ -7,10 +7,11 @@ import { invitationThemeCssVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
 import { RevealSection } from "./RevealSection";
-import { useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
 
 export function Gallery() {
   const data = useWeddingContent();
+  const isDesktopLayout = useInvitationDesktopLayout();
   const photos = data.photos.gallery;
 
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
@@ -160,7 +161,12 @@ export function Gallery() {
     ) : null;
 
   return (
-    <RevealSection className="bg-inv-olive px-5 py-10 text-inv-cream-text">
+    <RevealSection
+      className={cn(
+        "bg-inv-olive px-5 py-10 text-inv-cream-text",
+        isDesktopLayout && "md:px-8",
+      )}
+    >
       <div className="mx-auto max-w-[440px] text-center">
         <h2 className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 font-inv-serif text-[clamp(22px,6.8vw,32px)] leading-[1.15] font-normal tracking-[0.03em] text-inv-cream-text uppercase">
           <span>GOLDEN HOUR</span>
@@ -180,7 +186,12 @@ export function Gallery() {
           <TemplatePhotoPlaceholder className="aspect-[4/3]" />
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-2 gap-2.5">
+        <div
+          className={cn(
+            "mt-8 grid grid-cols-2 gap-2.5",
+            isDesktopLayout && "mx-auto max-w-[920px] md:grid-cols-3 md:gap-4",
+          )}
+        >
           {photos.map((photo, index) => (
             <button
               key={photo.id || `${photo.url}-${index}`}

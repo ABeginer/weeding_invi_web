@@ -64,7 +64,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             )}
             {toast.type === "info" && (
-              <Info className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+              <Info className="h-4 w-4 shrink-0 text-accent-text" aria-hidden="true" />
             )}
             <span className="flex-1 font-medium">{toast.message}</span>
             <button

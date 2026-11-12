@@ -21,7 +21,11 @@ export function Footer() {
       ) : (
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-br from-[#232b19] via-[#171d11] to-[#0b0b0b]"
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(135deg, color-mix(in srgb, var(--inv-olive-deep) 60%, black) 0%, color-mix(in srgb, var(--inv-olive-deep) 35%, black) 55%, black 100%)",
+          }}
         />
       )}
 

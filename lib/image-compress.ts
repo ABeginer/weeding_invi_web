@@ -104,3 +104,74 @@ export async function compressImageFile(file: File): Promise<File> {
   });
 }
 
+const OG_WIDTH = 1200;
+const OG_HEIGHT = 630;
+const OG_MAX_BYTES = 300 * 1024;
+
+/**
+ * Tạo ảnh đại diện chia sẻ mạng xã hội (Open Graph) kích thước 1200x630 (cover crop)
+ * và nén xuống dưới 300 KB.
+ */
+export async function createOgCoverImage(file: File): Promise<File> {
+  const validationError = validateImageFile(file);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const img = await loadImageElement(file);
+  const srcWidth = img.naturalWidth || img.width;
+  const srcHeight = img.naturalHeight || img.height;
+
+  if (!srcWidth || !srcHeight) {
+    throw new Error("Không xác định được kích thước ảnh để tạo ảnh chia sẻ.");
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = OG_WIDTH;
+  canvas.height = OG_HEIGHT;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Trình duyệt không hỗ trợ xử lý ảnh canvas.");
+  }
+
+  const scale = Math.max(OG_WIDTH / srcWidth, OG_HEIGHT / srcHeight);
+  const drawWidth = srcWidth * scale;
+  const drawHeight = srcHeight * scale;
+  const drawX = (OG_WIDTH - drawWidth) / 2;
+  const drawY = (OG_HEIGHT - drawHeight) * 0.35;
+
+  ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+
+  const qualities = [0.85, 0.72, 0.6, 0.5, 0.4];
+  let outputMime = "image/webp";
+  let bestBlob: Blob | null = null;
+
+  for (const quality of qualities) {
+    const candidate = await canvasToBlob(canvas, outputMime, quality);
+    if (!candidate || candidate.size === 0) break;
+    bestBlob = candidate;
+    if (candidate.size <= OG_MAX_BYTES) break;
+  }
+
+  if (!bestBlob || bestBlob.size === 0) {
+    outputMime = "image/jpeg";
+    for (const quality of qualities) {
+      const candidate = await canvasToBlob(canvas, outputMime, quality);
+      if (!candidate || candidate.size === 0) break;
+      bestBlob = candidate;
+      if (candidate.size <= OG_MAX_BYTES) break;
+    }
+  }
+
+  if (!bestBlob || bestBlob.size === 0) {
+    throw new Error("Không thể tạo ảnh chia sẻ Open Graph.");
+  }
+
+  const ext = outputMime === "image/webp" ? "webp" : "jpg";
+  return new File([bestBlob], `og-cover.${ext}`, {
+    type: outputMime,
+    lastModified: Date.now(),
+  });
+}
+

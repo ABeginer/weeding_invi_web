@@ -30,7 +30,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className={cn(
             "flex h-11 w-full rounded-xl border bg-surface px-3.5 py-2 text-sm text-fg transition-colors",
             "placeholder:text-fg-muted/70",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:border-accent",
             "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:opacity-75",
             error ? "border-danger-fg focus-visible:ring-danger-fg" : "border-border",
             className
@@ -80,7 +80,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className={cn(
             "flex min-h-[110px] w-full rounded-xl border bg-surface px-3.5 py-2.5 text-sm text-fg transition-colors",
             "placeholder:text-fg-muted/70",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:border-accent",
             "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:opacity-75",
             error ? "border-danger-fg focus-visible:ring-danger-fg" : "border-border",
             className

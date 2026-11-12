@@ -9,6 +9,7 @@ import type {
   TemplateData,
   WeddingContent,
   WeddingPhoto,
+  WeddingPlan,
 } from "@/lib/types";
 import { toTemplateData } from "@/lib/wedding-data";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +20,7 @@ interface InvitePageClientProps {
   slug: string;
   weddingSlug?: string;
   templateId?: string;
+  plan?: WeddingPlan;
   initialData: TemplateData;
   rawContent: WeddingContent;
   rawPhotos: WeddingPhoto[];
@@ -28,6 +30,7 @@ export function InvitePageClient({
   slug,
   weddingSlug,
   templateId = "basic-1",
+  plan = "free",
   initialData,
   rawContent,
   rawPhotos,
@@ -62,20 +65,21 @@ export function InvitePageClient({
     if (!invite) return initialData;
     return toTemplateData({
       templateId,
+      plan,
       weddingSlug,
       content: rawContent,
       events: invite.events ?? initialData.events,
       photos: rawPhotos,
     });
-  }, [initialData, invite, rawContent, rawPhotos, templateId, weddingSlug]);
+  }, [initialData, invite, plan, rawContent, rawPhotos, templateId, weddingSlug]);
 
   if (loading) {
     return (
       <div
         style={invitationThemeCssVars as React.CSSProperties}
-        className="invitation-theme min-h-dvh bg-inv-bg text-inv-ink"
+        className="invitation-theme min-h-screen-dvh bg-inv-bg text-inv-ink"
       >
-        <main className="mx-auto flex min-h-dvh max-w-[500px] flex-col items-center justify-center bg-inv-bg px-6 py-12 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]">
+        <main className="mx-auto flex min-h-screen-dvh max-w-[500px] flex-col items-center justify-center bg-inv-bg px-6 py-12 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]">
           <div className="w-full space-y-5 rounded-3xl border border-inv-olive/20 bg-inv-paper p-8 text-center">
             <Skeleton className="mx-auto h-4 w-32 bg-inv-tint" />
             <Skeleton className="mx-auto h-10 w-56 bg-inv-tint" />
@@ -90,9 +94,9 @@ export function InvitePageClient({
     return (
       <div
         style={invitationThemeCssVars as React.CSSProperties}
-        className="invitation-theme min-h-dvh bg-inv-bg text-inv-ink"
+        className="invitation-theme min-h-screen-dvh bg-inv-bg text-inv-ink"
       >
-        <main className="mx-auto flex min-h-dvh max-w-[500px] flex-col items-center justify-center bg-inv-bg px-6 py-12 text-center md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]">
+        <main className="mx-auto flex min-h-screen-dvh max-w-[500px] flex-col items-center justify-center bg-inv-bg px-6 py-12 text-center md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]">
           <div className="w-full space-y-5 rounded-3xl border border-inv-olive/25 bg-inv-paper px-6 py-8">
             <p className="font-inv-serif text-xs font-medium uppercase tracking-[0.24em] text-inv-olive-btn">
               {initialData.ui.eyebrow}
@@ -130,9 +134,9 @@ export function InvitePageClient({
     return (
       <div
         style={invitationThemeCssVars as React.CSSProperties}
-        className="invitation-theme min-h-dvh bg-inv-bg text-inv-ink"
+        className="invitation-theme min-h-screen-dvh bg-inv-bg text-inv-ink"
       >
-        <main className="mx-auto flex min-h-dvh max-w-[500px] flex-col items-center justify-center bg-inv-bg px-6 py-12 text-center md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]">
+        <main className="mx-auto flex min-h-screen-dvh max-w-[500px] flex-col items-center justify-center bg-inv-bg px-6 py-12 text-center md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]">
           <div className="w-full space-y-5 rounded-3xl border border-inv-olive/25 bg-inv-paper px-6 py-8">
             <p className="font-inv-serif text-xs font-medium uppercase tracking-[0.24em] text-inv-olive-btn">
               {initialData.ui.eyebrow}
@@ -168,6 +172,8 @@ export function InvitePageClient({
       invitationMode="personal"
       guestName={invite.name}
       initialStatus={invite.status}
+      initialPlusOnes={invite.plusOnes}
+      initialDiet={invite.diet}
     />
   );
 }

@@ -13,13 +13,19 @@ import {
 import { getPlanLabel, getPlanLimits } from "@/config/plans";
 import { ApiError, buildWeddingLink, listWeddings } from "@/lib/api";
 import type { Wedding } from "@/lib/types";
-import { formatDateTimeVi } from "@/lib/utils";
+import { cn, formatDateTimeVi } from "@/lib/utils";
 import { FREE_PLAN_MAX_WEDDINGS, WEDDING_TEMPLATES } from "@/lib/wedding-slug";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { CreateWeddingDialog } from "./CreateWeddingDialog";
+
+function getPlanBadgeClasses(plan: Wedding["plan"]): string {
+  if (plan === "free") return "border-sage bg-surface text-text";
+  if (plan === "pro") return "border-accent bg-accent text-accent-fg font-semibold";
+  return "border-vip-border bg-vip-bg text-vip-fg font-semibold";
+}
 
 interface WeddingListProps {
   initialCreateTemplateId?: string;
@@ -95,7 +101,7 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">
+          <p className="text-[11px] font-medium tracking-[0.18em] text-accent-text uppercase">
             Trung tâm quản lý
           </p>
           <h1 className="mt-1 font-display text-3xl font-semibold text-fg sm:text-4xl">
@@ -122,13 +128,13 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
       </div>
 
       {reachedFreeLimit && (
-        <div className="rounded-xl border border-accent/35 bg-accent-soft px-4 py-3 text-xs text-fg sm:text-sm">
+        <div className="rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-xs text-text sm:text-sm">
           Tài khoản gói miễn phí được tạo tối đa{" "}
-          <strong className="font-semibold text-accent">
+          <strong className="font-semibold text-text">
             {FREE_PLAN_MAX_WEDDINGS} thiệp cưới
           </strong>
           , {freeLimits.events} lễ, {freeLimits.photos.gallery} ảnh thư viện và{" "}
-          <strong className="font-semibold text-accent">
+          <strong className="font-semibold text-text">
             {freeLimits.guests ?? 20} khách mời
           </strong>
           .
@@ -155,8 +161,8 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
         </Card>
       ) : weddings.length === 0 ? (
         <Card className="p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent-soft text-accent">
-            <Heart className="h-6 w-6" aria-hidden="true" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/35 bg-accent-soft text-text">
+            <Heart className="h-6 w-6 text-accent-text" aria-hidden="true" />
           </div>
           <h2 className="mt-4 font-display text-2xl font-semibold text-fg">
             Bạn chưa có thiệp cưới nào
@@ -195,7 +201,12 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
                         /w/{wedding.slug}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full border border-accent/35 bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                        getPlanBadgeClasses(wedding.plan),
+                      )}
+                    >
                       {getPlanLabel(wedding.plan)}
                     </span>
                   </div>
@@ -234,7 +245,7 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`Mở thiệp /w/${wedding.slug}`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg transition-colors hover:bg-surface-muted hover:text-accent"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg transition-colors hover:bg-surface-muted hover:text-accent-text"
                   >
                     <ExternalLink className="h-4 w-4" aria-hidden="true" />
                   </a>

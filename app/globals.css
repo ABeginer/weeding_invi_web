@@ -1,41 +1,59 @@
 @import "tailwindcss";
 
-@theme {
+@theme inline {
   --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: var(--font-cormorant), Georgia, "Times New Roman", serif;
   --font-inv-serif: var(--font-lora), Georgia, "Times New Roman", serif;
-  --font-inv-script: var(--font-great-vibes), var(--font-lora), cursive;
-  --font-inv-quote: var(--font-pinyon), var(--font-great-vibes), Georgia, serif;
+  /* Font chữ viết tay được chuyển sang Cormorant Garamond italic để hỗ trợ đầy đủ dấu tiếng Việt */
+  --font-inv-script: var(--font-cormorant), var(--font-lora), Georgia, serif;
+  --font-inv-quote: var(--font-cormorant), var(--font-lora), Georgia, serif;
 
-  /* Admin & default system tokens */
-  --color-bg: #faf7f2;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f3ede3;
-  --color-fg: #2c2420;
-  --color-fg-muted: #6e6159;
+  /* Brand semantic tokens (resolved from lib/brand-theme.ts CSS) */
+  --color-bg: var(--brand-bg);
+  --color-surface: var(--brand-surface);
+  --color-surface-alt: var(--brand-surface-alt);
+  --color-surface-muted: var(--brand-surface-alt);
+  --color-border: var(--brand-border);
 
-  --color-accent: #876335;
-  --color-accent-hover: #6e4f28;
-  --color-accent-soft: #f2e9dc;
-  --color-accent-fg: #ffffff;
-  --color-rose: #c49b95;
-  --color-border: #e5ddd2;
+  --color-text: var(--brand-text);
+  --color-fg: var(--brand-text);
+  --color-text-muted: var(--brand-text-muted);
+  --color-fg-muted: var(--brand-text-muted);
 
-  --color-success-bg: #ecf5ef;
-  --color-success-fg: #1f5c3a;
-  --color-success-border: #b8dcc5;
+  --color-accent: var(--brand-accent);
+  --color-accent-hover: var(--brand-accent-hover);
+  --color-accent-text: var(--brand-accent-text);
+  --color-accent-fg: var(--brand-accent-fg);
+  --color-accent-soft: var(--brand-accent-soft);
+  --color-rose: var(--brand-rose);
+  --color-sage: var(--brand-sage);
+  --color-focus-ring: var(--brand-focus-ring);
 
-  --color-danger-bg: #fdf0ef;
-  --color-danger-fg: #9c2b23;
-  --color-danger-border: #f0c2be;
-  --color-danger-btn-bg: #9c2b23;
-  --color-danger-btn-fg: #ffffff;
+  --color-vip-bg: var(--brand-vip-bg);
+  --color-vip-fg: var(--brand-vip-fg);
+  --color-vip-border: var(--brand-vip-border);
+  --color-soon-bg: var(--brand-soon-bg);
+  --color-soon-fg: var(--brand-soon-fg);
+  --color-soon-border: var(--brand-soon-border);
 
-  --color-neutral-bg: #f1efec;
-  --color-neutral-fg: #57504b;
-  --color-neutral-border: #dcd6ce;
+  --color-success-bg: var(--brand-success-bg);
+  --color-success-fg: var(--brand-success-fg);
+  --color-success-border: var(--brand-success-border);
+  --color-danger-bg: var(--brand-danger-bg);
+  --color-danger-fg: var(--brand-danger-fg);
+  --color-danger-border: var(--brand-danger-border);
+  --color-danger-btn-bg: var(--brand-danger-btn-bg);
+  --color-danger-btn-fg: var(--brand-danger-btn-fg);
+  --color-neutral-bg: var(--brand-neutral-bg);
+  --color-neutral-fg: var(--brand-neutral-fg);
+  --color-neutral-border: var(--brand-neutral-border);
 
-  /* Landing & Demo luxury dark-gold tokens */
+  --color-phone-chassis: var(--brand-phone-chassis);
+  --color-phone-bezel: var(--brand-phone-bezel);
+  --color-phone-highlight: var(--brand-phone-highlight);
+  --color-phone-notch: var(--brand-phone-notch);
+
+  /* Invitation dark-gold template tokens (inline from lib/theme.ts landingThemeCssVars) */
   --color-lnd-bg: var(--lnd-bg);
   --color-lnd-surface: var(--lnd-surface);
   --color-lnd-surface-hover: var(--lnd-surface-hover);
@@ -46,18 +64,12 @@
   --color-lnd-gold-tint: var(--lnd-gold-tint);
   --color-lnd-body: var(--lnd-body);
   --color-lnd-muted: var(--lnd-muted);
-  --color-lnd-free-bg: var(--lnd-free-bg);
-  --color-lnd-free-border: var(--lnd-free-border);
-  --color-lnd-free-text: var(--lnd-free-text);
-  --color-lnd-soon-bg: var(--lnd-soon-bg);
-  --color-lnd-soon-border: var(--lnd-soon-border);
-  --color-lnd-soon-text: var(--lnd-soon-text);
   --color-lnd-phone-chassis: var(--lnd-phone-chassis);
   --color-lnd-phone-bezel: var(--lnd-phone-bezel);
   --color-lnd-phone-highlight: var(--lnd-phone-highlight);
   --color-lnd-phone-notch: var(--lnd-phone-notch);
 
-  /* Invitation olive-white palette tokens */
+  /* Invitation olive-white palette tokens (inline from lib/theme.ts invitationThemeCssVars) */
   --color-inv-bg: var(--inv-bg);
   --color-inv-paper: var(--inv-paper);
   --color-inv-cream: var(--inv-cream);
@@ -78,68 +90,39 @@
 
   --radius-card: 1rem;
   --radius-pill: 9999px;
-
-  --shadow-soft: 0 12px 32px -12px rgba(44, 36, 32, 0.1);
-  --shadow-card: 0 4px 20px -4px rgba(44, 36, 32, 0.06);
 }
 
-:root {
-  --inv-bg: #ffffff;
-  --inv-paper: #f7f7f4;
-  --inv-cream: #f5f1e8;
-  --inv-input-bg: #fffefa;
-  --inv-title: #405e34;
-  --inv-ink: #30451c;
-  --inv-text-small: #4f663a;
-  --inv-muted: #527166;
-  --inv-olive: #5e733f;
-  --inv-olive-mid: #596e40;
-  --inv-olive-deep: #405e34;
-  --inv-olive-btn: #5d733f;
-  --inv-olive-hover: #4c6037;
-  --inv-tint: #eff4ed;
-  --inv-cream-text: #fff8ee;
-  --inv-cream-soft: #e3eed8;
-  --inv-tap-hint: #294a2d;
+.font-inv-script,
+.font-inv-quote {
+  font-style: italic;
+}
 
-  /* Landing & Demo defaults */
-  --lnd-bg: #0b0b0b;
-  --lnd-surface: #151515;
-  --lnd-surface-hover: #1e1e1e;
-  --lnd-border: #2a2a2a;
-  --lnd-gold: #d4af37;
-  --lnd-gold-bright: #e3c35a;
-  --lnd-gold-soft: #8c7a3f;
-  --lnd-gold-tint: #221d11;
-  --lnd-body: #e8dfc8;
-  --lnd-muted: #a89f86;
-  --lnd-free-bg: #182421;
-  --lnd-free-border: #354d46;
-  --lnd-free-text: #a5c6be;
-  --lnd-soon-bg: #222222;
-  --lnd-soon-border: #3a3a3a;
-  --lnd-soon-text: #c2bdb4;
-  --lnd-phone-chassis: #161618;
-  --lnd-phone-bezel: #2e2e32;
-  --lnd-phone-highlight: #3d3a32;
-  --lnd-phone-notch: #080808;
+.min-h-screen-dvh {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.h-screen-dvh {
+  height: 100vh;
+  height: 100dvh;
 }
 
 .invitation-theme {
   font-family: var(--font-inv-serif);
   color-scheme: light;
-  --color-bg: var(--inv-bg);
-  --color-surface: var(--inv-bg);
-  --color-surface-muted: var(--inv-tint);
-  --color-fg: var(--inv-ink);
-  --color-fg-muted: var(--inv-muted);
-
-  --color-accent: var(--inv-olive-btn);
-  --color-accent-hover: var(--inv-olive-hover);
-  --color-accent-soft: var(--inv-tint);
-  --color-accent-fg: #ffffff;
-  --color-rose: var(--inv-olive);
-  --color-border: color-mix(in srgb, var(--inv-olive-deep) 28%, var(--inv-bg));
+  --brand-bg: var(--inv-bg);
+  --brand-surface: var(--inv-bg);
+  --brand-surface-alt: var(--inv-tint);
+  --brand-text: var(--inv-ink);
+  --brand-text-muted: var(--inv-muted);
+  --brand-accent: var(--inv-olive-btn);
+  --brand-accent-hover: var(--inv-olive-hover);
+  --brand-accent-text: var(--inv-olive-deep);
+  --brand-accent-soft: var(--inv-tint);
+  --brand-accent-fg: var(--inv-bg);
+  --brand-rose: var(--inv-olive);
+  --brand-border: color-mix(in srgb, var(--inv-olive-deep) 28%, var(--inv-bg));
+  --brand-focus-ring: var(--inv-olive-btn);
 
   --shadow-soft: 0 14px 36px -12px color-mix(in srgb, var(--inv-olive-deep) 16%, transparent);
   --shadow-card: 0 6px 20px -6px color-mix(in srgb, var(--inv-olive-deep) 12%, transparent);
@@ -156,60 +139,25 @@ body:has(.invitation-theme) {
   color: var(--inv-ink);
 }
 
-.dashboard-theme,
-html:has(.dashboard-theme),
-body:has(.dashboard-theme) {
-  --color-bg: #0b0b0b;
-  --color-surface: #151515;
-  --color-surface-muted: #1e1e1e;
-  --color-fg: #e8dfc8;
-  --color-fg-muted: #a89f86;
-  --color-accent: #d4af37;
-  --color-accent-hover: #e3c35a;
-  --color-accent-soft: #221d11;
-  --color-accent-fg: #0b0b0b;
-  --color-border: #2a2a2a;
-  --color-success-bg: #12261c;
-  --color-success-fg: #7fe3a8;
-  --color-success-border: #285940;
-  --color-danger-bg: #2b1414;
-  --color-danger-fg: #fca5a5;
-  --color-danger-border: #6e2929;
-  --color-danger-btn-bg: #b91c1c;
-  --color-danger-btn-fg: #ffffff;
-  --color-neutral-bg: #201e1b;
-  --color-neutral-fg: #c9bfa8;
-  --color-neutral-border: #38342e;
-  --shadow-soft: 0 14px 36px -12px rgba(0, 0, 0, 0.75);
-  --shadow-card: 0 8px 24px -8px rgba(0, 0, 0, 0.65);
-  background-color: #0b0b0b;
-  color: #e8dfc8;
-  color-scheme: dark;
-}
-
-.dashboard-theme input[type="datetime-local"] {
-  color-scheme: dark;
-}
-
-.dashboard-theme ::selection {
-  background-color: color-mix(in srgb, #d4af37 28%, #0b0b0b);
-  color: #e8dfc8;
+html:has(.template-pro-obsidian),
+body:has(.template-pro-obsidian) {
+  background-color: var(--lnd-bg);
+  color: var(--lnd-body);
 }
 
 .landing-theme {
-  background-color: var(--lnd-bg);
-  color: var(--lnd-body);
-}
-
-html:has(.landing-theme),
-body:has(.landing-theme) {
-  background-color: var(--lnd-bg);
-  color: var(--lnd-body);
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
 }
 
 .landing-theme ::selection {
-  background-color: color-mix(in srgb, var(--lnd-gold) 28%, var(--lnd-bg));
-  color: var(--lnd-body);
+  background-color: color-mix(in srgb, var(--brand-accent) 26%, var(--brand-bg));
+  color: var(--brand-text);
+}
+
+.dashboard-theme ::selection {
+  background-color: color-mix(in srgb, var(--brand-accent) 26%, var(--brand-bg));
+  color: var(--brand-text);
 }
 
 .lnd-phone-float {
@@ -223,7 +171,7 @@ body:has(.landing-theme) {
 
 .lnd-phone-scroll {
   scrollbar-width: thin;
-  scrollbar-color: var(--lnd-gold-soft) transparent;
+  scrollbar-color: var(--brand-border) transparent;
 }
 
 .lnd-phone-scroll::-webkit-scrollbar {
@@ -231,7 +179,7 @@ body:has(.landing-theme) {
 }
 
 .lnd-phone-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--lnd-gold-soft);
+  background-color: var(--brand-border);
   border-radius: 9999px;
 }
 
@@ -286,14 +234,14 @@ body:has(.landing-theme) {
 @layer base {
   html {
     scroll-behavior: smooth;
-    background-color: var(--color-bg);
-    color: var(--color-fg);
+    background-color: var(--brand-bg);
+    color: var(--brand-text);
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: var(--color-bg);
-    color: var(--color-fg);
+    background-color: var(--brand-bg);
+    color: var(--brand-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -318,8 +266,8 @@ body:has(.landing-theme) {
   }
 
   ::selection {
-    background-color: var(--color-accent-soft);
-    color: var(--color-fg);
+    background-color: var(--brand-accent-soft);
+    color: var(--brand-text);
   }
 }
 

@@ -10,9 +10,80 @@ import { db } from "@/lib/server/supabase";
 import { ensureUserRecord } from "@/lib/server/weddings";
 import { createDefaultWeddingContent } from "@/lib/wedding-data";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
+import {
+  toIsoPlus07,
+  weddingContentInputSchema,
+  type WeddingContent,
+} from "@/lib/wedding-types";
 import { getTemplateMeta } from "@/templates/registry";
 
 const TEMPLATE_ID_RE = /^[a-z0-9-]{2,40}$/;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function mergeInitialContent(
+  rawContent: unknown,
+): { ok: true; content: WeddingContent } | { ok: false; error: string } {
+  const defaults = createDefaultWeddingContent();
+  if (rawContent === undefined) {
+    return { ok: true, content: defaults };
+  }
+  if (!isRecord(rawContent)) {
+    return { ok: false, error: "Nội dung thiệp khởi tạo không hợp lệ." };
+  }
+
+  const rawCouple = isRecord(rawContent.couple) ? rawContent.couple : {};
+  const rawDate = typeof rawContent.date === "string" ? rawContent.date : defaults.date;
+  const isoDate = toIsoPlus07(rawDate) || rawDate;
+
+  const candidate = {
+    couple: {
+      groomName:
+        typeof rawCouple.groomName === "string"
+          ? rawCouple.groomName
+          : defaults.couple.groomName,
+      brideName:
+        typeof rawCouple.brideName === "string"
+          ? rawCouple.brideName
+          : defaults.couple.brideName,
+      groomFullName:
+        typeof rawCouple.groomFullName === "string"
+          ? rawCouple.groomFullName
+          : defaults.couple.groomFullName,
+      brideFullName:
+        typeof rawCouple.brideFullName === "string"
+          ? rawCouple.brideFullName
+          : defaults.couple.brideFullName,
+      groomParents:
+        typeof rawCouple.groomParents === "string"
+          ? rawCouple.groomParents
+          : defaults.couple.groomParents,
+      brideParents:
+        typeof rawCouple.brideParents === "string"
+          ? rawCouple.brideParents
+          : defaults.couple.brideParents,
+    },
+    date: isoDate,
+    quote:
+      typeof rawContent.quote === "string" ? rawContent.quote : defaults.quote,
+    heroPhotoId: null,
+    groomPhotoId: null,
+    bridePhotoId: null,
+    gift: isRecord(rawContent.gift) ? rawContent.gift : defaults.gift,
+  };
+
+  const parsed = weddingContentInputSchema.safeParse(candidate);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Nội dung thiệp không hợp lệ.",
+    };
+  }
+
+  return { ok: true, content: parsed.data };
+}
 
 export const GET = authRoute(async (_req, user) => {
   const { data, error } = await db()
@@ -48,6 +119,11 @@ export const POST = authRoute(async (req, user) => {
     templateId = meta.id;
   }
 
+  const contentResult = mergeInitialContent(body?.content);
+  if (!contentResult.ok) {
+    return fail(contentResult.error);
+  }
+
   await ensureUserRecord(user);
 
   const client = db();
@@ -76,7 +152,7 @@ export const POST = authRoute(async (req, user) => {
       slug: slugCheck.slug,
       template_id: templateId,
       plan: "free",
-      content: createDefaultWeddingContent(),
+      content: contentResult.content,
     })
     .select("*")
     .single();

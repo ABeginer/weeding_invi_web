@@ -1,6 +1,6 @@
 "use client";
 
-import { GuestStatus } from "@/lib/types";
+import type { GuestDiet, GuestStatus } from "@/lib/types";
 import { Couple } from "./Couple";
 import { Countdown } from "./Countdown";
 import { EventDetails } from "./EventDetails";
@@ -20,6 +20,8 @@ interface WeddingInvitationContentProps {
   mode?: "personal" | "public";
   guestName?: string;
   initialStatus?: GuestStatus;
+  initialPlusOnes?: number;
+  initialDiet?: GuestDiet | null;
 }
 
 export function WeddingInvitationContent({
@@ -28,6 +30,8 @@ export function WeddingInvitationContent({
   mode = "personal",
   guestName,
   initialStatus = "pending",
+  initialPlusOnes = 0,
+  initialDiet = null,
 }: WeddingInvitationContentProps) {
   return (
     <>
@@ -54,6 +58,8 @@ export function WeddingInvitationContent({
           mode={mode}
           guestName={guestName}
           initialStatus={initialStatus}
+          initialPlusOnes={initialPlusOnes}
+          initialDiet={initialDiet}
         />
         {/* #10 Mừng cưới */}
         <GiftQR />

@@ -28,6 +28,24 @@ export const DELETE = authRoute<Ctx>(async (_req, user, { params }) => {
   const deletedPhoto = photoRow as PhotoRow;
   await deletePhotoObject(deletedPhoto.storage_key);
 
+  if (deletedPhoto.kind === "banner") {
+    const { data: ogRows } = await client
+      .from("photos")
+      .delete()
+      .eq("wedding_id", wedding.id)
+      .eq("kind", "og")
+      .select("storage_key");
+
+    if (ogRows && ogRows.length > 0) {
+      await Promise.allSettled(
+        ogRows
+          .map((row) => (row.storage_key ? String(row.storage_key) : ""))
+          .filter(Boolean)
+          .map((key) => deletePhotoObject(key)),
+      );
+    }
+  }
+
   const currentContent = normalizeWeddingContent(wedding.content);
   const nextContent = {
     ...currentContent,

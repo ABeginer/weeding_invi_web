@@ -1,15 +1,18 @@
 "use client";
 
-import { formatWeddingDateParts } from "@/lib/utils";
+import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
-import { useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
 
-function RingsOrnament() {
+function RingsOrnament({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 92 64"
       aria-hidden="true"
-      className="mx-auto my-10 block h-auto w-[64px] text-inv-olive/75 sm:w-[74px]"
+      className={cn(
+        "mx-auto my-10 block h-auto w-[64px] text-inv-olive/75 sm:w-[74px]",
+        className,
+      )}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.9"
@@ -28,10 +31,26 @@ function RingsOrnament() {
 
 export function EventDetails() {
   const data = useWeddingContent();
+  const isDesktopLayout = useInvitationDesktopLayout();
+  const isMultiColumnDesktop = isDesktopLayout && data.events.length > 1;
 
   return (
-    <RevealSection className="bg-inv-bg px-5 pt-2 pb-14 text-center">
-      <div className="mx-auto max-w-[440px]">
+    <RevealSection
+      className={cn(
+        "bg-inv-bg px-5 pt-2 pb-14 text-center",
+        isDesktopLayout && "md:px-8",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto",
+          isMultiColumnDesktop
+            ? "max-w-[880px] md:grid md:grid-cols-2 md:items-start md:gap-8"
+            : isDesktopLayout && data.events.length === 1
+              ? "max-w-[500px]"
+              : "max-w-[440px]",
+        )}
+      >
         {data.events.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-inv-olive/35 bg-inv-tint/60 px-5 py-8 text-center">
             <p className="font-inv-serif text-sm font-medium text-inv-olive-deep">
@@ -43,7 +62,13 @@ export function EventDetails() {
             const dateParts = formatWeddingDateParts(event.startsAt);
 
             return (
-              <div key={event.id || `${event.title}-${index}`}>
+              <div
+                key={event.id || `${event.title}-${index}`}
+                className={cn(
+                  isMultiColumnDesktop &&
+                    "md:rounded-3xl md:border md:border-inv-olive/20 md:bg-inv-paper/60 md:p-6",
+                )}
+              >
                 <article className="text-center">
                   <h2 className="font-inv-serif text-[18px] leading-[1.2] font-semibold tracking-[0.02em] text-inv-olive-btn uppercase sm:text-[20px]">
                     {event.title}
@@ -107,7 +132,11 @@ export function EventDetails() {
                   )}
                 </article>
 
-                {index < data.events.length - 1 && <RingsOrnament />}
+                {index < data.events.length - 1 && (
+                  <RingsOrnament
+                    className={cn(isMultiColumnDesktop && "md:hidden")}
+                  />
+                )}
               </div>
             );
           })

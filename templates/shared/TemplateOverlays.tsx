@@ -65,7 +65,7 @@ export function TemplateLightboxModal({
       role="dialog"
       aria-modal="true"
       aria-label={`Xem ảnh ${activeIndex + 1} trên ${photos.length}`}
-      className="fixed inset-0 z-50 flex flex-col justify-between bg-[#0B0B0B]/95 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-[#E8DFC8] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex flex-col justify-between bg-[#0B0B0B]/95 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-[#E8DFC8] sm:backdrop-blur-sm"
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0]?.clientX ?? null;
       }}

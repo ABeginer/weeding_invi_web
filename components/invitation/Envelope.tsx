@@ -179,7 +179,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
             : "absolute inset-0 z-40 h-full w-full overflow-hidden"
           : opening
             ? "pointer-events-none fixed inset-y-0 left-1/2 z-50 w-full max-w-[500px] -translate-x-1/2 overflow-hidden"
-            : "fixed inset-y-0 left-1/2 z-50 w-full max-w-[500px] -translate-x-1/2 overflow-hidden"
+            : "fixed inset-y-0 left-1/2 z-50 w-full max-w-[500px] -translate-x-1/2 overflow-hidden md:border-x md:border-inv-olive/15 md:shadow-[0_12px_40px_color-mix(in_srgb,var(--inv-olive-deep)_10%,transparent)]"
       }
       aria-label="Thiệp mời cưới"
     >

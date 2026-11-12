@@ -300,9 +300,9 @@ export function EventsManager({
       </div>
 
       {reachedLimit && (
-        <div className="rounded-xl border border-accent/35 bg-accent-soft px-4 py-3 text-xs text-fg sm:text-sm">
+        <div className="rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-xs text-text sm:text-sm">
           {getEventLimitMessage(plan)}{" "}
-          <Link href="/#bang-gia" className="font-semibold text-accent underline">
+          <Link href="/#bang-gia" className="font-semibold text-text underline">
             Xem bảng giá
           </Link>
         </div>
@@ -310,7 +310,7 @@ export function EventsManager({
 
       {events.length === 0 ? (
         <Card className="p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent-soft text-accent">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/35 bg-accent-soft text-accent-text">
             <CalendarHeart className="h-6 w-6" aria-hidden="true" />
           </div>
           <h3 className="mt-4 font-display text-xl font-semibold text-fg">
@@ -357,14 +357,14 @@ export function EventsManager({
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full border border-accent/35 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent">
+                          <span className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-text">
                             #{index + 1}
                           </span>
                           <h3 className="truncate font-display text-xl font-semibold text-fg">
                             {evt.title}
                           </h3>
                         </div>
-                        <p className="mt-1 text-xs font-medium text-accent">
+                        <p className="mt-1 text-xs font-medium text-accent-text">
                           {dateParts.time} · {dateParts.weekday} · {dateParts.dotDate}
                           {evt.lunarDate ? ` (${evt.lunarDate})` : ""}
                         </p>
@@ -437,7 +437,7 @@ export function EventsManager({
                             href={evt.mapDirectionsUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-accent underline underline-offset-4 hover:text-accent-hover"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-accent-text underline underline-offset-4 hover:text-accent-hover"
                           >
                             <span>Mở link chỉ đường</span>
                             <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -521,7 +521,7 @@ export function EventsManager({
               <button
                 type="button"
                 onClick={() => setMapGuideOpen(true)}
-                className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-accent underline underline-offset-4 hover:text-accent-hover"
+                className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-accent-text underline underline-offset-4 hover:text-accent-hover"
               >
                 <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>Lấy link nhúng từ Google Maps</span>
@@ -593,7 +593,7 @@ export function EventsManager({
               href="https://maps.google.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-accent underline"
+              className="font-medium text-accent-text underline"
             >
               Google Maps
             </a>{" "}
@@ -609,7 +609,7 @@ export function EventsManager({
           <li>
             Dán trực tiếp đoạn mã vừa sao chép vào ô{" "}
             <strong>Link nhúng Google Maps</strong> — hệ thống sẽ tự trích xuất đúng liên kết{" "}
-            <code className="rounded bg-surface-muted px-1 py-0.5 text-xs text-accent">
+            <code className="rounded bg-surface-muted px-1 py-0.5 text-xs text-text">
               https://...
             </code>
             .

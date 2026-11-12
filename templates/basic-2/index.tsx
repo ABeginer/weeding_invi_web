@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Heart, MapPin, Sparkles } from "lucide-react";
+import { GiftFloatingTrigger, GiftModal } from "@/components/invitation/GiftModal";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
@@ -23,11 +24,14 @@ export default function Basic2Template({
   invitationMode = "personal",
   guestName,
   initialStatus = "pending",
+  initialPlusOnes = 0,
+  initialDiet = null,
   externalMusicControl,
 }: WeddingTemplateProps) {
   const prefersReducedMotion = useReducedMotion();
   const [opened, setOpened] = React.useState(isOpenedProp);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+  const [giftOpen, setGiftOpen] = React.useState(false);
 
   React.useEffect(() => {
     setOpened(isOpenedProp);
@@ -58,9 +62,11 @@ export default function Basic2Template({
     <div
       className={cn(
         "relative w-full bg-[#FAF7F0] text-[#1F1D1A] font-sans",
-        contained ? "min-h-full" : "min-h-dvh",
+        contained ? "min-h-full" : "min-h-screen-dvh",
         !opened &&
-          (contained ? "h-full overflow-hidden" : "h-dvh max-h-full overflow-hidden"),
+          (contained
+            ? "h-full overflow-hidden"
+            : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       <AnimatePresence>
@@ -434,6 +440,8 @@ export default function Basic2Template({
           invitationMode={invitationMode}
           guestName={guestName}
           initialStatus={initialStatus}
+          initialPlusOnes={initialPlusOnes}
+          initialDiet={initialDiet}
         />
 
         <footer className="border-t border-[#E2D9C8] bg-[#23201C] px-5 py-10 text-center text-[#FAF7F0]">
@@ -457,11 +465,28 @@ export default function Basic2Template({
         onChangeIndex={setLightboxIndex}
       />
 
+      <GiftFloatingTrigger
+        visible={opened}
+        onClick={() => setGiftOpen(true)}
+        tone="minimal"
+        contained={contained}
+      />
+
+      <GiftModal
+        open={giftOpen}
+        onClose={() => setGiftOpen(false)}
+        gift={data.gift}
+        plan={data.plan}
+        tone="minimal"
+        wishAnchorId="rsvp-wishes"
+      />
+
       {mode === "live" && !externalMusicControl && (
         <LiveMusicFloatingButton
           src={data.music.src}
           title={data.music.title}
           visible={opened}
+          tone="minimal"
         />
       )}
     </div>

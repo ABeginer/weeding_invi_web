@@ -13,6 +13,9 @@ export const FORBIDDEN_WEDDING_SLUGS = new Set([
   "logout",
   "w",
   "m",
+  "mau",
+  "tao-thiep",
+  "media",
   "static",
   "_next",
 ]);

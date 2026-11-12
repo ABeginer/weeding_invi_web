@@ -2,9 +2,14 @@
 
 import * as React from "react";
 import { invitationThemeCssVars } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 import { Envelope } from "./Envelope";
 import { MusicPlayer } from "./MusicPlayer";
-import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
+import {
+  useInvitationContained,
+  useInvitationDesktopLayout,
+  useWeddingContent,
+} from "./WeddingContentProvider";
 
 interface InvitationShellProps {
   guestName?: string | null;
@@ -30,6 +35,8 @@ export function InvitationShell({
   const data = useWeddingContent();
   const contextContained = useInvitationContained();
   const contained = containedProp ?? contextContained;
+  const desktopLayout = useInvitationDesktopLayout();
+  const isDesktopLayout = desktopLayout && !contained;
   const [envelopeDismissed, setEnvelopeDismissed] = React.useState(initialOpened);
   const [isOpened, setIsOpened] = React.useState(initialOpened);
   const [isPlaying, setIsPlaying] = React.useState(false);
@@ -327,8 +334,8 @@ export function InvitationShell({
             ? "invitation-theme relative min-h-full bg-inv-bg text-inv-ink"
             : "invitation-theme relative h-full overflow-hidden bg-inv-bg text-inv-ink"
           : envelopeDismissed
-            ? "invitation-theme relative min-h-dvh bg-inv-bg text-inv-ink"
-            : "invitation-theme relative h-dvh max-h-full overflow-hidden bg-inv-bg text-inv-ink"
+            ? "invitation-theme relative min-h-screen-dvh bg-inv-bg text-inv-ink"
+            : "invitation-theme relative h-screen-dvh max-h-full overflow-hidden bg-inv-bg text-inv-ink"
       }
     >
       {!externalMusicControl && data.music?.src && audioAvailable && (
@@ -362,11 +369,15 @@ export function InvitationShell({
               : isOpened
                 ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300"
                 : "pointer-events-none mx-auto h-full w-full overflow-hidden bg-inv-bg opacity-0"
-            : envelopeDismissed
-              ? "mx-auto min-h-dvh w-full max-w-[500px] overflow-x-clip bg-inv-bg opacity-100 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
-              : isOpened
-                ? "mx-auto min-h-dvh w-full max-w-[500px] overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
-                : "pointer-events-none mx-auto h-dvh w-full max-w-[500px] overflow-hidden bg-inv-bg opacity-0 motion-safe:translate-y-4"
+            : cn(
+                "mx-auto w-full bg-inv-bg",
+                isDesktopLayout ? "max-w-[1040px]" : "max-w-[500px]",
+                envelopeDismissed
+                  ? "min-h-screen-dvh overflow-x-clip opacity-100 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
+                  : isOpened
+                    ? "min-h-screen-dvh overflow-x-clip opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
+                    : "pointer-events-none h-screen-dvh overflow-hidden opacity-0 motion-safe:translate-y-4",
+              )
         }
       >
         {children}

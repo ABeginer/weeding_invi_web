@@ -1,12 +1,17 @@
 import { formatWeddingDateParts } from "./utils";
 import {
+  emptyGiftInfo,
+  GIFT_ACCOUNT_MAX_LENGTH,
+  GIFT_TEXT_MAX_LENGTH,
   NAME_MAX_LENGTH,
   QUOTE_MAX_LENGTH,
   toIsoPlus07,
   type TemplateData,
   type WeddingContent,
   type WeddingEvent,
+  type WeddingGiftInfo,
   type WeddingPhoto,
+  type WeddingPlan,
 } from "./wedding-types";
 
 const DEFAULT_ISO_DATE = "2027-01-01T10:00:00+07:00";
@@ -30,6 +35,24 @@ function nullableUuid(value: unknown): string | null {
     : null;
 }
 
+function normalizeGiftInfo(rawGift: unknown): WeddingGiftInfo {
+  if (!isRecord(rawGift)) return emptyGiftInfo();
+  return {
+    groomBankName: clampString(rawGift.groomBankName, GIFT_TEXT_MAX_LENGTH),
+    groomAccountName: clampString(rawGift.groomAccountName, GIFT_TEXT_MAX_LENGTH),
+    groomAccountNumber: clampString(
+      rawGift.groomAccountNumber,
+      GIFT_ACCOUNT_MAX_LENGTH,
+    ),
+    brideBankName: clampString(rawGift.brideBankName, GIFT_TEXT_MAX_LENGTH),
+    brideAccountName: clampString(rawGift.brideAccountName, GIFT_TEXT_MAX_LENGTH),
+    brideAccountNumber: clampString(
+      rawGift.brideAccountNumber,
+      GIFT_ACCOUNT_MAX_LENGTH,
+    ),
+  };
+}
+
 export function createDefaultWeddingContent(): WeddingContent {
   return {
     couple: {
@@ -45,11 +68,12 @@ export function createDefaultWeddingContent(): WeddingContent {
     heroPhotoId: null,
     groomPhotoId: null,
     bridePhotoId: null,
+    gift: emptyGiftInfo(),
   };
 }
 
 /**
- * Chuẩn hóa `weddings.content` từ dữ liệu v3 hoặc định dạng cũ trước migration_v3.
+ * Chuẩn hóa `weddings.content` từ dữ liệu v3/v4 hoặc định dạng cũ trước migration_v3.
  */
 export function normalizeWeddingContent(raw: unknown): WeddingContent {
   const defaults = createDefaultWeddingContent();
@@ -73,6 +97,7 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
       heroPhotoId: nullableUuid(raw.heroPhotoId),
       groomPhotoId: nullableUuid(raw.groomPhotoId),
       bridePhotoId: nullableUuid(raw.bridePhotoId),
+      gift: normalizeGiftInfo(raw.gift),
     };
   }
 
@@ -110,6 +135,7 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
     heroPhotoId: nullableUuid(raw.heroPhotoId),
     groomPhotoId: nullableUuid(raw.groomPhotoId),
     bridePhotoId: nullableUuid(raw.bridePhotoId),
+    gift: normalizeGiftInfo(raw.gift),
   };
 }
 
@@ -129,6 +155,7 @@ export interface ToTemplateDataInput {
   events: WeddingEvent[];
   photos: WeddingPhoto[];
   templateId?: string;
+  plan?: WeddingPlan;
   weddingSlug?: string;
   uiOverrides?: Partial<TemplateData["ui"]>;
   musicOverrides?: Partial<TemplateData["music"]>;
@@ -143,6 +170,7 @@ export function toTemplateData({
   events,
   photos,
   templateId = "basic-1",
+  plan = "free",
   weddingSlug,
   uiOverrides,
   musicOverrides,
@@ -171,6 +199,15 @@ export function toTemplateData({
       position: p.position,
     }));
 
+  const giftPhotos = photos.filter((p) => p.kind === "gift");
+  const allowQrPhotos = plan !== "free";
+  const groomQrPhoto = allowQrPhotos
+    ? giftPhotos.find((p) => p.position === 0) ?? null
+    : null;
+  const brideQrPhoto = allowQrPhotos
+    ? giftPhotos.find((p) => p.position === 1) ?? null
+    : null;
+
   const sortedEvents = [...events].sort((a, b) => a.position - b.position);
 
   const groomName = content.couple.groomName.trim() || "Chú rể";
@@ -183,6 +220,7 @@ export function toTemplateData({
   return {
     weddingSlug,
     templateId,
+    plan,
     couple: {
       groomName,
       brideName,
@@ -200,6 +238,11 @@ export function toTemplateData({
       groomUrl: groomPhoto?.url ?? null,
       brideUrl: bridePhoto?.url ?? null,
       gallery,
+    },
+    gift: {
+      ...normalizeGiftInfo(content.gift),
+      groomQrUrl: groomQrPhoto?.url ?? null,
+      brideQrUrl: brideQrPhoto?.url ?? null,
     },
     events: sortedEvents,
     music: {

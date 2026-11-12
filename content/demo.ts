@@ -3,6 +3,7 @@ import type {
   WeddingContent,
   WeddingEvent,
   WeddingPhoto,
+  WeddingPlan,
 } from "@/lib/types";
 import { toTemplateData } from "@/lib/wedding-data";
 import { getTemplateMeta } from "@/templates/registry";
@@ -49,7 +50,13 @@ const DEMO_PORTRAITS: WeddingPhoto[] = [
   { id: "demo-bride", kind: "couple", url: "/photos/portrait_cd.jpg", position: 1 },
 ];
 
+const DEMO_GIFT_QR_PHOTOS: WeddingPhoto[] = [
+  { id: "demo-gift-groom", kind: "gift", url: "/images/gift-qr.png", position: 0 },
+  { id: "demo-gift-bride", kind: "gift", url: "/images/gift-qr.png", position: 1 },
+];
+
 interface DemoPreset {
+  plan: WeddingPlan;
   content: WeddingContent;
   heroUrl: string;
   eyebrow: string;
@@ -60,6 +67,7 @@ interface DemoPreset {
 
 const DEMO_PRESETS: Record<string, DemoPreset> = {
   "basic-1": {
+    plan: "free",
     heroUrl: "/photos/hero2.jpg",
     eyebrow: "Save The Date",
     heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
@@ -81,9 +89,18 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       heroPhotoId: "demo-hero",
       groomPhotoId: "demo-groom",
       bridePhotoId: "demo-bride",
+      gift: {
+        groomBankName: "Vietcombank",
+        groomAccountName: "NGUYEN MINH KHOI",
+        groomAccountNumber: "0123456789 (Minh họa)",
+        brideBankName: "Techcombank",
+        brideAccountName: "TRAN THAO NGUYEN",
+        brideAccountNumber: "9876543210 (Minh họa)",
+      },
     },
   },
   "basic-2": {
+    plan: "free",
     heroUrl: "/photos/1.jpg",
     eyebrow: "Wedding Invitation",
     heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
@@ -105,9 +122,18 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       heroPhotoId: "demo-hero",
       groomPhotoId: "demo-groom",
       bridePhotoId: "demo-bride",
+      gift: {
+        groomBankName: "MB Bank",
+        groomAccountName: "LE GIA HUY",
+        groomAccountNumber: "1900202701 (Minh họa)",
+        brideBankName: "ACB",
+        brideAccountName: "DOAN NGOC HAN",
+        brideAccountNumber: "6868202702 (Minh họa)",
+      },
     },
   },
   "basic-3": {
+    plan: "free",
     heroUrl: "/photos/3.jpg",
     eyebrow: "Sunset Vows",
     heroSubtitle: "Hân hạnh đón tiếp trong buổi chiều chung vui",
@@ -129,9 +155,18 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       heroPhotoId: "demo-hero",
       groomPhotoId: "demo-groom",
       bridePhotoId: "demo-bride",
+      gift: {
+        groomBankName: "VPBank",
+        groomAccountName: "PHAM HOANG VIET",
+        groomAccountNumber: "3366202701 (Minh họa)",
+        brideBankName: "BIDV",
+        brideAccountName: "VU KHANH LINH",
+        brideAccountNumber: "1188202702 (Minh họa)",
+      },
     },
   },
   "pro-1": {
+    plan: "pro",
     heroUrl: "/photos/5.jpg",
     eyebrow: "Evening Gala",
     heroSubtitle: "Trân trọng đón tiếp trong đêm tiệc thành hôn ánh kim",
@@ -153,6 +188,14 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       heroPhotoId: "demo-hero",
       groomPhotoId: "demo-groom",
       bridePhotoId: "demo-bride",
+      gift: {
+        groomBankName: "Vietcombank",
+        groomAccountName: "HO TUAN KIET",
+        groomAccountNumber: "9999202701 (Minh họa)",
+        brideBankName: "Techcombank",
+        brideAccountName: "NGO LAN ANH",
+        brideAccountNumber: "8888202702 (Minh họa)",
+      },
     },
   },
 };
@@ -168,10 +211,12 @@ export function getDemoTemplateData(
     { id: "demo-hero", kind: "banner", url: preset.heroUrl, position: 0 },
     ...DEMO_PORTRAITS,
     ...DEMO_GALLERY_PHOTOS,
+    ...(preset.plan !== "free" ? DEMO_GIFT_QR_PHOTOS : []),
   ];
 
   return toTemplateData({
     templateId: key,
+    plan: preset.plan,
     content: preset.content,
     events: DEMO_EVENTS,
     photos,

@@ -2,9 +2,12 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { formatWeddingDateParts } from "@/lib/utils";
+import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
-import { useWeddingContent } from "./WeddingContentProvider";
+import {
+  useInvitationDesktopLayout,
+  useWeddingContent,
+} from "./WeddingContentProvider";
 
 interface HeroProps {
   guestName?: string | null;
@@ -12,6 +15,7 @@ interface HeroProps {
 
 export function Hero({ guestName }: HeroProps) {
   const data = useWeddingContent();
+  const isDesktopLayout = useInvitationDesktopLayout();
   const prefersReducedMotion = useReducedMotion();
   const [mounted, setMounted] = React.useState(false);
   const primaryEvent = data.events[0];
@@ -27,7 +31,13 @@ export function Hero({ guestName }: HeroProps) {
   const reducedMotion = mounted && Boolean(prefersReducedMotion);
 
   return (
-    <section className="relative mx-auto w-full bg-inv-bg px-4 pt-10 pb-4 text-center sm:px-6 sm:pt-12 sm:pb-6">
+    <section
+      className={cn(
+        "relative mx-auto w-full bg-inv-bg px-4 pt-10 pb-4 text-center sm:px-6 sm:pt-12 sm:pb-6",
+        isDesktopLayout &&
+        "md:grid md:grid-cols-12 md:items-center md:gap-10 md:px-8 md:pt-14 md:pb-12 md:text-left",
+      )}
+    >
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
@@ -36,7 +46,7 @@ export function Hero({ guestName }: HeroProps) {
             ? { duration: 0.01 }
             : { duration: 0.7, ease: [0.22, 1, 0.36, 1] }
         }
-        className="space-y-4"
+        className={cn("space-y-4", isDesktopLayout && "md:col-span-6")}
       >
         <p className="font-inv-serif text-xs font-medium uppercase tracking-[0.28em] text-inv-olive-btn">
           {data.ui.eyebrow}
@@ -49,7 +59,12 @@ export function Hero({ guestName }: HeroProps) {
           </p>
         )}
 
-        <h1 className="font-inv-serif text-[clamp(30px,8vw,40px)] leading-[1.18] font-semibold tracking-tight text-inv-olive-deep">
+        <h1
+          className={cn(
+            "font-inv-serif text-[clamp(30px,8vw,40px)] leading-[1.18] font-semibold tracking-tight text-inv-olive-deep",
+            isDesktopLayout && "md:text-[clamp(36px,4.2vw,52px)] md:leading-[1.12]",
+          )}
+        >
           {data.couple.groomName}
           <span className="ml-1.5 mr-4 inline-block font-inv-script text-[1.12em] font-normal text-inv-olive-btn">
             &amp;
@@ -57,7 +72,12 @@ export function Hero({ guestName }: HeroProps) {
           {data.couple.brideName}
         </h1>
 
-        <p className="mx-auto max-w-md font-inv-serif text-sm leading-relaxed text-inv-text sm:text-[15px]">
+        <p
+          className={cn(
+            "max-w-md font-inv-serif text-sm leading-relaxed text-inv-text sm:text-[15px]",
+            isDesktopLayout ? "mx-auto md:mx-0 md:text-base" : "mx-auto",
+          )}
+        >
           {data.ui.heroSubtitle}
         </p>
 
@@ -78,7 +98,10 @@ export function Hero({ guestName }: HeroProps) {
             ? { duration: 0.01 }
             : { duration: 0.8, delay: 0.12, ease: [0.22, 1, 0.36, 1] }
         }
-        className="mx-auto mt-7 w-full max-w-[420px] overflow-hidden rounded-[28px] border border-inv-olive/30 bg-inv-bg p-2.5 shadow-[var(--shadow-soft)]"
+        className={cn(
+          "mx-auto mt-7 w-full max-w-[420px] overflow-hidden rounded-[28px] border border-inv-olive/30 bg-inv-bg p-2.5 shadow-[var(--shadow-soft)]",
+          isDesktopLayout && "md:col-span-6 md:mt-0 md:max-w-none",
+        )}
       >
         <div className="overflow-hidden rounded-[20px] bg-inv-tint">
           {data.photos.heroUrl ? (
@@ -88,7 +111,10 @@ export function Hero({ guestName }: HeroProps) {
               width={600}
               height={900}
               fetchPriority="high"
-              className="block h-auto w-full object-cover"
+              className={cn(
+                "block h-auto w-full object-cover",
+                isDesktopLayout && "md:aspect-[3/4] md:object-[center_20%]",
+              )}
             />
           ) : (
             <TemplatePhotoPlaceholder />

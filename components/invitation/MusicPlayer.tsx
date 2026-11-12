@@ -35,7 +35,7 @@ export function MusicPlayer({
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg",
           isPlaying
             ? "border-white/70 bg-inv-olive-btn text-white shadow-[0_6px_18px_color-mix(in_srgb,var(--inv-olive-deep)_34%,transparent)] hover:bg-inv-olive-hover"
-            : "border-inv-olive/40 bg-inv-cream/95 text-inv-olive-deep shadow-md backdrop-blur-sm hover:bg-inv-tint",
+            : "border-inv-olive/40 bg-inv-cream text-inv-olive-deep shadow-md sm:bg-inv-cream/95 sm:backdrop-blur-sm hover:bg-inv-tint",
         )}
       >
         {isPlaying ? (

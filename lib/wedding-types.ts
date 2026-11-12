@@ -1,17 +1,28 @@
 import { z } from "zod";
 
 export type WeddingPlan = "free" | "pro" | "vip";
-export type PhotoKind = "banner" | "couple" | "gallery";
-export type PhotoSlot = "hero" | "groom" | "bride";
+export type PhotoKind = "banner" | "couple" | "gallery" | "og" | "gift";
+export type PhotoSlot = "hero" | "groom" | "bride" | "og" | "gift-groom" | "gift-bride";
 export type TemplateMode = "demo" | "preview" | "live";
 
 export const NAME_MAX_LENGTH = 60;
 export const QUOTE_MAX_LENGTH = 200;
+export const GIFT_TEXT_MAX_LENGTH = 80;
+export const GIFT_ACCOUNT_MAX_LENGTH = 40;
 export const EVENT_TITLE_MAX_LENGTH = 120;
 export const EVENT_LUNAR_MAX_LENGTH = 60;
 export const EVENT_VENUE_MAX_LENGTH = 120;
 export const EVENT_ADDRESS_MAX_LENGTH = 300;
 export const EVENT_URL_MAX_LENGTH = 2000;
+
+export type WeddingGiftInfo = {
+  groomBankName: string;
+  groomAccountName: string;
+  groomAccountNumber: string;
+  brideBankName: string;
+  brideAccountName: string;
+  brideAccountNumber: string;
+};
 
 export type WeddingContent = {
   couple: {
@@ -27,6 +38,7 @@ export type WeddingContent = {
   heroPhotoId: string | null;
   groomPhotoId: string | null;
   bridePhotoId: string | null;
+  gift: WeddingGiftInfo;
 };
 
 export type WeddingEvent = {
@@ -58,6 +70,7 @@ export type TemplatePhotoItem = {
 export type TemplateData = {
   weddingSlug?: string;
   templateId: string;
+  plan: WeddingPlan;
   couple: {
     groomName: string;
     brideName: string;
@@ -75,6 +88,10 @@ export type TemplateData = {
     groomUrl: string | null;
     brideUrl: string | null;
     gallery: TemplatePhotoItem[];
+  };
+  gift: WeddingGiftInfo & {
+    groomQrUrl: string | null;
+    brideQrUrl: string | null;
   };
   events: WeddingEvent[];
   music: {
@@ -130,7 +147,6 @@ export function toIsoPlus07(raw: string): string {
     return trimmed;
   }
 
-  // YYYY-MM-DDTHH:mm hoặc YYYY-MM-DDTHH:mm:ss
   const localMatch = trimmed.match(
     /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::(\d{2}))?$/,
   );
@@ -139,14 +155,12 @@ export function toIsoPlus07(raw: string): string {
     return !Number.isNaN(Date.parse(candidate)) ? candidate : "";
   }
 
-  // YYYY-MM-DD
   const dateOnlyMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})$/);
   if (dateOnlyMatch) {
     const candidate = `${dateOnlyMatch[1]}T10:00:00+07:00`;
     return !Number.isNaN(Date.parse(candidate)) ? candidate : "";
   }
 
-  // Timestamptz ISO khác (vd UTC `Z` hoặc offset khác) -> chuyển về giờ Việt Nam (+07:00)
   const parsedMs = Date.parse(trimmed);
   if (!Number.isNaN(parsedMs)) {
     const vnMs = parsedMs + 7 * 60 * 60 * 1000;
@@ -187,8 +201,41 @@ export function isValidHttpsUrl(raw: string): boolean {
 }
 
 const uuidOrNullSchema = z
-  .union([z.string().uuid("Mã ảnh không hợp lệ."), z.literal(""), z.null()])
-  .transform((val) => (val && val.length > 0 ? val : null));
+  .union([z.string().uuid("Mã ảnh không hợp lệ."), z.literal(""), z.null(), z.undefined()])
+  .transform((val) => (typeof val === "string" && val.length > 0 ? val : null));
+
+const giftTextFieldSchema = (label: string, maxLength = GIFT_TEXT_MAX_LENGTH) =>
+  z
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((val) => (typeof val === "string" ? val.trim() : ""))
+    .refine(
+      (val) => val.length <= maxLength,
+      `${label} tối đa ${maxLength} ký tự.`,
+    );
+
+export const weddingGiftInputSchema = z.object({
+  groomBankName: giftTextFieldSchema("Ngân hàng nhà trai"),
+  groomAccountName: giftTextFieldSchema("Tên tài khoản nhà trai"),
+  groomAccountNumber: giftTextFieldSchema(
+    "Số tài khoản nhà trai",
+    GIFT_ACCOUNT_MAX_LENGTH,
+  ),
+  brideBankName: giftTextFieldSchema("Ngân hàng nhà gái"),
+  brideAccountName: giftTextFieldSchema("Tên tài khoản nhà gái"),
+  brideAccountNumber: giftTextFieldSchema(
+    "Số tài khoản nhà gái",
+    GIFT_ACCOUNT_MAX_LENGTH,
+  ),
+});
+
+export const emptyGiftInfo = (): WeddingGiftInfo => ({
+  groomBankName: "",
+  groomAccountName: "",
+  groomAccountNumber: "",
+  brideBankName: "",
+  brideAccountName: "",
+  brideAccountNumber: "",
+});
 
 export const weddingContentInputSchema = z.object({
   couple: z.object({
@@ -234,6 +281,7 @@ export const weddingContentInputSchema = z.object({
   heroPhotoId: uuidOrNullSchema,
   groomPhotoId: uuidOrNullSchema,
   bridePhotoId: uuidOrNullSchema,
+  gift: weddingGiftInputSchema.optional().transform((val) => val ?? emptyGiftInfo()),
 });
 
 export const weddingContentPatchSchema = z.object({
@@ -314,4 +362,3 @@ export const guestEventsInputSchema = z.object({
     .array(z.string().uuid("Mã lễ không hợp lệ."))
     .max(100, "Số lễ gán vượt quá giới hạn."),
 });
-

@@ -282,6 +282,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
     if (!wedding || !draftContent) return null;
     return toTemplateData({
       templateId: draftTemplateId,
+      plan: wedding.plan,
       weddingSlug: wedding.slug,
       content: draftContent,
       events,
@@ -334,7 +335,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             Xem trước thiệp
           </span>
           {isDirty && (
-            <span className="rounded-full border border-accent/45 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent">
+            <span className="rounded-full border border-accent/45 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-text">
               Chưa lưu
             </span>
           )}
@@ -345,7 +346,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             setPreviewOpened((prev) => !prev);
             phoneScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
           }}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1 text-xs font-medium text-fg transition-colors hover:border-accent hover:text-accent"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1 text-xs font-medium text-fg transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
           <span>{previewOpened ? "Đóng bì thư" : "Mở xem nội dung"}</span>
@@ -382,7 +383,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
         <div className="space-y-1.5">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted transition-colors hover:text-accent sm:text-sm"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted transition-colors hover:text-accent-text sm:text-sm"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Tất cả thiệp cưới</span>
@@ -391,18 +392,27 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             <h1 className="font-display text-3xl font-semibold text-fg sm:text-4xl">
               {draftContent.couple.groomName} &amp; {draftContent.couple.brideName}
             </h1>
-            <span className="rounded-full border border-accent/35 bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
+            <span
+              className={cn(
+                "rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                wedding.plan === "free" && "border-sage bg-surface text-text",
+                wedding.plan === "pro" &&
+                  "border-accent bg-accent text-accent-fg font-semibold",
+                wedding.plan === "vip" &&
+                  "border-vip-border bg-vip-bg text-vip-fg font-semibold",
+              )}
+            >
               Gói {getPlanLabel(wedding.plan)}
             </span>
             {isDirty && (
-              <span className="rounded-full border border-accent/50 bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
+              <span className="rounded-full border border-accent/50 bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-text">
                 Chưa lưu thay đổi
               </span>
             )}
           </div>
           <p className="text-xs text-fg-muted sm:text-sm">
             Đường dẫn chung:{" "}
-            <code className="rounded bg-surface px-1.5 py-0.5 text-accent">
+            <code className="rounded bg-surface px-1.5 py-0.5 text-accent-text">
               /w/{wedding.slug}
             </code>
           </p>
@@ -421,7 +431,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             href={`/w/${wedding.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent-text"
           >
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Xem thiệp live</span>
@@ -447,7 +457,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                   className={cn(
                     "inline-flex cursor-pointer items-center gap-2 border-b-2 px-3.5 py-3 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm",
                     active
-                      ? "border-accent text-accent"
+                      ? "border-accent text-accent-text"
                       : "border-transparent text-fg-muted hover:border-border hover:text-fg",
                   )}
                 >
@@ -513,6 +523,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               wedding={wedding}
               draftContent={draftContent}
               draftTemplateId={draftTemplateId}
+              photos={photos}
               isDirty={isDirty}
               saving={savingInfo}
               saveError={saveError}
@@ -522,6 +533,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                 setDraftTemplateId(tplId);
                 setPreviewOpened(false);
               }}
+              onPhotosStateChange={handlePhotosStateChange}
               onSave={handleSaveInfo}
               onResetDraft={handleResetDraft}
               onDeleted={() => router.replace("/dashboard")}

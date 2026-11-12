@@ -24,38 +24,38 @@ export function PhoneFrame({
       className={cn(
         "relative mx-auto w-full max-w-[416px] select-none",
         enableFloat && "lnd-phone-float",
-        className
+        className,
       )}
     >
       {/* Khung viền kim loại CSS thuần — không dùng ảnh thiết bị thật */}
       <div
         role="region"
         aria-label={LANDING_COPY.hero.phoneFrameAriaLabel}
-        className="relative rounded-[46px] border border-lnd-phone-highlight bg-gradient-to-b from-lnd-phone-highlight via-lnd-phone-bezel to-lnd-phone-chassis p-[11px] shadow-[0_28px_70px_-18px_rgba(0,0,0,0.9),0_0_0_1px_rgba(212,175,55,0.12)] sm:p-[12px]"
+        className="relative rounded-[46px] border border-phone-highlight bg-gradient-to-b from-phone-highlight via-phone-bezel to-phone-chassis p-[11px] shadow-2xl sm:p-[12px]"
       >
         {/* Nút bấm vật lý trang trí hai bên khung */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-24 -left-[3px] hidden h-9 w-[3px] rounded-l bg-lnd-phone-highlight sm:block"
+          className="pointer-events-none absolute top-24 -left-[3px] hidden h-9 w-[3px] rounded-l bg-phone-highlight sm:block"
         />
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-36 -left-[3px] hidden h-12 w-[3px] rounded-l bg-lnd-phone-highlight sm:block"
+          className="pointer-events-none absolute top-36 -left-[3px] hidden h-12 w-[3px] rounded-l bg-phone-highlight sm:block"
         />
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-28 -right-[3px] hidden h-14 w-[3px] rounded-r bg-lnd-phone-highlight sm:block"
+          className="pointer-events-none absolute top-28 -right-[3px] hidden h-14 w-[3px] rounded-r bg-phone-highlight sm:block"
         />
 
         {/* Màn hình 390x844 bên trong (tự co tỉ lệ khi màn nhỏ hơn 414px) */}
-        <div className="relative overflow-hidden rounded-[36px] border border-lnd-border bg-lnd-bg">
+        <div className="relative overflow-hidden rounded-[36px] border border-phone-bezel bg-surface">
           {/* Tai thỏ / Notch đơn giản */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute top-2 left-1/2 z-50 flex h-[22px] w-[108px] -translate-x-1/2 items-center justify-center rounded-full border border-lnd-border bg-lnd-phone-notch shadow-sm"
+            className="pointer-events-none absolute top-2 left-1/2 z-50 flex h-[22px] w-[108px] -translate-x-1/2 items-center justify-center rounded-full border border-phone-bezel bg-phone-notch shadow-sm"
           >
-            <span className="h-1.5 w-10 rounded-full bg-lnd-phone-bezel" />
-            <span className="ml-2 h-2 w-2 rounded-full bg-lnd-phone-highlight" />
+            <span className="h-1.5 w-10 rounded-full bg-phone-bezel" />
+            <span className="ml-2 h-2 w-2 rounded-full bg-phone-highlight" />
           </div>
 
           {/* Vùng cuộn thực tế bên trong khung */}
@@ -65,8 +65,8 @@ export function PhoneFrame({
             aria-label={LANDING_COPY.hero.phoneHelperHint}
             style={{ transform: "translate3d(0,0,0)" }}
             className={cn(
-              "lnd-phone-scroll relative aspect-[390/844] w-full overflow-x-hidden overscroll-contain pt-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lnd-gold",
-              lockedScroll ? "overflow-y-hidden" : "overflow-y-auto"
+              "lnd-phone-scroll relative aspect-[390/844] w-full overflow-x-hidden overscroll-contain pt-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring",
+              lockedScroll ? "overflow-y-hidden" : "overflow-y-auto",
             )}
           >
             {children}
@@ -77,11 +77,10 @@ export function PhoneFrame({
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 bottom-1.5 z-50 flex justify-center"
           >
-            <span className="h-1 w-28 rounded-full bg-lnd-phone-highlight/90" />
+            <span className="h-1 w-28 rounded-full bg-phone-highlight/90" />
           </div>
         </div>
       </div>
     </div>
   );
 }
-

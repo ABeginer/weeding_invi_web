@@ -1,5 +1,6 @@
 import type {
   Guest,
+  GuestDiet,
   GuestStatus,
   PhotoKind,
   Wedding,
@@ -29,6 +30,8 @@ export interface GuestRow {
   name: string;
   slug: string;
   status: GuestStatus;
+  plus_ones?: number | null;
+  diet?: GuestDiet | null;
   responded_at: string | null;
   created_at: string;
 }
@@ -85,6 +88,11 @@ export function toGuest(row: GuestRow, eventIds?: string[]): Guest {
     name: row.name,
     slug: row.slug,
     status: row.status,
+    plusOnes:
+      typeof row.plus_ones === "number" && Number.isFinite(row.plus_ones)
+        ? Math.max(0, row.plus_ones)
+        : 0,
+    diet: row.diet === "meat" || row.diet === "veg" ? row.diet : null,
     respondedAt: row.responded_at,
     createdAt: row.created_at,
     ...(eventIds !== undefined ? { eventIds } : {}),

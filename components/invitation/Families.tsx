@@ -1,7 +1,8 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
-import { useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
 
 function renderParentLines(parents: string) {
   if (!parents.trim()) {
@@ -50,19 +51,35 @@ function HandDrawnHeart() {
 
 export function Families() {
   const data = useWeddingContent();
+  const isDesktopLayout = useInvitationDesktopLayout();
   const { groomParents, brideParents } = data.couple;
   const hasParents = Boolean(groomParents || brideParents);
 
   return (
-    <RevealSection className="bg-inv-bg px-4 pt-8 pb-3 text-center sm:px-6">
+    <RevealSection
+      className={cn(
+        "bg-inv-bg px-4 pt-8 pb-3 text-center sm:px-6",
+        isDesktopLayout && "md:border-t md:border-inv-olive/15 md:px-8 md:pt-10",
+      )}
+    >
       {data.quote && (
-        <blockquote className="mx-auto mb-7 max-w-[420px] font-inv-quote text-[21px] leading-[1.4] text-inv-text sm:text-[23px]">
+        <blockquote
+          className={cn(
+            "mx-auto mb-7 max-w-[420px] font-inv-quote text-[21px] leading-[1.4] text-inv-text sm:text-[23px]",
+            isDesktopLayout && "md:max-w-[580px] md:text-2xl",
+          )}
+        >
           “{data.quote}”
         </blockquote>
       )}
 
       {hasParents && (
-        <div className="grid grid-cols-2 gap-3 sm:gap-5">
+        <div
+          className={cn(
+            "grid grid-cols-2 gap-3 sm:gap-5",
+            isDesktopLayout && "mx-auto max-w-[680px] md:gap-8",
+          )}
+        >
           <div className="min-w-0">
             <h2 className="mb-2 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
               NHÀ TRAI

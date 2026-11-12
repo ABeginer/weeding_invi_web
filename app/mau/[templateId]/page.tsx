@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { TemplateDemoViewer } from "@/components/demo/template-demo-viewer";
 import { SITE_NAME } from "@/config/site";
 import { getAuth0 } from "@/lib/auth0";
 import { getTemplateMeta } from "@/templates/registry";
-import { TemplateDemoViewer } from "@/components/demo/template-demo-viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -38,13 +38,27 @@ export default async function TemplateDemoPage({ params }: PageProps) {
   }
 
   let isAuthenticated = false;
+  let userEmail: string | null = null;
   try {
     const session = await getAuth0().getSession();
     isAuthenticated = Boolean(session);
+    if (session?.user) {
+      const userObj = session.user as Record<string, unknown>;
+      const rawEmail = userObj.email ?? userObj["https://thiepcuoi/email"];
+      if (typeof rawEmail === "string" && rawEmail.trim()) {
+        userEmail = rawEmail.trim();
+      }
+    }
   } catch {
     isAuthenticated = false;
+    userEmail = null;
   }
 
-  return <TemplateDemoViewer template={tpl} isAuthenticated={isAuthenticated} />;
+  return (
+    <TemplateDemoViewer
+      template={tpl}
+      isAuthenticated={isAuthenticated}
+      userEmail={userEmail}
+    />
+  );
 }
-

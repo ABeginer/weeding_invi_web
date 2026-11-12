@@ -1,22 +1,27 @@
 import * as React from "react";
 import Link from "next/link";
 import { LANDING_COPY } from "@/config/landing";
-import { SITE_COPYRIGHT, SITE_EMAIL, SITE_LINKS, SITE_NAME } from "@/config/site";
+import {
+  SITE_COPYRIGHT,
+  SITE_EMAIL,
+  SITE_LINKS,
+  SITE_NAME,
+} from "@/config/site";
 
 export function LandingFooter() {
   const copy = LANDING_COPY.footer;
 
   return (
-    <footer className="bg-lnd-bg py-10 text-lnd-muted">
+    <footer className="bg-bg py-10 text-text-muted">
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-5 px-4 sm:flex-row sm:items-center sm:px-6">
         <div>
           <Link
             href={SITE_LINKS.home}
-            className="font-display text-2xl font-semibold text-lnd-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="font-display text-2xl font-semibold text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {SITE_NAME}
           </Link>
-          <p className="mt-1 text-xs text-lnd-muted">{SITE_COPYRIGHT}</p>
+          <p className="mt-1 text-xs text-text-muted">{SITE_COPYRIGHT}</p>
         </div>
 
         <nav
@@ -25,19 +30,19 @@ export function LandingFooter() {
         >
           <Link
             href={SITE_LINKS.privacy}
-            className="text-lnd-body transition-colors hover:text-lnd-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {copy.privacyLabel}
           </Link>
           <Link
             href={SITE_LINKS.terms}
-            className="text-lnd-body transition-colors hover:text-lnd-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {copy.termsLabel}
           </Link>
           <a
             href={`mailto:${SITE_EMAIL}`}
-            className="text-lnd-muted transition-colors hover:text-lnd-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+            className="text-text-muted transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {copy.contactPrefix} {SITE_EMAIL}
           </a>
@@ -46,4 +51,3 @@ export function LandingFooter() {
     </footer>
   );
 }
-

@@ -1,6 +1,8 @@
 import { getAccessToken } from "@auth0/nextjs-auth0";
+import type { BrandThemeMode } from "./brand-theme";
 import type {
   Guest,
+  GuestDiet,
   InviteResponse,
   PhotoKind,
   PhotoSlot,
@@ -167,31 +169,65 @@ export async function getPublicWedding(
   }
 }
 
+export async function checkWeddingSlugAvailability(slug: string): Promise<{
+  valid: boolean;
+  available: boolean;
+  error?: string;
+}> {
+  return request<{ valid: boolean; available: boolean; error?: string }>(
+    `/api/weddings/check-slug?slug=${encodeURIComponent(slug)}`,
+  );
+}
+
 export interface SubmitRsvpInput {
   slug?: string;
   weddingSlug?: string;
   name?: string;
   status: "accepted" | "declined";
+  plusOnes?: number;
+  diet?: GuestDiet | null;
+  wish?: string;
+  turnstileToken?: string;
   website?: string;
 }
 
 export interface SubmitRsvpResponse {
   ok: boolean;
   slug?: string;
+  wishSaved?: boolean;
 }
 
 export async function submitRsvp(
   slug: string,
   status: "accepted" | "declined",
+  extras?: {
+    plusOnes?: number;
+    diet?: GuestDiet | null;
+    wish?: string;
+    turnstileToken?: string;
+  },
 ): Promise<SubmitRsvpResponse>;
 export async function submitRsvp(input: SubmitRsvpInput): Promise<SubmitRsvpResponse>;
 export async function submitRsvp(
   slugOrInput: string | SubmitRsvpInput,
   status?: "accepted" | "declined",
+  extras?: {
+    plusOnes?: number;
+    diet?: GuestDiet | null;
+    wish?: string;
+    turnstileToken?: string;
+  },
 ): Promise<SubmitRsvpResponse> {
   const payload =
     typeof slugOrInput === "string"
-      ? { slug: slugOrInput, status }
+      ? {
+          slug: slugOrInput,
+          status,
+          ...(extras?.plusOnes !== undefined ? { plusOnes: extras.plusOnes } : {}),
+          ...(extras?.diet !== undefined ? { diet: extras.diet } : {}),
+          ...(extras?.wish ? { wish: extras.wish } : {}),
+          ...(extras?.turnstileToken ? { turnstileToken: extras.turnstileToken } : {}),
+        }
       : slugOrInput;
   return request<SubmitRsvpResponse>("/api/rsvp", post(payload));
 }
@@ -201,6 +237,7 @@ export async function submitWish(input: {
   weddingSlug?: string;
   name: string;
   message: string;
+  turnstileToken?: string;
   website?: string;
 }): Promise<void> {
   await request("/api/wishes", post(input));
@@ -208,6 +245,12 @@ export async function submitWish(input: {
 
 export function syncMe(): Promise<UserProfile> {
   return authRequest("/api/me", { method: "POST" });
+}
+
+export function updateMyTheme(
+  theme: BrandThemeMode,
+): Promise<{ theme: BrandThemeMode }> {
+  return authRequest("/api/me/theme", patch({ theme }));
 }
 
 export function listWeddings(): Promise<Wedding[]> {
@@ -221,6 +264,7 @@ export function getWedding(weddingId: string): Promise<WeddingDetail> {
 export function createWedding(input: {
   slug: string;
   templateId: string;
+  content?: Partial<WeddingContent>;
 }): Promise<Wedding> {
   return authRequest("/api/weddings", post(input));
 }

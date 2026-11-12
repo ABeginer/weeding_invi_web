@@ -2,15 +2,25 @@ import { SLUG_RE } from "./http";
 import { db } from "./supabase";
 import { normalizeWeddingContent } from "../wedding-data";
 import { validateWeddingSlug } from "../wedding-slug";
-import type { WeddingContent, WeddingEvent, WeddingPhoto } from "../types";
+import type {
+  WeddingContent,
+  WeddingEvent,
+  WeddingPhoto,
+  WeddingPlan,
+} from "../types";
 import { getGuestVisibleEvents, listWeddingEvents, listWeddingPhotos } from "./weddings";
 
 export interface PublicWeddingData {
   slug: string;
   templateId: string;
+  plan: WeddingPlan;
   content: WeddingContent;
   events: WeddingEvent[];
   photos: WeddingPhoto[];
+}
+
+export interface PublicGuestWeddingData extends PublicWeddingData {
+  guestName: string;
 }
 
 export async function getPublicWeddingBySlug(
@@ -21,7 +31,7 @@ export async function getPublicWeddingBySlug(
 
   const { data, error } = await db()
     .from("weddings")
-    .select("id, slug, template_id, content")
+    .select("id, slug, template_id, plan, content")
     .eq("slug", slugCheck.slug)
     .maybeSingle();
 
@@ -36,6 +46,7 @@ export async function getPublicWeddingBySlug(
   return {
     slug: data.slug,
     templateId: data.template_id,
+    plan: (data.plan as WeddingPlan) ?? "free",
     content: normalizeWeddingContent(data.content),
     events,
     photos,
@@ -44,13 +55,13 @@ export async function getPublicWeddingBySlug(
 
 export async function getPublicWeddingByGuestSlug(
   guestSlug: string,
-): Promise<PublicWeddingData | null> {
+): Promise<PublicGuestWeddingData | null> {
   if (!SLUG_RE.test(guestSlug)) return null;
 
   const client = db();
   const { data: guest, error: guestError } = await client
     .from("guests")
-    .select("id, wedding_id")
+    .select("id, wedding_id, name")
     .eq("slug", guestSlug)
     .maybeSingle();
 
@@ -59,7 +70,7 @@ export async function getPublicWeddingByGuestSlug(
 
   const { data: wedding, error: weddingError } = await client
     .from("weddings")
-    .select("id, slug, template_id, content")
+    .select("id, slug, template_id, plan, content")
     .eq("id", guest.wedding_id)
     .maybeSingle();
 
@@ -74,8 +85,10 @@ export async function getPublicWeddingByGuestSlug(
   return {
     slug: wedding.slug,
     templateId: wedding.template_id,
+    plan: (wedding.plan as WeddingPlan) ?? "free",
     content: normalizeWeddingContent(wedding.content),
     events,
     photos,
+    guestName: guest.name,
   };
 }

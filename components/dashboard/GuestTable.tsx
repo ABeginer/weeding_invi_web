@@ -8,6 +8,7 @@ import {
   Check,
   Copy,
   ExternalLink,
+  MessageSquareShare,
   Pencil,
   Plus,
   Search,
@@ -16,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import { getPlanLabel, getPlanLimits } from "@/config/plans";
+import { buildInviteShareMessage } from "@/config/share-templates";
 import {
   ApiError,
   buildGuestLink,
@@ -67,6 +69,7 @@ export function GuestTable({
   const [addOpen, setAddOpen] = React.useState(false);
   const [bulkOpen, setBulkOpen] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [copiedInviteId, setCopiedInviteId] = React.useState<string | null>(null);
 
   const [editingGuest, setEditingGuest] = React.useState<Guest | null>(null);
   const [editName, setEditName] = React.useState("");
@@ -160,6 +163,50 @@ export function GuestTable({
     window.setTimeout(() => {
       setCopiedId((prev) => (prev === guest.id ? null : prev));
     }, 1800);
+  };
+
+  const handleCopyInvite = async (guest: Guest) => {
+    const message = buildInviteShareMessage(guest.name, buildGuestLink(guest.slug));
+    try {
+      await navigator.clipboard.writeText(message);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = message;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedInviteId(guest.id);
+    showToast(`Đã sao chép lời mời cho "${guest.name}"`, "success");
+    window.setTimeout(() => {
+      setCopiedInviteId((prev) => (prev === guest.id ? null : prev));
+    }, 1800);
+  };
+
+  const renderGuestExtras = (guest: Guest) => {
+    if (guest.status !== "accepted") return null;
+    const plusOnes = typeof guest.plusOnes === "number" ? guest.plusOnes : 0;
+    const dietLabel =
+      guest.diet === "veg" ? "Chay" : guest.diet === "meat" ? "Mặn" : null;
+    if (plusOnes <= 0 && !dietLabel) return null;
+
+    return (
+      <div className="mt-1 flex flex-wrap items-center gap-1">
+        {plusOnes > 0 && (
+          <span className="rounded-full border border-border bg-surface-muted px-2 py-0.5 text-[10px] font-medium text-fg">
+            +{plusOnes} người
+          </span>
+        )}
+        {dietLabel && (
+          <span className="rounded-full border border-sage bg-surface px-2 py-0.5 text-[10px] font-medium text-fg">
+            {dietLabel}
+          </span>
+        )}
+      </div>
+    );
   };
 
   const openEditDialog = (guest: Guest) => {
@@ -289,11 +336,11 @@ export function GuestTable({
       <button
         type="button"
         onClick={() => openAssignDialog(guest)}
-        className="group inline-flex cursor-pointer flex-wrap items-center gap-1 rounded-lg border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="group inline-flex cursor-pointer flex-wrap items-center gap-1 rounded-lg border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         title="Nhấn để phân bổ lễ mời"
       >
         {resolved.length === 0 ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-neutral-border bg-neutral-bg px-2.5 py-0.5 text-[11px] font-medium text-neutral-fg group-hover:border-accent/40 group-hover:text-accent">
+          <span className="inline-flex items-center gap-1 rounded-full border border-neutral-border bg-neutral-bg px-2.5 py-0.5 text-[11px] font-medium text-neutral-fg group-hover:border-accent/40 group-hover:text-text">
             <CalendarHeart className="h-3 w-3" aria-hidden="true" />
             <span>Tất cả lễ</span>
           </span>
@@ -301,7 +348,7 @@ export function GuestTable({
           resolved.map((evt) => (
             <span
               key={evt.id}
-              className="rounded-full border border-accent/35 bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent"
+              className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-text"
             >
               {evt.title}
             </span>
@@ -333,7 +380,7 @@ export function GuestTable({
             disabled={reachedGuestLimit}
           >
             <Upload className="h-4 w-4" aria-hidden="true" />
-            <span>Nhập hàng loạt</span>
+            <span>Dán danh sách</span>
           </Button>
           <Button
             variant="primary"
@@ -348,11 +395,11 @@ export function GuestTable({
       </div>
 
       {reachedGuestLimit && guestLimit !== null && (
-        <div className="rounded-xl border border-accent/35 bg-accent-soft px-4 py-3 text-xs text-fg sm:text-sm">
+        <div className="rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-xs text-text sm:text-sm">
           Gói {getPlanLabel(plan)} giới hạn tối đa{" "}
-          <strong className="font-semibold text-accent">{guestLimit} khách mời</strong>.
+          <strong className="font-semibold text-text">{guestLimit} khách mời</strong>.
           Xóa bớt khách cũ hoặc{" "}
-          <Link href="/#bang-gia" className="font-semibold text-accent underline">
+          <Link href="/#bang-gia" className="font-semibold text-text underline">
             nâng cấp gói
           </Link>
           .
@@ -372,7 +419,7 @@ export function GuestTable({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên khách mời hoặc slug..."
               aria-label="Tìm khách mời"
-              className="h-10 w-full rounded-xl border border-border bg-bg pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="h-10 w-full rounded-xl border border-border bg-bg pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             />
           </div>
 
@@ -419,7 +466,7 @@ export function GuestTable({
         </Card>
       ) : guests.length === 0 ? (
         <Card className="p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent-soft text-accent">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/35 bg-accent-soft text-accent-text">
             <Users className="h-6 w-6" aria-hidden="true" />
           </div>
           <h3 className="mt-4 font-display text-xl font-semibold text-fg">
@@ -435,7 +482,7 @@ export function GuestTable({
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <Button variant="outline" onClick={() => setBulkOpen(true)}>
               <Upload className="h-4 w-4" aria-hidden="true" />
-              <span>Nhập hàng loạt</span>
+              <span>Dán danh sách</span>
             </Button>
             <Button variant="primary" onClick={() => setAddOpen(true)}>
               <Plus className="h-4 w-4" aria-hidden="true" />
@@ -467,6 +514,7 @@ export function GuestTable({
                 <tbody className="divide-y divide-border/80">
                   {filteredGuests.map((guest) => {
                     const isCopied = copiedId === guest.id;
+                    const isInviteCopied = copiedInviteId === guest.id;
                     return (
                       <tr key={guest.id} className="hover:bg-surface-muted/45">
                         <td className="px-4 py-3.5">
@@ -480,6 +528,7 @@ export function GuestTable({
                         </td>
                         <td className="px-4 py-3.5">
                           <StatusBadge status={guest.status} />
+                          {renderGuestExtras(guest)}
                         </td>
                         <td className="px-4 py-3.5 text-xs text-fg-muted">
                           {formatDateTimeVi(guest.respondedAt)}
@@ -501,12 +550,30 @@ export function GuestTable({
                               )}
                               <span>{isCopied ? "Đã chép" : "Chép link"}</span>
                             </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleCopyInvite(guest)}
+                            >
+                              {isInviteCopied ? (
+                                <Check
+                                  className="h-3.5 w-3.5 text-success-fg"
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <MessageSquareShare
+                                  className="h-3.5 w-3.5"
+                                  aria-hidden="true"
+                                />
+                              )}
+                              <span>{isInviteCopied ? "Đã chép" : "Chép lời mời"}</span>
+                            </Button>
                             <a
                               href={`/m/${guest.slug}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label={`Mở thiệp /m/${guest.slug}`}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:bg-surface-muted hover:text-accent"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:bg-surface-muted hover:text-accent-text"
                             >
                               <ExternalLink className="h-4 w-4" aria-hidden="true" />
                             </a>
@@ -541,6 +608,7 @@ export function GuestTable({
           <div className="space-y-3 md:hidden">
             {filteredGuests.map((guest) => {
               const isCopied = copiedId === guest.id;
+              const isInviteCopied = copiedInviteId === guest.id;
               return (
                 <Card key={guest.id} className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -550,7 +618,10 @@ export function GuestTable({
                         /m/{guest.slug}
                       </p>
                     </div>
-                    <StatusBadge status={guest.status} />
+                    <div className="flex shrink-0 flex-col items-end">
+                      <StatusBadge status={guest.status} />
+                      {renderGuestExtras(guest)}
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between gap-2">
@@ -580,14 +651,33 @@ export function GuestTable({
                       ) : (
                         <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                       )}
-                      <span>{isCopied ? "Đã chép" : "Sao chép link /m"}</span>
+                      <span>{isCopied ? "Đã chép" : "Chép link"}</span>
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleCopyInvite(guest)}
+                    >
+                      {isInviteCopied ? (
+                        <Check
+                          className="h-3.5 w-3.5 text-success-fg"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <MessageSquareShare
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span>{isInviteCopied ? "Đã chép" : "Chép lời mời"}</span>
                     </Button>
                     <a
                       href={`/m/${guest.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`Mở thiệp /m/${guest.slug}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted hover:bg-surface-muted hover:text-accent"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted hover:bg-surface-muted hover:text-accent-text"
                     >
                       <ExternalLink className="h-4 w-4" aria-hidden="true" />
                     </a>
@@ -628,6 +718,9 @@ export function GuestTable({
 
       <BulkImportDialog
         weddingId={weddingId}
+        plan={plan}
+        currentGuestCount={guests.length}
+        existingGuestNames={guests.map((g) => g.name)}
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
         onCreated={(created) => {
@@ -670,7 +763,7 @@ export function GuestTable({
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleEventSelection(evt.id)}
-                      className="mt-1 h-4 w-4 rounded border-border accent-[#D4AF37]"
+                      className="mt-1 h-4 w-4 rounded border-border accent-accent"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-fg">{evt.title}</p>
@@ -687,7 +780,7 @@ export function GuestTable({
                   <button
                     type="button"
                     onClick={() => setSelectedEventIds([])}
-                    className="cursor-pointer text-xs font-medium text-accent underline underline-offset-4 hover:text-accent-hover"
+                    className="cursor-pointer text-xs font-medium text-accent-text underline underline-offset-4 hover:text-accent-hover"
                   >
                     Bỏ chọn tất cả (hiển thị mọi lễ)
                   </button>

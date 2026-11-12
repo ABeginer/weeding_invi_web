@@ -1,5 +1,6 @@
 import { db } from "@/lib/server/supabase";
 import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
+import { verifyTurnstileToken } from "@/lib/server/turnstile";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 export const POST = route(async (req: Request) => {
@@ -7,6 +8,14 @@ export const POST = route(async (req: Request) => {
 
   if (typeof body?.website === "string" && body.website.trim() !== "") {
     return json({ ok: true });
+  }
+
+  const captcha = await verifyTurnstileToken(req, body?.turnstileToken);
+  if (!captcha.ok) {
+    return fail(
+      captcha.error ?? "Xác thực chống spam không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.",
+      400,
+    );
   }
 
   const message = text(body?.message, 500);

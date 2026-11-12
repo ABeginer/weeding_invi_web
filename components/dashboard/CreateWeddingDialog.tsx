@@ -115,7 +115,7 @@ export function CreateWeddingDialog({
             value={templateId}
             onChange={(e) => setTemplateId(e.target.value)}
             disabled={submitting}
-            className="flex h-11 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-fg focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="flex h-11 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-fg focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {WEDDING_TEMPLATES.map((tpl) => (
               <option key={tpl.id} value={tpl.id}>
@@ -126,12 +126,12 @@ export function CreateWeddingDialog({
           {requiresUpgrade && selectedTemplate && (
             <p
               role="alert"
-              className="rounded-xl border border-accent/40 bg-accent-soft px-3 py-2 text-xs text-fg"
+              className="rounded-xl border border-accent/40 bg-accent-soft px-3 py-2 text-xs text-text"
             >
               Mẫu này yêu cầu gói{" "}
-              <strong className="text-accent">{getPlanLabel(selectedTemplate.plan)}</strong>.
+              <strong className="font-semibold text-text">{getPlanLabel(selectedTemplate.plan)}</strong>.
               Thiệp mới khởi tạo ở gói Miễn phí — vui lòng chọn một mẫu Miễn phí hoặc xem{" "}
-              <Link href="/#bang-gia" className="font-semibold text-accent underline">
+              <Link href="/#bang-gia" className="font-semibold text-text underline">
                 Bảng giá nâng cấp
               </Link>
               .

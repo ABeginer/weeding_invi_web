@@ -90,7 +90,7 @@ export function WishList({ weddingId }: WishListProps) {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên người gửi hoặc nội dung lời chúc..."
               aria-label="Tìm lời chúc"
-              className="h-10 w-full rounded-xl border border-border bg-bg pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="h-10 w-full rounded-xl border border-border bg-bg pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             />
           </div>
         </Card>
@@ -115,7 +115,7 @@ export function WishList({ weddingId }: WishListProps) {
         </Card>
       ) : wishes.length === 0 ? (
         <Card className="p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent-soft text-accent">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/35 bg-accent-soft text-accent-text">
             <MessageSquareHeart className="h-6 w-6" aria-hidden="true" />
           </div>
           <h3 className="mt-4 font-display text-xl font-semibold text-fg">

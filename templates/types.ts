@@ -1,4 +1,10 @@
-import type { GuestStatus, TemplateData, TemplateMode, WeddingPlan } from "@/lib/types";
+import type {
+  GuestDiet,
+  GuestStatus,
+  TemplateData,
+  TemplateMode,
+  WeddingPlan,
+} from "@/lib/types";
 
 export type TemplateId = "basic-1" | "basic-2" | "basic-3" | "pro-1" | "vip-1";
 
@@ -35,4 +41,6 @@ export interface WeddingTemplateProps {
   invitationMode?: "personal" | "public";
   guestName?: string | null;
   initialStatus?: GuestStatus;
+  initialPlusOnes?: number;
+  initialDiet?: GuestDiet | null;
 }

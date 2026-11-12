@@ -12,6 +12,8 @@ export const FORBIDDEN_WEDDING_SLUGS = new Set([
   "logout",
   "w",
   "m",
+  "mau",
+  "tao-thiep",
   "media",
   "static",
   "_next",
@@ -19,13 +21,49 @@ export const FORBIDDEN_WEDDING_SLUGS = new Set([
 
 export const WEDDING_TEMPLATES = SELECTABLE_DASHBOARD_TEMPLATES.map((tpl) => ({
   id: tpl.id,
-  name: tpl.plan === "free" ? `${tpl.name} (Miễn phí)` : `${tpl.name} (${tpl.plan.toUpperCase()})`,
+  name:
+    tpl.plan === "free"
+      ? `${tpl.name} (Miễn phí)`
+      : `${tpl.name} (${tpl.plan.toUpperCase()})`,
   description: tpl.description,
   plan: tpl.plan,
 }));
 
 export const FREE_PLAN_MAX_WEDDINGS = PLAN_LIMITS.free.weddings ?? 1;
 export const FREE_PLAN_MAX_GUESTS = PLAN_LIMITS.free.guests ?? 20;
+
+export function toSlugSegment(input: string): string {
+  return input
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
+export function suggestWeddingSlug(groomName: string, brideName: string): string {
+  const g = toSlugSegment(groomName);
+  const b = toSlugSegment(brideName);
+  let combined = [g, b].filter(Boolean).join("-");
+
+  if (!combined) {
+    combined = "thiep-cuoi";
+  }
+
+  combined = combined.slice(0, 40).replace(/-+$/g, "");
+
+  if (combined.length < 3) {
+    combined = `${combined}-cuoi`.slice(0, 40).replace(/-+$/g, "");
+  }
+
+  if (FORBIDDEN_WEDDING_SLUGS.has(combined)) {
+    combined = `cuoi-${combined}`.slice(0, 40).replace(/-+$/g, "");
+  }
+
+  return combined;
+}
 
 export function validateWeddingSlug(raw: unknown): {
   valid: boolean;
@@ -53,4 +91,3 @@ export function validateWeddingSlug(raw: unknown): {
   }
   return { valid: true, slug };
 }
-

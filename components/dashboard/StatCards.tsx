@@ -8,7 +8,9 @@ import {
   Clock,
   MessageSquareHeart,
   RefreshCw,
+  UserCheck,
   Users,
+  Utensils,
   XCircle,
 } from "lucide-react";
 import { ApiError, getStats } from "@/lib/api";
@@ -85,18 +87,40 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
   const responseRate =
     stats.total > 0 ? Math.round((responded / stats.total) * 100) : 0;
 
+  const acceptedHeadcount = stats.acceptedHeadcount ?? stats.accepted;
+  const meatCount = stats.meatCount ?? 0;
+  const vegCount = stats.vegCount ?? 0;
+
   const items = [
     {
       label: "Tổng khách mời",
       value: stats.total,
       Icon: Users,
-      accent: "border border-accent/30 bg-accent-soft text-accent",
+      accent: "border border-accent/35 bg-accent-soft text-text",
     },
     {
       label: "Chấp nhận",
       value: stats.accepted,
       Icon: CheckCircle2,
       accent: "border border-success-border bg-success-bg text-success-fg",
+    },
+    {
+      label: "Số người sẽ đến",
+      value: acceptedHeadcount,
+      Icon: UserCheck,
+      accent: "border border-success-border bg-success-bg text-success-fg",
+    },
+    {
+      label: "Suất mặn",
+      value: meatCount,
+      Icon: Utensils,
+      accent: "border border-accent/35 bg-accent-soft text-text",
+    },
+    {
+      label: "Suất chay",
+      value: vegCount,
+      Icon: Utensils,
+      accent: "border border-sage bg-surface text-text",
     },
     {
       label: "Từ chối",
@@ -114,7 +138,7 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
       label: "Lời chúc",
       value: stats.wishes,
       Icon: MessageSquareHeart,
-      accent: "border border-accent/30 bg-accent-soft text-accent",
+      accent: "border border-accent/35 bg-accent-soft text-text",
     },
   ];
 
@@ -159,7 +183,7 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-2 text-sm">
           <span className="font-medium text-fg">Tỷ lệ khách đã phản hồi</span>
-          <span className="font-semibold tabular-nums text-accent">
+          <span className="font-semibold tabular-nums text-accent-text">
             {responded}/{stats.total} ({responseRate}%)
           </span>
         </div>
@@ -170,7 +194,8 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
           />
         </div>
         <p className="mt-2 text-xs text-fg-muted">
-          Bao gồm {stats.accepted} khách xác nhận tham dự và {stats.declined} khách báo bận.
+          Bao gồm {stats.accepted} khách xác nhận tham dự ({acceptedHeadcount} người dự kiến ·{" "}
+          {meatCount} suất mặn, {vegCount} suất chay) và {stats.declined} khách báo bận.
         </p>
       </Card>
 
@@ -178,7 +203,7 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="flex items-center gap-2 font-sans text-base font-semibold text-fg">
-              <CalendarHeart className="h-4 w-4 text-accent" aria-hidden="true" />
+              <CalendarHeart className="h-4 w-4 text-accent-text" aria-hidden="true" />
               <span>Phân bổ theo từng lễ</span>
             </h3>
             <p className="mt-0.5 text-xs text-fg-muted">
@@ -209,7 +234,7 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-sm font-medium text-fg">{item.title}</span>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-full border border-accent/35 bg-accent-soft px-2.5 py-0.5 font-medium text-accent">
+                      <span className="rounded-full border border-accent/40 bg-accent-soft px-2.5 py-0.5 font-medium text-text">
                         Gán riêng: {item.assignedCount}
                       </span>
                       <span className="text-fg-muted tabular-nums">

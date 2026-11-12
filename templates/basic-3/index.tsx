@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CalendarHeart, MapPin } from "lucide-react";
+import { GiftFloatingTrigger, GiftModal } from "@/components/invitation/GiftModal";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
@@ -23,11 +24,14 @@ export default function Basic3Template({
   invitationMode = "personal",
   guestName,
   initialStatus = "pending",
+  initialPlusOnes = 0,
+  initialDiet = null,
   externalMusicControl,
 }: WeddingTemplateProps) {
   const prefersReducedMotion = useReducedMotion();
   const [opened, setOpened] = React.useState(isOpenedProp);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+  const [giftOpen, setGiftOpen] = React.useState(false);
 
   React.useEffect(() => {
     setOpened(isOpenedProp);
@@ -58,9 +62,11 @@ export default function Basic3Template({
     <div
       className={cn(
         "relative w-full bg-[#FCF5F0] text-[#322424] font-sans",
-        contained ? "min-h-full" : "min-h-dvh",
+        contained ? "min-h-full" : "min-h-screen-dvh",
         !opened &&
-          (contained ? "h-full overflow-hidden" : "h-dvh max-h-full overflow-hidden"),
+          (contained
+            ? "h-full overflow-hidden"
+            : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       <AnimatePresence>
@@ -121,35 +127,57 @@ export default function Basic3Template({
         )}
       >
         {/* Hero */}
-        <header className="bg-gradient-to-b from-[#F5E0D5] to-[#FCF5F0] px-5 pt-10 pb-8 text-center sm:px-8">
-          <p className="text-[11px] font-medium tracking-[0.22em] text-[#8A4444] uppercase">
-            {data.ui.eyebrow} · {heroDate.dotDate}
-          </p>
-          <h1 className="mt-2 font-display text-[clamp(34px,9vw,52px)] leading-[1.1] font-semibold text-[#5C2626]">
-            {data.couple.groomName} &amp; {data.couple.brideName}
-          </h1>
-          <p className="mx-auto mt-2.5 max-w-md text-sm text-[#6B504B]">
-            {data.ui.heroSubtitle}
-          </p>
-
-          <div
-            className={cn(
-              "mx-auto mt-6 overflow-hidden rounded-t-full border-2 border-[#D7B3A5] bg-white p-2 shadow-sm",
-              isDesktopLayout ? "max-w-[420px]" : "max-w-[320px]",
-            )}
-          >
-            <div className="overflow-hidden rounded-t-full">
-              {data.photos.heroUrl ? (
-                <img
-                  src={data.photos.heroUrl}
-                  alt={data.photos.heroAlt}
-                  width={600}
-                  height={800}
-                  className="block aspect-[3/4] w-full rounded-t-full object-cover object-[center_20%]"
-                />
-              ) : (
-                <TemplatePhotoPlaceholder />
+        <header
+          className={cn(
+            "bg-gradient-to-b from-[#F5E0D5] to-[#FCF5F0] px-5 pt-10 pb-8 text-center sm:px-8",
+            isDesktopLayout &&
+              "md:grid md:grid-cols-12 md:items-center md:gap-10 md:px-8 md:pt-14 md:pb-12 md:text-left",
+          )}
+        >
+          <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-4" : "space-y-3")}>
+            <p className="text-[11px] font-medium tracking-[0.22em] text-[#8A4444] uppercase">
+              {data.ui.eyebrow} · {heroDate.dotDate}
+            </p>
+            <h1 className="font-display text-[clamp(34px,9vw,52px)] leading-[1.1] font-semibold text-[#5C2626]">
+              {data.couple.groomName}
+              <span className="mx-2 font-normal italic text-[#8A4444]">&amp;</span>
+              {data.couple.brideName}
+            </h1>
+            <p
+              className={cn(
+                "max-w-md text-sm leading-relaxed text-[#6B504B]",
+                isDesktopLayout ? "mx-auto md:mx-0" : "mx-auto",
               )}
+            >
+              {data.ui.heroSubtitle}
+            </p>
+            {guestName && (
+              <p className="inline-block rounded-full border border-[#D7B3A5] bg-[#FFFBF8] px-4 py-1 text-xs text-[#5C2626]">
+                {data.ui.invitePrefix}: <strong className="font-semibold">{guestName}</strong>
+              </p>
+            )}
+          </div>
+
+          <div className={cn("mt-6", isDesktopLayout && "md:col-span-6 md:mt-0")}>
+            <div
+              className={cn(
+                "mx-auto overflow-hidden rounded-t-full border-2 border-[#D7B3A5] bg-white p-2 shadow-sm",
+                isDesktopLayout ? "max-w-[320px] md:max-w-none md:p-2.5" : "max-w-[320px]",
+              )}
+            >
+              <div className="overflow-hidden rounded-t-full bg-[#F5E0D5]/40">
+                {data.photos.heroUrl ? (
+                  <img
+                    src={data.photos.heroUrl}
+                    alt={data.photos.heroAlt}
+                    width={600}
+                    height={800}
+                    className="block aspect-[3/4] w-full rounded-t-full object-cover object-[center_20%]"
+                  />
+                ) : (
+                  <TemplatePhotoPlaceholder />
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -379,6 +407,8 @@ export default function Basic3Template({
           invitationMode={invitationMode}
           guestName={guestName}
           initialStatus={initialStatus}
+          initialPlusOnes={initialPlusOnes}
+          initialDiet={initialDiet}
         />
 
         <footer className="bg-gradient-to-t from-[#5C2626] to-[#7A3535] px-5 py-10 text-center text-[#FFF8F4]">
@@ -401,11 +431,28 @@ export default function Basic3Template({
         onChangeIndex={setLightboxIndex}
       />
 
+      <GiftFloatingTrigger
+        visible={opened}
+        onClick={() => setGiftOpen(true)}
+        tone="sunset"
+        contained={contained}
+      />
+
+      <GiftModal
+        open={giftOpen}
+        onClose={() => setGiftOpen(false)}
+        gift={data.gift}
+        plan={data.plan}
+        tone="sunset"
+        wishAnchorId="rsvp-wishes"
+      />
+
       {mode === "live" && !externalMusicControl && (
         <LiveMusicFloatingButton
           src={data.music.src}
           title={data.music.title}
           visible={opened}
+          tone="sunset"
         />
       )}
     </div>

@@ -1,7 +1,8 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
-import { useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
 
 interface InvitationIntroProps {
   guestName?: string;
@@ -9,6 +10,7 @@ interface InvitationIntroProps {
 
 export function InvitationIntro({ guestName }: InvitationIntroProps) {
   const data = useWeddingContent();
+  const isDesktopLayout = useInvitationDesktopLayout();
   const displayName =
     guestName && guestName.trim().length > 0
       ? guestName.trim()
@@ -24,7 +26,12 @@ export function InvitationIntro({ guestName }: InvitationIntroProps) {
         {displayName}
       </h2>
 
-      <p className="mx-auto mt-5 max-w-[420px] font-inv-serif text-[14px] leading-[1.6] text-inv-text sm:text-[15.5px]">
+      <p
+        className={cn(
+          "mx-auto mt-5 max-w-[420px] font-inv-serif text-[14px] leading-[1.6] text-inv-text sm:text-[15.5px]",
+          isDesktopLayout && "md:max-w-[540px]",
+        )}
+      >
         {data.ui.invitationNote}
       </p>
     </RevealSection>

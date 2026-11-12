@@ -6,6 +6,7 @@ export function getAuth0(): Auth0Client {
   if (!client) {
     const audience = process.env.AUTH0_AUDIENCE;
     client = new Auth0Client({
+      signInReturnToPath: "/dashboard",
       authorizationParameters: {
         ...(audience ? { audience } : {}),
         scope: "openid profile email offline_access",

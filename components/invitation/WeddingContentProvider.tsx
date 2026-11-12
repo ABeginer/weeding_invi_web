@@ -7,9 +7,11 @@ import { createDefaultWeddingContent, toTemplateData } from "@/lib/wedding-data"
 const WeddingContentContext = React.createContext<TemplateData | null>(null);
 const InvitationRuntimeContext = React.createContext<{
   contained: boolean;
+  viewport: "phone" | "desktop";
   mode: TemplateMode;
 }>({
   contained: false,
+  viewport: "phone",
   mode: "live",
 });
 
@@ -22,17 +24,19 @@ const FALLBACK_TEMPLATE_DATA: TemplateData = toTemplateData({
 export function WeddingContentProvider({
   data,
   contained = false,
+  viewport = "phone",
   mode = "live",
   children,
 }: {
   data: TemplateData;
   contained?: boolean;
+  viewport?: "phone" | "desktop";
   mode?: TemplateMode;
   children: React.ReactNode;
 }) {
   const runtime = React.useMemo(
-    () => ({ contained, mode }),
-    [contained, mode],
+    () => ({ contained, viewport, mode }),
+    [contained, viewport, mode],
   );
 
   return (
@@ -51,6 +55,11 @@ export function useWeddingContent(): TemplateData {
 
 export function useInvitationContained(): boolean {
   return React.useContext(InvitationRuntimeContext).contained;
+}
+
+export function useInvitationDesktopLayout(): boolean {
+  const ctx = React.useContext(InvitationRuntimeContext);
+  return !ctx.contained && ctx.viewport === "desktop";
 }
 
 export function useInvitationMode(): TemplateMode {

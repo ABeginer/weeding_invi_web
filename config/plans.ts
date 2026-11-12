@@ -29,6 +29,8 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
       banner: 1,
       couple: 2,
       gallery: 5,
+      og: 1,
+      gift: 0,
     },
     allowedTemplatePlans: ["free"],
   },
@@ -41,6 +43,8 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
       banner: 1,
       couple: 2,
       gallery: 30,
+      og: 1,
+      gift: 2,
     },
     allowedTemplatePlans: ["free", "pro"],
   },
@@ -53,6 +57,8 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
       banner: 1,
       couple: 2,
       gallery: 100,
+      og: 1,
+      gift: 2,
     },
     allowedTemplatePlans: ["free", "pro", "vip"],
   },
@@ -77,11 +83,16 @@ const PHOTO_KIND_LABEL: Record<PhotoKind, string> = {
   banner: "ảnh bìa",
   couple: "ảnh cặp đôi",
   gallery: "ảnh trong thư viện",
+  og: "ảnh chia sẻ mạng xã hội",
+  gift: "ảnh QR quà mừng",
 };
 
 export function getPhotoLimitMessage(plan: WeddingPlan, kind: PhotoKind): string {
   const limits = getPlanLimits(plan);
   const max = limits.photos[kind];
+  if (kind === "gift" && max === 0) {
+    return `Gói ${limits.label} chỉ hỗ trợ thông tin chuyển khoản dạng chữ. Nâng cấp lên Pro để tải ảnh QR quà mừng.`;
+  }
   if (kind === "gallery") {
     return `Gói ${limits.label} tối đa ${max} ảnh trong thư viện. Nâng cấp để thêm ảnh.`;
   }
@@ -113,4 +124,3 @@ export function getTemplateLockedMessage(
 ): string {
   return `Mẫu này yêu cầu gói ${getPlanLabel(requiredPlan)}. Thiệp hiện đang ở gói ${getPlanLabel(userPlan)}.`;
 }
-
