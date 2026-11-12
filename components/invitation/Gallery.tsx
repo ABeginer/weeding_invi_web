@@ -7,10 +7,11 @@ import { invitationThemeCssVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
 import { RevealSection } from "./RevealSection";
-import { useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationContained, useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
 
 export function Gallery() {
   const data = useWeddingContent();
+  const isContained = useInvitationContained();
   const isDesktopLayout = useInvitationDesktopLayout();
   const photos = data.photos.gallery;
 
@@ -168,9 +169,23 @@ export function Gallery() {
       )}
     >
       <div className="mx-auto max-w-[440px] text-center">
-        <h2 className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 font-inv-serif text-[clamp(22px,6.8vw,32px)] leading-[1.15] font-normal tracking-[0.03em] text-inv-cream-text uppercase">
+        <h2
+          className={cn(
+            "flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 font-inv-serif leading-[1.15] font-normal tracking-[0.03em] text-inv-cream-text uppercase",
+            isContained
+              ? "text-[clamp(18px,6.8cqw,26px)]"
+              : "text-[clamp(22px,6.8vw,32px)]",
+          )}
+        >
           <span>GOLDEN HOUR</span>
-          <span className="font-inv-script text-[clamp(28px,8vw,38px)] leading-none text-inv-cream-soft normal-case">
+          <span
+            className={cn(
+              "font-inv-script leading-none text-inv-cream-soft normal-case",
+              isContained
+                ? "text-[clamp(22px,8cqw,32px)]"
+                : "text-[clamp(28px,8vw,38px)]",
+            )}
+          >
             Of
           </span>
           <span>LOVE</span>
@@ -206,6 +221,7 @@ export function Gallery() {
                 width={600}
                 height={900}
                 loading="lazy"
+                decoding="async"
                 className="block aspect-[2/3] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               />
             </button>

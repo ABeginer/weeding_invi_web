@@ -30,10 +30,10 @@ export function LandingNavbar({
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/95 sm:bg-bg/85 sm:backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-2 sm:px-6">
         <Link
           href={SITE_LINKS.home}
-          className="inline-flex items-center gap-2 rounded-lg px-1 py-0.5 font-display text-2xl font-semibold tracking-wide text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="inline-flex items-center gap-2 rounded-lg px-1 py-0.5 font-display text-xl font-semibold tracking-wide text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-2xl"
         >
           <span>{SITE_NAME}</span>
         </Link>

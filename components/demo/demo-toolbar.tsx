@@ -45,18 +45,18 @@ export function DemoToolbar({
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-bg/95 text-text sm:bg-bg/85 sm:backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 sm:px-6 sm:py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6">
           {/* Trái: Quay lại & Tên mẫu */}
-          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
             <Link
               href={SITE_LINKS.templatesAnchor}
-              className="inline-flex h-9 shrink-0 items-center rounded-full border border-border bg-surface px-3 text-xs font-medium text-text transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="inline-flex h-8 shrink-0 items-center rounded-full border border-border bg-surface px-3 text-xs font-medium text-text transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               {LANDING_COPY.demo.backToTemplates}
             </Link>
 
             <div className="flex min-w-0 items-center gap-2">
-              <h1 className="truncate font-display text-lg font-semibold text-accent-text sm:text-xl">
+              <h1 className="truncate font-display text-base font-semibold text-accent-text sm:text-lg">
                 {template.name}
               </h1>
               <span

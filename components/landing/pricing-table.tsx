@@ -22,29 +22,29 @@ export function PricingTable({
   return (
     <section
       id="bang-gia"
-      className="scroll-mt-16 border-b border-border bg-bg py-14 sm:py-20"
+      className="scroll-mt-14 border-b border-border bg-bg py-10 sm:py-12"
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="mx-auto max-w-xl text-center">
           <p className="text-[11px] font-medium tracking-[0.18em] text-accent-text uppercase">
             {copy.eyebrow}
           </p>
-          <h2 className="mt-2 font-display text-3xl font-semibold text-accent-text sm:text-4xl">
+          <h2 className="mt-1.5 font-display text-2xl font-semibold text-accent-text sm:text-3xl">
             {copy.title}
           </h2>
-          <p className="mt-2.5 text-sm leading-relaxed text-text-muted sm:text-base">
+          <p className="mt-2 text-sm leading-relaxed text-text-muted">
             {copy.description}
           </p>
         </div>
 
         {/* Bảng so sánh 3 cột (cuộn ngang mượt trên màn nhỏ, cột đầu cố định) */}
-        <div className="mt-10 overflow-x-auto rounded-2xl border border-border bg-surface shadow-lg">
-          <table className="w-full min-w-[700px] border-collapse text-left">
+        <div className="mt-7 overflow-x-auto rounded-2xl border border-border bg-surface shadow-lg">
+          <table className="w-full min-w-[680px] border-collapse text-left">
             <thead>
               <tr className="border-b border-border">
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 w-[190px] border-r border-border bg-surface px-4 py-5 align-bottom text-xs font-semibold tracking-[0.14em] text-text-muted uppercase sm:w-[230px] sm:px-6"
+                  className="sticky left-0 z-10 w-[180px] border-r border-border bg-surface px-4 py-4 align-bottom text-xs font-semibold tracking-[0.14em] text-text-muted uppercase sm:w-[210px] sm:px-5"
                 >
                   {copy.featureColumnHeader}
                 </th>
@@ -53,24 +53,24 @@ export function PricingTable({
                     key={tier.id}
                     scope="col"
                     className={cn(
-                      "min-w-[175px] px-4 py-5 align-top sm:px-5",
+                      "min-w-[165px] px-4 py-4 align-top sm:px-5",
                       tier.highlighted
                         ? "border-x border-accent/60 bg-accent-soft"
                         : "bg-surface",
                     )}
                   >
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-display text-xl font-semibold text-text">
+                        <span className="font-display text-lg font-semibold text-text sm:text-xl">
                           {tier.name}
                         </span>
                         {tier.badge && (
-                          <span className="shrink-0 rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent-fg uppercase">
+                          <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold tracking-wide text-accent-fg uppercase">
                             {tier.badge}
                           </span>
                         )}
                       </div>
-                      <p className="font-display text-3xl font-semibold text-text">
+                      <p className="font-display text-2xl font-semibold text-text">
                         {tier.price}
                       </p>
                       <p className="text-xs font-normal leading-relaxed text-text-muted">
@@ -92,7 +92,7 @@ export function PricingTable({
                 <tr key={row.id} className="group">
                   <th
                     scope="row"
-                    className="sticky left-0 z-10 border-r border-border bg-surface px-4 py-3.5 text-xs font-semibold text-text group-hover:bg-surface-alt sm:px-6 sm:text-sm"
+                    className="sticky left-0 z-10 border-r border-border bg-surface px-4 py-3 text-xs font-semibold text-text group-hover:bg-surface-alt sm:px-5 sm:text-sm"
                   >
                     {row.feature}
                   </th>
@@ -102,7 +102,7 @@ export function PricingTable({
                       <td
                         key={`${row.id}-${tier.id}`}
                         className={cn(
-                          "px-4 py-3.5 align-middle text-xs leading-relaxed text-text sm:px-5 sm:text-sm",
+                          "px-4 py-3 align-middle text-xs leading-relaxed text-text sm:px-5 sm:text-sm",
                           tier.highlighted
                             ? "border-x border-accent/30 bg-accent-soft/45 group-hover:bg-accent-soft/65"
                             : "group-hover:bg-surface-alt",
@@ -126,13 +126,13 @@ export function PricingTable({
                 <th
                   scope="row"
                   aria-label="Hành động chọn gói"
-                  className="sticky left-0 z-10 border-r border-border bg-surface px-4 py-5 sm:px-6"
+                  className="sticky left-0 z-10 border-r border-border bg-surface px-4 py-4 sm:px-5"
                 />
                 {PRICING_TIERS.map((tier) => (
                   <td
                     key={`cta-${tier.id}`}
                     className={cn(
-                      "px-4 py-5 sm:px-5",
+                      "px-4 py-4 sm:px-5",
                       tier.highlighted
                         ? "border-x border-accent/60 bg-accent-soft/60"
                         : "bg-surface",
@@ -145,7 +145,7 @@ export function PricingTable({
                             ? SITE_LINKS.dashboard
                             : SITE_LINKS.createWedding
                         }
-                        className="inline-flex h-10 w-full items-center justify-center rounded-full border border-text bg-transparent px-4 text-xs font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-sm"
+                        className="inline-flex h-9 w-full items-center justify-center rounded-full border border-text bg-transparent px-4 text-xs font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-sm"
                       >
                         {tier.ctaLabel}
                       </Link>
@@ -156,7 +156,7 @@ export function PricingTable({
                           onSelectPaidPlan(tier.id === "vip" ? "vip" : "pro")
                         }
                         className={cn(
-                          "inline-flex h-10 w-full cursor-pointer items-center justify-center rounded-full px-4 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-sm",
+                          "inline-flex h-9 w-full cursor-pointer items-center justify-center rounded-full px-4 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-sm",
                           tier.highlighted
                             ? "bg-accent text-accent-fg hover:bg-accent-hover"
                             : "border border-text bg-transparent text-text hover:bg-surface-alt",

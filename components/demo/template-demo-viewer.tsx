@@ -188,7 +188,7 @@ export function TemplateDemoViewer({
         onUseTemplate={handleUseTemplate}
       />
 
-      <main className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6">
+      <main className="mx-auto max-w-6xl px-3 py-3 sm:px-6 md:py-4">
         {template.isPlaceholder ? (
           <div className="mx-auto max-w-xl rounded-3xl border border-border bg-surface px-6 py-12 text-center shadow-2xl">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-accent-soft text-text">
@@ -218,10 +218,10 @@ export function TemplateDemoViewer({
             </div>
           </div>
         ) : viewport === "phone" ? (
-          <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-8 px-1 md:grid-cols-12 md:gap-8 lg:gap-12">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 px-1 md:grid-cols-12 md:gap-8 lg:gap-10">
             {/* Cột trái trên desktop: Giới thiệu mẫu thiệp đang xem thử (ẩn trên mobile để giữ nguyên giao diện mobile) */}
-            <aside className="hidden space-y-6 text-left md:col-span-6 md:block">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1.5">
+            <aside className="hidden space-y-4 text-left md:col-span-7 md:block md:pt-1">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
                 <Sparkles
                   className="h-3.5 w-3.5 text-accent-text"
                   aria-hidden="true"
@@ -231,8 +231,8 @@ export function TemplateDemoViewer({
                 </span>
               </div>
 
-              <div className="space-y-2.5">
-                <div className="flex flex-wrap items-center gap-2.5">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={cn(
                       "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
@@ -246,22 +246,22 @@ export function TemplateDemoViewer({
                   </span>
                 </div>
 
-                <h2 className="font-display text-4xl leading-[1.1] font-semibold tracking-tight text-accent-text lg:text-5xl">
+                <h2 className="font-display text-3xl leading-[1.1] font-semibold tracking-tight text-accent-text lg:text-4xl">
                   {template.name}
                 </h2>
               </div>
 
-              <p className="max-w-xl text-base leading-relaxed text-text">
+              <p className="max-w-lg text-sm leading-relaxed text-text sm:text-base">
                 {template.description}
               </p>
 
-              <div className="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-xs">
-                <div className="grid grid-cols-1 gap-3 border-b border-border pb-4 sm:grid-cols-2">
+              <div className="space-y-3 rounded-2xl border border-border bg-surface p-4 shadow-xs">
+                <div className="grid grid-cols-1 gap-3 border-b border-border pb-3 sm:grid-cols-2">
                   <div>
                     <p className="text-[11px] font-medium tracking-[0.14em] text-text-muted uppercase">
                       {LANDING_COPY.demo.sampleCoupleLabel}
                     </p>
-                    <p className="mt-1 font-display text-xl font-semibold text-accent-text">
+                    <p className="mt-1 font-display text-lg font-semibold text-accent-text">
                       {demoData.couple.groomName} &amp; {demoData.couple.brideName}
                     </p>
                   </div>
@@ -283,9 +283,9 @@ export function TemplateDemoViewer({
                   <p className="text-[11px] font-medium tracking-[0.14em] text-text-muted uppercase">
                     {LANDING_COPY.demo.highlightsTitle}
                   </p>
-                  <ul className="mt-2.5 space-y-2 text-sm text-text">
+                  <ul className="mt-2 space-y-1.5 text-xs text-text sm:text-sm">
                     {LANDING_COPY.demo.highlights.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5">
+                      <li key={item} className="flex items-start gap-2">
                         <Check
                           className="mt-0.5 h-4 w-4 shrink-0 text-sage"
                           aria-hidden="true"
@@ -297,11 +297,11 @@ export function TemplateDemoViewer({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 pt-1">
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
                 <button
                   type="button"
                   onClick={handleUseTemplate}
-                  className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-7 text-sm font-semibold text-accent-fg shadow-md transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                  className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-6 text-xs font-semibold text-accent-fg shadow-md transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:h-11 sm:text-sm"
                 >
                   <span>{LANDING_COPY.demo.useNowLabel}</span>
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -310,7 +310,7 @@ export function TemplateDemoViewer({
                 <button
                   type="button"
                   onClick={() => handleViewportChange("desktop")}
-                  className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-text bg-transparent px-6 text-sm font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                  className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-text bg-transparent px-5 text-xs font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:h-11 sm:text-sm"
                 >
                   <Monitor className="h-4 w-4" aria-hidden="true" />
                   <span>{LANDING_COPY.demo.switchToDesktopLabel}</span>
@@ -323,12 +323,13 @@ export function TemplateDemoViewer({
             </aside>
 
             {/* Cột phải trên desktop / Chính giữa trên mobile: Khung điện thoại */}
-            <div className="flex flex-col items-center md:col-span-6 md:items-end">
-              <div className="w-full max-w-[384px] sm:max-w-[408px] md:max-w-[348px] lg:max-w-[408px]">
+            <div className="flex flex-col items-center md:col-span-5 md:items-end">
+              <div className="w-full max-w-[352px] md:w-auto md:max-w-none">
                 <PhoneFrame
                   scrollRef={phoneScrollRef}
                   enableFloat={false}
                   lockedScroll={!isOpened}
+                  desktopOffsetPx={116}
                 >
                   <TemplatePreviewRenderer
                     key={`${template.id}-phone`}
@@ -349,10 +350,10 @@ export function TemplateDemoViewer({
           <div
             style={{ transform: "translate3d(0,0,0)" }}
             className={cn(
-              "relative mx-auto w-full max-w-[1280px] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl",
+              "relative mx-auto w-full max-w-[1040px] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl",
               !isOpened
-                ? "h-[max(560px,calc(100dvh-116px))]"
-                : "min-h-[max(760px,calc(100dvh-116px))]",
+                ? "h-[min(620px,calc(100dvh-100px))]"
+                : "min-h-[max(680px,calc(100dvh-100px))]",
             )}
           >
             <TemplatePreviewRenderer

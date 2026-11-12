@@ -53,7 +53,7 @@ export function DashboardShell({ userEmail, children }: DashboardShellProps) {
       </a>
 
       <header className="sticky top-0 z-30 border-b border-border bg-bg/95 sm:bg-bg/85 sm:backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
             <Link
               href={SITE_LINKS.home}
@@ -63,12 +63,12 @@ export function DashboardShell({ userEmail, children }: DashboardShellProps) {
             </Link>
             <Link
               href={SITE_LINKS.dashboard}
-              className="inline-flex min-w-0 items-center gap-2.5 rounded-lg px-1 py-0.5 text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="inline-flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-accent-soft text-text">
-                <Heart className="h-4 w-4 text-accent-text" aria-hidden="true" />
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-accent-soft text-text">
+                <Heart className="h-3.5 w-3.5 text-accent-text" aria-hidden="true" />
               </span>
-              <span className="truncate font-display text-xl font-semibold tracking-tight text-accent-text sm:text-2xl">
+              <span className="truncate font-display text-lg font-semibold tracking-tight text-accent-text sm:text-xl">
                 Quản lý Thiệp Cưới
               </span>
             </Link>
@@ -87,7 +87,7 @@ export function DashboardShell({ userEmail, children }: DashboardShellProps) {
 
       <main
         id="dashboard-main-content"
-        className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8"
+        className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6"
       >
         {children}
       </main>

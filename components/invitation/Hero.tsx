@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
 import {
+  useInvitationContained,
   useInvitationDesktopLayout,
   useWeddingContent,
 } from "./WeddingContentProvider";
@@ -15,6 +16,7 @@ interface HeroProps {
 
 export function Hero({ guestName }: HeroProps) {
   const data = useWeddingContent();
+  const isContained = useInvitationContained();
   const isDesktopLayout = useInvitationDesktopLayout();
   const prefersReducedMotion = useReducedMotion();
   const [mounted, setMounted] = React.useState(false);
@@ -33,9 +35,12 @@ export function Hero({ guestName }: HeroProps) {
   return (
     <section
       className={cn(
-        "relative mx-auto w-full bg-inv-bg px-4 pt-10 pb-4 text-center sm:px-6 sm:pt-12 sm:pb-6",
+        "relative mx-auto w-full bg-inv-bg text-center",
+        isContained
+          ? "px-3.5 pt-7 pb-3"
+          : "px-4 pt-10 pb-4 sm:px-6 sm:pt-12 sm:pb-6",
         isDesktopLayout &&
-        "md:grid md:grid-cols-12 md:items-center md:gap-10 md:px-8 md:pt-14 md:pb-12 md:text-left",
+        "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-8 md:text-left",
       )}
     >
       <motion.div
@@ -46,7 +51,7 @@ export function Hero({ guestName }: HeroProps) {
             ? { duration: 0.01 }
             : { duration: 0.7, ease: [0.22, 1, 0.36, 1] }
         }
-        className={cn("space-y-4", isDesktopLayout && "md:col-span-6")}
+        className={cn(isContained ? "space-y-3" : "space-y-4", isDesktopLayout && "md:col-span-6")}
       >
         <p className="font-inv-serif text-xs font-medium uppercase tracking-[0.28em] text-inv-olive-btn">
           {data.ui.eyebrow}
@@ -61,12 +66,15 @@ export function Hero({ guestName }: HeroProps) {
 
         <h1
           className={cn(
-            "font-inv-serif text-[clamp(30px,8vw,40px)] leading-[1.18] font-semibold tracking-tight text-inv-olive-deep",
-            isDesktopLayout && "md:text-[clamp(36px,4.2vw,52px)] md:leading-[1.12]",
+            "font-inv-serif font-semibold tracking-tight text-inv-olive-deep",
+            isContained
+              ? "text-[clamp(24px,9.2cqw,34px)] leading-[1.15]"
+              : "text-[clamp(30px,8vw,40px)] leading-[1.18]",
+            isDesktopLayout && "md:text-[clamp(32px,3.6vw,44px)] md:leading-[1.12]",
           )}
         >
           {data.couple.groomName}
-          <span className="ml-1.5 mr-4 inline-block font-inv-script text-[1.12em] font-normal text-inv-olive-btn">
+          <span className="ml-1.5 mr-3 inline-block font-inv-script text-[1.12em] font-normal text-inv-olive-btn">
             &amp;
           </span>
           {data.couple.brideName}
@@ -75,13 +83,19 @@ export function Hero({ guestName }: HeroProps) {
         <p
           className={cn(
             "max-w-md font-inv-serif text-sm leading-relaxed text-inv-text sm:text-[15px]",
+            isContained && "text-[13px]",
             isDesktopLayout ? "mx-auto md:mx-0 md:text-base" : "mx-auto",
           )}
         >
           {data.ui.heroSubtitle}
         </p>
 
-        <div className="inline-flex items-center gap-3 rounded-full border border-inv-olive/25 bg-inv-bg px-5 py-2 font-inv-serif text-xs font-medium tracking-[0.16em] text-inv-ink uppercase shadow-xs sm:text-sm">
+        <div
+          className={cn(
+            "inline-flex items-center gap-2.5 rounded-full border border-inv-olive/25 bg-inv-bg font-inv-serif font-medium tracking-[0.16em] text-inv-ink uppercase shadow-xs",
+            isContained ? "px-4 py-1.5 text-[11px]" : "px-5 py-2 text-xs sm:text-sm",
+          )}
+        >
           <span className="capitalize">{dateParts.weekday}</span>
           <span aria-hidden="true" className="text-inv-olive-btn">
             ·
@@ -99,8 +113,9 @@ export function Hero({ guestName }: HeroProps) {
             : { duration: 0.8, delay: 0.12, ease: [0.22, 1, 0.36, 1] }
         }
         className={cn(
-          "mx-auto mt-7 w-full max-w-[420px] overflow-hidden rounded-[28px] border border-inv-olive/30 bg-inv-bg p-2.5 shadow-[var(--shadow-soft)]",
-          isDesktopLayout && "md:col-span-6 md:mt-0 md:max-w-none",
+          "mx-auto w-full overflow-hidden rounded-[26px] border border-inv-olive/30 bg-inv-bg p-2 shadow-[var(--shadow-soft)]",
+          isContained ? "mt-5 max-w-[320px]" : "mt-7 max-w-[420px] p-2.5",
+          isDesktopLayout && "md:col-span-6 md:mt-0 md:max-w-[350px]",
         )}
       >
         <div className="overflow-hidden rounded-[20px] bg-inv-tint">
@@ -110,6 +125,8 @@ export function Hero({ guestName }: HeroProps) {
               alt={data.photos.heroAlt}
               width={600}
               height={900}
+              loading="eager"
+              decoding="async"
               fetchPriority="high"
               className={cn(
                 "block h-auto w-full object-cover",

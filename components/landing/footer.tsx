@@ -12,12 +12,12 @@ export function LandingFooter() {
   const copy = LANDING_COPY.footer;
 
   return (
-    <footer className="bg-bg py-10 text-text-muted">
-      <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-5 px-4 sm:flex-row sm:items-center sm:px-6">
+    <footer className="bg-bg py-8 text-text-muted">
+      <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 px-4 sm:flex-row sm:items-center sm:px-6">
         <div>
           <Link
             href={SITE_LINKS.home}
-            className="font-display text-2xl font-semibold text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="font-display text-xl font-semibold text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-2xl"
           >
             {SITE_NAME}
           </Link>

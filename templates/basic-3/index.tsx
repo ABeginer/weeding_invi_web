@@ -64,9 +64,9 @@ export default function Basic3Template({
         "relative w-full bg-[#FCF5F0] text-[#322424] font-sans",
         contained ? "min-h-full" : "min-h-screen-dvh",
         !opened &&
-          (contained
-            ? "h-full overflow-hidden"
-            : "h-screen-dvh max-h-full overflow-hidden"),
+        (contained
+          ? "h-full overflow-hidden"
+          : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       <AnimatePresence>
@@ -89,25 +89,43 @@ export default function Basic3Template({
               type="button"
               onClick={handleOpen}
               aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayGuest}`}
-              className="group relative flex h-full max-h-[660px] w-full max-w-[380px] cursor-pointer flex-col items-center justify-between rounded-t-full rounded-b-3xl border border-[#CFA89A] bg-[#FFFBF8] px-6 pt-14 pb-9 text-center shadow-[0_20px_50px_rgba(122,53,53,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A3535]"
+              className={cn(
+                "group relative flex h-full w-full max-w-[380px] cursor-pointer flex-col items-center justify-between rounded-t-full rounded-b-3xl border border-[#CFA89A] bg-[#FFFBF8] text-center shadow-[0_20px_50px_rgba(122,53,53,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A3535]",
+                contained ? "max-h-[560px] px-5 pt-10 pb-7" : "max-h-[660px] px-6 pt-14 pb-9",
+              )}
             >
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <p className="text-[11px] font-medium tracking-[0.22em] text-[#8A4444] uppercase">
                   {data.ui.eyebrow}
                 </p>
-                <h2 className="font-display text-3xl font-semibold text-[#5C2626]">
+                <h2
+                  className={cn(
+                    "font-display font-semibold text-[#5C2626]",
+                    contained ? "text-2xl" : "text-3xl",
+                  )}
+                >
                   {data.couple.groomName} &amp; {data.couple.brideName}
                 </h2>
               </div>
 
-              <div className="space-y-3">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#7A3535] font-display text-xl font-semibold text-[#FFF8F4] shadow-md">
+              <div className="space-y-2.5">
+                <div
+                  className={cn(
+                    "mx-auto flex items-center justify-center rounded-full bg-[#7A3535] font-display font-semibold text-[#FFF8F4] shadow-md",
+                    contained ? "h-14 w-14 text-lg" : "h-16 w-16 text-xl",
+                  )}
+                >
                   {data.couple.sealLabel}
                 </div>
                 <p className="text-[11px] tracking-[0.18em] text-[#7D5E57] uppercase">
                   {data.ui.invitePrefix}
                 </p>
-                <p className="font-display text-2xl italic text-[#5C2626]">
+                <p
+                  className={cn(
+                    "font-display italic text-[#5C2626]",
+                    contained ? "text-xl" : "text-2xl",
+                  )}
+                >
                   {displayGuest}
                 </p>
               </div>
@@ -123,22 +141,32 @@ export default function Basic3Template({
       <div
         className={cn(
           "mx-auto w-full bg-[#FCF5F0]",
-          isDesktopLayout ? "max-w-[1040px]" : "max-w-[460px]",
+          isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
         )}
       >
         {/* Hero */}
         <header
           className={cn(
-            "bg-gradient-to-b from-[#F5E0D5] to-[#FCF5F0] px-5 pt-10 pb-8 text-center sm:px-8",
+            "bg-gradient-to-b from-[#F5E0D5] to-[#FCF5F0] text-center sm:px-8",
+            contained ? "px-4 pt-7 pb-6" : "px-5 pt-10 pb-8",
             isDesktopLayout &&
-              "md:grid md:grid-cols-12 md:items-center md:gap-10 md:px-8 md:pt-14 md:pb-12 md:text-left",
+            "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
           )}
         >
-          <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-4" : "space-y-3")}>
+          <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-3.5" : "space-y-3")}>
             <p className="text-[11px] font-medium tracking-[0.22em] text-[#8A4444] uppercase">
               {data.ui.eyebrow} · {heroDate.dotDate}
             </p>
-            <h1 className="font-display text-[clamp(34px,9vw,52px)] leading-[1.1] font-semibold text-[#5C2626]">
+            <h1
+              className={cn(
+                "font-display leading-[1.1] font-semibold text-[#5C2626]",
+                contained
+                  ? "text-[clamp(24px,9.2cqw,34px)]"
+                  : isDesktopLayout
+                    ? "text-[clamp(32px,3.6vw,44px)]"
+                    : "text-[clamp(32px,9vw,48px)]",
+              )}
+            >
               {data.couple.groomName}
               <span className="mx-2 font-normal italic text-[#8A4444]">&amp;</span>
               {data.couple.brideName}
@@ -158,11 +186,11 @@ export default function Basic3Template({
             )}
           </div>
 
-          <div className={cn("mt-6", isDesktopLayout && "md:col-span-6 md:mt-0")}>
+          <div className={cn("mt-5", isDesktopLayout && "md:col-span-6 md:mt-0")}>
             <div
               className={cn(
                 "mx-auto overflow-hidden rounded-t-full border-2 border-[#D7B3A5] bg-white p-2 shadow-sm",
-                isDesktopLayout ? "max-w-[320px] md:max-w-none md:p-2.5" : "max-w-[320px]",
+                isDesktopLayout ? "max-w-[300px] md:max-w-[340px] md:p-2.5" : "max-w-[290px]",
               )}
             >
               <div className="overflow-hidden rounded-t-full bg-[#F5E0D5]/40">
@@ -172,6 +200,9 @@ export default function Basic3Template({
                     alt={data.photos.heroAlt}
                     width={600}
                     height={800}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
                     className="block aspect-[3/4] w-full rounded-t-full object-cover object-[center_20%]"
                   />
                 ) : (
@@ -235,6 +266,7 @@ export default function Basic3Template({
                     width={480}
                     height={640}
                     loading="lazy"
+                    decoding="async"
                     className="block aspect-[3/4] w-full object-cover object-[center_20%]"
                   />
                 ) : (
@@ -389,6 +421,7 @@ export default function Basic3Template({
                     width={600}
                     height={800}
                     loading="lazy"
+                    decoding="async"
                     className="block aspect-[3/4] w-full rounded-xl object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                   />
                 </button>

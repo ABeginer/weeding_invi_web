@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { resolveEventIso } from "@/lib/utils";
+import { cn, resolveEventIso } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
-import { useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
 
 interface TimeLeft {
   days: number;
@@ -35,6 +35,7 @@ function padTwo(value: number): string {
 
 export function Countdown() {
   const data = useWeddingContent();
+  const isContained = useInvitationContained();
   const primaryEvent = data.events[0];
   const targetIso = React.useMemo(
     () => resolveEventIso(primaryEvent?.startsAt ?? data.date),
@@ -71,7 +72,12 @@ export function Countdown() {
         {data.ui.countdownEyebrow}
       </p>
 
-      <h2 className="mt-1.5 font-inv-script text-[clamp(36px,9.5vw,48px)] leading-[1.15] font-normal text-inv-olive-btn">
+      <h2
+        className={cn(
+          "mt-1.5 font-inv-script leading-[1.15] font-normal text-inv-olive-btn",
+          isContained ? "text-[clamp(28px,9.5cqw,40px)]" : "text-[clamp(36px,9.5vw,48px)]",
+        )}
+      >
         {data.ui.countdownTitle}
       </h2>
 
@@ -86,7 +92,12 @@ export function Countdown() {
               key={unit.label}
               className="flex flex-col items-center justify-center py-1"
             >
-              <span className="font-inv-serif text-[clamp(32px,8.8vw,44px)] leading-none font-normal tabular-nums text-inv-olive-btn">
+              <span
+                className={cn(
+                  "font-inv-serif leading-none font-normal tabular-nums text-inv-olive-btn",
+                  isContained ? "text-[clamp(26px,8.8cqw,36px)]" : "text-[clamp(32px,8.8vw,44px)]",
+                )}
+              >
                 {unit.value}
               </span>
               <span className="mt-2 font-inv-serif text-[14px] text-inv-olive-btn sm:text-[15px]">

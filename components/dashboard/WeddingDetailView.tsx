@@ -328,8 +328,8 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   }
 
   const renderPhonePreviewCard = () => (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-4 py-3">
+    <div className="space-y-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-3.5 py-2.5">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold tracking-[0.14em] text-fg uppercase">
             Xem trước thiệp
@@ -353,12 +353,12 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
         </button>
       </div>
 
-      <div className="mx-auto w-full max-w-[390px]">
+      <div className="mx-auto w-full">
         <PhoneFrame
           scrollRef={phoneScrollRef}
           enableFloat={false}
           lockedScroll={!previewOpened}
-          className="max-w-[390px]"
+          desktopOffsetPx={164}
         >
           <TemplatePreviewRenderer
             key={draftTemplateId}
@@ -377,10 +377,10 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1.5">
+      <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted transition-colors hover:text-accent-text sm:text-sm"
@@ -388,8 +388,8 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Tất cả thiệp cưới</span>
           </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-3xl font-semibold text-fg sm:text-4xl">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="font-display text-2xl font-semibold text-fg sm:text-3xl">
               {draftContent.couple.groomName} &amp; {draftContent.couple.brideName}
             </h1>
             <span
@@ -481,7 +481,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
         <aside className="hidden lg:col-span-2 lg:block">
           <nav
             aria-label="Mục quản lý thiệp"
-            className="sticky top-20 space-y-1.5 rounded-2xl border border-border bg-surface p-2"
+            className="sticky top-16 space-y-1.5 rounded-2xl border border-border bg-surface p-2"
           >
             {SIDEBAR_TABS.map(({ id, label, Icon }) => {
               const active = activeTab === id;
@@ -581,7 +581,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
         </section>
 
         <aside className="hidden lg:col-span-4 lg:block">
-          <div className="sticky top-20">{renderPhonePreviewCard()}</div>
+          <div className="sticky top-16">{renderPhonePreviewCard()}</div>
         </aside>
       </div>
 

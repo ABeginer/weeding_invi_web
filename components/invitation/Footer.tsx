@@ -1,14 +1,21 @@
 "use client";
 
-import { useWeddingContent } from "./WeddingContentProvider";
+import { cn } from "@/lib/utils";
+import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
 
 export function Footer() {
   const data = useWeddingContent();
+  const isContained = useInvitationContained();
   const resolvedBannerImage =
     data.photos.gallery[1]?.url ?? data.photos.heroUrl ?? null;
 
   return (
-    <footer className="relative flex min-h-[460px] w-full flex-col justify-end overflow-hidden bg-inv-olive-deep text-center text-white sm:min-h-[540px]">
+    <footer
+      className={cn(
+        "relative flex w-full flex-col justify-end overflow-hidden bg-inv-olive-deep text-center text-white",
+        isContained ? "min-h-[380px]" : "min-h-[460px] sm:min-h-[540px]",
+      )}
+    >
       {resolvedBannerImage ? (
         <img
           src={resolvedBannerImage}
@@ -16,6 +23,7 @@ export function Footer() {
           width={900}
           height={1350}
           loading="lazy"
+          decoding="async"
           className="absolute inset-0 block h-full w-full object-cover object-[center_20%]"
         />
       ) : (
@@ -41,7 +49,14 @@ export function Footer() {
       <div className="relative z-10 px-6 pt-16 pb-[max(4.75rem,calc(env(safe-area-inset-bottom)+4rem))]">
         <h2 className="sr-only">{data.ui.thankYouTitle}</h2>
 
-        <p className="font-inv-script text-[clamp(50px,13.5vw,66px)] leading-[1.05] text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.28)]">
+        <p
+          className={cn(
+            "font-inv-script leading-[1.05] text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.28)]",
+            isContained
+              ? "text-[clamp(36px,13cqw,52px)]"
+              : "text-[clamp(50px,13.5vw,66px)]",
+          )}
+        >
           {data.ui.thankYouHeading}
         </p>
 

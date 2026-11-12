@@ -2,7 +2,7 @@
 
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
-import { useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationContained, useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
 
 function RingsOrnament({ className }: { className?: string }) {
   return (
@@ -31,6 +31,7 @@ function RingsOrnament({ className }: { className?: string }) {
 
 export function EventDetails() {
   const data = useWeddingContent();
+  const isContained = useInvitationContained();
   const isDesktopLayout = useInvitationDesktopLayout();
   const isMultiColumnDesktop = isDesktopLayout && data.events.length > 1;
 
@@ -82,7 +83,12 @@ export function EventDetails() {
                     <span className="block border-y border-inv-olive/60 py-1.5 font-inv-serif text-[15px] leading-none whitespace-nowrap uppercase sm:text-[17px]">
                       THÁNG {dateParts.month}
                     </span>
-                    <strong className="font-inv-serif text-[clamp(52px,14vw,70px)] leading-[0.88] font-normal text-inv-ink">
+                    <strong
+                      className={cn(
+                        "font-inv-serif leading-[0.88] font-normal text-inv-ink",
+                        isContained ? "text-[clamp(40px,14cqw,58px)]" : "text-[clamp(52px,14vw,70px)]",
+                      )}
+                    >
                       {dateParts.day}
                     </strong>
                     <span className="block border-y border-inv-olive/60 py-1.5 font-inv-serif text-[15px] leading-none whitespace-nowrap uppercase sm:text-[17px]">

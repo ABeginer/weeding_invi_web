@@ -92,7 +92,10 @@ export default function Basic2Template({
               type="button"
               onClick={handleOpen}
               aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayGuest}`}
-              className="group relative flex h-full max-h-[660px] w-full max-w-[380px] cursor-pointer flex-col items-center justify-between border border-[#C6A962] bg-white px-6 py-10 text-center shadow-[0_18px_45px_rgba(31,29,26,0.08)] transition-colors hover:border-[#9E803B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#706040]"
+              className={cn(
+                "group relative flex h-full w-full max-w-[380px] cursor-pointer flex-col items-center justify-between border border-[#C6A962] bg-white text-center shadow-[0_18px_45px_rgba(31,29,26,0.08)] transition-colors hover:border-[#9E803B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#706040]",
+                contained ? "max-h-[560px] px-5 py-7" : "max-h-[660px] px-6 py-10",
+              )}
             >
               <span
                 aria-hidden="true"
@@ -107,18 +110,33 @@ export default function Basic2Template({
                 </p>
               </div>
 
-              <div className="relative space-y-3 py-4">
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#C6A962] bg-[#FAF7F0] font-display text-2xl font-semibold text-[#5E4D2B]">
+              <div className="relative space-y-2.5 py-3">
+                <div
+                  className={cn(
+                    "mx-auto flex items-center justify-center rounded-full border border-[#C6A962] bg-[#FAF7F0] font-display font-semibold text-[#5E4D2B]",
+                    contained ? "h-16 w-16 text-xl" : "h-20 w-20 text-2xl",
+                  )}
+                >
                   {data.couple.sealLabel}
                 </div>
-                <h2 className="font-display text-3xl font-semibold text-[#1F1D1A]">
+                <h2
+                  className={cn(
+                    "font-display font-semibold text-[#1F1D1A]",
+                    contained ? "text-2xl" : "text-3xl",
+                  )}
+                >
                   {data.couple.groomName} &amp; {data.couple.brideName}
                 </h2>
-                <div className="pt-2">
+                <div className="pt-1.5">
                   <p className="text-[11px] tracking-[0.18em] text-[#665E52] uppercase">
                     {data.ui.invitePrefix}
                   </p>
-                  <p className="mt-1 font-display text-2xl italic text-[#1F1D1A]">
+                  <p
+                    className={cn(
+                      "mt-1 font-display italic text-[#1F1D1A]",
+                      contained ? "text-xl" : "text-2xl",
+                    )}
+                  >
                     {displayGuest}
                   </p>
                 </div>
@@ -136,22 +154,32 @@ export default function Basic2Template({
       <div
         className={cn(
           "mx-auto w-full bg-[#FAF7F0]",
-          isDesktopLayout ? "max-w-[1040px]" : "max-w-[460px]",
+          isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
         )}
       >
         {/* Hero */}
         <header
           className={cn(
-            "px-5 pt-10 pb-8 text-center",
+            "text-center",
+            contained ? "px-4 pt-7 pb-6" : "px-5 pt-10 pb-8",
             isDesktopLayout &&
-              "md:grid md:grid-cols-12 md:items-center md:gap-10 md:px-8 md:pt-14 md:pb-12 md:text-left",
+              "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
           )}
         >
-          <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-4" : "space-y-4")}>
+          <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-3.5" : "space-y-3.5")}>
             <p className="text-[11px] font-medium tracking-[0.24em] text-[#706040] uppercase">
               {data.ui.eyebrow} · {heroDate.dotDate}
             </p>
-            <h1 className="font-display text-[clamp(34px,9vw,54px)] leading-[1.08] font-semibold text-[#1F1D1A]">
+            <h1
+              className={cn(
+                "font-display leading-[1.08] font-semibold text-[#1F1D1A]",
+                contained
+                  ? "text-[clamp(24px,9.2cqw,34px)]"
+                  : isDesktopLayout
+                    ? "text-[clamp(32px,3.6vw,44px)]"
+                    : "text-[clamp(32px,9vw,48px)]",
+              )}
+            >
               {data.couple.groomName}
               <span className="mx-2 font-normal italic text-[#8A7344]">&amp;</span>
               {data.couple.brideName}
@@ -171,8 +199,13 @@ export default function Basic2Template({
             )}
           </div>
 
-          <div className={cn("mt-6", isDesktopLayout && "md:col-span-6 md:mt-0")}>
-            <div className="overflow-hidden rounded-t-full border border-[#C6A962]/80 bg-white p-2.5 shadow-sm">
+          <div
+            className={cn(
+              "mt-5",
+              isDesktopLayout && "md:col-span-6 md:mt-0 md:mx-auto md:w-full md:max-w-[340px]",
+            )}
+          >
+            <div className="overflow-hidden rounded-t-full border border-[#C6A962]/80 bg-white p-2 shadow-sm sm:p-2.5">
               <div className="overflow-hidden rounded-t-full bg-[#EFEAE0]">
                 {data.photos.heroUrl ? (
                   <img
@@ -180,6 +213,9 @@ export default function Basic2Template({
                     alt={data.photos.heroAlt}
                     width={600}
                     height={800}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
                     className="block aspect-[3/4] w-full object-cover object-[center_20%]"
                   />
                 ) : (
@@ -248,6 +284,7 @@ export default function Basic2Template({
                     width={480}
                     height={640}
                     loading="lazy"
+                    decoding="async"
                     className="block aspect-[3/4] w-full object-cover object-[center_20%]"
                   />
                 ) : (
@@ -422,6 +459,7 @@ export default function Basic2Template({
                     width={600}
                     height={800}
                     loading="lazy"
+                    decoding="async"
                     className="block aspect-[3/4] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                   />
                 </button>

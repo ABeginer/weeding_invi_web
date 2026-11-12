@@ -40,6 +40,7 @@ export function PhotoTriptych() {
                 width={600}
                 height={900}
                 loading="lazy"
+                decoding="async"
                 className="block h-full w-full object-cover"
               />
             </div>

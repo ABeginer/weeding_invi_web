@@ -355,17 +355,17 @@ export function CreateWeddingBuilder({
     <div className="landing-theme min-h-screen-dvh bg-bg text-text">
       <LandingNavbar isAuthenticated={isAuthenticated} userEmail={userEmail} />
 
-      <main className="border-b border-border py-8 sm:py-12">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="max-w-2xl space-y-2">
+      <main className="border-b border-border py-5 sm:py-7">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="max-w-2xl space-y-1.5">
             <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.18em] text-accent-text uppercase">
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Tạo thử ngay không cần đăng nhập</span>
             </p>
-            <h1 className="font-display text-3xl font-semibold text-text sm:text-4xl">
+            <h1 className="font-display text-2xl font-semibold text-text sm:text-3xl">
               Thiết kế thiệp cưới của hai bạn
             </h1>
-            <p className="text-sm text-text-muted sm:text-base">
+            <p className="text-xs text-text-muted sm:text-sm">
               Nhập thông tin cơ bản để xem thiệp chạy trực tiếp trong khung điện thoại, sau đó lưu và nhận đường dẫn mời ngay.
             </p>
           </div>
@@ -395,7 +395,7 @@ export function CreateWeddingBuilder({
             </div>
           )}
 
-          <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+          <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
             {/* Cột trái: Form nhập liệu */}
             <form
               onSubmit={handleSubmit}
@@ -616,8 +616,8 @@ export function CreateWeddingBuilder({
 
             {/* Cột phải: Khung điện thoại xem trước trực tiếp */}
             <aside className="lg:col-span-5">
-              <div className="space-y-3 lg:sticky lg:top-20">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-4 py-3">
+              <div className="space-y-2.5 lg:sticky lg:top-16">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface px-3.5 py-2.5">
                   <span className="text-xs font-semibold tracking-[0.14em] text-text uppercase">
                     Xem trước trực tiếp
                   </span>
@@ -634,12 +634,12 @@ export function CreateWeddingBuilder({
                   </button>
                 </div>
 
-                <div className="mx-auto w-full max-w-[390px]">
+                <div className="mx-auto w-full">
                   <PhoneFrame
                     scrollRef={phoneScrollRef}
                     enableFloat={false}
                     lockedScroll={!previewOpened}
-                    className="max-w-[390px]"
+                    desktopOffsetPx={164}
                   >
                     <TemplatePreviewRenderer
                       key={templateId}

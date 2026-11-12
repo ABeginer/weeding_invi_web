@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { useWeddingContent } from "./WeddingContentProvider";
+import { cn } from "@/lib/utils";
+import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
 
 interface EnvelopeProps {
   guestName?: string | null;
@@ -156,6 +157,7 @@ function BotanicalLineArt() {
 
 export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps) {
   const data = useWeddingContent();
+  const isContained = useInvitationContained() || contained;
   const prefersReducedMotion = useReducedMotion();
   const [opening, setOpening] = React.useState(false);
 
@@ -212,7 +214,12 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
           </div>
         </div>
 
-        <div className="absolute top-1/2 left-[79.1139%] z-30 h-[96px] w-[96px] -translate-x-1/2 -translate-y-1/2 sm:h-[108px] sm:w-[108px]">
+        <div
+          className={cn(
+            "absolute top-1/2 left-[79.1139%] z-30 -translate-x-1/2 -translate-y-1/2",
+            isContained ? "h-[74px] w-[74px]" : "h-[96px] w-[96px] sm:h-[108px] sm:w-[108px]",
+          )}
+        >
           <img
             src="/images/olive-wax-seal.webp"
             alt=""
@@ -258,7 +265,10 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         onClick={handleOpen}
         disabled={opening}
         aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayName}`}
-        className="relative z-30 flex h-full w-full cursor-pointer flex-col items-center justify-between px-6 pt-[13dvh] pb-[6dvh] text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-inv-olive-deep"
+        className={cn(
+          "relative z-30 flex h-full w-full cursor-pointer flex-col items-center justify-between px-6 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-inv-olive-deep",
+          isContained ? "pt-[14%] pb-[9%]" : "pt-[13dvh] pb-[6dvh]",
+        )}
       >
         <motion.div
           animate={opening ? { opacity: 0, y: -6 } : { opacity: 1, y: 0 }}
@@ -268,7 +278,14 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
           <p className="font-inv-serif text-[11px] font-medium uppercase tracking-[0.26em] text-inv-text">
             {data.ui.invitePrefix}
           </p>
-          <p className="mt-2 font-inv-script text-[clamp(32px,9.5vw,44px)] leading-[1.15] text-inv-olive-deep">
+          <p
+            className={cn(
+              "mt-2 font-inv-script leading-[1.15] text-inv-olive-deep",
+              isContained
+                ? "text-[clamp(24px,9.5cqw,36px)]"
+                : "text-[clamp(32px,9.5vw,44px)]",
+            )}
+          >
             {displayName}
           </p>
         </motion.div>

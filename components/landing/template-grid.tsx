@@ -26,8 +26,13 @@ function getPlanBadgeClasses(plan: WeddingPlan): string {
   return "border-vip-border bg-vip-bg text-vip-fg font-semibold";
 }
 
-function TemplateCoverMedia({ template }: { template: WeddingTemplateMeta }) {
-  const [loaded, setLoaded] = React.useState(false);
+function TemplateCoverMedia({
+  template,
+  prioritize = false,
+}: {
+  template: WeddingTemplateMeta;
+  prioritize?: boolean;
+}) {
   const [errored, setErrored] = React.useState(Boolean(template.isPlaceholder));
 
   if (template.isPlaceholder || errored) {
@@ -38,7 +43,7 @@ function TemplateCoverMedia({ template }: { template: WeddingTemplateMeta }) {
           className="pointer-events-none absolute inset-3 rounded-lg border border-border"
         />
         <Diamond className="h-6 w-6 text-accent-text" aria-hidden="true" />
-        <p className="mt-3 font-display text-2xl font-semibold text-text">
+        <p className="mt-3 font-display text-xl font-semibold text-text sm:text-2xl">
           {template.name}
         </p>
         <span className="mt-2 rounded-full border border-soon-border bg-soon-bg px-3 py-0.5 text-[11px] font-medium text-soon-fg">
@@ -49,27 +54,17 @@ function TemplateCoverMedia({ template }: { template: WeddingTemplateMeta }) {
   }
 
   return (
-    <>
-      {!loaded && (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 animate-pulse bg-surface-alt motion-reduce:animate-none"
-        />
-      )}
-      <img
-        src={template.coverImage}
-        alt={`${template.name} — ${template.subtitle}`}
-        width={600}
-        height={800}
-        loading="lazy"
-        onLoad={() => setLoaded(true)}
-        onError={() => setErrored(true)}
-        className={cn(
-          "block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100",
-          loaded ? "opacity-100" : "opacity-0",
-        )}
-      />
-    </>
+    <img
+      src={template.coverImage}
+      alt={`${template.name} — ${template.subtitle}`}
+      width={480}
+      height={640}
+      loading="eager"
+      decoding="async"
+      fetchPriority={prioritize ? "high" : "auto"}
+      onError={() => setErrored(true)}
+      className="block h-full w-full bg-surface-alt object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+    />
   );
 }
 
@@ -85,18 +80,18 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
   return (
     <section
       id="mau-thiep"
-      className="scroll-mt-16 border-b border-border bg-bg py-14 sm:py-20"
+      className="scroll-mt-14 border-b border-border bg-bg py-10 sm:py-12"
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-2xl">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-xl">
             <p className="text-[11px] font-medium tracking-[0.18em] text-accent-text uppercase">
               {copy.eyebrow}
             </p>
-            <h2 className="mt-2 font-display text-3xl font-semibold text-accent-text sm:text-4xl">
+            <h2 className="mt-1.5 font-display text-2xl font-semibold text-accent-text sm:text-3xl">
               {copy.title}
             </h2>
-            <p className="mt-2.5 text-sm leading-relaxed text-text-muted sm:text-base">
+            <p className="mt-2 text-sm leading-relaxed text-text-muted">
               {copy.description}
             </p>
           </div>
@@ -116,7 +111,7 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                   onClick={() => setFilter(item.id)}
                   aria-pressed={active}
                   className={cn(
-                    "inline-flex h-9 cursor-pointer items-center justify-center rounded-full border px-4 text-xs font-medium transition-colors",
+                    "inline-flex h-8 cursor-pointer items-center justify-center rounded-full border px-3.5 text-xs font-medium transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
                     active
                       ? "border-accent bg-accent font-semibold text-accent-fg"
@@ -131,12 +126,12 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-border bg-surface p-10 text-center text-sm text-text-muted">
+          <div className="mt-8 rounded-2xl border border-border bg-surface p-8 text-center text-sm text-text-muted">
             {copy.emptyFilterLabel}
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
-            {filtered.map((tpl) => {
+          <div className="mt-6 grid grid-cols-2 gap-3.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {filtered.map((tpl, index) => {
               const isPlaceholder = Boolean(tpl.isPlaceholder);
               const badgeText = copy.planBadges[tpl.plan];
               const requiresUpgrade =
@@ -148,12 +143,12 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                   className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xs transition-colors hover:border-accent hover:bg-surface-alt"
                 >
                   {/* Khung ảnh bìa tỉ lệ 3:4 */}
-                  <div className="relative aspect-[3/4] w-full overflow-hidden border-b border-border bg-bg">
-                    <TemplateCoverMedia template={tpl} />
+                  <div className="relative aspect-[3/4] w-full overflow-hidden border-b border-border bg-surface-alt">
+                    <TemplateCoverMedia template={tpl} prioritize={index < 2} />
 
                     <span
                       className={cn(
-                        "absolute top-2.5 right-2.5 z-10 rounded-full border px-2.5 py-0.5 text-[11px] font-medium shadow-xs",
+                        "absolute top-2 right-2 z-10 rounded-full border px-2 py-0.5 text-[10px] font-medium shadow-xs",
                         getPlanBadgeClasses(tpl.plan),
                       )}
                     >
@@ -162,23 +157,23 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                   </div>
 
                   {/* Nội dung thẻ */}
-                  <div className="flex flex-1 flex-col justify-between p-3.5 sm:p-4">
+                  <div className="flex flex-1 flex-col justify-between p-3 sm:p-3.5">
                     <div>
-                      <h3 className="font-display text-lg leading-snug font-semibold text-text sm:text-xl">
+                      <h3 className="font-display text-base leading-snug font-semibold text-text sm:text-lg">
                         {tpl.name}
                       </h3>
-                      <p className="mt-0.5 text-[11px] tracking-[0.14em] text-text-muted uppercase">
+                      <p className="mt-0.5 text-[10px] tracking-[0.14em] text-text-muted uppercase">
                         {tpl.subtitle}
                       </p>
-                      <p className="mt-2 hidden text-xs leading-relaxed text-text-muted sm:line-clamp-2">
+                      <p className="mt-1.5 hidden text-xs leading-relaxed text-text-muted sm:line-clamp-2">
                         {tpl.description}
                       </p>
                     </div>
 
-                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <div className="mt-3 flex flex-col gap-1.5 sm:flex-row">
                       <Link
                         href={`/mau/${tpl.id}`}
-                        className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-text bg-transparent px-3 text-xs font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-full border border-text bg-transparent px-2.5 text-xs font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                       >
                         <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                         <span>{copy.previewLabel}</span>
@@ -188,7 +183,7 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                         <button
                           type="button"
                           disabled
-                          className="inline-flex h-9 flex-1 cursor-not-allowed items-center justify-center rounded-full border border-soon-border bg-soon-bg px-3 text-xs font-medium text-soon-fg opacity-85"
+                          className="inline-flex h-8 flex-1 cursor-not-allowed items-center justify-center rounded-full border border-soon-border bg-soon-bg px-2.5 text-xs font-medium text-soon-fg opacity-85"
                         >
                           {copy.comingSoonLabel}
                         </button>
@@ -197,7 +192,7 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                           type="button"
                           onClick={() => onUseTemplate(tpl)}
                           className={cn(
-                            "inline-flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
+                            "inline-flex h-8 flex-1 cursor-pointer items-center justify-center gap-1 rounded-full px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
                             requiresUpgrade
                               ? "border border-text bg-transparent text-text hover:bg-surface-alt"
                               : "bg-accent text-accent-fg hover:bg-accent-hover",

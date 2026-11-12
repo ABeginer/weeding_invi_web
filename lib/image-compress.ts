@@ -1,7 +1,7 @@
 import { UPLOAD_ALLOWED_MIME_TYPES, UPLOAD_MAX_BYTES } from "@/config/plans";
 
-const MAX_DIMENSION = 1600;
-const WEBP_QUALITY = 0.82;
+const MAX_DIMENSION = 1280;
+const WEBP_QUALITY = 0.78;
 
 export function validateImageFile(file: File): string | null {
   if (!(UPLOAD_ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)) {

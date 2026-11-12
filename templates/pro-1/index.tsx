@@ -109,33 +109,56 @@ export default function Pro1Template({
               type="button"
               onClick={handleOpen}
               aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayGuest}`}
-              className="group relative z-10 mx-5 flex w-full max-w-[350px] cursor-pointer flex-col items-center rounded-2xl border border-lnd-gold bg-lnd-bg/95 px-6 py-10 text-center shadow-[0_0_50px_rgba(212,175,55,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold"
+              className={cn(
+                "group relative z-10 mx-5 flex w-full max-w-[350px] cursor-pointer flex-col items-center rounded-2xl border border-lnd-gold bg-lnd-bg/95 text-center shadow-[0_0_50px_rgba(212,175,55,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lnd-gold",
+                contained ? "px-5 py-7" : "px-6 py-10",
+              )}
             >
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-3 rounded-xl border border-lnd-gold-soft/60"
               />
               <Diamond className="h-5 w-5 text-lnd-gold" aria-hidden="true" />
-              <p className="mt-3 text-[11px] font-medium tracking-[0.22em] text-lnd-gold uppercase">
+              <p className="mt-2.5 text-[11px] font-medium tracking-[0.22em] text-lnd-gold uppercase">
                 {data.ui.eyebrow}
               </p>
 
-              <div className="my-6 flex h-20 w-20 items-center justify-center rounded-full border-2 border-lnd-gold bg-lnd-gold-tint font-display text-2xl font-semibold text-lnd-gold">
+              <div
+                className={cn(
+                  "flex items-center justify-center rounded-full border-2 border-lnd-gold bg-lnd-gold-tint font-display font-semibold text-lnd-gold",
+                  contained ? "my-4 h-16 w-16 text-xl" : "my-6 h-20 w-20 text-2xl",
+                )}
+              >
                 {data.couple.sealLabel}
               </div>
 
-              <h2 className="font-display text-3xl font-semibold text-lnd-body">
+              <h2
+                className={cn(
+                  "font-display font-semibold text-lnd-body",
+                  contained ? "text-2xl" : "text-3xl",
+                )}
+              >
                 {data.couple.groomName} &amp; {data.couple.brideName}
               </h2>
 
-              <p className="mt-4 text-[11px] tracking-[0.18em] text-lnd-muted uppercase">
+              <p className="mt-3 text-[11px] tracking-[0.18em] text-lnd-muted uppercase">
                 {data.ui.invitePrefix}
               </p>
-              <p className="mt-1 font-display text-2xl italic text-lnd-gold">
+              <p
+                className={cn(
+                  "mt-1 font-display italic text-lnd-gold",
+                  contained ? "text-xl" : "text-2xl",
+                )}
+              >
                 {displayGuest}
               </p>
 
-              <span className="mt-7 inline-flex h-10 items-center rounded-full bg-lnd-gold px-6 text-xs font-semibold tracking-[0.14em] text-lnd-bg uppercase transition-colors group-hover:bg-lnd-gold-bright">
+              <span
+                className={cn(
+                  "inline-flex h-10 items-center rounded-full bg-lnd-gold px-6 text-xs font-semibold tracking-[0.14em] text-lnd-bg uppercase transition-colors group-hover:bg-lnd-gold-bright",
+                  contained ? "mt-5" : "mt-7",
+                )}
+              >
                 {data.ui.tapHint}
               </span>
             </button>
@@ -146,18 +169,19 @@ export default function Pro1Template({
       <div
         className={cn(
           "mx-auto w-full bg-lnd-bg",
-          isDesktopLayout ? "max-w-[1060px]" : "max-w-[460px]",
+          isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
         )}
       >
         {/* Hero */}
         <header
           className={cn(
-            "relative overflow-hidden px-5 pt-11 pb-10 text-center",
+            "relative overflow-hidden text-center",
+            contained ? "px-4 pt-7 pb-6" : "px-5 pt-11 pb-10",
             isDesktopLayout &&
-              "md:grid md:grid-cols-12 md:items-center md:gap-10 md:px-10 md:pt-14 md:pb-12 md:text-left",
+              "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
           )}
         >
-          <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-4" : "space-y-4")}>
+          <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-3.5" : "space-y-3.5")}>
             <div
               className={cn(
                 "inline-flex items-center gap-2",
@@ -169,7 +193,16 @@ export default function Pro1Template({
                 {data.ui.eyebrow} · {heroDate.dotDate}
               </span>
             </div>
-            <h1 className="font-display text-[clamp(34px,9vw,54px)] leading-[1.08] font-semibold text-lnd-gold">
+            <h1
+              className={cn(
+                "font-display leading-[1.08] font-semibold text-lnd-gold",
+                contained
+                  ? "text-[clamp(24px,9.2cqw,34px)]"
+                  : isDesktopLayout
+                    ? "text-[clamp(32px,3.6vw,44px)]"
+                    : "text-[clamp(32px,9vw,48px)]",
+              )}
+            >
               {data.couple.groomName}
               <span className="mx-2 font-normal italic text-lnd-body">&amp;</span>
               {data.couple.brideName}
@@ -190,8 +223,13 @@ export default function Pro1Template({
             )}
           </div>
 
-          <div className={cn("mt-6", isDesktopLayout && "md:col-span-6 md:mt-0")}>
-            <div className="relative rounded-t-full border border-lnd-gold bg-lnd-surface p-2.5 shadow-[0_0_40px_rgba(212,175,55,0.12)]">
+          <div
+            className={cn(
+              "mt-5",
+              isDesktopLayout && "md:col-span-6 md:mt-0 md:mx-auto md:w-full md:max-w-[340px]",
+            )}
+          >
+            <div className="relative rounded-t-full border border-lnd-gold bg-lnd-surface p-2 shadow-[0_0_40px_rgba(212,175,55,0.12)] sm:p-2.5">
               <div className="overflow-hidden rounded-t-full border border-lnd-gold-soft/60">
                 {data.photos.heroUrl ? (
                   <img
@@ -199,6 +237,9 @@ export default function Pro1Template({
                     alt={data.photos.heroAlt}
                     width={600}
                     height={800}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
                     className="block aspect-[3/4] w-full object-cover object-[center_20%]"
                   />
                 ) : (
@@ -267,6 +308,7 @@ export default function Pro1Template({
                     width={480}
                     height={640}
                     loading="lazy"
+                    decoding="async"
                     className="block aspect-[3/4] w-full rounded-lg object-cover object-[center_20%]"
                   />
                 ) : (
@@ -429,6 +471,7 @@ export default function Pro1Template({
                     width={600}
                     height={800}
                     loading="lazy"
+                    decoding="async"
                     className="block aspect-[3/4] w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                   />
                 </button>
