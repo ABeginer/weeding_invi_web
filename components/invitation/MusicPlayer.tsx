@@ -2,7 +2,7 @@
 
 import { Disc3, Music, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { wedding } from "@/content/wedding";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 interface MusicPlayerProps {
   visible: boolean;
@@ -15,6 +15,7 @@ export function MusicPlayer({
   isPlaying,
   onToggle,
 }: MusicPlayerProps) {
+  const wedding = useWeddingContent();
   if (!visible) return null;
 
   return (

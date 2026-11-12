@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { wedding } from "@/content/wedding";
 import { formatWeddingDateParts } from "@/lib/utils";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 interface HeroProps {
   guestName?: string | null;
 }
 
 export function Hero({ guestName }: HeroProps) {
+  const wedding = useWeddingContent();
   const prefersReducedMotion = useReducedMotion();
   const [mounted, setMounted] = React.useState(false);
   const primaryEvent = wedding.events[0];
@@ -19,7 +20,7 @@ export function Hero({ guestName }: HeroProps) {
         primaryEvent?.date ?? wedding.date,
         primaryEvent?.time
       ),
-    [primaryEvent?.date, primaryEvent?.time]
+    [primaryEvent?.date, primaryEvent?.time, wedding.date]
   );
 
   React.useEffect(() => {

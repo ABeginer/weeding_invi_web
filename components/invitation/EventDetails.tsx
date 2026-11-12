@@ -1,8 +1,8 @@
 "use client";
 
-import { wedding } from "@/content/wedding";
 import { formatWeddingDateParts } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 function RingsOrnament() {
   return (
@@ -30,6 +30,7 @@ function RingsOrnament() {
 }
 
 export function EventDetails() {
+  const wedding = useWeddingContent();
   if (wedding.events.length === 0) return null;
 
   return (

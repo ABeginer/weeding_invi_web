@@ -3,10 +3,10 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { Download, Gift, X } from "lucide-react";
-import { wedding } from "@/content/wedding";
 import { invitationThemeCssVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 function LeafWreathFrame() {
   return (
@@ -52,6 +52,7 @@ function LeafWreathFrame() {
 }
 
 export function GiftQR() {
+  const wedding = useWeddingContent();
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const closeBtnRef = React.useRef<HTMLButtonElement | null>(null);

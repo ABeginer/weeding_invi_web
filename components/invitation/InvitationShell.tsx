@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { wedding } from "@/content/wedding";
 import { invitationThemeCssVars } from "@/lib/theme";
 import { Envelope } from "./Envelope";
 import { MusicPlayer } from "./MusicPlayer";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 interface InvitationShellProps {
   guestName?: string | null;
@@ -19,6 +19,7 @@ export function InvitationShell({
   guestName,
   children,
 }: InvitationShellProps) {
+  const wedding = useWeddingContent();
   const [envelopeDismissed, setEnvelopeDismissed] = React.useState(false);
   const [isOpened, setIsOpened] = React.useState(false);
   const [isPlaying, setIsPlaying] = React.useState(false);
@@ -83,7 +84,7 @@ export function InvitationShell({
     } catch {
       setIsPlaying(false);
     }
-  }, [audioAvailable, startFadeIn]);
+  }, [audioAvailable, startFadeIn, wedding.music?.src]);
 
   const handleOpenEnvelope = React.useCallback(() => {
     setIsOpened(true);
@@ -295,7 +296,7 @@ export function InvitationShell({
     return () => {
       cleanup(false);
     };
-  }, [envelopeDismissed]);
+  }, [envelopeDismissed, wedding.autoScroll]);
 
   return (
     <div

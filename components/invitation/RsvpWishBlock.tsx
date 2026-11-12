@@ -4,13 +4,15 @@ import * as React from "react";
 import { AlertTriangle, CheckCircle2, Lock, Send, XCircle } from "lucide-react";
 import { submitRsvp, submitWish } from "@/lib/api";
 import { GuestStatus } from "@/lib/types";
-import { wedding } from "@/content/wedding";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 interface RsvpWishBlockProps {
   slug?: string;
+  weddingSlug?: string;
+  mode?: "personal" | "public";
   guestName?: string;
   initialStatus?: GuestStatus;
 }
@@ -19,10 +21,14 @@ const MAX_WISH_LENGTH = 500;
 
 export function RsvpWishBlock({
   slug,
+  weddingSlug,
+  mode = "personal",
   guestName,
   initialStatus = "pending",
 }: RsvpWishBlockProps) {
-  const isNameLocked = Boolean(guestName && guestName.trim().length > 0);
+  const wedding = useWeddingContent();
+  const isPublicMode = mode === "public";
+  const isNameLocked = !isPublicMode && Boolean(guestName && guestName.trim().length > 0);
   const copy = wedding.sections.rsvpWish;
 
   const [status, setStatus] = React.useState<GuestStatus>(initialStatus);
@@ -51,6 +57,7 @@ export function RsvpWishBlock({
   const [wishError, setWishError] = React.useState<string | null>(null);
   const [rsvpSavedBeforeWishFailed, setRsvpSavedBeforeWishFailed] =
     React.useState(false);
+  const [publicWishSent, setPublicWishSent] = React.useState(false);
 
   React.useEffect(() => {
     setStatus(initialStatus);
@@ -109,7 +116,7 @@ export function RsvpWishBlock({
       const res = await submitRsvp(
         savedSlug
           ? { slug: savedSlug, status: choice, website: honeypot }
-          : { name: trimmedName, status: choice, website: honeypot }
+          : { weddingSlug, name: trimmedName, status: choice, website: honeypot }
       );
       if (!savedSlug && res.slug) {
         savedSlug = res.slug;
@@ -195,11 +202,180 @@ export function RsvpWishBlock({
     }
   };
 
+  const handlePublicWishSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearAlerts();
+
+    const trimmedName = name.trim();
+    const trimmedMessage = message.trim();
+
+    if (honeypot.trim().length > 0) {
+      setMessage("");
+      setPublicWishSent(true);
+      return;
+    }
+
+    if (!trimmedName) {
+      setWishError("Vui lòng nhập tên của bạn.");
+      return;
+    }
+    if (!trimmedMessage) {
+      setWishError("Vui lòng nhập lời chúc (tối đa 500 ký tự).");
+      return;
+    }
+    if (trimmedMessage.length > MAX_WISH_LENGTH) {
+      setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
+      return;
+    }
+
+    setSubmitting("wish");
+    try {
+      await submitWish({
+        weddingSlug,
+        name: trimmedName,
+        message: trimmedMessage,
+        website: honeypot,
+      });
+      setMessage("");
+      setPublicWishSent(true);
+    } catch (err) {
+      setWishError(
+        err instanceof Error
+          ? err.message
+          : "Không thể gửi lời chúc lúc này. Vui lòng thử lại."
+      );
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
   const handleOpenEdit = () => {
     clearAlerts();
     setRsvpFeedback(null);
     setIsEditingRsvp(true);
   };
+
+  if (isPublicMode) {
+    return (
+      <RevealSection className="bg-inv-bg px-5 pt-10 pb-6">
+        <div className="mx-auto max-w-[440px]">
+          <div className="text-center">
+            <h2 className="font-inv-script text-[clamp(32px,8.8vw,46px)] leading-[1.2] font-normal text-inv-olive-deep">
+              {copy.titlePublic}
+            </h2>
+            <p className="mx-auto mt-2.5 max-w-[390px] font-inv-serif text-[14px] leading-[1.55] text-inv-olive-btn sm:text-[15px]">
+              {copy.subtitlePublic}
+            </p>
+          </div>
+
+          {publicWishSent ? (
+            <div className="mt-7 space-y-4 text-center">
+              <div className="rounded-2xl border border-inv-olive/30 bg-inv-tint p-5 text-inv-ink">
+                <div className="flex items-center justify-center gap-2 font-inv-serif font-semibold">
+                  <CheckCircle2
+                    className="h-5 w-5 shrink-0 text-inv-olive-deep"
+                    aria-hidden="true"
+                  />
+                  <span>Đã gửi lời chúc</span>
+                </div>
+                <p className="mt-2 font-inv-serif text-sm leading-relaxed text-inv-text">
+                  {copy.wishOnlySuccessMessage}
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPublicWishSent(false)}
+                  className="rounded-full border-inv-olive/45 bg-inv-bg px-5 font-inv-serif text-inv-olive-deep hover:bg-inv-tint"
+                >
+                  {copy.sendAnotherWishLabel}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <form
+              onSubmit={handlePublicWishSubmit}
+              className="mt-7 space-y-3"
+              noValidate
+            >
+              <input
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none"
+              />
+
+              <div>
+                <Input
+                  aria-label={copy.nameLabel}
+                  placeholder={copy.namePlaceholder}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={submitting !== null}
+                  required
+                  maxLength={100}
+                  className="h-11 rounded-full border-inv-olive-btn bg-inv-bg px-4 font-inv-serif text-base text-inv-ink placeholder:text-inv-olive-btn/80 focus-visible:border-inv-olive-deep focus-visible:ring-inv-olive sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <Textarea
+                  aria-label={copy.messageLabelPublic}
+                  placeholder={copy.messagePlaceholder}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  maxLength={MAX_WISH_LENGTH}
+                  disabled={submitting !== null}
+                  className="min-h-[104px] rounded-[19px] border-inv-olive-btn bg-inv-bg px-4 py-3 font-inv-serif text-base text-inv-ink placeholder:text-inv-olive-btn/80 focus-visible:border-inv-olive-deep focus-visible:ring-inv-olive sm:text-sm"
+                  rows={4}
+                />
+                <div className="mt-1 flex justify-end px-2">
+                  <span
+                    className={
+                      message.length >= MAX_WISH_LENGTH
+                        ? "font-inv-serif text-xs font-semibold text-inv-olive-deep"
+                        : "font-inv-serif text-xs text-inv-muted"
+                    }
+                  >
+                    {message.length}/{MAX_WISH_LENGTH} ký tự
+                  </span>
+                </div>
+              </div>
+
+              {wishError && (
+                <p
+                  role="alert"
+                  className="rounded-2xl border border-inv-olive/35 bg-inv-tint px-4 py-2.5 font-inv-serif text-sm text-inv-ink"
+                >
+                  {wishError}
+                </p>
+              )}
+
+              <div className="pt-1">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  loading={submitting === "wish"}
+                  disabled={submitting !== null}
+                  className="h-11 w-full rounded-full bg-inv-olive-btn font-inv-serif text-sm tracking-[0.02em] text-white hover:bg-inv-olive-hover"
+                >
+                  <Send className="h-4 w-4" aria-hidden="true" />
+                  <span>{copy.submitWishLabel}</span>
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      </RevealSection>
+    );
+  }
 
   const showSavedSummary =
     !isEditingRsvp && status !== "pending" && !rsvpSavedBeforeWishFailed;

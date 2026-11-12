@@ -7,7 +7,6 @@ import {
   Pinyon_Script,
 } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
-import { wedding } from "@/content/wedding";
 import { invitationTheme } from "@/lib/theme";
 import "./globals.css";
 
@@ -48,24 +47,20 @@ const pinyonScript = Pinyon_Script({
   display: "swap",
 });
 
+function resolveMetadataBase(): URL | undefined {
+  const raw = process.env.APP_BASE_URL;
+  if (!raw) return undefined;
+  try {
+    return new URL(raw);
+  } catch {
+    return undefined;
+  }
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://thiepcuoi.example"),
-  title: wedding.seo.title,
-  description: wedding.seo.description,
-  openGraph: {
-    title: wedding.seo.title,
-    description: wedding.seo.description,
-    type: "website",
-    locale: "vi_VN",
-    images: [
-      {
-        url: wedding.seo.ogImage,
-        width: 1200,
-        height: 630,
-        alt: wedding.seo.title,
-      },
-    ],
-  },
+  metadataBase: resolveMetadataBase(),
+  title: "Thiệp Cưới Online",
+  description: "Nền tảng tạo và quản lý thiệp cưới cá nhân hóa trực tuyến.",
 };
 
 export const viewport: Viewport = {

@@ -1,9 +1,10 @@
 "use client";
 
-import { wedding } from "@/content/wedding";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 export function Couple() {
+  const wedding = useWeddingContent();
   return (
     <RevealSection className="bg-inv-bg text-center">
       {/* Vai trò & tên thư pháp Chú rể - Cô dâu nằm cạnh nhau */}

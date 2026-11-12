@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { wedding } from "@/content/wedding";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 interface EnvelopeProps {
   guestName?: string | null;
@@ -164,6 +164,7 @@ function BotanicalLineArt() {
 }
 
 export function Envelope({ guestName, onOpen }: EnvelopeProps) {
+  const wedding = useWeddingContent();
   const prefersReducedMotion = useReducedMotion();
   const [opening, setOpening] = React.useState(false);
 

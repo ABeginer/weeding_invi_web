@@ -1,6 +1,9 @@
-import { wedding } from "@/content/wedding";
+"use client";
+
+import { useWeddingContent } from "./WeddingContentProvider";
 
 export function Footer() {
+  const wedding = useWeddingContent();
   const {
     bannerImage,
     bannerAlt,

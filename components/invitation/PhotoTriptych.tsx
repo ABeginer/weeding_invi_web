@@ -1,10 +1,11 @@
 "use client";
 
-import { wedding } from "@/content/wedding";
 import { cn } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 export function PhotoTriptych() {
+  const wedding = useWeddingContent();
   const trio = wedding.photos.slice(0, 3);
   if (trio.length === 0) return null;
 

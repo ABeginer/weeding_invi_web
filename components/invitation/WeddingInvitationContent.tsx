@@ -16,12 +16,16 @@ import { RsvpWishBlock } from "./RsvpWishBlock";
 
 interface WeddingInvitationContentProps {
   slug?: string;
+  weddingSlug?: string;
+  mode?: "personal" | "public";
   guestName?: string;
   initialStatus?: GuestStatus;
 }
 
 export function WeddingInvitationContent({
   slug,
+  weddingSlug,
+  mode = "personal",
   guestName,
   initialStatus = "pending",
 }: WeddingInvitationContentProps) {
@@ -46,6 +50,8 @@ export function WeddingInvitationContent({
         {/* #9 Xác nhận tham dự & Gửi lời chúc */}
         <RsvpWishBlock
           slug={slug}
+          weddingSlug={weddingSlug}
+          mode={mode}
           guestName={guestName}
           initialStatus={initialStatus}
         />

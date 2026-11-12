@@ -1,7 +1,7 @@
 "use client";
 
-import { wedding } from "@/content/wedding";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 function renderParentLines(parents: string) {
   const parts = parents.split(/\s*&\s*/);
@@ -42,6 +42,7 @@ function HandDrawnHeart() {
 }
 
 export function Families() {
+  const wedding = useWeddingContent();
   const { groom, bride } = wedding.families;
 
   return (

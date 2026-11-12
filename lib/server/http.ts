@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "./session";
+import { getUser, type AuthUser } from "./auth";
 
 export const SLUG_RE = /^[a-f0-9]{12}$/;
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const WEDDING_SLUG_RE = /^[a-z0-9-]{3,40}$/;
+export const FORBIDDEN_WEDDING_SLUGS = new Set([
+  "admin",
+  "api",
+  "dashboard",
+  "auth",
+  "login",
+  "logout",
+  "w",
+  "m",
+  "static",
+  "_next",
+]);
 
 export function json(data: unknown, status = 200): Response {
   return NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
@@ -40,9 +53,12 @@ export function route<A extends unknown[]>(handler: (...args: A) => Promise<Resp
   };
 }
 
-export function adminRoute<A extends unknown[]>(handler: (...args: A) => Promise<Response>) {
-  return route(async (...args: A) => {
-    if (!(await isAdmin())) return fail("Bạn chưa đăng nhập.", 401);
-    return handler(...args);
+export function authRoute<C = { params: Promise<Record<string, string>> }>(
+  handler: (req: Request, user: AuthUser, context: C) => Promise<Response>,
+) {
+  return route(async (req: Request, context: C) => {
+    const user = await getUser(req);
+    if (!user) return fail("Bạn chưa đăng nhập.", 401);
+    return handler(req, user, context);
   });
 }

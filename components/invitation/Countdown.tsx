@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { wedding } from "@/content/wedding";
 import { resolveEventIso } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 interface TimeLeft {
   days: number;
@@ -34,10 +34,11 @@ function padTwo(value: number): string {
 }
 
 export function Countdown() {
+  const wedding = useWeddingContent();
   const primaryEvent = wedding.events[0];
   const targetIso = React.useMemo(
     () => resolveEventIso(primaryEvent?.date ?? wedding.date, primaryEvent?.time),
-    [primaryEvent?.date, primaryEvent?.time]
+    [primaryEvent?.date, primaryEvent?.time, wedding.date]
   );
 
   const [timeLeft, setTimeLeft] = React.useState<TimeLeft | null>(null);

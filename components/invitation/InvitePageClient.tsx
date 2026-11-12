@@ -5,17 +5,19 @@ import Link from "next/link";
 import { getInvite } from "@/lib/api";
 import { invitationThemeCssVars } from "@/lib/theme";
 import { GuestStatus } from "@/lib/types";
-import { wedding } from "@/content/wedding";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { InvitationShell } from "./InvitationShell";
 import { WeddingInvitationContent } from "./WeddingInvitationContent";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 interface InvitePageClientProps {
   slug: string;
+  weddingSlug?: string;
 }
 
-export function InvitePageClient({ slug }: InvitePageClientProps) {
+export function InvitePageClient({ slug, weddingSlug }: InvitePageClientProps) {
+  const wedding = useWeddingContent();
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [invite, setInvite] = React.useState<{
@@ -87,12 +89,14 @@ export function InvitePageClient({ slug }: InvitePageClientProps) {
               >
                 Thử lại
               </Button>
-              <Link
-                href="/"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-inv-olive/35 bg-inv-bg px-6 font-inv-serif text-sm font-medium text-inv-ink transition-colors hover:bg-inv-tint"
-              >
-                {wedding.sections.invalidInvite.backHomeLabel}
-              </Link>
+              {weddingSlug && (
+                <Link
+                  href={`/w/${weddingSlug}`}
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-inv-olive/35 bg-inv-bg px-6 font-inv-serif text-sm font-medium text-inv-ink transition-colors hover:bg-inv-tint"
+                >
+                  {wedding.sections.invalidInvite.backHomeLabel}
+                </Link>
+              )}
             </div>
           </div>
         </main>
@@ -117,14 +121,16 @@ export function InvitePageClient({ slug }: InvitePageClientProps) {
             <p className="font-inv-serif text-sm leading-relaxed text-inv-text">
               {wedding.sections.invalidInvite.description}
             </p>
-            <div className="pt-2">
-              <Link
-                href="/"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-inv-olive-btn px-7 font-inv-serif text-sm font-medium text-white transition-colors hover:bg-inv-olive-hover"
-              >
-                {wedding.sections.invalidInvite.backHomeLabel}
-              </Link>
-            </div>
+            {weddingSlug && (
+              <div className="pt-2">
+                <Link
+                  href={`/w/${weddingSlug}`}
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-inv-olive-btn px-7 font-inv-serif text-sm font-medium text-white transition-colors hover:bg-inv-olive-hover"
+                >
+                  {wedding.sections.invalidInvite.backHomeLabel}
+                </Link>
+              </div>
+            )}
           </div>
         </main>
       </div>

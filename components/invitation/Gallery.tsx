@@ -3,12 +3,13 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { wedding } from "@/content/wedding";
 import { invitationThemeCssVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 export function Gallery() {
+  const wedding = useWeddingContent();
   const photos = wedding.photos.slice(0, 6);
   const { headingPrefix, headingItalic, headingSuffix, subtitle } =
     wedding.sections.gallery;

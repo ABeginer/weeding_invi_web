@@ -1,13 +1,14 @@
 "use client";
 
-import { wedding } from "@/content/wedding";
 import { RevealSection } from "./RevealSection";
+import { useWeddingContent } from "./WeddingContentProvider";
 
 interface InvitationIntroProps {
   guestName?: string;
 }
 
 export function InvitationIntro({ guestName }: InvitationIntroProps) {
+  const wedding = useWeddingContent();
   const displayName =
     guestName && guestName.trim().length > 0
       ? guestName.trim()

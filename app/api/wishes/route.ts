@@ -1,5 +1,6 @@
 import { db } from "@/lib/server/supabase";
 import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
+import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 export const POST = route(async (req: Request) => {
   const body = await readBody(req);
@@ -13,27 +14,42 @@ export const POST = route(async (req: Request) => {
 
   const client = db();
   let guestId: string | null = null;
+  let weddingId: string | null = null;
   let name = text(body?.name, 100);
 
-  const slug = typeof body?.slug === "string" && body.slug !== "" ? body.slug : null;
+  const slug = typeof body?.slug === "string" && body.slug.trim() !== "" ? body.slug.trim() : null;
   if (slug) {
     if (!SLUG_RE.test(slug)) return fail("Link không hợp lệ.", 404);
     const { data, error } = await client
       .from("guests")
-      .select("id, name")
+      .select("id, name, wedding_id")
       .eq("slug", slug)
       .maybeSingle();
     if (error) throw error;
     if (!data) return fail("Link không hợp lệ.", 404);
     guestId = data.id;
+    weddingId = data.wedding_id;
     name = data.name;
+  } else {
+    const weddingSlugCheck = validateWeddingSlug(body?.weddingSlug);
+    if (!weddingSlugCheck.valid) {
+      return fail("Không xác định được thiệp cưới.", 400);
+    }
+    const { data: weddingRow, error: weddingError } = await client
+      .from("weddings")
+      .select("id")
+      .eq("slug", weddingSlugCheck.slug)
+      .maybeSingle();
+    if (weddingError) throw weddingError;
+    if (!weddingRow) return fail("Không tìm thấy thiệp cưới.", 404);
+    weddingId = weddingRow.id;
   }
 
   if (!name) return fail("Vui lòng nhập tên của bạn.");
 
   const { error } = await client
     .from("wishes")
-    .insert({ guest_id: guestId, name, message });
+    .insert({ wedding_id: weddingId, guest_id: guestId, name, message });
   if (error) throw error;
 
   return json({ ok: true }, 201);
