@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Crown, Diamond, Monitor, Music2, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Crown, Diamond, Monitor, Music2 } from "lucide-react";
 import { PhoneFrame } from "@/components/landing/phone-frame";
 import { PaymentTransferModal, PlanUpgradeModal } from "@/components/landing/pricing-modals";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
@@ -221,11 +221,7 @@ export function TemplateDemoViewer({
           <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-6 px-1 md:grid-cols-12 md:gap-8 lg:gap-10">
             {/* Cột trái trên desktop: Giới thiệu mẫu thiệp đang xem thử (ẩn trên mobile để giữ nguyên giao diện mobile) */}
             <aside className="hidden space-y-4 text-left md:col-span-7 md:block md:pt-1">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
-                <Sparkles
-                  className="h-3.5 w-3.5 text-accent-text"
-                  aria-hidden="true"
-                />
+              <div className="inline-flex items-center rounded-full border border-border bg-surface px-3.5 py-1">
                 <span className="text-[11px] font-medium tracking-[0.16em] text-accent-text uppercase">
                   {LANDING_COPY.demo.previewEyebrow}
                 </span>

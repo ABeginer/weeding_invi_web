@@ -11,7 +11,6 @@ import {
   Loader2,
   Lock,
   MailOpen,
-  Sparkles,
 } from "lucide-react";
 import { LandingFooter } from "@/components/landing/footer";
 import { LandingNavbar } from "@/components/landing/navbar";
@@ -358,9 +357,8 @@ export function CreateWeddingBuilder({
       <main className="border-b border-border py-5 sm:py-7">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="max-w-2xl space-y-1.5">
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.18em] text-accent-text uppercase">
-              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Tạo thử ngay không cần đăng nhập</span>
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent-text uppercase">
+              Tạo thử ngay không cần đăng nhập
             </p>
             <h1 className="font-display text-2xl font-semibold text-text sm:text-3xl">
               Thiết kế thiệp cưới của hai bạn

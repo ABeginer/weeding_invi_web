@@ -58,34 +58,61 @@ export const LANDING_COPY = {
     emptyFilterLabel: "Chưa có mẫu nào trong nhóm này.",
   },
   howItWorks: {
-    eyebrow: "TRỌN VẸN CHO NGÀY CƯỚI",
-    title: "Giải quyết gọn nhẹ mọi khâu mời khách",
+    eyebrow: "GIÁ TRỊ XỨNG ĐÁNG & QUẢN TRỊ THÔNG MINH",
+    title: "Giải quyết gọn nhẹ mọi khâu mời khách từ một Dashboard",
+    description:
+      "Thay cho chi phí in thiệp giấy đắt đỏ và cảnh nhắn tin hỏi từng người, chỉ từ một khoản chi phí nhỏ bạn sở hữu trọn bộ thiệp cá nhân hóa cùng bảng điều khiển quản lý ngày cưới chuyên nghiệp.",
     steps: [
       {
         number: "01",
-        title: "Đúng tên từng khách",
+        title: "Đúng tên từng khách mời",
         description:
-          "Nhập danh sách một lần, mỗi khách một link riêng.",
+          "Tiết kiệm công sức ghi tay và chi phí in lại khi sai tên. Mỗi khách mời nhận một liên kết mang đúng tên riêng đầy trân trọng.",
+        bullets: [
+          "Nhập nhanh danh sách khách hàng loạt trong vài giây (Bulk Import)",
+          "Tự sinh link mời cá nhân & tin nhắn mẫu copy 1 chạm gửi Zalo/SMS",
+          "Phân quyền mời riêng theo từng buổi lễ (Thành hôn hoặc Tiệc cưới)",
+        ],
       },
       {
         number: "02",
-        title: "Biết ai sẽ đến",
+        title: "Dashboard chốt bàn chính xác",
         description:
-          "Xác nhận tham dự, số người đi cùng, chế độ ăn, thống kê trong dashboard.",
+          "Không còn cảnh ước lượng cảm tính khiến thừa hoặc thiếu cỗ. Theo dõi chính xác ai sẽ đến theo thời gian thực ngay trong Dashboard.",
+        bullets: [
+          "Thống kê trực quan số khách xác nhận, báo bận và đang chờ phản hồi",
+          "Tự cộng dồn tổng khách kèm số người đi cùng cho từng buổi lễ",
+          "Tổng hợp sẵn chế độ ăn chay / ăn mặn để đặt thực đơn chuẩn xác",
+        ],
       },
       {
         number: "03",
-        title: "Chỉ đường và mừng cưới",
+        title: "Chỉnh sửa thiệp mọi lúc, không tốn phí in lại",
         description:
-          "Bản đồ, chỉ đường một chạm, quà mừng hiện khi khách muốn xem.",
+          "Đổi giờ tiệc, bổ sung bản đồ sảnh hay thay ảnh cưới sau khi đã phát hành — mọi cập nhật đồng bộ tức thì tới tất cả khách mời.",
+        bullets: [
+          "Cập nhật thông tin cưới, lịch lễ và Google Maps chỉ đường dễ dàng",
+          "Quản lý thư viện ảnh HD, nhạc nền và QR mừng cưới hai gia đình",
+          "Xem trước trực tiếp trên khung điện thoại ngay trong trang quản trị",
+        ],
       },
       {
         number: "04",
-        title: "Lời chúc được lưu lại",
+        title: "Lưu giữ lời chúc & chia sẻ không giới hạn",
         description:
-          "Mọi lời chúc hiện trong thiệp và dashboard.",
+          "Mọi lời chúc tốt đẹp được gom gọn gàng thay vì trôi mất trên mạng xã hội, đi kèm chỉ đường một chạm và hộp mừng cưới tinh tế.",
+        bullets: [
+          "Tự động lưu và tìm kiếm toàn bộ lời chúc trong mục Quản lý Dashboard",
+          "Có sẵn đường dẫn công khai tiện đăng Facebook hoặc mời nhóm bạn",
+          "Khung quà mừng đặt gọn gàng sau bước xác nhận để giữ sự trang nhã",
+        ],
       },
     ],
+    dashboardCtaTitle: "Trải nghiệm trọn bộ Dashboard quản lý cưới ngay hôm nay",
+    dashboardCtaDescription:
+      "Bắt đầu miễn phí cho 20 khách mời đầu tiên — không cần thẻ, dùng thử thực tế trước khi nâng cấp gói Pro/VIP.",
+    dashboardPrimaryCta: "Tạo thiệp miễn phí",
+    dashboardSecondaryCta: "Xem bảng giá",
   },
   pricing: {
     eyebrow: "CHI PHÍ MINH BẠCH",

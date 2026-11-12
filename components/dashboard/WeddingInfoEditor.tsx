@@ -4,12 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import {
   Gift,
+  LayoutTemplate,
   Loader2,
   Lock,
   QrCode,
   RotateCcw,
   Save,
-  Sparkles,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -269,7 +269,7 @@ export function WeddingInfoEditor({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 className="flex items-center gap-2 font-sans text-base font-semibold text-fg">
-                <Sparkles className="h-4 w-4 text-accent-text" aria-hidden="true" />
+                <LayoutTemplate className="h-4 w-4 text-accent-text" aria-hidden="true" />
                 <span>Mẫu giao diện thiệp</span>
               </h3>
               <p className="mt-0.5 text-xs text-fg-muted">

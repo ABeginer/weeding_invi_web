@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Heart, MapPin, Sparkles } from "lucide-react";
+import { Heart, MailOpen, MapPin } from "lucide-react";
+import { CoupleDisplayName } from "@/components/invitation/CoupleDisplayName";
 import { GiftModal } from "@/components/invitation/GiftModal";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
@@ -120,14 +121,16 @@ export default function Basic2Template({
                 >
                   {data.couple.sealLabel}
                 </div>
-                <h2
+                <CoupleDisplayName
+                  as="h2"
+                  groomName={data.couple.groomName}
+                  brideName={data.couple.brideName}
                   className={cn(
                     "font-display font-semibold text-[#1F1D1A]",
                     contained ? "text-2xl" : "text-3xl",
                   )}
-                >
-                  {data.couple.groomName} &amp; {data.couple.brideName}
-                </h2>
+                  inlineAmpersandClassName="text-[#8A7344]"
+                />
                 <div className="pt-1.5">
                   <p className="text-[11px] tracking-[0.18em] text-[#665E52] uppercase">
                     {data.ui.invitePrefix}
@@ -144,7 +147,7 @@ export default function Basic2Template({
               </div>
 
               <span className="relative inline-flex items-center gap-2 rounded-full border border-[#C6A962] bg-[#FAF7F0] px-5 py-2 text-xs font-medium tracking-[0.14em] text-[#3F3626] uppercase transition-colors group-hover:bg-[#EFEAE0]">
-                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>{data.ui.tapHint}</span>
               </span>
             </button>
@@ -171,20 +174,20 @@ export default function Basic2Template({
             <p className="text-[11px] font-medium tracking-[0.24em] text-[#706040] uppercase">
               {data.ui.eyebrow} · {heroDate.dotDate}
             </p>
-            <h1
+            <CoupleDisplayName
+              as="h1"
+              groomName={data.couple.groomName}
+              brideName={data.couple.brideName}
               className={cn(
                 "font-display leading-[1.08] font-semibold text-[#1F1D1A]",
                 contained
-                  ? "text-[clamp(24px,9.2cqw,34px)]"
+                  ? "text-[clamp(24px,9cqw,34px)]"
                   : isDesktopLayout
                     ? "text-[clamp(32px,3.6vw,44px)]"
                     : "text-[clamp(32px,9vw,48px)]",
               )}
-            >
-              {data.couple.groomName}
-              <span className="mx-2 font-normal italic text-[#8A7344]">&amp;</span>
-              {data.couple.brideName}
-            </h1>
+              inlineAmpersandClassName="text-[#8A7344]"
+            />
             <p
               className={cn(
                 "text-sm leading-relaxed text-[#5E574B]",

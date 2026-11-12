@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CalendarHeart, MapPin } from "lucide-react";
+import { CoupleDisplayName } from "@/components/invitation/CoupleDisplayName";
 import { GiftModal } from "@/components/invitation/GiftModal";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
@@ -99,14 +100,16 @@ export default function Basic3Template({
                 <p className="text-[11px] font-medium tracking-[0.22em] text-[#8A4444] uppercase">
                   {data.ui.eyebrow}
                 </p>
-                <h2
+                <CoupleDisplayName
+                  as="h2"
+                  groomName={data.couple.groomName}
+                  brideName={data.couple.brideName}
                   className={cn(
                     "font-display font-semibold text-[#5C2626]",
                     contained ? "text-2xl" : "text-3xl",
                   )}
-                >
-                  {data.couple.groomName} &amp; {data.couple.brideName}
-                </h2>
+                  inlineAmpersandClassName="text-[#8A4444]"
+                />
               </div>
 
               <div className="space-y-2.5">
@@ -158,20 +161,20 @@ export default function Basic3Template({
             <p className="text-[11px] font-medium tracking-[0.22em] text-[#8A4444] uppercase">
               {data.ui.eyebrow} · {heroDate.dotDate}
             </p>
-            <h1
+            <CoupleDisplayName
+              as="h1"
+              groomName={data.couple.groomName}
+              brideName={data.couple.brideName}
               className={cn(
                 "font-display leading-[1.1] font-semibold text-[#5C2626]",
                 contained
-                  ? "text-[clamp(24px,9.2cqw,34px)]"
+                  ? "text-[clamp(24px,9cqw,34px)]"
                   : isDesktopLayout
                     ? "text-[clamp(32px,3.6vw,44px)]"
                     : "text-[clamp(32px,9vw,48px)]",
               )}
-            >
-              {data.couple.groomName}
-              <span className="mx-2 font-normal italic text-[#8A4444]">&amp;</span>
-              {data.couple.brideName}
-            </h1>
+              inlineAmpersandClassName="text-[#8A4444]"
+            />
             <p
               className={cn(
                 "max-w-md text-sm leading-relaxed text-[#6B504B]",

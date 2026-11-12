@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
+import { CoupleDisplayName } from "./CoupleDisplayName";
 import {
   useInvitationContained,
   useInvitationDesktopLayout,
@@ -64,21 +65,20 @@ export function Hero({ guestName }: HeroProps) {
           </p>
         )}
 
-        <h1
+        <CoupleDisplayName
+          as="h1"
+          groomName={data.couple.groomName}
+          brideName={data.couple.brideName}
           className={cn(
             "font-inv-serif font-semibold tracking-tight text-inv-olive-deep",
             isContained
-              ? "text-[clamp(24px,9.2cqw,34px)] leading-[1.15]"
+              ? "text-[clamp(24px,9cqw,34px)] leading-[1.15]"
               : "text-[clamp(30px,8vw,40px)] leading-[1.18]",
             isDesktopLayout && "md:text-[clamp(32px,3.6vw,44px)] md:leading-[1.12]",
           )}
-        >
-          {data.couple.groomName}
-          <span className="ml-1.5 mr-3 inline-block font-inv-script text-[1.12em] font-normal text-inv-olive-btn">
-            &amp;
-          </span>
-          {data.couple.brideName}
-        </h1>
+          inlineAmpersandClassName="font-inv-script text-[1.12em] not-italic font-normal text-inv-olive-btn"
+          stackedAmpersandClassName="font-inv-script text-[0.95em] not-italic font-normal text-inv-olive-btn"
+        />
 
         <p
           className={cn(

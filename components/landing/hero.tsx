@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight } from "lucide-react";
 import { MusicToggle } from "@/components/demo/music-toggle";
 import { LANDING_COPY } from "@/config/landing";
 import { SITE_LINKS } from "@/config/site";
@@ -72,11 +72,7 @@ export function HeroSection() {
       <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-start gap-7 px-4 pt-4 pb-8 sm:px-6 md:grid-cols-12 md:gap-8 md:pt-5 md:pb-8 lg:gap-10 lg:pt-6">
         {/* Cột trái (desktop/tablet) / Phía trên (mobile) */}
         <div className="space-y-4 text-center md:col-span-7 md:pt-1 md:text-left">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1">
-            <Sparkles
-              className="h-3.5 w-3.5 text-accent-text"
-              aria-hidden="true"
-            />
+          <div className="inline-flex items-center rounded-full border border-border bg-surface px-3.5 py-1">
             <span className="text-[11px] font-medium tracking-[0.16em] text-accent-text uppercase">
               {copy.eyebrow}
             </span>
