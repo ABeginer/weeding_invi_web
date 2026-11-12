@@ -42,8 +42,8 @@ function TemplateCoverMedia({
           aria-hidden="true"
           className="pointer-events-none absolute inset-3 rounded-lg border border-border"
         />
-        <Diamond className="h-6 w-6 text-accent-text" aria-hidden="true" />
-        <p className="mt-3 font-display text-xl font-semibold text-text sm:text-2xl">
+        <Diamond className="h-5 w-5 text-accent-text" aria-hidden="true" />
+        <p className="mt-2.5 font-display text-lg leading-snug font-semibold text-text">
           {template.name}
         </p>
         <span className="mt-2 rounded-full border border-soon-border bg-soon-bg px-3 py-0.5 text-[11px] font-medium text-soon-fg">
@@ -157,33 +157,25 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                   </div>
 
                   {/* Nội dung thẻ */}
-                  <div className="flex flex-1 flex-col justify-between p-3 lg:p-2.5">
+                  <div className="flex flex-1 flex-col justify-between p-3">
                     <div>
-                      <h3 className="font-display text-base leading-snug font-semibold text-text lg:text-[17px]">
+                      <h3 className="font-display text-[17px] leading-snug font-semibold text-text">
                         {tpl.name}
                       </h3>
-                      <p className="mt-0.5 text-[10px] tracking-[0.12em] text-text-muted uppercase">
+                      <p className="mt-0.5 text-[10px] tracking-[0.1em] text-text-muted uppercase">
                         {tpl.subtitle}
                       </p>
-                      <p className="mt-1 hidden text-[11px] leading-snug text-text-muted sm:line-clamp-2">
+                      <p className="mt-1.5 hidden text-xs leading-relaxed text-text-muted sm:line-clamp-2">
                         {tpl.description}
                       </p>
                     </div>
 
-                    <div className="mt-2.5 flex flex-col gap-1.5 sm:flex-row">
-                      <Link
-                        href={`/mau/${tpl.id}`}
-                        className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-full border border-text bg-transparent px-2 text-[11px] font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                      >
-                        <Eye className="h-3 w-3 shrink-0" aria-hidden="true" />
-                        <span>{copy.previewLabel}</span>
-                      </Link>
-
+                    <div className="mt-3 flex flex-col gap-1.5">
                       {isPlaceholder ? (
                         <button
                           type="button"
                           disabled
-                          className="inline-flex h-8 flex-1 cursor-not-allowed items-center justify-center rounded-full border border-soon-border bg-soon-bg px-2 text-[11px] font-medium text-soon-fg opacity-85"
+                          className="inline-flex h-8 w-full cursor-not-allowed items-center justify-center rounded-full border border-soon-border bg-soon-bg px-3 text-xs font-medium whitespace-nowrap text-soon-fg opacity-85"
                         >
                           {copy.comingSoonLabel}
                         </button>
@@ -192,7 +184,7 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                           type="button"
                           onClick={() => onUseTemplate(tpl)}
                           className={cn(
-                            "inline-flex h-8 flex-1 cursor-pointer items-center justify-center gap-1 rounded-full px-2 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
+                            "inline-flex h-8 w-full cursor-pointer items-center justify-center gap-1 rounded-full px-3 text-xs font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
                             requiresUpgrade
                               ? "border border-text bg-transparent text-text hover:bg-surface-alt"
                               : "bg-accent text-accent-fg hover:bg-accent-hover",
@@ -200,11 +192,19 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                         >
                           <span>{copy.useTemplateLabel}</span>
                           <ArrowRight
-                            className="h-3 w-3 shrink-0"
+                            className="h-3.5 w-3.5 shrink-0"
                             aria-hidden="true"
                           />
                         </button>
                       )}
+
+                      <Link
+                        href={`/mau/${tpl.id}`}
+                        className="inline-flex h-8 w-full items-center justify-center gap-1 rounded-full border border-border bg-bg px-3 text-xs font-medium whitespace-nowrap text-text transition-colors hover:border-text hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                      >
+                        <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        <span>{copy.previewLabel}</span>
+                      </Link>
                     </div>
                   </div>
                 </article>
