@@ -1,0 +1,40 @@
+import { db } from "@/lib/server/supabase";
+import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
+
+export const POST = route(async (req: Request) => {
+  const body = await readBody(req);
+
+  if (typeof body?.website === "string" && body.website.trim() !== "") {
+    return json({ ok: true });
+  }
+
+  const message = text(body?.message, 500);
+  if (!message) return fail("Vui lòng nhập lời chúc (tối đa 500 ký tự).");
+
+  const client = db();
+  let guestId: string | null = null;
+  let name = text(body?.name, 100);
+
+  const slug = typeof body?.slug === "string" && body.slug !== "" ? body.slug : null;
+  if (slug) {
+    if (!SLUG_RE.test(slug)) return fail("Link không hợp lệ.", 404);
+    const { data, error } = await client
+      .from("guests")
+      .select("id, name")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return fail("Link không hợp lệ.", 404);
+    guestId = data.id;
+    name = data.name;
+  }
+
+  if (!name) return fail("Vui lòng nhập tên của bạn.");
+
+  const { error } = await client
+    .from("wishes")
+    .insert({ guest_id: guestId, name, message });
+  if (error) throw error;
+
+  return json({ ok: true }, 201);
+});

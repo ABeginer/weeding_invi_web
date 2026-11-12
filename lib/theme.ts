@@ -1,0 +1,41 @@
+export const invitationTheme = {
+  bg: "#ffffff",
+  paper: "#f7f7f4",
+  cream: "#f5f1e8",
+  inputBg: "#fffefa",
+  title: "#405e34",
+  ink: "#30451c",
+  textSmall: "#4f663a",
+  muted: "#527166",
+  olive: "#5e733f",
+  oliveMid: "#596e40",
+  oliveDeep: "#405e34",
+  oliveBtn: "#5d733f",
+  oliveHover: "#4c6037",
+  tint: "#eff4ed",
+  creamText: "#fff8ee",
+  creamSoft: "#e3eed8",
+  tapHint: "#294a2d",
+} as const;
+
+export type InvitationTheme = typeof invitationTheme;
+
+export const invitationThemeCssVars = {
+  "--inv-bg": invitationTheme.bg,
+  "--inv-paper": invitationTheme.paper,
+  "--inv-cream": invitationTheme.cream,
+  "--inv-input-bg": invitationTheme.inputBg,
+  "--inv-title": invitationTheme.title,
+  "--inv-ink": invitationTheme.ink,
+  "--inv-text-small": invitationTheme.textSmall,
+  "--inv-muted": invitationTheme.muted,
+  "--inv-olive": invitationTheme.olive,
+  "--inv-olive-mid": invitationTheme.oliveMid,
+  "--inv-olive-deep": invitationTheme.oliveDeep,
+  "--inv-olive-btn": invitationTheme.oliveBtn,
+  "--inv-olive-hover": invitationTheme.oliveHover,
+  "--inv-tint": invitationTheme.tint,
+  "--inv-cream-text": invitationTheme.creamText,
+  "--inv-cream-soft": invitationTheme.creamSoft,
+  "--inv-tap-hint": invitationTheme.tapHint,
+} as const;

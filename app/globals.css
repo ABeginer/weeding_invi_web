@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  --font-inv-serif: var(--font-lora), Georgia, "Times New Roman", serif;
+  --font-inv-script: var(--font-great-vibes), var(--font-lora), cursive;
+  --font-inv-quote: var(--font-pinyon), var(--font-great-vibes), Georgia, serif;
+
+  /* Admin & default system tokens */
+  --color-bg: #faf7f2;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3ede3;
+  --color-fg: #2c2420;
+  --color-fg-muted: #6e6159;
+
+  --color-accent: #876335;
+  --color-accent-hover: #6e4f28;
+  --color-accent-soft: #f2e9dc;
+  --color-rose: #c49b95;
+  --color-border: #e5ddd2;
+
+  --color-success-bg: #ecf5ef;
+  --color-success-fg: #1f5c3a;
+  --color-success-border: #b8dcc5;
+
+  --color-danger-bg: #fdf0ef;
+  --color-danger-fg: #9c2b23;
+  --color-danger-border: #f0c2be;
+
+  --color-neutral-bg: #f1efec;
+  --color-neutral-fg: #57504b;
+  --color-neutral-border: #dcd6ce;
+
+  /* Invitation olive-white palette tokens */
+  --color-inv-bg: var(--inv-bg);
+  --color-inv-paper: var(--inv-paper);
+  --color-inv-cream: var(--inv-cream);
+  --color-inv-input: var(--inv-input-bg);
+  --color-inv-title: var(--inv-title);
+  --color-inv-ink: var(--inv-ink);
+  --color-inv-text: var(--inv-text-small);
+  --color-inv-muted: var(--inv-muted);
+  --color-inv-olive: var(--inv-olive);
+  --color-inv-olive-mid: var(--inv-olive-mid);
+  --color-inv-olive-deep: var(--inv-olive-deep);
+  --color-inv-olive-btn: var(--inv-olive-btn);
+  --color-inv-olive-hover: var(--inv-olive-hover);
+  --color-inv-tint: var(--inv-tint);
+  --color-inv-cream-text: var(--inv-cream-text);
+  --color-inv-cream-soft: var(--inv-cream-soft);
+  --color-inv-tap-hint: var(--inv-tap-hint);
+
+  --radius-card: 1rem;
+  --radius-pill: 9999px;
+
+  --shadow-soft: 0 12px 32px -12px rgba(44, 36, 32, 0.1);
+  --shadow-card: 0 4px 20px -4px rgba(44, 36, 32, 0.06);
+}
+
+:root {
+  --inv-bg: #ffffff;
+  --inv-paper: #f7f7f4;
+  --inv-cream: #f5f1e8;
+  --inv-input-bg: #fffefa;
+  --inv-title: #405e34;
+  --inv-ink: #30451c;
+  --inv-text-small: #4f663a;
+  --inv-muted: #527166;
+  --inv-olive: #5e733f;
+  --inv-olive-mid: #596e40;
+  --inv-olive-deep: #405e34;
+  --inv-olive-btn: #5d733f;
+  --inv-olive-hover: #4c6037;
+  --inv-tint: #eff4ed;
+  --inv-cream-text: #fff8ee;
+  --inv-cream-soft: #e3eed8;
+  --inv-tap-hint: #294a2d;
+}
+
+.invitation-theme {
+  font-family: var(--font-inv-serif);
+  --color-bg: var(--inv-bg);
+  --color-surface: var(--inv-bg);
+  --color-surface-muted: var(--inv-tint);
+  --color-fg: var(--inv-ink);
+  --color-fg-muted: var(--inv-muted);
+
+  --color-accent: var(--inv-olive-btn);
+  --color-accent-hover: var(--inv-olive-hover);
+  --color-accent-soft: var(--inv-tint);
+  --color-rose: var(--inv-olive);
+  --color-border: color-mix(in srgb, var(--inv-olive-deep) 28%, var(--inv-bg));
+
+  --shadow-soft: 0 14px 36px -12px color-mix(in srgb, var(--inv-olive-deep) 16%, transparent);
+  --shadow-card: 0 6px 20px -6px color-mix(in srgb, var(--inv-olive-deep) 12%, transparent);
+}
+
+html:has(.invitation-theme),
+body:has(.invitation-theme) {
+  background-color: var(--inv-bg);
+  color: var(--inv-ink);
+}
+
+.invitation-theme ::selection {
+  background-color: color-mix(in srgb, var(--inv-olive) 20%, var(--inv-bg));
+  color: var(--inv-ink);
+}
+
+@keyframes inv-tap-hint-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translateY(0px);
+  }
+  50% {
+    opacity: 0.92;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes inv-heartbeat {
+  0%,
+  64%,
+  100% {
+    transform: scale(1);
+  }
+  20% {
+    transform: scale(1.13);
+  }
+  36% {
+    transform: scale(0.98);
+  }
+  48% {
+    transform: scale(1.07);
+  }
+}
+
+@keyframes inv-pill-pulse {
+  0%,
+  100% {
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--inv-olive-deep) 18%, transparent), 0 0 0 0 color-mix(in srgb, var(--inv-olive-btn) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--inv-olive-deep) 24%, transparent), 0 0 0 7px color-mix(in srgb, var(--inv-olive-btn) 0%, transparent);
+  }
+}
+
+@keyframes inv-spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .invitation-theme h1,
+  .invitation-theme h2,
+  .invitation-theme h3 {
+    font-family: var(--font-inv-serif);
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+    color: var(--color-fg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

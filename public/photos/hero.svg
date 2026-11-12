@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1125" viewBox="0 0 900 1125">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F6EFE6"/>
+      <stop offset="100%" stop-color="#EADCCB"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1125" fill="url(#g)"/>
+  <rect x="24" y="24" width="852" height="1077" fill="none" stroke="#B08A5A" stroke-opacity="0.45" stroke-width="1.5" rx="16"/>
+  <circle cx="450" cy="538.5" r="42" fill="none" stroke="#B08A5A" stroke-opacity="0.5" stroke-width="1.5"/>
+  <path d="M436 538.5c0-8 7-14 14-6 7-8 14-2 14 6 0 11-14 19-14 19s-14-8-14-19z" fill="#C49B95" fill-opacity="0.7"/>
+  <text x="450" y="608.5" text-anchor="middle" font-family="Georgia, serif" font-size="24" fill="#2C2420">Minh Quan & Thanh Thao</text>
+  <text x="450" y="638.5" text-anchor="middle" font-family="sans-serif" font-size="13" letter-spacing="2" fill="#6E6159">ANH CUOI CHINH (PLACEHOLDER)</text>
+</svg>
