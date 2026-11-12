@@ -1,12 +1,20 @@
 import type { MetadataRoute } from "next";
-import { toAbsoluteSiteUrl } from "@/config/site";
+import { SITE_LINKS, toAbsoluteSiteUrl } from "@/config/site";
+import { IS_LUNAR_TOOL_PUBLIC } from "@/config/tools-copy";
 
 export default function robots(): MetadataRoute.Robots {
+  const allowPaths = [
+    SITE_LINKS.home,
+    SITE_LINKS.tools,
+    SITE_LINKS.toolWeddingCalc,
+    ...(IS_LUNAR_TOOL_PUBLIC ? [SITE_LINKS.toolLunar] : []),
+  ];
+
   return {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/cong-cu", "/cong-cu/bang-tinh-dam-cuoi"],
+        allow: allowPaths,
         disallow: [
           "/api/",
           "/auth/",
@@ -20,3 +28,4 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: toAbsoluteSiteUrl("/sitemap.xml"),
   };
 }
+

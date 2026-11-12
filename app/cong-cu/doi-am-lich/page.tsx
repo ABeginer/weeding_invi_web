@@ -12,6 +12,8 @@ import { IS_LUNAR_TOOL_PUBLIC, LUNAR_CONVERTER_COPY } from "@/config/tools-copy"
 const canonicalUrl = toAbsoluteSiteUrl(SITE_LINKS.toolLunar);
 const ogImageUrl = toAbsoluteSiteUrl("/templates/basic-3/cover.webp");
 
+export const dynamic = "force-static";
+
 export function generateMetadata(): Metadata {
   if (!IS_LUNAR_TOOL_PUBLIC) {
     return {
@@ -162,3 +164,4 @@ export default function LunarConverterPage() {
     </ToolsPageShell>
   );
 }
+

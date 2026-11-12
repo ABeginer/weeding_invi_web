@@ -1,6 +1,6 @@
 import { SITE_NAME } from "./site";
 
-export const IS_LUNAR_TOOL_PUBLIC = false;
+export const IS_LUNAR_TOOL_PUBLIC = true;
 
 export interface ToolFaqItem {
   question: string;
@@ -313,3 +313,4 @@ export const LUNAR_CONVERTER_COPY = {
     },
   ] satisfies ToolFaqItem[],
 } as const;
+
