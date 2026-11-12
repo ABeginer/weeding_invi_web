@@ -80,7 +80,7 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
   return (
     <section
       id="mau-thiep"
-      className="scroll-mt-14 border-b border-border bg-bg py-10 sm:py-12"
+      className="scroll-mt-14 border-b border-border bg-bg py-8 sm:py-9"
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -130,7 +130,7 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
             {copy.emptyFilterLabel}
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-2 gap-3.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3.5 md:grid-cols-3 lg:grid-cols-4">
             {filtered.map((tpl, index) => {
               const isPlaceholder = Boolean(tpl.isPlaceholder);
               const badgeText = copy.planBadges[tpl.plan];
@@ -140,7 +140,7 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
               return (
                 <article
                   key={tpl.id}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xs transition-colors hover:border-accent hover:bg-surface-alt"
+                  className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xs transition-colors hover:border-accent hover:bg-surface-alt"
                 >
                   {/* Khung ảnh bìa tỉ lệ 3:4 */}
                   <div className="relative aspect-[3/4] w-full overflow-hidden border-b border-border bg-surface-alt">
@@ -157,15 +157,15 @@ export function TemplateGrid({ userPlan, onUseTemplate }: TemplateGridProps) {
                   </div>
 
                   {/* Nội dung thẻ */}
-                  <div className="flex flex-1 flex-col justify-between p-3 sm:p-3.5">
+                  <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-3">
                     <div>
-                      <h3 className="font-display text-base leading-snug font-semibold text-text sm:text-lg">
+                      <h3 className="font-display text-base leading-snug font-semibold text-text">
                         {tpl.name}
                       </h3>
                       <p className="mt-0.5 text-[10px] tracking-[0.14em] text-text-muted uppercase">
                         {tpl.subtitle}
                       </p>
-                      <p className="mt-1.5 hidden text-xs leading-relaxed text-text-muted sm:line-clamp-2">
+                      <p className="mt-1 hidden text-xs leading-relaxed text-text-muted sm:line-clamp-2">
                         {tpl.description}
                       </p>
                     </div>

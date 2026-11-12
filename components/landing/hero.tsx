@@ -69,27 +69,27 @@ export function HeroSection() {
         className="pointer-events-none absolute -top-24 left-1/2 hidden h-96 w-[760px] -translate-x-1/2 rounded-full bg-accent-soft opacity-45 blur-3xl md:block"
       />
 
-      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-start gap-7 px-4 pt-4 pb-8 sm:px-6 md:grid-cols-12 md:gap-8 md:pt-5 md:pb-8 lg:gap-10 lg:pt-6">
+      <div className="relative mx-auto grid max-w-5xl grid-cols-1 items-center gap-6 px-4 pt-4 pb-7 sm:px-6 md:grid-cols-12 md:gap-8 md:py-7">
         {/* Cột trái (desktop/tablet) / Phía trên (mobile) */}
-        <div className="space-y-4 text-center md:col-span-7 md:pt-1 md:text-left">
-          <div className="inline-flex items-center rounded-full border border-border bg-surface px-3.5 py-1">
+        <div className="space-y-3.5 text-center md:col-span-7 md:text-left">
+          <div className="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1">
             <span className="text-[11px] font-medium tracking-[0.16em] text-accent-text uppercase">
               {copy.eyebrow}
             </span>
           </div>
 
-          <h1 className="font-display text-[clamp(28px,5.2vw,42px)] leading-[1.1] font-semibold tracking-tight text-accent-text">
+          <h1 className="font-display text-[clamp(26px,3.6vw,36px)] leading-[1.12] font-semibold tracking-tight text-accent-text">
             {copy.title}
           </h1>
 
-          <p className="mx-auto max-w-lg text-sm leading-relaxed text-text sm:text-base md:mx-0">
+          <p className="mx-auto max-w-lg text-sm leading-relaxed text-text sm:text-[15px] md:mx-0">
             {copy.description}
           </p>
 
           <div className="flex flex-col items-stretch justify-center gap-2.5 pt-0.5 sm:flex-row sm:items-center md:justify-start">
             <Link
               href={createHref}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-accent px-6 text-xs font-semibold text-accent-fg shadow-md transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:h-11 sm:text-sm"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-accent px-5 text-xs font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:text-sm"
             >
               <span>{copy.primaryCta}</span>
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -98,7 +98,7 @@ export function HeroSection() {
             <button
               type="button"
               onClick={handleScrollToTemplates}
-              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-text bg-transparent px-5 text-xs font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:h-11 sm:text-sm"
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-text bg-transparent px-5 text-xs font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:text-sm"
             >
               <span>{copy.secondaryCta}</span>
               <ArrowDown className="h-4 w-4" aria-hidden="true" />
@@ -106,15 +106,15 @@ export function HeroSection() {
           </div>
 
           {/* 4 nút đổi nhanh trên desktop đặt bên trái để cột phải vừa trọn vẹn khung điện thoại */}
-          <div className="hidden max-w-md pt-2 md:block">
-            <div className="rounded-2xl border border-border bg-surface p-3 shadow-xs">
-              <p className="text-[11px] font-medium tracking-[0.14em] text-text-muted uppercase">
+          <div className="hidden max-w-sm pt-1.5 md:block">
+            <div className="rounded-2xl border border-border bg-surface p-2.5 shadow-xs">
+              <p className="text-[10px] font-medium tracking-[0.14em] text-text-muted uppercase">
                 {copy.quickSwitchLabel}
               </p>
               <div
                 role="group"
                 aria-label={copy.quickSwitchLabel}
-                className="mt-2 grid grid-cols-2 gap-1.5"
+                className="mt-1.5 grid grid-cols-2 gap-1.5"
               >
                 {HERO_PREVIEW_TEMPLATES.map((tpl, index) => {
                   const isActive = index === activeIndex;
@@ -150,7 +150,7 @@ export function HeroSection() {
               scrollRef={phoneScrollRef}
               enableFloat
               lockedScroll={!isOpened}
-              desktopOffsetPx={116}
+              desktopOffsetPx={156}
             >
               <TemplatePreviewRenderer
                 key={activeTemplate.id}
