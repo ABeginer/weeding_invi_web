@@ -1,9 +1,16 @@
+import {
+  getPlanLimits,
+  getTemplateLockedMessage,
+  getWeddingLimitMessage,
+  isTemplateAllowedForPlan,
+} from "@/config/plans";
 import { authRoute, fail, json, readBody, text } from "@/lib/server/http";
 import { toWedding, type WeddingRow } from "@/lib/server/mappers";
 import { db } from "@/lib/server/supabase";
 import { ensureUserRecord } from "@/lib/server/weddings";
-import { createDefaultWeddingContent } from "@/lib/wedding-content";
-import { FREE_PLAN_MAX_WEDDINGS, validateWeddingSlug } from "@/lib/wedding-slug";
+import { createDefaultWeddingContent } from "@/lib/wedding-data";
+import { validateWeddingSlug } from "@/lib/wedding-slug";
+import { getTemplateMeta } from "@/templates/registry";
 
 const TEMPLATE_ID_RE = /^[a-z0-9-]{2,40}$/;
 
@@ -31,7 +38,14 @@ export const POST = authRoute(async (req, user) => {
     if (!parsed || !TEMPLATE_ID_RE.test(parsed)) {
       return fail("Mẫu thiệp không hợp lệ.");
     }
-    templateId = parsed;
+    const meta = getTemplateMeta(parsed);
+    if (!meta || meta.isPlaceholder) {
+      return fail("Mẫu thiệp này chưa sẵn sàng hoặc không tồn tại.");
+    }
+    if (!isTemplateAllowedForPlan("free", meta.plan)) {
+      return fail(getTemplateLockedMessage("free", meta.plan), 403);
+    }
+    templateId = meta.id;
   }
 
   await ensureUserRecord(user);
@@ -45,12 +59,14 @@ export const POST = authRoute(async (req, user) => {
   if (countError) throw countError;
 
   const weddingsList = existing ?? [];
+  const freeMaxWeddings = getPlanLimits("free").weddings;
   const hasPaidPlan = weddingsList.some((w) => w.plan === "pro" || w.plan === "vip");
-  if (!hasPaidPlan && weddingsList.length >= FREE_PLAN_MAX_WEDDINGS) {
-    return fail(
-      `Gói miễn phí chỉ được tạo tối đa ${FREE_PLAN_MAX_WEDDINGS} thiệp cưới.`,
-      400,
-    );
+  if (
+    !hasPaidPlan &&
+    freeMaxWeddings !== null &&
+    weddingsList.length >= freeMaxWeddings
+  ) {
+    return fail(getWeddingLimitMessage("free"), 403);
   }
 
   const { data, error } = await client
@@ -74,4 +90,3 @@ export const POST = authRoute(async (req, user) => {
 
   return json(toWedding(data as WeddingRow), 201);
 });
-

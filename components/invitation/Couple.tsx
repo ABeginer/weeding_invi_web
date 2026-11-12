@@ -1,55 +1,62 @@
 "use client";
 
+import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
 import { RevealSection } from "./RevealSection";
 import { useWeddingContent } from "./WeddingContentProvider";
 
 export function Couple() {
-  const wedding = useWeddingContent();
+  const data = useWeddingContent();
   return (
     <RevealSection className="bg-inv-bg text-center">
-      {/* Vai trò & tên thư pháp Chú rể - Cô dâu nằm cạnh nhau */}
       <div className="grid grid-cols-2 gap-3 px-4 pt-1 pb-6 sm:gap-5 sm:px-6">
         <div className="min-w-0">
           <p className="mb-1 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
-            {wedding.groom.label}
+            CHÚ RỂ
           </p>
           <h2 className="font-inv-script text-[clamp(23px,6.2vw,31px)] leading-[1.2] font-normal text-inv-ink">
-            {wedding.groom.fullName}
+            {data.couple.groomFullName}
           </h2>
         </div>
 
         <div className="min-w-0">
           <p className="mb-1 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
-            {wedding.bride.label}
+            CÔ DÂU
           </p>
           <h2 className="font-inv-script text-[clamp(23px,6.2vw,31px)] leading-[1.2] font-normal text-inv-ink">
-            {wedding.bride.fullName}
+            {data.couple.brideFullName}
           </h2>
         </div>
       </div>
 
-      {/* Dải băng xanh olive bọc hai ảnh chân dung góc vuông */}
       <div className="grid grid-cols-2 gap-3 bg-inv-olive-mid p-3">
         <div className="h-[220px] w-full overflow-hidden bg-inv-olive-deep/30 sm:h-[300px]">
-          <img
-            src={wedding.groom.photo}
-            alt={`${wedding.groom.name} ${wedding.groom.fullName}`}
-            width={600}
-            height={800}
-            loading="lazy"
-            className="block h-full w-full object-cover object-[center_22%]"
-          />
+          {data.photos.groomUrl ? (
+            <img
+              src={data.photos.groomUrl}
+              alt={`Chú rể ${data.couple.groomFullName}`}
+              width={600}
+              height={800}
+              loading="lazy"
+              className="block h-full w-full object-cover object-[center_22%]"
+            />
+          ) : (
+            <TemplatePhotoPlaceholder className="h-full aspect-auto" />
+          )}
         </div>
 
         <div className="h-[220px] w-full overflow-hidden bg-inv-olive-deep/30 sm:h-[300px]">
-          <img
-            src={wedding.bride.photo}
-            alt={`${wedding.bride.name} ${wedding.bride.fullName}`}
-            width={600}
-            height={800}
-            loading="lazy"
-            className="block h-full w-full object-cover object-[center_22%]"
-          />
+          {data.photos.brideUrl ? (
+            <img
+              src={data.photos.brideUrl}
+              alt={`Cô dâu ${data.couple.brideFullName}`}
+              width={600}
+              height={800}
+              loading="lazy"
+              className="block h-full w-full object-cover object-[center_22%]"
+            />
+          ) : (
+            <TemplatePhotoPlaceholder className="h-full aspect-auto" />
+          )}
         </div>
       </div>
     </RevealSection>

@@ -13,7 +13,7 @@ export interface ButtonProps
 
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "bg-accent text-white hover:bg-accent-hover shadow-sm border border-transparent",
+    "bg-accent text-accent-fg hover:bg-accent-hover shadow-sm border border-transparent font-semibold",
   secondary:
     "bg-surface-muted text-fg hover:bg-border/60 border border-border",
   outline:
@@ -21,7 +21,7 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   ghost:
     "bg-transparent text-fg hover:bg-surface-muted border border-transparent",
   danger:
-    "bg-danger-fg text-white hover:opacity-90 border border-transparent",
+    "bg-danger-btn-bg text-danger-btn-fg hover:opacity-90 border border-transparent font-semibold",
 };
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {

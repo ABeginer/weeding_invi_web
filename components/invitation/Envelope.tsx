@@ -20,9 +20,7 @@ function BotanicalLineArt() {
       aria-hidden="true"
       className="h-full w-full text-inv-olive-deep/80"
     >
-      {/* Mảng hoa bên trái vươn tới đường gấp giữa */}
       <g fill="var(--inv-paper)" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-        {/* Cành lá nền bên trái */}
         <path
           d="M-12 458 C45 435, 92 412, 148 398"
           fill="none"
@@ -49,7 +47,6 @@ function BotanicalLineArt() {
           strokeWidth="1.6"
         />
 
-        {/* Đóa hoa lớn trái */}
         <g transform="translate(88 492) rotate(-14)">
           <path d="M0 0 C-28 -44, -68 -36, -62 6 C-56 36, -24 38, 0 0 Z" strokeWidth="1.8" />
           <path d="M0 0 C-10 -56, 38 -64, 48 -24 C56 4, 24 22, 0 0 Z" strokeWidth="1.8" />
@@ -62,7 +59,6 @@ function BotanicalLineArt() {
           <circle cx="8" cy="9" r="2" fill="currentColor" stroke="none" />
         </g>
 
-        {/* Đóa hoa vừa hướng về tâm */}
         <g transform="translate(174 366) rotate(12)">
           <path d="M0 0 C-26 -38, -56 -24, -48 12 C-42 36, -16 30, 0 0 Z" strokeWidth="1.8" />
           <path d="M0 0 C-6 -48, 38 -48, 44 -14 C48 10, 20 18, 0 0 Z" strokeWidth="1.8" />
@@ -71,7 +67,6 @@ function BotanicalLineArt() {
           <circle cx="0" cy="0" r="5" fill="currentColor" strokeWidth="1.2" />
         </g>
 
-        {/* Nụ & cành lá vươn gần con dấu */}
         <path
           d="M148 398 C184 398, 214 408, 238 424"
           fill="none"
@@ -85,7 +80,6 @@ function BotanicalLineArt() {
           d="M182 410 C186 436, 206 452, 222 440 C212 424, 198 414, 182 410 Z"
           strokeWidth="1.5"
         />
-        {/* Thân rũ phía dưới bên trái */}
         <path
           d="M72 522 C52 562, 34 592, 16 626"
           fill="none"
@@ -100,7 +94,6 @@ function BotanicalLineArt() {
           strokeWidth="1.5"
         />
 
-        {/* Mảng hoa lily & nhành olive bên phải */}
         <path
           d="M512 412 C456 410, 398 416, 336 426"
           fill="none"
@@ -123,7 +116,6 @@ function BotanicalLineArt() {
           strokeWidth="1.5"
         />
 
-        {/* Hoa lily trên phải */}
         <g transform="translate(388 352) rotate(-18)">
           <path d="M0 0 C-16 -54, 16 -70, 26 -24 C30 -4, 14 10, 0 0 Z" strokeWidth="1.8" />
           <path d="M0 0 C-56 -22, -58 -62, -16 -56 C2 -52, 8 -20, 0 0 Z" strokeWidth="1.8" />
@@ -136,7 +128,6 @@ function BotanicalLineArt() {
           <circle cx="26" cy="-5" r="2.2" fill="currentColor" stroke="none" />
         </g>
 
-        {/* Hoa lily lớn dưới phải hướng về mép giữa */}
         <g transform="translate(418 486) rotate(22)">
           <path d="M0 0 C-18 -58, 18 -72, 28 -22 C32 0, 14 12, 0 0 Z" strokeWidth="1.8" />
           <path d="M0 0 C-62 -20, -64 -62, -18 -58 C4 -54, 10 -20, 0 0 Z" strokeWidth="1.8" />
@@ -149,7 +140,6 @@ function BotanicalLineArt() {
           <circle cx="28" cy="-7" r="2.2" fill="currentColor" stroke="none" />
         </g>
 
-        {/* Nụ vươn sang đường gấp giữa ở phía phải */}
         <path
           d="M338 426 C306 426, 282 418, 258 408"
           fill="none"
@@ -165,19 +155,18 @@ function BotanicalLineArt() {
 }
 
 export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps) {
-  const wedding = useWeddingContent();
+  const data = useWeddingContent();
   const prefersReducedMotion = useReducedMotion();
   const [opening, setOpening] = React.useState(false);
 
   const displayName =
     guestName && guestName.trim().length > 0
       ? guestName.trim()
-      : wedding.envelope.defaultGuestName;
+      : data.ui.defaultGuestName;
 
   const handleOpen = () => {
     if (opening) return;
     setOpening(true);
-    // Kích hoạt nhạc ngay trong sự kiện chạm để trình duyệt cho phép phát âm thanh
     onOpen();
   };
 
@@ -194,7 +183,6 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
       }
       aria-label="Thiệp mời cưới"
     >
-      {/* Cánh trái bất đối xứng (63.2%): 79.1139% là tờ giấy trái khớp đúng tâm 50%, phần thừa chứa con dấu sáp */}
       <motion.div
         aria-hidden="true"
         initial={false}
@@ -212,7 +200,6 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         }
         className="pointer-events-none absolute inset-y-0 left-0 z-20 w-[63.2%] will-change-transform"
       >
-        {/* Nửa giấy bên trái (50% màn hình = 79.1139% của cánh trái) */}
         <div
           className="relative h-full w-[79.1139%] overflow-hidden border-r border-inv-olive/20 bg-inv-paper shadow-[4px_0_18px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
           style={{
@@ -225,7 +212,6 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
           </div>
         </div>
 
-        {/* Con dấu sáp olive 3D vắt ngay trên đường mép giữa */}
         <div className="absolute top-1/2 left-[79.1139%] z-30 h-[96px] w-[96px] -translate-x-1/2 -translate-y-1/2 sm:h-[108px] sm:w-[108px]">
           <img
             src="/images/olive-wax-seal.webp"
@@ -241,7 +227,6 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         </div>
       </motion.div>
 
-      {/* Cánh phải (50%) */}
       <motion.div
         aria-hidden="true"
         initial={false}
@@ -268,36 +253,33 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         </div>
       </motion.div>
 
-      {/* Vùng chạm toàn màn hình, lời mời tên khách & dòng "Chạm để mở thiệp" ở đáy */}
       <button
         type="button"
         onClick={handleOpen}
         disabled={opening}
-        aria-label={`${wedding.envelope.tapHint} - ${wedding.envelope.invitePrefix} ${displayName}`}
+        aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayName}`}
         className="relative z-30 flex h-full w-full cursor-pointer flex-col items-center justify-between px-6 pt-[13dvh] pb-[6dvh] text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-inv-olive-deep"
       >
-        {/* Trân trọng kính mời {tên khách} đặt trang nhã ở khoảng trống phía trên */}
         <motion.div
           animate={opening ? { opacity: 0, y: -6 } : { opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
           className="max-w-[340px] px-4 py-2"
         >
           <p className="font-inv-serif text-[11px] font-medium uppercase tracking-[0.26em] text-inv-text">
-            {wedding.envelope.invitePrefix}
+            {data.ui.invitePrefix}
           </p>
           <p className="mt-2 font-inv-script text-[clamp(32px,9.5vw,44px)] leading-[1.15] text-inv-olive-deep">
             {displayName}
           </p>
         </motion.div>
 
-        {/* Dòng "CHẠM ĐỂ MỞ THIỆP" nhấp nháy nhẹ ở đáy màn */}
         <motion.span
           animate={opening ? { opacity: 0 } : { opacity: 1 }}
           transition={{ duration: 0.25 }}
           className="w-full"
         >
           <span className="inline-block font-inv-serif text-[12px] tracking-[0.14em] uppercase text-inv-tap-hint [text-shadow:0_1px_4px_rgba(255,255,255,0.95),0_0_10px_rgba(255,255,255,0.85)] motion-safe:animate-[inv-tap-hint-pulse_2.4s_ease-in-out_infinite]">
-            {wedding.envelope.tapHint}
+            {data.ui.tapHint}
           </span>
         </motion.span>
       </button>

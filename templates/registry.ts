@@ -1,3 +1,4 @@
+import { isTemplateAllowedForPlan } from "@/config/plans";
 import type { WeddingPlan } from "@/lib/types";
 import type { TemplateId, WeddingTemplateMeta } from "./types";
 
@@ -100,16 +101,10 @@ export function isImplementedTemplateId(templateId: string): templateId is Exclu
   );
 }
 
-const PLAN_RANK: Record<WeddingPlan, number> = {
-  free: 0,
-  pro: 1,
-  vip: 2,
-};
-
 export function canPlanUseTemplate(
   userPlan: WeddingPlan,
   templatePlan: WeddingPlan
 ): boolean {
-  return PLAN_RANK[userPlan] >= PLAN_RANK[templatePlan];
+  return isTemplateAllowedForPlan(userPlan, templatePlan);
 }
 

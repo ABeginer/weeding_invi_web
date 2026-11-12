@@ -3,13 +3,13 @@
 import * as React from "react";
 import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
 import { submitRsvp, submitWish } from "@/lib/api";
-import type { GuestStatus, WeddingContent } from "@/lib/types";
+import type { GuestStatus, TemplateData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { TemplateRenderMode } from "../types";
 import type { TemplateTone } from "./TemplateOverlays";
 
 interface TemplateRsvpSectionProps {
-  content: WeddingContent;
+  data: TemplateData;
   mode: TemplateRenderMode;
   tone: TemplateTone;
   inviteSlug?: string;
@@ -22,7 +22,7 @@ interface TemplateRsvpSectionProps {
 const MAX_WISH_LENGTH = 500;
 
 export function TemplateRsvpSection({
-  content,
+  data,
   mode,
   tone,
   inviteSlug,
@@ -31,10 +31,10 @@ export function TemplateRsvpSection({
   guestName,
   initialStatus = "pending",
 }: TemplateRsvpSectionProps) {
-  const isDemo = mode === "demo";
-  const isPublicMode = !isDemo && invitationMode === "public";
+  const isReadOnlyPreview = mode === "demo" || mode === "preview";
+  const isPublicMode = !isReadOnlyPreview && invitationMode === "public";
   const isNameLocked = !isPublicMode && Boolean(guestName && guestName.trim().length > 0);
-  const copy = content.sections.rsvpWish;
+  const effectiveWeddingSlug = weddingSlug ?? data.weddingSlug;
 
   const [status, setStatus] = React.useState<GuestStatus>(initialStatus);
   const [isEditingRsvp, setIsEditingRsvp] = React.useState(initialStatus === "pending");
@@ -73,6 +73,7 @@ export function TemplateRsvpSection({
   };
 
   const handleRespond = async (choice: "accepted" | "declined") => {
+    if (isReadOnlyPreview) return;
     clearAlerts();
     setRsvpFeedback(null);
 
@@ -96,25 +97,13 @@ export function TemplateRsvpSection({
       return;
     }
 
-    if (isDemo) {
-      setSubmitting(choice);
-      window.setTimeout(() => {
-        setStatus(choice);
-        setMessage("");
-        setRsvpFeedback({ choice, wishIncluded: trimmedMessage.length > 0 });
-        setIsEditingRsvp(false);
-        setSubmitting(null);
-      }, 280);
-      return;
-    }
-
     setSubmitting(choice);
     let savedSlug = getActiveSlug(trimmedName);
     try {
       const res = await submitRsvp(
         savedSlug
           ? { slug: savedSlug, status: choice, website: honeypot }
-          : { weddingSlug, name: trimmedName, status: choice, website: honeypot }
+          : { weddingSlug: effectiveWeddingSlug, name: trimmedName, status: choice, website: honeypot },
       );
       if (!savedSlug && res.slug) {
         savedSlug = res.slug;
@@ -125,7 +114,7 @@ export function TemplateRsvpSection({
       setRsvpError(
         err instanceof Error
           ? err.message
-          : "Không thể gửi xác nhận tham dự lúc này. Vui lòng thử lại."
+          : "Không thể gửi xác nhận tham dự lúc này. Vui lòng thử lại.",
       );
       setSubmitting(null);
       return;
@@ -146,7 +135,7 @@ export function TemplateRsvpSection({
         setWishError(
           err instanceof Error
             ? `Đã ghi nhận xác nhận tham dự, nhưng chưa gửi được lời chúc: ${err.message}`
-            : "Đã ghi nhận xác nhận tham dự, nhưng chưa gửi được lời chúc."
+            : "Đã ghi nhận xác nhận tham dự, nhưng chưa gửi được lời chúc.",
         );
       } finally {
         setSubmitting(null);
@@ -161,6 +150,7 @@ export function TemplateRsvpSection({
 
   const handlePublicWishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnlyPreview) return;
     clearAlerts();
 
     const trimmedName = name.trim();
@@ -185,20 +175,10 @@ export function TemplateRsvpSection({
       return;
     }
 
-    if (isDemo) {
-      setSubmitting("wish");
-      window.setTimeout(() => {
-        setMessage("");
-        setPublicWishSent(true);
-        setSubmitting(null);
-      }, 280);
-      return;
-    }
-
     setSubmitting("wish");
     try {
       await submitWish({
-        weddingSlug,
+        weddingSlug: effectiveWeddingSlug,
         name: trimmedName,
         message: trimmedMessage,
         website: honeypot,
@@ -209,7 +189,7 @@ export function TemplateRsvpSection({
       setWishError(
         err instanceof Error
           ? err.message
-          : "Không thể gửi lời chúc lúc này. Vui lòng thử lại."
+          : "Không thể gửi lời chúc lúc này. Vui lòng thử lại.",
       );
     } finally {
       setSubmitting(null);
@@ -266,13 +246,13 @@ export function TemplateRsvpSection({
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
             <p className={cn("text-[11px] font-medium uppercase tracking-[0.2em]", styles.eyebrow)}>
-              {copy.eyebrow}
+              Phản Hồi &amp; Chúc Phúc
             </p>
             <h2 className={cn("mt-1.5 text-3xl font-semibold", styles.heading)}>
-              {copy.titlePublic}
+              Gửi Lời Chúc Phúc
             </h2>
             <p className={cn("mx-auto mt-2 max-w-[380px] text-sm leading-relaxed", styles.subtext)}>
-              {copy.subtitlePublic}
+              Gửi đôi lời yêu thương để cùng lưu giữ những kỷ niệm đẹp nhất trong ngày cưới của chúng mình.
             </p>
           </div>
 
@@ -283,17 +263,17 @@ export function TemplateRsvpSection({
                 <span>Đã gửi lời chúc</span>
               </div>
               <p className={cn("mt-2 text-sm leading-relaxed", styles.subtext)}>
-                {copy.wishOnlySuccessMessage}
+                Cảm ơn bạn thật nhiều! Lời chúc của bạn đã được gửi tới cô dâu &amp; chú rể.
               </p>
               <button
                 type="button"
                 onClick={() => setPublicWishSent(false)}
                 className={cn(
                   "mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full px-4 text-xs font-medium transition-colors",
-                  styles.outlineBtn
+                  styles.outlineBtn,
                 )}
               >
-                {copy.sendAnotherWishLabel}
+                Gửi thêm lời chúc
               </button>
             </div>
           ) : (
@@ -310,22 +290,22 @@ export function TemplateRsvpSection({
               />
 
               <input
-                aria-label={copy.nameLabel}
-                placeholder={copy.namePlaceholder}
+                aria-label="Tên của bạn"
+                placeholder="Nhập tên hoặc biệt danh của bạn"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={submitting !== null}
                 maxLength={100}
                 className={cn(
                   "h-11 w-full rounded-xl px-4 text-sm focus:outline-none focus:ring-2",
-                  styles.input
+                  styles.input,
                 )}
               />
 
               <div>
                 <textarea
-                  aria-label={copy.messageLabelPublic}
-                  placeholder={copy.messagePlaceholder}
+                  aria-label="Lời chúc dành cho cô dâu & chú rể"
+                  placeholder="Viết lời chúc tốt đẹp của bạn tại đây..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   maxLength={MAX_WISH_LENGTH}
@@ -333,7 +313,7 @@ export function TemplateRsvpSection({
                   rows={3}
                   className={cn(
                     "w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2",
-                    styles.input
+                    styles.input,
                   )}
                 />
                 <div className={cn("mt-1 text-right text-[11px]", styles.subtext)}>
@@ -352,11 +332,11 @@ export function TemplateRsvpSection({
                 disabled={submitting !== null}
                 className={cn(
                   "inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 text-sm transition-colors disabled:opacity-60",
-                  styles.primaryBtn
+                  styles.primaryBtn,
                 )}
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
-                <span>{submitting === "wish" ? "Đang gửi..." : copy.submitWishLabel}</span>
+                <span>{submitting === "wish" ? "Đang gửi..." : "Gửi lời chúc"}</span>
               </button>
             </form>
           )}
@@ -365,7 +345,7 @@ export function TemplateRsvpSection({
     );
   }
 
-  const showSavedSummary = !isEditingRsvp && status !== "pending";
+  const showSavedSummary = !isReadOnlyPreview && !isEditingRsvp && status !== "pending";
   const activeChoice = rsvpFeedback?.choice ?? (status !== "pending" ? status : null);
 
   return (
@@ -373,13 +353,13 @@ export function TemplateRsvpSection({
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
           <p className={cn("text-[11px] font-medium uppercase tracking-[0.2em]", styles.eyebrow)}>
-            {copy.eyebrow}
+            Phản Hồi &amp; Chúc Phúc
           </p>
           <h2 className={cn("mt-1.5 text-3xl font-semibold", styles.heading)}>
-            {copy.titlePersonal}
+            Xác Nhận Tham Dự &amp; Gửi Lời Chúc
           </h2>
           <p className={cn("mx-auto mt-2 max-w-[380px] text-sm leading-relaxed", styles.subtext)}>
-            {copy.subtitlePersonal}
+            Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới.
           </p>
         </div>
 
@@ -393,21 +373,18 @@ export function TemplateRsvpSection({
               )}
               <span>
                 {activeChoice === "accepted"
-                  ? copy.currentAcceptedBadge
-                  : copy.currentDeclinedBadge}
+                  ? "Bạn đã xác nhận sẽ tham dự"
+                  : "Bạn đã báo bận không thể tham dự"}
               </span>
             </div>
             <p className={cn("mt-2 text-sm leading-relaxed", styles.subtext)}>
-              {activeChoice === "accepted" ? copy.acceptedMessage : copy.declinedMessage}
+              {activeChoice === "accepted"
+                ? "Cảm ơn bạn đã nhận lời! Chúng mình rất mong chờ được đón tiếp và nâng ly cùng bạn trong ngày vui."
+                : "Rất tiếc vì bạn chưa thể sắp xếp tham dự, nhưng tấm lòng của bạn luôn đáng quý với chúng mình!"}
             </p>
             {rsvpFeedback?.wishIncluded && (
               <p className={cn("mt-2 text-xs font-medium", styles.eyebrow)}>
-                {copy.wishAlsoSavedNote}
-              </p>
-            )}
-            {isDemo && (
-              <p className={cn("mt-2 text-[11px] italic", styles.subtext)}>
-                Chế độ xem thử — phản hồi hiển thị mô phỏng tại chỗ.
+                Lời chúc của bạn cũng đã được gửi tới cô dâu &amp; chú rể.
               </p>
             )}
             <button
@@ -419,10 +396,10 @@ export function TemplateRsvpSection({
               }}
               className={cn(
                 "mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full px-4 text-xs font-medium transition-colors",
-                styles.outlineBtn
+                styles.outlineBtn,
               )}
             >
-              {copy.changeMindLabel}
+              Thay đổi lựa chọn hoặc gửi thêm lời chúc
             </button>
           </div>
         ) : (
@@ -441,48 +418,48 @@ export function TemplateRsvpSection({
             <div>
               <div className="relative">
                 <input
-                  aria-label={copy.nameLabel}
-                  placeholder={copy.namePlaceholder}
-                  value={name}
+                  aria-label="Tên của bạn"
+                  placeholder="Nhập tên hoặc biệt danh của bạn"
+                  value={isReadOnlyPreview ? data.ui.defaultGuestName : name}
                   onChange={(e) => setName(e.target.value)}
-                  readOnly={isNameLocked}
-                  disabled={isNameLocked || submitting !== null}
+                  readOnly={isReadOnlyPreview || isNameLocked}
+                  disabled={isReadOnlyPreview || isNameLocked || submitting !== null}
                   maxLength={100}
                   className={cn(
-                    "h-11 w-full rounded-xl px-4 text-sm focus:outline-none focus:ring-2",
+                    "h-11 w-full rounded-xl px-4 text-sm focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-65",
                     isNameLocked && "pr-10",
-                    styles.input
+                    styles.input,
                   )}
                 />
                 {isNameLocked && (
                   <Lock
                     className={cn(
                       "pointer-events-none absolute top-1/2 right-3.5 h-4 w-4 -translate-y-1/2",
-                      styles.subtext
+                      styles.subtext,
                     )}
                     aria-hidden="true"
                   />
                 )}
               </div>
-              {isNameLocked && (
+              {isNameLocked && !isReadOnlyPreview && (
                 <p className={cn("mt-1 px-1 text-[11px]", styles.subtext)}>
-                  {copy.lockedNameHint}
+                  Tên được điền tự động theo thiệp mời cá nhân của bạn
                 </p>
               )}
             </div>
 
             <div>
               <textarea
-                aria-label={copy.messageLabel}
-                placeholder={copy.messagePlaceholder}
+                aria-label="Lời chúc dành cho cô dâu & chú rể (không bắt buộc)"
+                placeholder="Viết lời chúc tốt đẹp của bạn tại đây..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={MAX_WISH_LENGTH}
-                disabled={submitting !== null}
+                disabled={isReadOnlyPreview || submitting !== null}
                 rows={3}
                 className={cn(
-                  "w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2",
-                  styles.input
+                  "w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-65",
+                  styles.input,
                 )}
               />
               <div className={cn("mt-1 text-right text-[11px]", styles.subtext)}>
@@ -499,31 +476,36 @@ export function TemplateRsvpSection({
             <div className="flex flex-col gap-2 pt-1 sm:flex-row">
               <button
                 type="button"
-                disabled={submitting !== null}
+                disabled={isReadOnlyPreview || submitting !== null}
                 onClick={() => handleRespond("accepted")}
                 className={cn(
-                  "inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-sm transition-colors disabled:opacity-60",
-                  styles.primaryBtn
+                  "inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
+                  styles.primaryBtn,
                 )}
               >
-                {submitting === "accepted" ? "Đang gửi..." : copy.acceptLabel}
+                {submitting === "accepted" ? "Đang gửi..." : "Tôi sẽ tham dự"}
               </button>
               <button
                 type="button"
-                disabled={submitting !== null}
+                disabled={isReadOnlyPreview || submitting !== null}
                 onClick={() => handleRespond("declined")}
                 className={cn(
-                  "inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-sm transition-colors disabled:opacity-60",
-                  styles.outlineBtn
+                  "inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
+                  styles.outlineBtn,
                 )}
               >
-                {submitting === "declined" ? "Đang gửi..." : copy.declineLabel}
+                {submitting === "declined" ? "Đang gửi..." : "Tiếc quá, mình bận mất rồi"}
               </button>
             </div>
+
+            {isReadOnlyPreview && (
+              <p className={cn("pt-1 text-center text-xs italic", styles.subtext)}>
+                Chế độ xem thử
+              </p>
+            )}
           </form>
         )}
       </div>
     </section>
   );
 }
-

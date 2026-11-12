@@ -4,6 +4,13 @@ import { RevealSection } from "./RevealSection";
 import { useWeddingContent } from "./WeddingContentProvider";
 
 function renderParentLines(parents: string) {
+  if (!parents.trim()) {
+    return (
+      <p className="font-inv-serif text-[11px] italic leading-[1.4] text-inv-muted sm:text-[12.5px]">
+        Gia đình nhà hàng lễ cưới
+      </p>
+    );
+  }
   const parts = parents.split(/\s*&\s*/);
   if (parts.length === 2 && parts[0] && parts[1]) {
     return (
@@ -42,42 +49,36 @@ function HandDrawnHeart() {
 }
 
 export function Families() {
-  const wedding = useWeddingContent();
-  const { groom, bride } = wedding.families;
+  const data = useWeddingContent();
+  const { groomParents, brideParents } = data.couple;
+  const hasParents = Boolean(groomParents || brideParents);
 
   return (
     <RevealSection className="bg-inv-bg px-4 pt-8 pb-3 text-center sm:px-6">
-      {/* #2. Lời dẫn ngắn căn giữa */}
-      {wedding.quote && (
+      {data.quote && (
         <blockquote className="mx-auto mb-7 max-w-[420px] font-inv-quote text-[21px] leading-[1.4] text-inv-text sm:text-[23px]">
-          “{wedding.quote}”
+          “{data.quote}”
         </blockquote>
       )}
 
-      {/* #3. Hai khối NHÀ TRAI và NHÀ GÁI luôn xếp 2 cột song song */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-5">
-        <div className="min-w-0">
-          <h2 className="mb-2 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
-            {groom.label}
-          </h2>
-          {renderParentLines(groom.parents)}
-          <p className="mt-2 font-inv-serif text-[11px] leading-[1.4] text-inv-muted sm:text-[12.5px]">
-            {groom.address}
-          </p>
-        </div>
+      {hasParents && (
+        <div className="grid grid-cols-2 gap-3 sm:gap-5">
+          <div className="min-w-0">
+            <h2 className="mb-2 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
+              NHÀ TRAI
+            </h2>
+            {renderParentLines(groomParents)}
+          </div>
 
-        <div className="min-w-0">
-          <h2 className="mb-2 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
-            {bride.label}
-          </h2>
-          {renderParentLines(bride.parents)}
-          <p className="mt-2 font-inv-serif text-[11px] leading-[1.4] text-inv-muted sm:text-[12.5px]">
-            {bride.address}
-          </p>
+          <div className="min-w-0">
+            <h2 className="mb-2 font-inv-serif text-[12px] font-semibold leading-[1.2] tracking-[0.04em] text-inv-ink uppercase sm:text-[13px]">
+              NHÀ GÁI
+            </h2>
+            {renderParentLines(brideParents)}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Biểu tượng trái tim nét mảnh chính giữa */}
       <HandDrawnHeart />
     </RevealSection>
   );

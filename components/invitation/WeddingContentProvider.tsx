@@ -1,52 +1,63 @@
 "use client";
 
 import * as React from "react";
-import type { WeddingContent } from "@/lib/types";
-import { createDefaultWeddingContent } from "@/lib/wedding-content";
+import type { TemplateData, TemplateMode } from "@/lib/types";
+import { createDefaultWeddingContent, toTemplateData } from "@/lib/wedding-data";
 
-const WeddingContentContext = React.createContext<WeddingContent | null>(null);
+const WeddingContentContext = React.createContext<TemplateData | null>(null);
 const InvitationRuntimeContext = React.createContext<{
   contained: boolean;
-  isDemo: boolean;
+  mode: TemplateMode;
 }>({
   contained: false,
-  isDemo: false,
+  mode: "live",
+});
+
+const FALLBACK_TEMPLATE_DATA: TemplateData = toTemplateData({
+  content: createDefaultWeddingContent(),
+  events: [],
+  photos: [],
 });
 
 export function WeddingContentProvider({
-  content,
+  data,
   contained = false,
-  isDemo = false,
+  mode = "live",
   children,
 }: {
-  content: WeddingContent;
+  data: TemplateData;
   contained?: boolean;
-  isDemo?: boolean;
+  mode?: TemplateMode;
   children: React.ReactNode;
 }) {
   const runtime = React.useMemo(
-    () => ({ contained, isDemo }),
-    [contained, isDemo]
+    () => ({ contained, mode }),
+    [contained, mode],
   );
 
   return (
     <InvitationRuntimeContext.Provider value={runtime}>
-      <WeddingContentContext.Provider value={content}>
+      <WeddingContentContext.Provider value={data}>
         {children}
       </WeddingContentContext.Provider>
     </InvitationRuntimeContext.Provider>
   );
 }
 
-export function useWeddingContent(): WeddingContent {
+export function useWeddingContent(): TemplateData {
   const ctx = React.useContext(WeddingContentContext);
-  return ctx ?? createDefaultWeddingContent();
+  return ctx ?? FALLBACK_TEMPLATE_DATA;
 }
 
 export function useInvitationContained(): boolean {
   return React.useContext(InvitationRuntimeContext).contained;
 }
 
-export function useInvitationDemoMode(): boolean {
-  return React.useContext(InvitationRuntimeContext).isDemo;
+export function useInvitationMode(): TemplateMode {
+  return React.useContext(InvitationRuntimeContext).mode;
+}
+
+export function useInvitationReadOnly(): boolean {
+  const mode = React.useContext(InvitationRuntimeContext).mode;
+  return mode === "demo" || mode === "preview";
 }

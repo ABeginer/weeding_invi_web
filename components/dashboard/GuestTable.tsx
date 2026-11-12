@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   AlertCircle,
+  CalendarHeart,
   Check,
   Copy,
   ExternalLink,
@@ -13,16 +15,17 @@ import {
   Upload,
   Users,
 } from "lucide-react";
+import { getPlanLabel, getPlanLimits } from "@/config/plans";
 import {
   ApiError,
   buildGuestLink,
   deleteGuest,
   listGuests,
+  setGuestEvents,
   updateGuest,
 } from "@/lib/api";
-import type { Guest, GuestStatus, WeddingPlan } from "@/lib/types";
-import { cn, formatDateTimeVi } from "@/lib/utils";
-import { FREE_PLAN_MAX_GUESTS } from "@/lib/wedding-slug";
+import type { Guest, GuestStatus, WeddingEvent, WeddingPlan } from "@/lib/types";
+import { cn, formatDateTimeVi, formatWeddingDateParts } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
@@ -36,6 +39,7 @@ import { StatusBadge } from "./StatusBadge";
 interface GuestTableProps {
   weddingId: string;
   plan: WeddingPlan;
+  events: WeddingEvent[];
   onGuestsChanged?: () => void;
 }
 
@@ -49,6 +53,7 @@ const FILTER_OPTIONS: { value: "all" | GuestStatus; label: string }[] = [
 export function GuestTable({
   weddingId,
   plan,
+  events,
   onGuestsChanged,
 }: GuestTableProps) {
   const { showToast } = useToast();
@@ -67,6 +72,11 @@ export function GuestTable({
   const [editName, setEditName] = React.useState("");
   const [editError, setEditError] = React.useState<string | null>(null);
   const [savingEdit, setSavingEdit] = React.useState(false);
+
+  const [assigningGuest, setAssigningGuest] = React.useState<Guest | null>(null);
+  const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([]);
+  const [assignError, setAssignError] = React.useState<string | null>(null);
+  const [savingAssign, setSavingAssign] = React.useState(false);
 
   const [deletingGuest, setDeletingGuest] = React.useState<Guest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
@@ -94,6 +104,11 @@ export function GuestTable({
     loadGuests();
   }, [loadGuests]);
 
+  const eventMap = React.useMemo(
+    () => new Map(events.map((evt) => [evt.id, evt])),
+    [events],
+  );
+
   const filteredGuests = React.useMemo(() => {
     const keyword = search.trim().toLowerCase();
     return guests.filter((guest) => {
@@ -111,8 +126,20 @@ export function GuestTable({
     });
   }, [guests, search, statusFilter]);
 
-  const isFreePlan = plan === "free";
-  const reachedGuestLimit = isFreePlan && !loading && guests.length >= FREE_PLAN_MAX_GUESTS;
+  const limits = getPlanLimits(plan);
+  const guestLimit = limits.guests;
+  const reachedGuestLimit =
+    guestLimit !== null && !loading && guests.length >= guestLimit;
+
+  const getResolvedEvents = React.useCallback(
+    (guest: Guest): WeddingEvent[] => {
+      const ids = guest.eventIds ?? [];
+      return ids
+        .map((id) => eventMap.get(id))
+        .filter((evt): evt is WeddingEvent => Boolean(evt));
+    },
+    [eventMap],
+  );
 
   const handleCopyLink = async (guest: Guest) => {
     const url = buildGuestLink(guest.slug);
@@ -141,6 +168,59 @@ export function GuestTable({
     setEditError(null);
   };
 
+  const openAssignDialog = (guest: Guest) => {
+    const validIds = (guest.eventIds ?? []).filter((id) => eventMap.has(id));
+    setAssigningGuest(guest);
+    setSelectedEventIds(validIds);
+    setAssignError(null);
+  };
+
+  const toggleEventSelection = (eventId: string) => {
+    setSelectedEventIds((prev) =>
+      prev.includes(eventId)
+        ? prev.filter((id) => id !== eventId)
+        : [...prev, eventId],
+    );
+  };
+
+  const handleSaveAssign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assigningGuest) return;
+    setAssignError(null);
+    setSavingAssign(true);
+    try {
+      const res = await setGuestEvents(
+        weddingId,
+        assigningGuest.id,
+        selectedEventIds,
+      );
+      setGuests((prev) =>
+        prev.map((item) =>
+          item.id === assigningGuest.id ? { ...item, eventIds: res.eventIds } : item,
+        ),
+      );
+      showToast(
+        res.eventIds.length > 0
+          ? `Đã cập nhật lễ mời cho "${assigningGuest.name}"`
+          : `"${assigningGuest.name}" sẽ xem tất cả các lễ`,
+        "success",
+      );
+      setAssigningGuest(null);
+      onGuestsChanged?.();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setAssigningGuest(null);
+        window.location.assign("/auth/login");
+        return;
+      }
+      setAssignError(
+        err instanceof Error ? err.message : "Không thể cập nhật lễ mời cho khách.",
+      );
+    } finally {
+      setSavingAssign(false);
+    }
+  };
+
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingGuest) return;
@@ -156,7 +236,11 @@ export function GuestTable({
     try {
       const updated = await updateGuest(weddingId, editingGuest.id, { name: trimmed });
       setGuests((prev) =>
-        prev.map((item) => (item.id === updated.id ? updated : item)),
+        prev.map((item) =>
+          item.id === updated.id
+            ? { ...updated, eventIds: updated.eventIds ?? item.eventIds }
+            : item,
+        ),
       );
       showToast("Đã cập nhật tên khách mời", "success");
       setEditingGuest(null);
@@ -199,14 +283,44 @@ export function GuestTable({
     }
   };
 
+  const renderAssignedEventsSummary = (guest: Guest) => {
+    const resolved = getResolvedEvents(guest);
+    return (
+      <button
+        type="button"
+        onClick={() => openAssignDialog(guest)}
+        className="group inline-flex cursor-pointer flex-wrap items-center gap-1 rounded-lg border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        title="Nhấn để phân bổ lễ mời"
+      >
+        {resolved.length === 0 ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-neutral-border bg-neutral-bg px-2.5 py-0.5 text-[11px] font-medium text-neutral-fg group-hover:border-accent/40 group-hover:text-accent">
+            <CalendarHeart className="h-3 w-3" aria-hidden="true" />
+            <span>Tất cả lễ</span>
+          </span>
+        ) : (
+          resolved.map((evt) => (
+            <span
+              key={evt.id}
+              className="rounded-full border border-accent/35 bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent"
+            >
+              {evt.title}
+            </span>
+          ))
+        )}
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-fg">Danh sách khách mời</h2>
+          <h2 className="font-display text-2xl font-semibold text-fg">
+            Danh sách khách mời
+          </h2>
           <p className="text-xs text-fg-muted sm:text-sm">
-            {isFreePlan
-              ? `Đang dùng ${guests.length}/${FREE_PLAN_MAX_GUESTS} khách mời (gói miễn phí).`
+            {guestLimit !== null
+              ? `Đang dùng ${guests.length}/${guestLimit} khách mời (gói ${getPlanLabel(plan)}).`
               : `Tổng cộng ${guests.length} khách mời.`}
           </p>
         </div>
@@ -233,13 +347,15 @@ export function GuestTable({
         </div>
       </div>
 
-      {reachedGuestLimit && (
-        <div className="rounded-xl border border-border bg-surface px-4 py-3 text-xs text-fg-muted sm:text-sm">
-          Gói miễn phí giới hạn tối đa{" "}
-          <strong className="font-semibold text-fg">
-            {FREE_PLAN_MAX_GUESTS} khách mời
-          </strong>
-          . Xóa bớt khách cũ nếu muốn thêm khách mới.
+      {reachedGuestLimit && guestLimit !== null && (
+        <div className="rounded-xl border border-accent/35 bg-accent-soft px-4 py-3 text-xs text-fg sm:text-sm">
+          Gói {getPlanLabel(plan)} giới hạn tối đa{" "}
+          <strong className="font-semibold text-accent">{guestLimit} khách mời</strong>.
+          Xóa bớt khách cũ hoặc{" "}
+          <Link href="/#bang-gia" className="font-semibold text-accent underline">
+            nâng cấp gói
+          </Link>
+          .
         </div>
       )}
 
@@ -256,7 +372,7 @@ export function GuestTable({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên khách mời hoặc slug..."
               aria-label="Tìm khách mời"
-              className="h-10 w-full rounded-xl border border-border bg-surface pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="h-10 w-full rounded-xl border border-border bg-bg pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
           </div>
 
@@ -275,7 +391,7 @@ export function GuestTable({
                   className={cn(
                     "cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
                     active
-                      ? "border-accent bg-accent text-white"
+                      ? "border-accent bg-accent font-semibold text-accent-fg"
                       : "border-border bg-surface text-fg-muted hover:bg-surface-muted hover:text-fg",
                   )}
                 >
@@ -303,10 +419,10 @@ export function GuestTable({
         </Card>
       ) : guests.length === 0 ? (
         <Card className="p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-hover">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent-soft text-accent">
             <Users className="h-6 w-6" aria-hidden="true" />
           </div>
-          <h3 className="mt-4 text-base font-semibold text-fg">
+          <h3 className="mt-4 font-display text-xl font-semibold text-fg">
             Chưa có khách mời nào
           </h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-fg-muted">
@@ -340,8 +456,9 @@ export function GuestTable({
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-surface-muted/60 text-xs font-semibold uppercase tracking-wide text-fg-muted">
+                  <tr className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-wide text-fg-muted">
                     <th className="px-4 py-3">Khách mời</th>
+                    <th className="px-4 py-3">Các lễ được mời</th>
                     <th className="px-4 py-3">Trạng thái</th>
                     <th className="px-4 py-3">Phản hồi lúc</th>
                     <th className="px-4 py-3 text-right">Thao tác</th>
@@ -351,12 +468,15 @@ export function GuestTable({
                   {filteredGuests.map((guest) => {
                     const isCopied = copiedId === guest.id;
                     return (
-                      <tr key={guest.id} className="hover:bg-bg/60">
+                      <tr key={guest.id} className="hover:bg-surface-muted/45">
                         <td className="px-4 py-3.5">
                           <div className="font-medium text-fg">{guest.name}</div>
                           <div className="mt-0.5 text-xs text-fg-muted">
                             /m/{guest.slug}
                           </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {renderAssignedEventsSummary(guest)}
                         </td>
                         <td className="px-4 py-3.5">
                           <StatusBadge status={guest.status} />
@@ -386,7 +506,7 @@ export function GuestTable({
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label={`Mở thiệp /m/${guest.slug}`}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:bg-surface-muted hover:text-accent"
                             >
                               <ExternalLink className="h-4 w-4" aria-hidden="true" />
                             </a>
@@ -433,6 +553,11 @@ export function GuestTable({
                     <StatusBadge status={guest.status} />
                   </div>
 
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-fg-muted">Lễ mời:</span>
+                    {renderAssignedEventsSummary(guest)}
+                  </div>
+
                   <p className="text-xs text-fg-muted">
                     Phản hồi lúc:{" "}
                     <span className="font-medium text-fg">
@@ -440,7 +565,7 @@ export function GuestTable({
                     </span>
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-2 border-t border-border/70 pt-3">
+                  <div className="flex flex-wrap items-center gap-2 border-t border-border/80 pt-3">
                     <Button
                       variant="outline"
                       size="sm"
@@ -462,7 +587,7 @@ export function GuestTable({
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`Mở thiệp /m/${guest.slug}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted hover:bg-surface-muted hover:text-fg"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg-muted hover:bg-surface-muted hover:text-accent"
                     >
                       <ExternalLink className="h-4 w-4" aria-hidden="true" />
                     </a>
@@ -510,6 +635,89 @@ export function GuestTable({
           onGuestsChanged?.();
         }}
       />
+
+      <Dialog
+        open={Boolean(assigningGuest)}
+        onClose={() => !savingAssign && setAssigningGuest(null)}
+        title={
+          assigningGuest
+            ? `Các lễ mời cho "${assigningGuest.name}"`
+            : "Phân bổ lễ cho khách mời"
+        }
+        description="Nếu không chọn lễ nào, khách sẽ mặc định nhìn thấy tất cả các lễ trên thiệp cá nhân (/m/...)."
+      >
+        <form onSubmit={handleSaveAssign} className="space-y-4">
+          {events.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border px-4 py-5 text-center text-xs text-fg-muted">
+              Thiệp chưa có lễ nào. Hãy thêm lễ ở mục &ldquo;Lễ &amp; địa điểm&rdquo; trước.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {events.map((evt) => {
+                const checked = selectedEventIds.includes(evt.id);
+                const dateParts = formatWeddingDateParts(evt.startsAt);
+                return (
+                  <label
+                    key={evt.id}
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors",
+                      checked
+                        ? "border-accent bg-accent-soft"
+                        : "border-border bg-bg hover:border-accent/45",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleEventSelection(evt.id)}
+                      className="mt-1 h-4 w-4 rounded border-border accent-[#D4AF37]"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-fg">{evt.title}</p>
+                      <p className="mt-0.5 text-xs text-fg-muted">
+                        {dateParts.time} · {dateParts.dotDate} · {evt.venueName}
+                      </p>
+                    </div>
+                  </label>
+                );
+              })}
+
+              {selectedEventIds.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEventIds([])}
+                    className="cursor-pointer text-xs font-medium text-accent underline underline-offset-4 hover:text-accent-hover"
+                  >
+                    Bỏ chọn tất cả (hiển thị mọi lễ)
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {assignError && (
+            <p role="alert" className="text-xs text-danger-fg">
+              {assignError}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setAssigningGuest(null)}
+              disabled={savingAssign}
+            >
+              Hủy
+            </Button>
+            {events.length > 0 && (
+              <Button type="submit" variant="primary" loading={savingAssign}>
+                Lưu phân bổ lễ
+              </Button>
+            )}
+          </div>
+        </form>
+      </Dialog>
 
       <Dialog
         open={Boolean(editingGuest)}

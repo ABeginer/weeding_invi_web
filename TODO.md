@@ -57,3 +57,29 @@ Tài liệu tổng hợp các mục tạm thời/placeholder cần chủ dự á
 | `soonBadgeText` trên `soonBadgeBg` | `#C2BDB4` / `#222222` | **8.51:1** | Nhãn `"Sắp có"` — Đạt (`>= 4.5:1`) |
 | `goldSoft` trên `bg` | `#8C7A3F` / `#0B0B0B` | **4.66:1** | Viền nhạt / icon phụ trên `#0B0B0B` — Đạt (`>= 4.5:1`) |
 | `goldSoft` trên `surface` | `#8C7A3F` / `#151515` | **4.32:1** | Chỉ dùng cho viền (`border`) / icon trang trí (`>= 3.0:1`), không dùng cho chữ |
+
+### Hệ màu Dashboard (`dashboardTheme` trong `lib/theme.ts`) & Kết quả đo độ tương phản WCAG 2.1
+Dashboard dùng chung hệ màu nền tối & chữ vàng với trang chủ, kèm các token trạng thái riêng đạt chuẩn WCAG AA (`>= 4.5:1`):
+
+| Cặp màu (Chữ / Thành phần trên Nền) | Mã Hex | Tỉ lệ đo được | Mục đích & Trạng thái |
+| :--- | :--- | :---: | :--- |
+| `textBody` trên `bg` / `surface` / `surfaceMuted` | `#E8DFC8` trên `#0B0B0B` / `#151515` / `#1E1E1E` | **14.83:1** / **13.76:1** / **12.56:1** | Chữ nội dung & thẻ — Đạt (`>= 4.5:1`) |
+| `textMuted` trên `bg` / `surface` / `surfaceMuted` | `#A89F86` trên `#0B0B0B` / `#151515` / `#1E1E1E` | **7.47:1** / **6.93:1** / **6.33:1** | Chữ phụ, mô tả, nhãn — Đạt (`>= 4.5:1`) |
+| `gold` trên `bg` / `surface` / `goldTint` | `#D4AF37` trên `#0B0B0B` / `#151515` / `#221D11` | **9.36:1** / **8.68:1** / **7.98:1** | Tiêu đề, liên kết nhấn — Đạt (`>= 4.5:1`) |
+| `accentFg` trên `gold` / `goldBright` | `#0B0B0B` trên `#D4AF37` / `#E3C35A` | **9.36:1** / **11.45:1** | Chữ trên nút chính, tab & filter đang chọn — Đạt (`>= 4.5:1`) |
+| `successFg` trên `successBg` / `surface` | `#7FE3A8` trên `#12261C` / `#151515` | **10.20:1** / **11.70:1** | Nhãn trạng thái `"Tham dự"` & cảnh báo tích cực — Đạt (`>= 4.5:1`) |
+| `dangerFg` trên `dangerBg` / `surface` | `#FCA5A5` trên `#2B1414` / `#151515` | **9.12:1** / **9.62:1** | Nhãn `"Từ chối"`, thông báo lỗi & xác nhận xóa — Đạt (`>= 4.5:1`) |
+| `dangerBtnFg` trên `dangerBtnBg` | `#FFFFFF` trên `#B91C1C` | **6.47:1** | Nút `"Xóa"` nguy hiểm — Đạt (`>= 4.5:1`) |
+| `neutralFg` trên `neutralBg` | `#C9BFA8` trên `#201E1B` | **9.11:1** | Nhãn `"Chờ phản hồi"` — Đạt (`>= 4.5:1`) |
+
+---
+
+## 5. Cài đặt Hạ tầng & Cơ sở dữ liệu cho Trung tâm quản lý Dashboard
+- [ ] **Chạy Migration v3 trên Supabase (Bắt buộc trước khi dùng/test đầy đủ)**: File `supabase/migration_v3.sql` đã được tạo sẵn nhưng **CHƯA thực thi**. Chủ dự án mở **Supabase Studio -> SQL Editor**, dán và chạy toàn bộ nội dung `supabase/migration_v3.sql` để tạo bảng `public.events`, `public.guest_events` cùng các ràng buộc RLS.
+- [ ] **Tạo Cloudflare R2 Bucket cho ảnh cưới**: `wrangler.jsonc` đã cấu hình binding `PHOTOS` trỏ tới bucket `thiep-cuoi-photos`. Trước khi upload ảnh hoặc deploy lên Cloudflare Workers/OpenNext, chạy:
+  ```bash
+  npx wrangler r2 bucket create thiep-cuoi-photos
+  ```
+  (Môi trường dev cục bộ với OpenNext/Miniflare có thể lưu R2 local trong `.wrangler/`; production cần bucket thật trên Cloudflare và chưa chạy `wrangler deploy`).
+- [ ] **Tính năng ngoài phạm vi đợt này (chưa triển khai)**: Sổ mừng (quản lý tiền mừng/QR động từ dashboard), đa ngôn ngữ, số người đi cùng, tải nhạc tùy chỉnh, tên miền riêng, check-in QR, thanh toán đối soát tự động.
+

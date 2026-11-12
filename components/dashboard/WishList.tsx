@@ -57,7 +57,9 @@ export function WishList({ weddingId }: WishListProps) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-fg">Lời chúc từ khách mời</h2>
+          <h2 className="font-display text-2xl font-semibold text-fg">
+            Lời chúc từ khách mời
+          </h2>
           <p className="text-xs text-fg-muted sm:text-sm">
             Sắp xếp từ mới nhất đến cũ nhất ({wishes.length} lời chúc).
           </p>
@@ -88,7 +90,7 @@ export function WishList({ weddingId }: WishListProps) {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên người gửi hoặc nội dung lời chúc..."
               aria-label="Tìm lời chúc"
-              className="h-10 w-full rounded-xl border border-border bg-surface pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="h-10 w-full rounded-xl border border-border bg-bg pr-3.5 pl-10 text-sm text-fg placeholder:text-fg-muted/70 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
           </div>
         </Card>
@@ -113,10 +115,10 @@ export function WishList({ weddingId }: WishListProps) {
         </Card>
       ) : wishes.length === 0 ? (
         <Card className="p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-hover">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent-soft text-accent">
             <MessageSquareHeart className="h-6 w-6" aria-hidden="true" />
           </div>
-          <h3 className="mt-4 text-base font-semibold text-fg">
+          <h3 className="mt-4 font-display text-xl font-semibold text-fg">
             Chưa có lời chúc nào
           </h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-fg-muted">
@@ -168,4 +170,3 @@ export function WishList({ weddingId }: WishListProps) {
     </div>
   );
 }
-

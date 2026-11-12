@@ -1,8 +1,8 @@
+import { getGuestLimitMessage, getPlanLimits } from "@/config/plans";
 import { authRoute, fail, json, readBody, text } from "@/lib/server/http";
 import { toGuest, type GuestRow } from "@/lib/server/mappers";
 import { db } from "@/lib/server/supabase";
 import { getOwnedWedding } from "@/lib/server/weddings";
-import { FREE_PLAN_MAX_GUESTS } from "@/lib/wedding-slug";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -11,7 +11,8 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
   const wedding = await getOwnedWedding(id, user.id);
   if (!wedding) return fail("Không tìm thấy thiệp cưới.", 404);
 
-  const { data, error } = await db()
+  const client = db();
+  const { data, error } = await client
     .from("guests")
     .select("*")
     .eq("wedding_id", wedding.id)
@@ -19,7 +20,27 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
     .limit(2000);
 
   if (error) throw error;
-  return json(((data ?? []) as GuestRow[]).map(toGuest));
+  const rows = (data ?? []) as GuestRow[];
+  const eventMap = new Map<string, string[]>();
+
+  if (rows.length > 0) {
+    const guestIds = rows.map((row) => row.id);
+    const { data: links, error: linkError } = await client
+      .from("guest_events")
+      .select("guest_id, event_id")
+      .in("guest_id", guestIds);
+
+    if (linkError) throw linkError;
+    for (const row of links ?? []) {
+      const gId = String(row.guest_id);
+      const eId = String(row.event_id);
+      const current = eventMap.get(gId) ?? [];
+      current.push(eId);
+      eventMap.set(gId, current);
+    }
+  }
+
+  return json(rows.map((row) => toGuest(row, eventMap.get(row.id) ?? [])));
 });
 
 export const POST = authRoute<Ctx>(async (req, user, { params }) => {
@@ -40,11 +61,9 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
   if (countError) throw countError;
   const currentCount = count ?? 0;
 
-  if (wedding.plan === "free" && currentCount >= FREE_PLAN_MAX_GUESTS) {
-    return fail(
-      `Gói miễn phí chỉ được tối đa ${FREE_PLAN_MAX_GUESTS} khách mời. Vui lòng xóa bớt khách hoặc nâng cấp gói.`,
-      400,
-    );
+  const maxGuests = getPlanLimits(wedding.plan).guests;
+  if (maxGuests !== null && currentCount >= maxGuests) {
+    return fail(getGuestLimitMessage(wedding.plan), 403);
   }
 
   const { data, error } = await client
@@ -54,6 +73,5 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
     .single();
 
   if (error) throw error;
-  return json(toGuest(data as GuestRow), 201);
+  return json(toGuest(data as GuestRow, []), 201);
 });
-

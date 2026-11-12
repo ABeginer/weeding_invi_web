@@ -5,8 +5,8 @@ import { RevealSection } from "./RevealSection";
 import { useWeddingContent } from "./WeddingContentProvider";
 
 export function PhotoTriptych() {
-  const wedding = useWeddingContent();
-  const trio = wedding.photos.slice(0, 3);
+  const data = useWeddingContent();
+  const trio = data.photos.gallery.slice(0, 3);
   if (trio.length === 0) return null;
 
   return (
@@ -16,17 +16,17 @@ export function PhotoTriptych() {
           const isCenter = trio.length === 3 && index === 1;
           return (
             <div
-              key={photo.src}
+              key={photo.id || photo.url}
               className={cn(
                 "w-full overflow-hidden bg-inv-tint",
-                isCenter ? "h-[218px] sm:h-[248px]" : "h-[168px] sm:h-[192px]"
+                isCenter ? "h-[218px] sm:h-[248px]" : "h-[168px] sm:h-[192px]",
               )}
             >
               <img
-                src={photo.src}
+                src={photo.url}
                 alt={photo.alt}
-                width={photo.width}
-                height={photo.height}
+                width={600}
+                height={900}
                 loading="lazy"
                 className="block h-full w-full object-cover"
               />

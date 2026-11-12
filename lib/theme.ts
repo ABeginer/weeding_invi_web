@@ -87,3 +87,59 @@ export const landingThemeCssVars = {
   "--lnd-phone-highlight": landingTheme.phoneHighlight,
   "--lnd-phone-notch": landingTheme.phoneNotch,
 } as const;
+
+/**
+ * Hệ màu Dashboard — dùng chung nền tối & chữ vàng với trang chủ,
+ * kèm token trạng thái ngữ nghĩa đạt chuẩn tương phản WCAG AA (>= 4.5:1).
+ */
+export const dashboardTheme = {
+  bg: landingTheme.bg,
+  surface: landingTheme.surface,
+  surfaceMuted: landingTheme.surfaceHover,
+  border: landingTheme.border,
+  gold: landingTheme.gold,
+  goldBright: landingTheme.goldBright,
+  goldSoft: landingTheme.goldSoft,
+  goldTint: landingTheme.goldTint,
+  textBody: landingTheme.textBody,
+  textMuted: landingTheme.textMuted,
+  accentFg: "#0B0B0B",
+  successBg: "#12261C",
+  successFg: "#7FE3A8",
+  successBorder: "#285940",
+  dangerBg: "#2B1414",
+  dangerFg: "#FCA5A5",
+  dangerBorder: "#6E2929",
+  dangerBtnBg: "#B91C1C",
+  dangerBtnFg: "#FFFFFF",
+  neutralBg: "#201E1B",
+  neutralFg: "#C9BFA8",
+  neutralBorder: "#38342E",
+} as const;
+
+export type DashboardTheme = typeof dashboardTheme;
+
+export const dashboardThemeCssVars = {
+  ...landingThemeCssVars,
+  "--color-bg": dashboardTheme.bg,
+  "--color-surface": dashboardTheme.surface,
+  "--color-surface-muted": dashboardTheme.surfaceMuted,
+  "--color-fg": dashboardTheme.textBody,
+  "--color-fg-muted": dashboardTheme.textMuted,
+  "--color-accent": dashboardTheme.gold,
+  "--color-accent-hover": dashboardTheme.goldBright,
+  "--color-accent-soft": dashboardTheme.goldTint,
+  "--color-accent-fg": dashboardTheme.accentFg,
+  "--color-border": dashboardTheme.border,
+  "--color-success-bg": dashboardTheme.successBg,
+  "--color-success-fg": dashboardTheme.successFg,
+  "--color-success-border": dashboardTheme.successBorder,
+  "--color-danger-bg": dashboardTheme.dangerBg,
+  "--color-danger-fg": dashboardTheme.dangerFg,
+  "--color-danger-border": dashboardTheme.dangerBorder,
+  "--color-danger-btn-bg": dashboardTheme.dangerBtnBg,
+  "--color-danger-btn-fg": dashboardTheme.dangerBtnFg,
+  "--color-neutral-bg": dashboardTheme.neutralBg,
+  "--color-neutral-fg": dashboardTheme.neutralFg,
+  "--color-neutral-border": dashboardTheme.neutralBorder,
+} as const;

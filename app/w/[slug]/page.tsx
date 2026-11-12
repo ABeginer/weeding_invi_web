@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { LiveTemplateRenderer } from "@/templates/LiveTemplateRenderer";
 import { getPublicWeddingBySlug } from "@/lib/server/public-wedding";
+import { toTemplateData } from "@/lib/wedding-data";
+import { getTemplateMeta } from "@/templates/registry";
+import { LiveTemplateRenderer } from "@/templates/LiveTemplateRenderer";
 
 export const dynamic = "force-dynamic";
 
@@ -19,21 +21,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const { seo, groom, bride } = wedding.content;
-  const title = seo.title || `Thiệp Cưới ${groom.shortName} & ${bride.shortName}`;
+  const templateData = toTemplateData({
+    templateId: wedding.templateId,
+    weddingSlug: wedding.slug,
+    content: wedding.content,
+    events: wedding.events,
+    photos: wedding.photos,
+  });
+  const title = templateData.ui.seoTitle;
+  const ogImage =
+    templateData.photos.heroUrl ??
+    getTemplateMeta(wedding.templateId)?.coverImage;
 
   return {
     title,
-    description: seo.description,
+    description: templateData.ui.seoDescription,
     openGraph: {
       title,
-      description: seo.description,
+      description: templateData.ui.seoDescription,
       type: "website",
       locale: "vi_VN",
-      images: seo.ogImage
+      images: ogImage
         ? [
             {
-              url: seo.ogImage,
+              url: ogImage,
               width: 1200,
               height: 630,
               alt: title,
@@ -52,13 +63,20 @@ export default async function PublicWeddingPage({ params }: PageProps) {
     notFound();
   }
 
+  const templateData = toTemplateData({
+    templateId: wedding.templateId,
+    weddingSlug: wedding.slug,
+    content: wedding.content,
+    events: wedding.events,
+    photos: wedding.photos,
+  });
+
   return (
     <LiveTemplateRenderer
       templateId={wedding.templateId}
-      content={wedding.content}
+      data={templateData}
       weddingSlug={wedding.slug}
       invitationMode="public"
     />
   );
 }
-

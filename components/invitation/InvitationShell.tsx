@@ -27,15 +27,20 @@ export function InvitationShell({
   initialOpened = false,
   onOpenedChange,
 }: InvitationShellProps) {
-  const wedding = useWeddingContent();
+  const data = useWeddingContent();
   const contextContained = useInvitationContained();
   const contained = containedProp ?? contextContained;
   const [envelopeDismissed, setEnvelopeDismissed] = React.useState(initialOpened);
   const [isOpened, setIsOpened] = React.useState(initialOpened);
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [audioAvailable, setAudioAvailable] = React.useState(
-    Boolean(wedding.music?.src)
+    Boolean(data.music?.src),
   );
+
+  React.useEffect(() => {
+    setIsOpened(initialOpened);
+    setEnvelopeDismissed(initialOpened);
+  }, [initialOpened]);
 
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const fadeTimerRef = React.useRef<number | null>(null);
@@ -57,19 +62,19 @@ export function InvitationShell({
         const elapsed = performance.now() - startTime;
         const progress = Math.min(1, elapsed / FADE_DURATION_MS);
         audio.volume = Number(
-          (0.04 + (TARGET_VOLUME - 0.04) * progress).toFixed(3)
+          (0.04 + (TARGET_VOLUME - 0.04) * progress).toFixed(3),
         );
         if (progress >= 1) {
           clearFade();
         }
       }, 60);
     },
-    [clearFade]
+    [clearFade],
   );
 
   const playAudio = React.useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || !audioAvailable || !wedding.music?.src) return;
+    if (!audio || !audioAvailable || !data.music?.src) return;
 
     try {
       audio.volume = 0.04;
@@ -81,7 +86,6 @@ export function InvitationShell({
             startFadeIn(audio);
           })
           .catch(() => {
-            // Trình duyệt chặn hoặc thiếu file nhạc: giữ trang hoạt động bình thường
             setIsPlaying(false);
             if (audio.error) {
               setAudioAvailable(false);
@@ -94,7 +98,7 @@ export function InvitationShell({
     } catch {
       setIsPlaying(false);
     }
-  }, [audioAvailable, startFadeIn, wedding.music?.src]);
+  }, [audioAvailable, data.music?.src, startFadeIn]);
 
   const handleOpenEnvelope = React.useCallback(() => {
     setIsOpened(true);
@@ -114,7 +118,7 @@ export function InvitationShell({
           window.scrollTo({ top: 0, behavior: "auto" });
         }
       },
-      isReducedMotion ? 320 : ENVELOPE_DISMISS_MS
+      isReducedMotion ? 320 : ENVELOPE_DISMISS_MS,
     );
   }, [contained, externalMusicControl, onOpenedChange, playAudio]);
 
@@ -162,7 +166,7 @@ export function InvitationShell({
   }, [clearFade]);
 
   React.useEffect(() => {
-    const config = wedding.autoScroll;
+    const config = data.ui.autoScroll;
     if (
       contained ||
       !envelopeDismissed ||
@@ -173,7 +177,7 @@ export function InvitationShell({
     }
 
     const reducedMotionQuery = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
+      "(prefers-reduced-motion: reduce)",
     );
     if (reducedMotionQuery.matches) {
       return;
@@ -312,7 +316,7 @@ export function InvitationShell({
     return () => {
       cleanup(false);
     };
-  }, [contained, envelopeDismissed, wedding.autoScroll]);
+  }, [contained, data.ui.autoScroll, envelopeDismissed]);
 
   return (
     <div
@@ -327,10 +331,10 @@ export function InvitationShell({
             : "invitation-theme relative h-dvh max-h-full overflow-hidden bg-inv-bg text-inv-ink"
       }
     >
-      {!externalMusicControl && wedding.music?.src && audioAvailable && (
+      {!externalMusicControl && data.music?.src && audioAvailable && (
         <audio
           ref={audioRef}
-          src={wedding.music.src}
+          src={data.music.src}
           loop
           preload="none"
           onError={() => {
@@ -349,7 +353,6 @@ export function InvitationShell({
         />
       )}
 
-      {/* Khung tờ thiệp chuẩn 500px căn giữa trên màn hình lớn, tràn viền trên di động */}
       <div
         aria-hidden={!isOpened}
         className={

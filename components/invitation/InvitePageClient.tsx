@@ -4,30 +4,37 @@ import * as React from "react";
 import Link from "next/link";
 import { getInvite } from "@/lib/api";
 import { invitationThemeCssVars } from "@/lib/theme";
-import { GuestStatus } from "@/lib/types";
+import type {
+  InviteResponse,
+  TemplateData,
+  WeddingContent,
+  WeddingPhoto,
+} from "@/lib/types";
+import { toTemplateData } from "@/lib/wedding-data";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { LiveTemplateRenderer } from "@/templates/LiveTemplateRenderer";
-import { useWeddingContent } from "./WeddingContentProvider";
 
 interface InvitePageClientProps {
   slug: string;
   weddingSlug?: string;
   templateId?: string;
+  initialData: TemplateData;
+  rawContent: WeddingContent;
+  rawPhotos: WeddingPhoto[];
 }
 
 export function InvitePageClient({
   slug,
   weddingSlug,
   templateId = "basic-1",
+  initialData,
+  rawContent,
+  rawPhotos,
 }: InvitePageClientProps) {
-  const wedding = useWeddingContent();
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
-  const [invite, setInvite] = React.useState<{
-    name: string;
-    status: GuestStatus;
-  } | null>(null);
+  const [invite, setInvite] = React.useState<InviteResponse | null>(null);
 
   const loadInvite = React.useCallback(async () => {
     setLoading(true);
@@ -40,7 +47,7 @@ export function InvitePageClient({
       setLoadError(
         err instanceof Error
           ? err.message
-          : "Không thể tải thông tin thiệp mời lúc này. Vui lòng thử lại."
+          : "Không thể tải thông tin thiệp mời lúc này. Vui lòng thử lại.",
       );
     } finally {
       setLoading(false);
@@ -50,6 +57,17 @@ export function InvitePageClient({
   React.useEffect(() => {
     loadInvite();
   }, [loadInvite]);
+
+  const resolvedData = React.useMemo(() => {
+    if (!invite) return initialData;
+    return toTemplateData({
+      templateId,
+      weddingSlug,
+      content: rawContent,
+      events: invite.events ?? initialData.events,
+      photos: rawPhotos,
+    });
+  }, [initialData, invite, rawContent, rawPhotos, templateId, weddingSlug]);
 
   if (loading) {
     return (
@@ -77,7 +95,7 @@ export function InvitePageClient({
         <main className="mx-auto flex min-h-dvh max-w-[500px] flex-col items-center justify-center bg-inv-bg px-6 py-12 text-center md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]">
           <div className="w-full space-y-5 rounded-3xl border border-inv-olive/25 bg-inv-paper px-6 py-8">
             <p className="font-inv-serif text-xs font-medium uppercase tracking-[0.24em] text-inv-olive-btn">
-              {wedding.hero.eyebrow}
+              {initialData.ui.eyebrow}
             </p>
             <h1 className="font-inv-serif text-2xl font-semibold text-inv-ink">
               Không thể tải thiệp mời
@@ -98,7 +116,7 @@ export function InvitePageClient({
                   href={`/w/${weddingSlug}`}
                   className="inline-flex h-11 items-center justify-center rounded-full border border-inv-olive/35 bg-inv-bg px-6 font-inv-serif text-sm font-medium text-inv-ink transition-colors hover:bg-inv-tint"
                 >
-                  {wedding.sections.invalidInvite.backHomeLabel}
+                  Xem thiệp mời chung
                 </Link>
               )}
             </div>
@@ -117,13 +135,13 @@ export function InvitePageClient({
         <main className="mx-auto flex min-h-dvh max-w-[500px] flex-col items-center justify-center bg-inv-bg px-6 py-12 text-center md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]">
           <div className="w-full space-y-5 rounded-3xl border border-inv-olive/25 bg-inv-paper px-6 py-8">
             <p className="font-inv-serif text-xs font-medium uppercase tracking-[0.24em] text-inv-olive-btn">
-              {wedding.hero.eyebrow}
+              {initialData.ui.eyebrow}
             </p>
             <h1 className="font-inv-serif text-2xl font-semibold text-inv-ink">
-              {wedding.sections.invalidInvite.title}
+              Liên kết thiệp mời không hợp lệ
             </h1>
             <p className="font-inv-serif text-sm leading-relaxed text-inv-text">
-              {wedding.sections.invalidInvite.description}
+              Đường dẫn bạn vừa mở không tồn tại hoặc đã bị thu hồi. Bạn vẫn có thể xem thiệp mời chung và gửi lời chúc cho cô dâu chú rể.
             </p>
             {weddingSlug && (
               <div className="pt-2">
@@ -131,7 +149,7 @@ export function InvitePageClient({
                   href={`/w/${weddingSlug}`}
                   className="inline-flex h-11 items-center justify-center rounded-full bg-inv-olive-btn px-7 font-inv-serif text-sm font-medium text-white transition-colors hover:bg-inv-olive-hover"
                 >
-                  {wedding.sections.invalidInvite.backHomeLabel}
+                  Xem thiệp mời chung
                 </Link>
               </div>
             )}
@@ -144,7 +162,7 @@ export function InvitePageClient({
   return (
     <LiveTemplateRenderer
       templateId={templateId}
-      content={wedding}
+      data={resolvedData}
       inviteSlug={slug}
       weddingSlug={weddingSlug}
       invitationMode="personal"

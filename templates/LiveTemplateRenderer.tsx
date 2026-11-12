@@ -1,15 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { InvitationShell } from "@/components/invitation/InvitationShell";
-import { WeddingContentProvider } from "@/components/invitation/WeddingContentProvider";
-import { WeddingInvitationContent } from "@/components/invitation/WeddingInvitationContent";
-import type { GuestStatus, WeddingContent } from "@/lib/types";
+import type { GuestStatus, TemplateData } from "@/lib/types";
+import Basic1Template from "./basic-1";
 import { TemplatePreviewRenderer } from "./TemplatePreviewRenderer";
 
 interface LiveTemplateRendererProps {
   templateId?: string;
-  content: WeddingContent;
+  data: TemplateData;
   inviteSlug?: string;
   weddingSlug?: string;
   invitationMode: "personal" | "public";
@@ -19,7 +17,7 @@ interface LiveTemplateRendererProps {
 
 export function LiveTemplateRenderer({
   templateId = "basic-1",
-  content,
+  data,
   inviteSlug,
   weddingSlug,
   invitationMode,
@@ -34,7 +32,7 @@ export function LiveTemplateRenderer({
     return (
       <TemplatePreviewRenderer
         templateId={templateId}
-        content={content}
+        data={data}
         mode="live"
         contained={false}
         viewport="desktop"
@@ -49,17 +47,17 @@ export function LiveTemplateRenderer({
   }
 
   return (
-    <WeddingContentProvider content={content}>
-      <InvitationShell guestName={guestName}>
-        <WeddingInvitationContent
-          slug={inviteSlug}
-          weddingSlug={weddingSlug}
-          mode={invitationMode}
-          guestName={guestName ?? undefined}
-          initialStatus={initialStatus}
-        />
-      </InvitationShell>
-    </WeddingContentProvider>
+    <Basic1Template
+      data={data}
+      mode="live"
+      contained={false}
+      viewport="phone"
+      externalMusicControl={false}
+      inviteSlug={inviteSlug}
+      weddingSlug={weddingSlug}
+      invitationMode={invitationMode}
+      guestName={guestName}
+      initialStatus={initialStatus}
+    />
   );
 }
-

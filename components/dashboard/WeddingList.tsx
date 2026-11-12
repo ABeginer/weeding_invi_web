@@ -10,6 +10,7 @@ import {
   Heart,
   Plus,
 } from "lucide-react";
+import { getPlanLabel, getPlanLimits } from "@/config/plans";
 import { ApiError, buildWeddingLink, listWeddings } from "@/lib/api";
 import type { Wedding } from "@/lib/types";
 import { formatDateTimeVi } from "@/lib/utils";
@@ -19,12 +20,6 @@ import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { CreateWeddingDialog } from "./CreateWeddingDialog";
-
-const PLAN_LABELS: Record<string, string> = {
-  free: "Miễn phí",
-  pro: "Pro",
-  vip: "VIP",
-};
 
 interface WeddingListProps {
   initialCreateTemplateId?: string;
@@ -63,6 +58,7 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
 
   const hasPaidPlan = weddings.some((w) => w.plan === "pro" || w.plan === "vip");
   const reachedFreeLimit = !hasPaidPlan && weddings.length >= FREE_PLAN_MAX_WEDDINGS;
+  const freeLimits = getPlanLimits("free");
 
   React.useEffect(() => {
     if (
@@ -96,14 +92,17 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-fg sm:text-3xl">
+          <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">
+            Trung tâm quản lý
+          </p>
+          <h1 className="mt-1 font-display text-3xl font-semibold text-fg sm:text-4xl">
             Thiệp cưới của bạn
           </h1>
           <p className="mt-1 text-sm text-fg-muted">
-            Tạo thiệp, chỉnh sửa nội dung và quản lý danh sách khách mời theo từng thiệp.
+            Tạo thiệp, tùy biến lễ &amp; ảnh cưới, xem trước trực tiếp và quản lý khách mời.
           </p>
         </div>
 
@@ -123,12 +122,16 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
       </div>
 
       {reachedFreeLimit && (
-        <div className="rounded-xl border border-border bg-surface px-4 py-3 text-xs text-fg-muted sm:text-sm">
+        <div className="rounded-xl border border-accent/35 bg-accent-soft px-4 py-3 text-xs text-fg sm:text-sm">
           Tài khoản gói miễn phí được tạo tối đa{" "}
-          <strong className="font-semibold text-fg">
+          <strong className="font-semibold text-accent">
             {FREE_PLAN_MAX_WEDDINGS} thiệp cưới
-          </strong>{" "}
-          và tối đa <strong className="font-semibold text-fg">20 khách mời</strong>.
+          </strong>
+          , {freeLimits.events} lễ, {freeLimits.photos.gallery} ảnh thư viện và{" "}
+          <strong className="font-semibold text-accent">
+            {freeLimits.guests ?? 20} khách mời
+          </strong>
+          .
         </div>
       )}
 
@@ -152,14 +155,14 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
         </Card>
       ) : weddings.length === 0 ? (
         <Card className="p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-hover">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent-soft text-accent">
             <Heart className="h-6 w-6" aria-hidden="true" />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-fg">
+          <h2 className="mt-4 font-display text-2xl font-semibold text-fg">
             Bạn chưa có thiệp cưới nào
           </h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-fg-muted">
-            Hãy tạo thiệp cưới đầu tiên để nhận đường dẫn chia sẻ và quản lý danh sách khách mời.
+          <p className="mx-auto mt-1.5 max-w-md text-sm text-fg-muted">
+            Hãy tạo thiệp cưới đầu tiên để chỉnh sửa thông tin, thêm lịch lễ, tải ảnh cưới và chia sẻ cho khách mời.
           </p>
           <Button
             variant="primary"
@@ -177,24 +180,27 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
               WEDDING_TEMPLATES.find((t) => t.id === wedding.templateId)?.name ??
               wedding.templateId;
             return (
-              <Card key={wedding.id} className="flex flex-col justify-between p-5">
+              <Card
+                key={wedding.id}
+                className="flex flex-col justify-between p-5 transition-colors hover:border-accent/45"
+              >
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h2 className="truncate text-lg font-semibold text-fg">
-                        {wedding.content.groom.shortName} &amp;{" "}
-                        {wedding.content.bride.shortName}
+                      <h2 className="truncate font-display text-2xl font-semibold text-fg">
+                        {wedding.content.couple.groomName} &amp;{" "}
+                        {wedding.content.couple.brideName}
                       </h2>
                       <p className="mt-0.5 truncate text-xs text-fg-muted">
                         /w/{wedding.slug}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full border border-border bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-fg-muted">
-                      {PLAN_LABELS[wedding.plan] ?? wedding.plan}
+                    <span className="shrink-0 rounded-full border border-accent/35 bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
+                      {getPlanLabel(wedding.plan)}
                     </span>
                   </div>
 
-                  <dl className="mt-4 space-y-1 text-xs text-fg-muted">
+                  <dl className="mt-4 space-y-1.5 text-xs text-fg-muted">
                     <div className="flex justify-between gap-2">
                       <dt>Mẫu thiệp:</dt>
                       <dd className="font-medium text-fg">{tplName}</dd>
@@ -206,10 +212,10 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
                   </dl>
                 </div>
 
-                <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border/80 pt-4">
+                <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
                   <Link
                     href={`/dashboard/weddings/${wedding.id}`}
-                    className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+                    className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover"
                   >
                     <span>Quản lý</span>
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -228,7 +234,7 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`Mở thiệp /w/${wedding.slug}`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg transition-colors hover:bg-surface-muted"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-fg transition-colors hover:bg-surface-muted hover:text-accent"
                   >
                     <ExternalLink className="h-4 w-4" aria-hidden="true" />
                   </a>
@@ -244,9 +250,7 @@ export function WeddingList({ initialCreateTemplateId }: WeddingListProps = {}) 
         onClose={() => setCreateOpen(false)}
         onCreated={(created) => setWeddings((prev) => [created, ...prev])}
         initialTemplateId={initialCreateTemplateId}
-        hasPaidPlan={hasPaidPlan}
       />
     </div>
   );
 }
-

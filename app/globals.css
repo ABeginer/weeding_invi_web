@@ -17,6 +17,7 @@
   --color-accent: #876335;
   --color-accent-hover: #6e4f28;
   --color-accent-soft: #f2e9dc;
+  --color-accent-fg: #ffffff;
   --color-rose: #c49b95;
   --color-border: #e5ddd2;
 
@@ -27,6 +28,8 @@
   --color-danger-bg: #fdf0ef;
   --color-danger-fg: #9c2b23;
   --color-danger-border: #f0c2be;
+  --color-danger-btn-bg: #9c2b23;
+  --color-danger-btn-fg: #ffffff;
 
   --color-neutral-bg: #f1efec;
   --color-neutral-fg: #57504b;
@@ -124,6 +127,7 @@
 
 .invitation-theme {
   font-family: var(--font-inv-serif);
+  color-scheme: light;
   --color-bg: var(--inv-bg);
   --color-surface: var(--inv-bg);
   --color-surface-muted: var(--inv-tint);
@@ -133,6 +137,7 @@
   --color-accent: var(--inv-olive-btn);
   --color-accent-hover: var(--inv-olive-hover);
   --color-accent-soft: var(--inv-tint);
+  --color-accent-fg: #ffffff;
   --color-rose: var(--inv-olive);
   --color-border: color-mix(in srgb, var(--inv-olive-deep) 28%, var(--inv-bg));
 
@@ -149,6 +154,46 @@ body:has(.invitation-theme) {
 .invitation-theme ::selection {
   background-color: color-mix(in srgb, var(--inv-olive) 20%, var(--inv-bg));
   color: var(--inv-ink);
+}
+
+.dashboard-theme,
+html:has(.dashboard-theme),
+body:has(.dashboard-theme) {
+  --color-bg: #0b0b0b;
+  --color-surface: #151515;
+  --color-surface-muted: #1e1e1e;
+  --color-fg: #e8dfc8;
+  --color-fg-muted: #a89f86;
+  --color-accent: #d4af37;
+  --color-accent-hover: #e3c35a;
+  --color-accent-soft: #221d11;
+  --color-accent-fg: #0b0b0b;
+  --color-border: #2a2a2a;
+  --color-success-bg: #12261c;
+  --color-success-fg: #7fe3a8;
+  --color-success-border: #285940;
+  --color-danger-bg: #2b1414;
+  --color-danger-fg: #fca5a5;
+  --color-danger-border: #6e2929;
+  --color-danger-btn-bg: #b91c1c;
+  --color-danger-btn-fg: #ffffff;
+  --color-neutral-bg: #201e1b;
+  --color-neutral-fg: #c9bfa8;
+  --color-neutral-border: #38342e;
+  --shadow-soft: 0 14px 36px -12px rgba(0, 0, 0, 0.75);
+  --shadow-card: 0 8px 24px -8px rgba(0, 0, 0, 0.65);
+  background-color: #0b0b0b;
+  color: #e8dfc8;
+  color-scheme: dark;
+}
+
+.dashboard-theme input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+.dashboard-theme ::selection {
+  background-color: color-mix(in srgb, #d4af37 28%, #0b0b0b);
+  color: #e8dfc8;
 }
 
 .landing-theme {

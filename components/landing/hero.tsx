@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowRight, Sparkles } from "lucide-react";
 import { LANDING_COPY } from "@/config/landing";
 import { SITE_LINKS } from "@/config/site";
-import { getDemoWeddingContent } from "@/content/demo";
+import { getDemoTemplateData } from "@/content/demo";
 import { cn } from "@/lib/utils";
 import { HERO_PREVIEW_TEMPLATES } from "@/templates/registry";
 import { TemplatePreviewRenderer } from "@/templates/TemplatePreviewRenderer";
@@ -22,8 +22,8 @@ export function HeroSection({ isAuthenticated }: HeroSectionProps) {
   const phoneScrollRef = React.useRef<HTMLDivElement | null>(null);
 
   const activeTemplate = HERO_PREVIEW_TEMPLATES[activeIndex] ?? HERO_PREVIEW_TEMPLATES[0];
-  const demoContent = React.useMemo(
-    () => getDemoWeddingContent(activeTemplate.id),
+  const demoData = React.useMemo(
+    () => getDemoTemplateData(activeTemplate.id),
     [activeTemplate.id]
   );
 
@@ -105,12 +105,12 @@ export function HeroSection({ isAuthenticated }: HeroSectionProps) {
 
         {/* Cột phải (desktop) / Phía dưới (mobile): Khung điện thoại CSS + Demo chạy thật */}
         <div className="flex flex-col items-center lg:col-span-6">
-          <div className="relative w-full max-w-[366px] sm:max-w-[384px] lg:max-w-[348px] xl:max-w-[356px]">
+          <div className="relative w-full max-w-[384px] sm:max-w-[408px]">
             <PhoneFrame scrollRef={phoneScrollRef} enableFloat lockedScroll={!isOpened}>
               <TemplatePreviewRenderer
                 key={activeTemplate.id}
                 templateId={activeTemplate.id}
-                content={demoContent}
+                data={demoData}
                 mode="demo"
                 contained
                 viewport="phone"

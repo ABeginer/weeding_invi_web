@@ -1,3 +1,4 @@
+import { PLAN_LIMITS } from "@/config/plans";
 import { SELECTABLE_DASHBOARD_TEMPLATES } from "@/templates/registry";
 
 export const WEDDING_SLUG_RE = /^[a-z0-9-]{3,40}$/;
@@ -11,6 +12,7 @@ export const FORBIDDEN_WEDDING_SLUGS = new Set([
   "logout",
   "w",
   "m",
+  "media",
   "static",
   "_next",
 ]);
@@ -22,8 +24,8 @@ export const WEDDING_TEMPLATES = SELECTABLE_DASHBOARD_TEMPLATES.map((tpl) => ({
   plan: tpl.plan,
 }));
 
-export const FREE_PLAN_MAX_WEDDINGS = 1;
-export const FREE_PLAN_MAX_GUESTS = 20;
+export const FREE_PLAN_MAX_WEDDINGS = PLAN_LIMITS.free.weddings ?? 1;
+export const FREE_PLAN_MAX_GUESTS = PLAN_LIMITS.free.guests ?? 20;
 
 export function validateWeddingSlug(raw: unknown): {
   valid: boolean;

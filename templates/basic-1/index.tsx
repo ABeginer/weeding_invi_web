@@ -7,7 +7,7 @@ import { WeddingInvitationContent } from "@/components/invitation/WeddingInvitat
 import type { WeddingTemplateProps } from "../types";
 
 export default function Basic1Template({
-  content,
+  data,
   mode,
   contained = false,
   viewport = "phone",
@@ -20,18 +20,24 @@ export default function Basic1Template({
   guestName,
   initialStatus = "pending",
 }: WeddingTemplateProps) {
-  const isDemo = mode === "demo";
-  const resolvedExternalMusic = externalMusicControl ?? isDemo;
+  const isReadOnlyPreview = mode === "demo" || mode === "preview";
+  const resolvedExternalMusic = externalMusicControl ?? isReadOnlyPreview;
   const resolvedGuestName =
     guestName !== undefined
       ? guestName
-      : isDemo
-        ? content.envelope.defaultGuestName
+      : mode === "demo"
+        ? data.ui.defaultGuestName
         : null;
 
   return (
-    <WeddingContentProvider content={content} contained={contained} isDemo={isDemo}>
-      <div className={viewport === "desktop" && !contained ? "mx-auto w-full max-w-[1280px]" : "h-full w-full"}>
+    <WeddingContentProvider data={data} contained={contained} mode={mode}>
+      <div
+        className={
+          viewport === "desktop" && !contained
+            ? "mx-auto w-full max-w-[1280px]"
+            : "h-full w-full"
+        }
+      >
         <InvitationShell
           guestName={resolvedGuestName}
           contained={contained}
@@ -41,8 +47,8 @@ export default function Basic1Template({
         >
           <WeddingInvitationContent
             slug={inviteSlug}
-            weddingSlug={weddingSlug}
-            mode={isDemo ? "personal" : invitationMode}
+            weddingSlug={weddingSlug ?? data.weddingSlug}
+            mode={isReadOnlyPreview ? "personal" : invitationMode}
             guestName={resolvedGuestName ?? undefined}
             initialStatus={initialStatus}
           />
@@ -51,4 +57,3 @@ export default function Basic1Template({
     </WeddingContentProvider>
   );
 }
-

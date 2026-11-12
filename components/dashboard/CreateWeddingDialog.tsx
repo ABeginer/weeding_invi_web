@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { getPlanLabel, isTemplateAllowedForPlan } from "@/config/plans";
 import { ApiError, createWedding } from "@/lib/api";
 import type { Wedding } from "@/lib/types";
 import { validateWeddingSlug, WEDDING_TEMPLATES } from "@/lib/wedding-slug";
@@ -15,7 +16,6 @@ interface CreateWeddingDialogProps {
   onClose: () => void;
   onCreated: (wedding: Wedding) => void;
   initialTemplateId?: string;
-  hasPaidPlan?: boolean;
 }
 
 function resolveInitialTemplateId(candidate?: string): string {
@@ -30,7 +30,6 @@ export function CreateWeddingDialog({
   onClose,
   onCreated,
   initialTemplateId,
-  hasPaidPlan = false,
 }: CreateWeddingDialogProps) {
   const { showToast } = useToast();
   const [slug, setSlug] = React.useState("");
@@ -53,7 +52,7 @@ export function CreateWeddingDialog({
     [templateId],
   );
   const requiresUpgrade = Boolean(
-    selectedTemplate && selectedTemplate.plan !== "free" && !hasPaidPlan,
+    selectedTemplate && !isTemplateAllowedForPlan("free", selectedTemplate.plan),
   );
 
   const slugValidation = React.useMemo(() => {
@@ -124,13 +123,15 @@ export function CreateWeddingDialog({
               </option>
             ))}
           </select>
-          {requiresUpgrade && (
+          {requiresUpgrade && selectedTemplate && (
             <p
               role="alert"
-              className="rounded-xl border border-border bg-surface-muted px-3 py-2 text-xs text-fg"
+              className="rounded-xl border border-accent/40 bg-accent-soft px-3 py-2 text-xs text-fg"
             >
-              Mẫu này thuộc gói <strong>Pro</strong>. Tài khoản hiện ở gói Miễn phí — vui lòng chọn một mẫu Miễn phí ở trên hoặc xem{" "}
-              <Link href="/#bang-gia" className="font-semibold underline">
+              Mẫu này yêu cầu gói{" "}
+              <strong className="text-accent">{getPlanLabel(selectedTemplate.plan)}</strong>.
+              Thiệp mới khởi tạo ở gói Miễn phí — vui lòng chọn một mẫu Miễn phí hoặc xem{" "}
+              <Link href="/#bang-gia" className="font-semibold text-accent underline">
                 Bảng giá nâng cấp
               </Link>
               .
@@ -173,4 +174,3 @@ export function CreateWeddingDialog({
     </Dialog>
   );
 }
-

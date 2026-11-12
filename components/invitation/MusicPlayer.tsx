@@ -15,7 +15,7 @@ export function MusicPlayer({
   isPlaying,
   onToggle,
 }: MusicPlayerProps) {
-  const wedding = useWeddingContent();
+  const data = useWeddingContent();
   if (!visible) return null;
 
   return (
@@ -26,16 +26,16 @@ export function MusicPlayer({
         aria-pressed={isPlaying}
         aria-label={
           isPlaying
-            ? `Tạm dừng nhạc nền: ${wedding.music.title}`
-            : `Phát nhạc nền: ${wedding.music.title}`
+            ? `Tạm dừng nhạc nền: ${data.music.title}`
+            : `Phát nhạc nền: ${data.music.title}`
         }
-        title={wedding.music.title}
+        title={data.music.title}
         className={cn(
           "group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border transition-all duration-200 sm:h-12 sm:w-12",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg",
           isPlaying
             ? "border-white/70 bg-inv-olive-btn text-white shadow-[0_6px_18px_color-mix(in_srgb,var(--inv-olive-deep)_34%,transparent)] hover:bg-inv-olive-hover"
-            : "border-inv-olive/40 bg-inv-cream/95 text-inv-olive-deep shadow-md backdrop-blur-sm hover:bg-inv-tint"
+            : "border-inv-olive/40 bg-inv-cream/95 text-inv-olive-deep shadow-md backdrop-blur-sm hover:bg-inv-tint",
         )}
       >
         {isPlaying ? (

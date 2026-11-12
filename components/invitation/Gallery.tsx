@@ -5,14 +5,13 @@ import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { invitationThemeCssVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
 import { RevealSection } from "./RevealSection";
 import { useWeddingContent } from "./WeddingContentProvider";
 
 export function Gallery() {
-  const wedding = useWeddingContent();
-  const photos = wedding.photos.slice(0, 6);
-  const { headingPrefix, headingItalic, headingSuffix, subtitle } =
-    wedding.sections.gallery;
+  const data = useWeddingContent();
+  const photos = data.photos.gallery;
 
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
   const [mounted, setMounted] = React.useState(false);
@@ -29,14 +28,14 @@ export function Gallery() {
 
   const showPrev = React.useCallback(() => {
     setActiveIndex((prev) => {
-      if (prev === null) return null;
+      if (prev === null || photos.length === 0) return null;
       return (prev - 1 + photos.length) % photos.length;
     });
   }, [photos.length]);
 
   const showNext = React.useCallback(() => {
     setActiveIndex((prev) => {
-      if (prev === null) return null;
+      if (prev === null || photos.length === 0) return null;
       return (prev + 1) % photos.length;
     });
   }, [photos.length]);
@@ -63,8 +62,6 @@ export function Gallery() {
     };
   }, [activeIndex, closeLightbox, showPrev, showNext]);
 
-  if (photos.length === 0) return null;
-
   const activePhoto = activeIndex !== null ? photos[activeIndex] : null;
 
   const lightboxContent =
@@ -89,7 +86,6 @@ export function Gallery() {
           touchStartX.current = null;
         }}
       >
-        {/* Thanh trên cùng: số trang & nút đóng */}
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between text-white">
           <span className="font-sans text-sm font-semibold tracking-wider">
             {activeIndex + 1} / {photos.length}
@@ -105,7 +101,6 @@ export function Gallery() {
           </button>
         </div>
 
-        {/* Ảnh phóng to + mũi tên chuyển ảnh */}
         <div className="relative mx-auto flex min-h-0 w-full max-w-4xl flex-1 items-center justify-center py-3">
           <button
             type="button"
@@ -117,10 +112,8 @@ export function Gallery() {
           </button>
 
           <img
-            src={activePhoto.src}
+            src={activePhoto.url}
             alt={activePhoto.alt}
-            width={activePhoto.width}
-            height={activePhoto.height}
             className="max-h-[64dvh] w-auto max-w-full rounded-lg object-contain select-none"
           />
 
@@ -134,7 +127,6 @@ export function Gallery() {
           </button>
         </div>
 
-        {/* Chú thích & dải ảnh thumbnail ở đáy */}
         <div className="mx-auto w-full max-w-4xl space-y-2.5">
           <p className="text-center font-inv-serif text-xs text-white/85 sm:text-sm">
             {activePhoto.alt}
@@ -142,7 +134,7 @@ export function Gallery() {
           <div className="flex items-center justify-start gap-2 overflow-x-auto px-1 py-1 sm:justify-center">
             {photos.map((thumb, idx) => (
               <button
-                key={`thumb-${thumb.src}`}
+                key={thumb.id || `thumb-${idx}`}
                 type="button"
                 onClick={() => setActiveIndex(idx)}
                 aria-label={`Chọn ảnh ${idx + 1}`}
@@ -150,11 +142,11 @@ export function Gallery() {
                   "h-12 w-16 shrink-0 cursor-pointer overflow-hidden rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
                   idx === activeIndex
                     ? "ring-2 ring-white opacity-100"
-                    : "opacity-55 hover:opacity-90"
+                    : "opacity-55 hover:opacity-90",
                 )}
               >
                 <img
-                  src={thumb.src}
+                  src={thumb.url}
                   alt=""
                   width={64}
                   height={48}
@@ -171,41 +163,45 @@ export function Gallery() {
     <RevealSection className="bg-inv-olive px-5 py-10 text-inv-cream-text">
       <div className="mx-auto max-w-[440px] text-center">
         <h2 className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 font-inv-serif text-[clamp(22px,6.8vw,32px)] leading-[1.15] font-normal tracking-[0.03em] text-inv-cream-text uppercase">
-          <span>{headingPrefix}</span>
+          <span>GOLDEN HOUR</span>
           <span className="font-inv-script text-[clamp(28px,8vw,38px)] leading-none text-inv-cream-soft normal-case">
-            {headingItalic}
+            Of
           </span>
-          <span>{headingSuffix}</span>
+          <span>LOVE</span>
         </h2>
 
         <p className="mx-auto mt-3 max-w-[380px] font-inv-serif text-[13.5px] leading-[1.6] text-inv-cream-text/90 sm:text-[14.5px]">
-          {subtitle}
+          {data.ui.gallerySubtitle}
         </p>
       </div>
 
-      {/* Lưới 6 ảnh góc vuông 2x3 trên nền xanh olive */}
-      <div className="mt-8 grid grid-cols-2 gap-2.5">
-        {photos.map((photo, index) => (
-          <button
-            key={photo.src}
-            type="button"
-            onClick={() => setActiveIndex(index)}
-            aria-label={`Xem ảnh ${index + 1}: ${photo.alt}`}
-            className="group block w-full cursor-pointer overflow-hidden bg-inv-olive-deep/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-cream-text focus-visible:ring-offset-2 focus-visible:ring-offset-inv-olive"
-          >
-            <img
-              src={photo.src}
-              alt={photo.alt}
-              width={photo.width}
-              height={photo.height}
-              loading="lazy"
-              className="block aspect-[2/3] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            />
-          </button>
-        ))}
-      </div>
+      {photos.length === 0 ? (
+        <div className="mx-auto mt-8 max-w-[320px] overflow-hidden rounded-xl border border-white/15">
+          <TemplatePhotoPlaceholder className="aspect-[4/3]" />
+        </div>
+      ) : (
+        <div className="mt-8 grid grid-cols-2 gap-2.5">
+          {photos.map((photo, index) => (
+            <button
+              key={photo.id || `${photo.url}-${index}`}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              aria-label={`Xem ảnh ${index + 1}: ${photo.alt}`}
+              className="group block w-full cursor-pointer overflow-hidden bg-inv-olive-deep/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-cream-text focus-visible:ring-offset-2 focus-visible:ring-offset-inv-olive"
+            >
+              <img
+                src={photo.url}
+                alt={photo.alt}
+                width={600}
+                height={900}
+                loading="lazy"
+                className="block aspect-[2/3] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              />
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Lightbox phóng to được portal ra document.body để không bị che bởi nút nhạc */}
       {mounted &&
         lightboxContent &&
         createPortal(lightboxContent, document.body)}

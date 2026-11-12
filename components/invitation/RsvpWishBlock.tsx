@@ -3,11 +3,11 @@
 import * as React from "react";
 import { AlertTriangle, CheckCircle2, Lock, Send, XCircle } from "lucide-react";
 import { submitRsvp, submitWish } from "@/lib/api";
-import { GuestStatus } from "@/lib/types";
+import type { GuestStatus } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
-import { useInvitationDemoMode, useWeddingContent } from "./WeddingContentProvider";
+import { useInvitationReadOnly, useWeddingContent } from "./WeddingContentProvider";
 
 interface RsvpWishBlockProps {
   slug?: string;
@@ -26,15 +26,15 @@ export function RsvpWishBlock({
   guestName,
   initialStatus = "pending",
 }: RsvpWishBlockProps) {
-  const wedding = useWeddingContent();
-  const isDemo = useInvitationDemoMode();
-  const isPublicMode = mode === "public";
+  const data = useWeddingContent();
+  const isReadOnlyPreview = useInvitationReadOnly();
+  const isPublicMode = !isReadOnlyPreview && mode === "public";
   const isNameLocked = !isPublicMode && Boolean(guestName && guestName.trim().length > 0);
-  const copy = wedding.sections.rsvpWish;
+  const effectiveWeddingSlug = weddingSlug ?? data.weddingSlug;
 
   const [status, setStatus] = React.useState<GuestStatus>(initialStatus);
   const [isEditingRsvp, setIsEditingRsvp] = React.useState(
-    initialStatus === "pending"
+    initialStatus === "pending",
   );
   const [walkInGuest, setWalkInGuest] = React.useState<{
     slug: string;
@@ -86,6 +86,7 @@ export function RsvpWishBlock({
   };
 
   const handleRespond = async (choice: "accepted" | "declined") => {
+    if (isReadOnlyPreview) return;
     clearAlerts();
     setRsvpFeedback(null);
 
@@ -110,18 +111,6 @@ export function RsvpWishBlock({
       return;
     }
 
-    if (isDemo) {
-      setSubmitting(choice);
-      window.setTimeout(() => {
-        setStatus(choice);
-        setMessage("");
-        setRsvpFeedback({ choice, wishIncluded: trimmedMessage.length > 0 });
-        setIsEditingRsvp(false);
-        setSubmitting(null);
-      }, 250);
-      return;
-    }
-
     setSubmitting(choice);
     let savedSlug = getActiveSlug(trimmedName);
 
@@ -129,7 +118,12 @@ export function RsvpWishBlock({
       const res = await submitRsvp(
         savedSlug
           ? { slug: savedSlug, status: choice, website: honeypot }
-          : { weddingSlug, name: trimmedName, status: choice, website: honeypot }
+          : {
+              weddingSlug: effectiveWeddingSlug,
+              name: trimmedName,
+              status: choice,
+              website: honeypot,
+            },
       );
       if (!savedSlug && res.slug) {
         savedSlug = res.slug;
@@ -140,7 +134,7 @@ export function RsvpWishBlock({
       setRsvpError(
         err instanceof Error
           ? err.message
-          : "Không thể gửi xác nhận tham dự lúc này. Vui lòng thử lại."
+          : "Không thể gửi xác nhận tham dự lúc này. Vui lòng thử lại.",
       );
       setSubmitting(null);
       return;
@@ -162,7 +156,7 @@ export function RsvpWishBlock({
         setWishError(
           err instanceof Error
             ? `Đã ghi nhận xác nhận tham dự, nhưng chưa gửi được lời chúc: ${err.message}`
-            : "Đã ghi nhận xác nhận tham dự, nhưng chưa gửi được lời chúc. Vui lòng thử gửi lại."
+            : "Đã ghi nhận xác nhận tham dự, nhưng chưa gửi được lời chúc. Vui lòng thử gửi lại.",
         );
       } finally {
         setSubmitting(null);
@@ -176,6 +170,7 @@ export function RsvpWishBlock({
   };
 
   const handleRetryWish = async () => {
+    if (isReadOnlyPreview) return;
     clearAlerts();
     const trimmedName = name.trim();
     const trimmedMessage = message.trim();
@@ -186,16 +181,6 @@ export function RsvpWishBlock({
     }
     if (trimmedMessage.length > MAX_WISH_LENGTH) {
       setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
-      return;
-    }
-
-    if (isDemo) {
-      setSubmitting("wish");
-      window.setTimeout(() => {
-        setMessage("");
-        setPublicWishSent(true);
-        setSubmitting(null);
-      }, 250);
       return;
     }
 
@@ -218,7 +203,7 @@ export function RsvpWishBlock({
       setWishError(
         err instanceof Error
           ? err.message
-          : "Không thể gửi lời chúc lúc này. Vui lòng thử lại."
+          : "Không thể gửi lời chúc lúc này. Vui lòng thử lại.",
       );
     } finally {
       setSubmitting(null);
@@ -227,6 +212,7 @@ export function RsvpWishBlock({
 
   const handlePublicWishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnlyPreview) return;
     clearAlerts();
 
     const trimmedName = name.trim();
@@ -251,20 +237,10 @@ export function RsvpWishBlock({
       return;
     }
 
-    if (isDemo) {
-      setSubmitting("wish");
-      window.setTimeout(() => {
-        setMessage("");
-        setPublicWishSent(true);
-        setSubmitting(null);
-      }, 250);
-      return;
-    }
-
     setSubmitting("wish");
     try {
       await submitWish({
-        weddingSlug,
+        weddingSlug: effectiveWeddingSlug,
         name: trimmedName,
         message: trimmedMessage,
         website: honeypot,
@@ -275,7 +251,7 @@ export function RsvpWishBlock({
       setWishError(
         err instanceof Error
           ? err.message
-          : "Không thể gửi lời chúc lúc này. Vui lòng thử lại."
+          : "Không thể gửi lời chúc lúc này. Vui lòng thử lại.",
       );
     } finally {
       setSubmitting(null);
@@ -294,10 +270,10 @@ export function RsvpWishBlock({
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
             <h2 className="font-inv-script text-[clamp(32px,8.8vw,46px)] leading-[1.2] font-normal text-inv-olive-deep">
-              {copy.titlePublic}
+              Gửi Lời Chúc
             </h2>
             <p className="mx-auto mt-2.5 max-w-[390px] font-inv-serif text-[14px] leading-[1.55] text-inv-olive-btn sm:text-[15px]">
-              {copy.subtitlePublic}
+              Gửi đôi lời yêu thương để cùng lưu giữ những kỷ niệm đẹp nhất trong ngày cưới của chúng mình.
             </p>
           </div>
 
@@ -312,7 +288,7 @@ export function RsvpWishBlock({
                   <span>Đã gửi lời chúc</span>
                 </div>
                 <p className="mt-2 font-inv-serif text-sm leading-relaxed text-inv-text">
-                  {copy.wishOnlySuccessMessage}
+                  Cảm ơn bạn thật nhiều! Lời chúc của bạn đã được gửi tới cô dâu &amp; chú rể.
                 </p>
               </div>
               <div className="flex justify-center">
@@ -323,7 +299,7 @@ export function RsvpWishBlock({
                   onClick={() => setPublicWishSent(false)}
                   className="rounded-full border-inv-olive/45 bg-inv-bg px-5 font-inv-serif text-inv-olive-deep hover:bg-inv-tint"
                 >
-                  {copy.sendAnotherWishLabel}
+                  Gửi thêm lời chúc
                 </Button>
               </div>
             </div>
@@ -346,8 +322,8 @@ export function RsvpWishBlock({
 
               <div>
                 <Input
-                  aria-label={copy.nameLabel}
-                  placeholder={copy.namePlaceholder}
+                  aria-label="Tên của bạn"
+                  placeholder="Nhập tên hoặc biệt danh của bạn"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={submitting !== null}
@@ -359,8 +335,8 @@ export function RsvpWishBlock({
 
               <div>
                 <Textarea
-                  aria-label={copy.messageLabelPublic}
-                  placeholder={copy.messagePlaceholder}
+                  aria-label="Lời chúc dành cho cô dâu & chú rể"
+                  placeholder="Viết lời chúc tốt đẹp của bạn tại đây..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   maxLength={MAX_WISH_LENGTH}
@@ -400,7 +376,7 @@ export function RsvpWishBlock({
                   className="h-11 w-full rounded-full bg-inv-olive-btn font-inv-serif text-sm tracking-[0.02em] text-white hover:bg-inv-olive-hover"
                 >
                   <Send className="h-4 w-4" aria-hidden="true" />
-                  <span>{copy.submitWishLabel}</span>
+                  <span>Gửi lời chúc</span>
                 </Button>
               </div>
             </form>
@@ -411,7 +387,10 @@ export function RsvpWishBlock({
   }
 
   const showSavedSummary =
-    !isEditingRsvp && status !== "pending" && !rsvpSavedBeforeWishFailed;
+    !isReadOnlyPreview &&
+    !isEditingRsvp &&
+    status !== "pending" &&
+    !rsvpSavedBeforeWishFailed;
 
   const activeChoice =
     rsvpFeedback?.choice ?? (status !== "pending" ? status : null);
@@ -421,10 +400,10 @@ export function RsvpWishBlock({
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
           <h2 className="font-inv-script text-[clamp(32px,8.8vw,46px)] leading-[1.2] font-normal text-inv-olive-deep">
-            {copy.titlePersonal}
+            Xác Nhận Tham Dự
           </h2>
           <p className="mx-auto mt-2.5 max-w-[390px] font-inv-serif text-[14px] leading-[1.55] text-inv-olive-btn sm:text-[15px]">
-            {copy.subtitlePersonal}
+            Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới.
           </p>
         </div>
 
@@ -445,18 +424,18 @@ export function RsvpWishBlock({
                 )}
                 <span>
                   {activeChoice === "accepted"
-                    ? copy.currentAcceptedBadge
-                    : copy.currentDeclinedBadge}
+                    ? "Bạn đã xác nhận sẽ tham dự"
+                    : "Bạn đã báo bận không thể tham dự"}
                 </span>
               </div>
               <p className="mt-2 font-inv-serif text-sm leading-relaxed text-inv-text">
                 {activeChoice === "accepted"
-                  ? copy.acceptedMessage
-                  : copy.declinedMessage}
+                  ? "Cảm ơn bạn đã nhận lời! Chúng mình rất mong chờ được đón tiếp và nâng ly cùng bạn trong ngày vui."
+                  : "Rất tiếc vì bạn chưa thể sắp xếp tham dự, nhưng tấm lòng của bạn luôn đáng quý với chúng mình!"}
               </p>
               {rsvpFeedback?.wishIncluded && (
                 <p className="mt-2.5 border-t border-inv-olive/20 pt-2.5 font-inv-serif text-xs font-medium text-inv-olive-deep">
-                  {copy.wishAlsoSavedNote}
+                  Lời chúc của bạn cũng đã được gửi tới cô dâu &amp; chú rể.
                 </p>
               )}
             </div>
@@ -469,7 +448,7 @@ export function RsvpWishBlock({
                 onClick={handleOpenEdit}
                 className="rounded-full border-inv-olive/45 bg-inv-bg px-5 font-inv-serif text-inv-olive-deep hover:bg-inv-tint"
               >
-                {copy.changeMindLabel}
+                Thay đổi lựa chọn hoặc gửi thêm lời chúc
               </Button>
             </div>
           </div>
@@ -479,7 +458,7 @@ export function RsvpWishBlock({
             className="mt-7 space-y-3"
             noValidate
           >
-            {/* Trường honeypot ẩn chống spam (không dùng text label tránh dính khi bôi đen copy) */}
+            {/* Trường honeypot ẩn chống spam */}
             <input
               name="website"
               type="text"
@@ -494,12 +473,14 @@ export function RsvpWishBlock({
             <div>
               <div className="relative">
                 <Input
-                  aria-label={copy.nameLabel}
-                  placeholder={copy.namePlaceholder}
-                  value={name}
+                  aria-label="Tên của bạn"
+                  placeholder="Nhập tên hoặc biệt danh của bạn"
+                  value={isReadOnlyPreview ? data.ui.defaultGuestName : name}
                   onChange={(e) => setName(e.target.value)}
-                  readOnly={isNameLocked}
-                  disabled={isNameLocked || submitting !== null}
+                  readOnly={isReadOnlyPreview || isNameLocked}
+                  disabled={
+                    isReadOnlyPreview || isNameLocked || submitting !== null
+                  }
                   required
                   maxLength={100}
                   className={
@@ -515,21 +496,21 @@ export function RsvpWishBlock({
                   />
                 )}
               </div>
-              {isNameLocked && (
+              {isNameLocked && !isReadOnlyPreview && (
                 <p className="mt-1.5 px-3 font-inv-serif text-xs text-inv-muted">
-                  {copy.lockedNameHint}
+                  Tên được điền tự động theo thiệp mời cá nhân của bạn
                 </p>
               )}
             </div>
 
             <div>
               <Textarea
-                aria-label={copy.messageLabel}
-                placeholder={copy.messagePlaceholder}
+                aria-label="Lời chúc dành cho cô dâu & chú rể (không bắt buộc)"
+                placeholder="Viết lời chúc tốt đẹp của bạn tại đây..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={MAX_WISH_LENGTH}
-                disabled={submitting !== null}
+                disabled={isReadOnlyPreview || submitting !== null}
                 className="min-h-[104px] rounded-[19px] border-inv-olive-btn bg-inv-bg px-4 py-3 font-inv-serif text-base text-inv-ink placeholder:text-inv-olive-btn/80 focus-visible:border-inv-olive-deep focus-visible:ring-inv-olive sm:text-sm"
                 rows={4}
               />
@@ -581,7 +562,7 @@ export function RsvpWishBlock({
                       onClick={handleRetryWish}
                     >
                       <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>{copy.retryWishLabel}</span>
+                      <span>Thử gửi lại lời chúc</span>
                     </Button>
                   </div>
                 )}
@@ -589,16 +570,18 @@ export function RsvpWishBlock({
             )}
 
             <div className="space-y-3 pt-1">
-              {status !== "pending" && !rsvpSavedBeforeWishFailed && (
-                <p className="text-center font-inv-serif text-xs text-inv-muted">
-                  Trạng thái hiện tại:{" "}
-                  <strong className="font-semibold text-inv-ink">
-                    {status === "accepted"
-                      ? copy.currentAcceptedBadge
-                      : copy.currentDeclinedBadge}
-                  </strong>
-                </p>
-              )}
+              {!isReadOnlyPreview &&
+                status !== "pending" &&
+                !rsvpSavedBeforeWishFailed && (
+                  <p className="text-center font-inv-serif text-xs text-inv-muted">
+                    Trạng thái hiện tại:{" "}
+                    <strong className="font-semibold text-inv-ink">
+                      {status === "accepted"
+                        ? "Bạn đã xác nhận sẽ tham dự"
+                        : "Bạn đã báo bận không thể tham dự"}
+                    </strong>
+                  </p>
+                )}
 
               <div className="flex flex-col gap-2.5 sm:flex-row">
                 <Button
@@ -606,39 +589,47 @@ export function RsvpWishBlock({
                   variant="primary"
                   size="lg"
                   loading={submitting === "accepted"}
-                  disabled={submitting !== null}
+                  disabled={isReadOnlyPreview || submitting !== null}
                   onClick={() => handleRespond("accepted")}
                   className="h-11 w-full rounded-full bg-inv-olive-btn font-inv-serif text-sm tracking-[0.02em] text-white hover:bg-inv-olive-hover sm:flex-1"
                 >
-                  {copy.acceptLabel}
+                  Tôi sẽ tham dự
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   size="lg"
                   loading={submitting === "declined"}
-                  disabled={submitting !== null}
+                  disabled={isReadOnlyPreview || submitting !== null}
                   onClick={() => handleRespond("declined")}
                   className="h-11 w-full rounded-full border-inv-olive-btn bg-inv-bg font-inv-serif text-sm tracking-[0.02em] text-inv-olive-deep hover:bg-inv-tint sm:flex-1"
                 >
-                  {copy.declineLabel}
+                  Tiếc quá, mình bận mất rồi
                 </Button>
               </div>
 
-              {status !== "pending" && !rsvpSavedBeforeWishFailed && (
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearAlerts();
-                      setIsEditingRsvp(false);
-                    }}
-                    className="cursor-pointer font-inv-serif text-xs font-medium text-inv-olive-deep underline underline-offset-4 hover:opacity-80"
-                  >
-                    {copy.keepPreviousLabel}
-                  </button>
-                </div>
+              {isReadOnlyPreview && (
+                <p className="text-center font-inv-serif text-xs italic text-inv-muted">
+                  Chế độ xem thử
+                </p>
               )}
+
+              {!isReadOnlyPreview &&
+                status !== "pending" &&
+                !rsvpSavedBeforeWishFailed && (
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearAlerts();
+                        setIsEditingRsvp(false);
+                      }}
+                      className="cursor-pointer font-inv-serif text-xs font-medium text-inv-olive-deep underline underline-offset-4 hover:opacity-80"
+                    >
+                      Giữ nguyên lựa chọn trước đó
+                    </button>
+                  </div>
+                )}
             </div>
           </form>
         )}
@@ -646,4 +637,3 @@ export function RsvpWishBlock({
     </RevealSection>
   );
 }
-

@@ -1,19 +1,27 @@
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import type {
   Guest,
-  GuestStatus,
+  InviteResponse,
+  PhotoKind,
+  PhotoSlot,
+  PublicWeddingPayload,
   Stats,
   UserProfile,
   Wedding,
   WeddingContent,
+  WeddingDetail,
+  WeddingEvent,
+  WeddingPhoto,
   Wish,
 } from "./types";
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  field?: string;
+  constructor(message: string, status: number, field?: string) {
     super(message);
     this.status = status;
+    this.field = field;
   }
 }
 
@@ -59,11 +67,13 @@ async function getBearerToken(): Promise<string> {
 
 async function parseErrorResponse(res: Response): Promise<never> {
   let message = "Có lỗi xảy ra, vui lòng thử lại.";
+  let field: string | undefined;
   try {
     const body = await res.json();
     if (body && typeof body.error === "string") message = body.error;
+    if (body && typeof body.field === "string") field = body.field;
   } catch {}
-  throw new ApiError(message, res.status);
+  throw new ApiError(message, res.status, field);
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -103,6 +113,28 @@ async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+async function authFormRequest<T>(path: string, formData: FormData): Promise<T> {
+  const token = await getBearerToken();
+  const res = await fetch(path, {
+    method: "POST",
+    body: formData,
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (res.status === 401) {
+    clearAccessTokenCache();
+  }
+
+  if (!res.ok) {
+    await parseErrorResponse(res);
+  }
+
+  return (await res.json()) as T;
+}
+
 const post = (body: unknown): RequestInit => ({
   method: "POST",
   body: JSON.stringify(body),
@@ -113,11 +145,22 @@ const patch = (body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 });
 
-export async function getInvite(
-  slug: string,
-): Promise<{ name: string; status: GuestStatus } | null> {
+export async function getInvite(slug: string): Promise<InviteResponse | null> {
   try {
-    return await request(`/api/invite/${encodeURIComponent(slug)}`);
+    return await request<InviteResponse>(`/api/invite/${encodeURIComponent(slug)}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export async function getPublicWedding(
+  slug: string,
+): Promise<PublicWeddingPayload | null> {
+  try {
+    return await request<PublicWeddingPayload>(
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -171,7 +214,7 @@ export function listWeddings(): Promise<Wedding[]> {
   return authRequest("/api/weddings");
 }
 
-export function getWedding(weddingId: string): Promise<Wedding> {
+export function getWedding(weddingId: string): Promise<WeddingDetail> {
   return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}`);
 }
 
@@ -189,10 +232,117 @@ export function updateWedding(
   return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}`, patch(body));
 }
 
+export function updateContent(
+  weddingId: string,
+  body: { templateId?: string; content: WeddingContent },
+): Promise<Wedding> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/content`,
+    patch(body),
+  );
+}
+
 export async function deleteWedding(weddingId: string): Promise<void> {
   await authRequest(`/api/weddings/${encodeURIComponent(weddingId)}`, {
     method: "DELETE",
   });
+}
+
+export interface WeddingEventPayload {
+  title: string;
+  startsAt: string;
+  lunarDate?: string;
+  venueName: string;
+  venueAddress?: string;
+  mapEmbedUrl?: string | null;
+  mapDirectionsUrl?: string | null;
+}
+
+export function listEvents(weddingId: string): Promise<WeddingEvent[]> {
+  return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}/events`);
+}
+
+export function createEvent(
+  weddingId: string,
+  input: WeddingEventPayload,
+): Promise<WeddingEvent> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/events`,
+    post(input),
+  );
+}
+
+export function updateEvent(
+  weddingId: string,
+  eventId: string,
+  input: WeddingEventPayload,
+): Promise<WeddingEvent> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/events/${encodeURIComponent(eventId)}`,
+    patch(input),
+  );
+}
+
+export function reorderEvents(
+  weddingId: string,
+  items: { id: string; position: number }[],
+): Promise<WeddingEvent[]> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/events`,
+    patch(items),
+  );
+}
+
+export async function deleteEvent(
+  weddingId: string,
+  eventId: string,
+): Promise<void> {
+  await authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/events/${encodeURIComponent(eventId)}`,
+    { method: "DELETE" },
+  );
+}
+
+export function listPhotos(weddingId: string): Promise<WeddingPhoto[]> {
+  return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}/photos`);
+}
+
+export function uploadPhoto(
+  weddingId: string,
+  file: File,
+  kind: PhotoKind,
+  slot?: PhotoSlot,
+): Promise<{ photo: WeddingPhoto; content: WeddingContent }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("kind", kind);
+  if (slot) {
+    formData.append("slot", slot);
+  }
+  return authFormRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/photos`,
+    formData,
+  );
+}
+
+export async function deletePhoto(
+  weddingId: string,
+  photoId: string,
+): Promise<{ ok: boolean; content: WeddingContent }> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/photos/${encodeURIComponent(photoId)}`,
+    { method: "DELETE" },
+  );
+}
+
+export function reorderPhotos(
+  weddingId: string,
+  items: { id: string; position: number }[],
+): Promise<WeddingPhoto[]> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/photos`,
+    patch(items),
+  );
 }
 
 export function listGuests(weddingId: string): Promise<Guest[]> {
@@ -228,6 +378,17 @@ export async function deleteGuest(weddingId: string, guestId: string): Promise<v
   await authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/${encodeURIComponent(guestId)}`,
     { method: "DELETE" },
+  );
+}
+
+export function setGuestEvents(
+  weddingId: string,
+  guestId: string,
+  eventIds: string[],
+): Promise<{ guestId: string; eventIds: string[] }> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/guests/${encodeURIComponent(guestId)}/events`,
+    post({ eventIds }),
   );
 }
 

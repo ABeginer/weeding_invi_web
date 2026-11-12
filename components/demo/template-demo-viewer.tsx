@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Crown, Diamond } from "lucide-react";
 import { LANDING_COPY } from "@/config/landing";
 import { SITE_LINKS } from "@/config/site";
-import { getDemoWeddingContent } from "@/content/demo";
+import { getDemoTemplateData } from "@/content/demo";
 import { listWeddings } from "@/lib/api";
 import { landingThemeCssVars } from "@/lib/theme";
 import type { WeddingPlan } from "@/lib/types";
@@ -38,8 +38,8 @@ export function TemplateDemoViewer({
   const phoneScrollRef = React.useRef<HTMLDivElement | null>(null);
   const pendingRatioRef = React.useRef<number | null>(null);
 
-  const demoContent = React.useMemo(
-    () => getDemoWeddingContent(template.id),
+  const demoData = React.useMemo(
+    () => getDemoTemplateData(template.id),
     [template.id]
   );
 
@@ -191,7 +191,7 @@ export function TemplateDemoViewer({
               <TemplatePreviewRenderer
                 key={`${template.id}-phone`}
                 templateId={template.id}
-                content={demoContent}
+                data={demoData}
                 mode="demo"
                 contained
                 viewport="phone"
@@ -214,7 +214,7 @@ export function TemplateDemoViewer({
             <TemplatePreviewRenderer
               key={`${template.id}-desktop`}
               templateId={template.id}
-              content={demoContent}
+              data={demoData}
               mode="demo"
               contained={false}
               viewport="desktop"

@@ -49,4 +49,3 @@ export function TemplatePreviewRenderer({
       return <DynamicBasic1 {...props} />;
   }
 }
-

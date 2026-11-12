@@ -56,7 +56,7 @@ export function Dialog({
       aria-labelledby={titleId}
     >
       <div
-        className="fixed inset-0 bg-fg/45 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -64,7 +64,7 @@ export function Dialog({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          "relative z-10 w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-xl outline-none sm:p-6",
+          "relative z-10 max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl outline-none sm:p-6",
           className
         )}
       >

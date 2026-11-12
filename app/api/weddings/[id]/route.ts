@@ -1,7 +1,15 @@
+import { getTemplateLockedMessage, isTemplateAllowedForPlan } from "@/config/plans";
 import { authRoute, fail, json, readBody, text } from "@/lib/server/http";
 import { toWedding, type WeddingRow } from "@/lib/server/mappers";
+import { deletePhotoObject } from "@/lib/server/storage";
 import { db } from "@/lib/server/supabase";
-import { getOwnedWedding } from "@/lib/server/weddings";
+import {
+  getOwnedWedding,
+  listWeddingEvents,
+  listWeddingPhotos,
+} from "@/lib/server/weddings";
+import { weddingContentInputSchema } from "@/lib/wedding-types";
+import { getTemplateMeta } from "@/templates/registry";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -11,7 +19,17 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
   const { id } = await params;
   const wedding = await getOwnedWedding(id, user.id);
   if (!wedding) return fail("Không tìm thấy thiệp cưới.", 404);
-  return json(toWedding(wedding));
+
+  const [events, photos] = await Promise.all([
+    listWeddingEvents(wedding.id),
+    listWeddingPhotos(wedding.id),
+  ]);
+
+  return json({
+    ...toWedding(wedding),
+    events,
+    photos,
+  });
 });
 
 export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
@@ -29,18 +47,24 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
     if (!templateId || !TEMPLATE_ID_RE.test(templateId)) {
       return fail("Mẫu thiệp không hợp lệ.");
     }
-    patch.template_id = templateId;
+    const meta = getTemplateMeta(templateId);
+    if (!meta || meta.isPlaceholder) {
+      return fail("Mẫu thiệp này chưa sẵn sàng hoặc không tồn tại.");
+    }
+    if (!isTemplateAllowedForPlan(wedding.plan, meta.plan)) {
+      return fail(getTemplateLockedMessage(wedding.plan, meta.plan), 403);
+    }
+    patch.template_id = meta.id;
   }
 
   if (body.content !== undefined) {
-    if (
-      !body.content ||
-      typeof body.content !== "object" ||
-      Array.isArray(body.content)
-    ) {
-      return fail("Nội dung thiệp phải là một đối tượng JSON hợp lệ.");
+    const parsed = weddingContentInputSchema.safeParse(body.content);
+    if (!parsed.success) {
+      return fail(
+        parsed.error.issues[0]?.message ?? "Nội dung thiệp không hợp lệ.",
+      );
     }
-    patch.content = body.content;
+    patch.content = parsed.data;
   }
 
   if (Object.keys(patch).length === 0) {
@@ -68,7 +92,19 @@ export const DELETE = authRoute<Ctx>(async (_req, user, { params }) => {
   const wedding = await getOwnedWedding(id, user.id);
   if (!wedding) return fail("Không tìm thấy thiệp cưới.", 404);
 
-  const { error } = await db()
+  const client = db();
+  const { data: photoRows } = await client
+    .from("photos")
+    .select("storage_key")
+    .eq("wedding_id", wedding.id);
+
+  if (photoRows && photoRows.length > 0) {
+    await Promise.allSettled(
+      photoRows.map((row) => deletePhotoObject(String(row.storage_key))),
+    );
+  }
+
+  const { error } = await client
     .from("weddings")
     .delete()
     .eq("id", wedding.id)
@@ -77,4 +113,3 @@ export const DELETE = authRoute<Ctx>(async (_req, user, { params }) => {
   if (error) throw error;
   return json({ ok: true });
 });
-

@@ -1,5 +1,6 @@
 import { db } from "@/lib/server/supabase";
 import { fail, json, route, SLUG_RE } from "@/lib/server/http";
+import { getGuestVisibleEvents } from "@/lib/server/weddings";
 
 export const GET = route(
   async (_req: Request, { params }: { params: Promise<{ slug: string }> }) => {
@@ -8,12 +9,14 @@ export const GET = route(
 
     const { data, error } = await db()
       .from("guests")
-      .select("name, status")
+      .select("id, wedding_id, name, status")
       .eq("slug", slug)
       .maybeSingle();
 
     if (error) throw error;
     if (!data) return fail("Link không hợp lệ.", 404);
-    return json({ name: data.name, status: data.status });
+
+    const events = await getGuestVisibleEvents(data.wedding_id, data.id);
+    return json({ name: data.name, status: data.status, events });
   },
 );

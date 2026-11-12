@@ -34,11 +34,11 @@ function padTwo(value: number): string {
 }
 
 export function Countdown() {
-  const wedding = useWeddingContent();
-  const primaryEvent = wedding.events[0];
+  const data = useWeddingContent();
+  const primaryEvent = data.events[0];
   const targetIso = React.useMemo(
-    () => resolveEventIso(primaryEvent?.date ?? wedding.date, primaryEvent?.time),
-    [primaryEvent?.date, primaryEvent?.time, wedding.date]
+    () => resolveEventIso(primaryEvent?.startsAt ?? data.date),
+    [primaryEvent?.startsAt, data.date],
   );
 
   const [timeLeft, setTimeLeft] = React.useState<TimeLeft | null>(null);
@@ -68,16 +68,16 @@ export function Countdown() {
   return (
     <RevealSection className="bg-inv-bg px-5 pt-4 pb-11 text-center">
       <p className="font-inv-serif text-[10px] font-semibold uppercase tracking-[0.26em] text-inv-muted">
-        {wedding.sections.countdownEyebrow}
+        {data.ui.countdownEyebrow}
       </p>
 
       <h2 className="mt-1.5 font-inv-script text-[clamp(36px,9.5vw,48px)] leading-[1.15] font-normal text-inv-olive-btn">
-        {wedding.sections.countdownTitle}
+        {data.ui.countdownTitle}
       </h2>
 
       {timeLeft?.finished ? (
         <p className="mt-6 font-inv-serif text-[22px] italic text-inv-olive-deep sm:text-[26px]">
-          {wedding.sections.countdownFinished}
+          {data.ui.countdownFinished}
         </p>
       ) : (
         <div className="mx-auto mt-6 grid max-w-[370px] grid-cols-4 gap-2 sm:gap-4">
