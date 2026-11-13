@@ -48,6 +48,14 @@
       "namedRegex": "^/api/invite/(?<nxtPslug>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/api/orders/[id]",
+      "regex": "^/api/orders/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/orders/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/api/public/wedding/[slug]",
       "regex": "^/api/public/wedding/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -228,10 +236,22 @@
       "namedRegex": "^/api/me/theme(?:/)?$"
     },
     {
+      "page": "/api/orders",
+      "regex": "^/api/orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/orders(?:/)?$"
+    },
+    {
       "page": "/api/rsvp",
       "regex": "^/api/rsvp(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/api/rsvp(?:/)?$"
+    },
+    {
+      "page": "/api/webhooks/bank",
+      "regex": "^/api/webhooks/bank(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/webhooks/bank(?:/)?$"
     },
     {
       "page": "/api/weddings",
@@ -292,6 +312,12 @@
       "regex": "^/dashboard/new(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/dashboard/new(?:/)?$"
+    },
+    {
+      "page": "/dashboard/so-mung",
+      "regex": "^/dashboard/so\\-mung(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/so\\-mung(?:/)?$"
     },
     {
       "page": "/dieu-khoan-su-dung",

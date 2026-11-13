@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
 import { SITE_LINKS } from "@/config/site";
 import { listWeddings, syncMe } from "@/lib/api";
-import type { WeddingPlan } from "@/lib/types";
+import type { Wedding, WeddingPlan } from "@/lib/types";
 import { canPlanUseTemplate } from "@/templates/registry";
 import type { WeddingTemplateMeta } from "@/templates/types";
 import { LandingFooter } from "./footer";
@@ -30,8 +30,36 @@ export function LandingPageClient({
   const router = useRouter();
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
   const [userPlan, setUserPlan] = React.useState<WeddingPlan>("free");
+  const [userWeddings, setUserWeddings] = React.useState<Wedding[]>([]);
   const [upgradeTemplate, setUpgradeTemplate] = React.useState<WeddingTemplateMeta | null>(null);
   const [paymentPlan, setPaymentPlan] = React.useState<Exclude<WeddingPlan, "free"> | null>(null);
+
+  // Read ?pay=pro / ?pay=vip when returning from login
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const pay = params.get("pay");
+    if (pay === "pro" || pay === "vip") {
+      setPaymentPlan(pay);
+      params.delete("pay");
+      const nextQuery = params.toString();
+      const nextUrl =
+        window.location.pathname +
+        (nextQuery ? `?${nextQuery}` : "") +
+        window.location.hash;
+      window.history.replaceState(null, "", nextUrl);
+    }
+  }, []);
+
+  const refreshPlan = React.useCallback(async () => {
+    try {
+      const weddings = await listWeddings();
+      setUserWeddings(weddings);
+      if (weddings.some((w) => w.plan === "vip")) setUserPlan("vip");
+      else if (weddings.some((w) => w.plan === "pro")) setUserPlan("pro");
+      else setUserPlan("free");
+    } catch {}
+  }, []);
 
   React.useEffect(() => {
     setSessionInfo({ isAuthenticated, email: userEmail });
@@ -61,12 +89,16 @@ export function LandingPageClient({
     listWeddings()
       .then((weddings) => {
         if (cancelled) return;
+        setUserWeddings(weddings);
         if (weddings.some((w) => w.plan === "vip")) setUserPlan("vip");
         else if (weddings.some((w) => w.plan === "pro")) setUserPlan("pro");
         else setUserPlan("free");
       })
       .catch(() => {
-        if (!cancelled) setUserPlan("free");
+        if (!cancelled) {
+          setUserWeddings([]);
+          setUserPlan("free");
+        }
       });
 
     return () => {
@@ -115,7 +147,10 @@ export function LandingPageClient({
 
       <PaymentTransferModal
         plan={paymentPlan}
+        weddings={userWeddings}
+        isAuthenticated={isAuthenticated}
         onClose={() => setPaymentPlan(null)}
+        onSuccess={refreshPlan}
       />
     </div>
   );

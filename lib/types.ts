@@ -147,3 +147,37 @@ export interface InviteResponse {
   diet?: GuestDiet | null;
   events?: WeddingEvent[];
 }
+
+export type PaidPlan = "pro" | "vip";
+
+export interface CreateOrderInput {
+  weddingId: string;
+  plan: PaidPlan;
+}
+
+export interface OrderBankInfo {
+  name: string;
+  accountNo: string;
+  accountName: string;
+}
+
+export interface CreatedOrder {
+  id: string;
+  code: string;
+  plan: PaidPlan;
+  amountVnd: number;
+  bank: OrderBankInfo;
+  transferContent: string;
+  qrPayload: string;
+}
+
+export type OrderStatus = "pending" | "paid" | "cancelled";
+
+export interface OrderStatusResponse {
+  id: string;
+  code: string;
+  plan: PaidPlan;
+  status: OrderStatus;
+  paidAt: string | null;
+}
+

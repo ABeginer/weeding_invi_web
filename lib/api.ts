@@ -18,6 +18,9 @@ import type {
   WeddingEvent,
   WeddingPhoto,
   Wish,
+  CreatedOrder,
+  OrderStatusResponse,
+  CreateOrderInput,
 } from "./types";
 
 export class ApiError extends Error {
@@ -39,7 +42,7 @@ export function clearAccessTokenCache(): void {
   cachedToken = null;
 }
 
-async function getBearerToken(): Promise<string> {
+export async function getBearerToken(): Promise<string> {
   const now = Date.now();
   if (cachedToken && cachedToken.expiresAtMs - 30_000 > now) {
     return cachedToken.token;
@@ -534,3 +537,12 @@ export function buildGuestLink(slug: string): string {
 export function buildWeddingLink(slug: string): string {
   return `${window.location.origin}/w/${slug}`;
 }
+
+export function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
+  return authRequest("/api/orders", post(input));
+}
+
+export function getOrder(orderId: string): Promise<OrderStatusResponse> {
+  return authRequest(`/api/orders/${encodeURIComponent(orderId)}`);
+}
+

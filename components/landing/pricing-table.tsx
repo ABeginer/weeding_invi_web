@@ -15,7 +15,10 @@ interface PricingTableProps {
   onSelectPaidPlan: (plan: Exclude<WeddingPlan, "free">) => void;
 }
 
-export function PricingTable({}: PricingTableProps) {
+export function PricingTable({
+  isAuthenticated,
+  onSelectPaidPlan,
+}: PricingTableProps) {
   const copy = LANDING_COPY.pricing;
 
   return (
@@ -126,24 +129,42 @@ export function PricingTable({}: PricingTableProps) {
                     {tier.id === "free" ? (
                       <Link
                         href={SITE_LINKS.createWedding}
-                        className="inline-flex h-11 w-full items-center justify-center rounded-full border border-text bg-transparent px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        className="inline-flex min-h-[44px] h-11 w-full items-center justify-center rounded-full border border-text bg-transparent px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                       >
                         {tier.ctaLabel}
                       </Link>
                     ) : tier.id === "pro" ? (
-                      <Link
-                        href={`${SITE_LINKS.createWedding}?plan=pro`}
-                        className="inline-flex h-11 w-full items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            window.location.assign(
+                              `/auth/login?returnTo=${encodeURIComponent("/?pay=pro")}`,
+                            );
+                            return;
+                          }
+                          onSelectPaidPlan("pro");
+                        }}
+                        className="inline-flex min-h-[44px] h-11 w-full cursor-pointer items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                       >
                         {tier.ctaLabel}
-                      </Link>
+                      </button>
                     ) : (
-                      <Link
-                        href={`${SITE_LINKS.createWedding}?plan=vip`}
-                        className="inline-flex h-11 w-full items-center justify-center rounded-full border border-text bg-transparent px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            window.location.assign(
+                              `/auth/login?returnTo=${encodeURIComponent("/?pay=vip")}`,
+                            );
+                            return;
+                          }
+                          onSelectPaidPlan("vip");
+                        }}
+                        className="inline-flex min-h-[44px] h-11 w-full cursor-pointer items-center justify-center rounded-full border border-text bg-transparent px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                       >
                         {tier.ctaLabel}
-                      </Link>
+                      </button>
                     )}
                   </div>
                 </div>
