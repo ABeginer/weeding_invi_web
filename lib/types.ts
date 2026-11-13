@@ -76,9 +76,30 @@ export interface Guest {
   status: GuestStatus;
   plusOnes?: number;
   diet?: GuestDiet | null;
+  songRequest?: string | null;
+  rideNeeded?: boolean;
   respondedAt: string | null;
   createdAt: string;
   eventIds?: string[];
+}
+
+export type GiftMethod = "cash" | "bank" | "other";
+
+export interface Gift {
+  id: string;
+  giverName: string;
+  amountVnd: number;
+  method: GiftMethod;
+  note: string | null;
+  guestId: string | null;
+  thankedAt: string | null;
+  createdAt: string;
+}
+
+export interface GiftTotals {
+  totalVnd: number;
+  count: number;
+  unthankedCount: number;
 }
 
 export interface Wish {

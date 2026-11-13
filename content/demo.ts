@@ -37,17 +37,17 @@ const DEMO_EVENTS: WeddingEvent[] = [
 ];
 
 const DEMO_GALLERY_PHOTOS: WeddingPhoto[] = [
-  { id: "demo-gal-1", kind: "gallery", url: "/photos/1.jpg", position: 0 },
-  { id: "demo-gal-2", kind: "gallery", url: "/photos/2.jpg", position: 1 },
-  { id: "demo-gal-3", kind: "gallery", url: "/photos/3.jpg", position: 2 },
-  { id: "demo-gal-4", kind: "gallery", url: "/photos/4.jpg", position: 3 },
-  { id: "demo-gal-5", kind: "gallery", url: "/photos/5.jpg", position: 4 },
-  { id: "demo-gal-6", kind: "gallery", url: "/photos/6.jpg", position: 5 },
+  { id: "demo-gal-1", kind: "gallery", url: "/photos/1.webp", position: 0 },
+  { id: "demo-gal-2", kind: "gallery", url: "/photos/2.webp", position: 1 },
+  { id: "demo-gal-3", kind: "gallery", url: "/photos/3.webp", position: 2 },
+  { id: "demo-gal-4", kind: "gallery", url: "/photos/4.webp", position: 3 },
+  { id: "demo-gal-5", kind: "gallery", url: "/photos/5.webp", position: 4 },
+  { id: "demo-gal-6", kind: "gallery", url: "/photos/6.webp", position: 5 },
 ];
 
 const DEMO_PORTRAITS: WeddingPhoto[] = [
-  { id: "demo-groom", kind: "couple", url: "/photos/portrait_cr.jpg", position: 0 },
-  { id: "demo-bride", kind: "couple", url: "/photos/portrait_cd.jpg", position: 1 },
+  { id: "demo-groom", kind: "couple", url: "/photos/portrait_cr.webp", position: 0 },
+  { id: "demo-bride", kind: "couple", url: "/photos/portrait_cd.webp", position: 1 },
 ];
 
 const DEMO_GIFT_QR_PHOTOS: WeddingPhoto[] = [
@@ -68,7 +68,7 @@ interface DemoPreset {
 const DEMO_PRESETS: Record<string, DemoPreset> = {
   "basic-1": {
     plan: "free",
-    heroUrl: "/photos/hero2.jpg",
+    heroUrl: "/photos/hero2.webp",
     eyebrow: "Save The Date",
     heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
     defaultGuestName: "Bạn Thanh Mai",
@@ -90,18 +90,18 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       groomPhotoId: "demo-groom",
       bridePhotoId: "demo-bride",
       gift: {
-        groomBankName: "Vietcombank",
-        groomAccountName: "NGUYEN MINH KHOI",
-        groomAccountNumber: "0123456789 (Minh họa)",
-        brideBankName: "Techcombank",
-        brideAccountName: "TRAN THAO NGUYEN",
-        brideAccountNumber: "9876543210 (Minh họa)",
+        groomBankName: "",
+        groomAccountName: "",
+        groomAccountNumber: "",
+        brideBankName: "",
+        brideAccountName: "",
+        brideAccountNumber: "",
       },
     },
   },
   "basic-2": {
     plan: "free",
-    heroUrl: "/photos/1.jpg",
+    heroUrl: "/photos/1.webp",
     eyebrow: "Wedding Invitation",
     heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
     defaultGuestName: "Anh Hoàng Long",
@@ -123,18 +123,18 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       groomPhotoId: "demo-groom",
       bridePhotoId: "demo-bride",
       gift: {
-        groomBankName: "MB Bank",
-        groomAccountName: "LE GIA HUY",
-        groomAccountNumber: "1900202701 (Minh họa)",
-        brideBankName: "ACB",
-        brideAccountName: "DOAN NGOC HAN",
-        brideAccountNumber: "6868202702 (Minh họa)",
+        groomBankName: "",
+        groomAccountName: "",
+        groomAccountNumber: "",
+        brideBankName: "",
+        brideAccountName: "",
+        brideAccountNumber: "",
       },
     },
   },
   "basic-3": {
     plan: "free",
-    heroUrl: "/photos/3.jpg",
+    heroUrl: "/photos/3.webp",
     eyebrow: "Sunset Vows",
     heroSubtitle: "Hân hạnh đón tiếp trong buổi chiều chung vui",
     defaultGuestName: "Chị Minh Châu",
@@ -156,18 +156,18 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       groomPhotoId: "demo-groom",
       bridePhotoId: "demo-bride",
       gift: {
-        groomBankName: "VPBank",
-        groomAccountName: "PHAM HOANG VIET",
-        groomAccountNumber: "3366202701 (Minh họa)",
-        brideBankName: "BIDV",
-        brideAccountName: "VU KHANH LINH",
-        brideAccountNumber: "1188202702 (Minh họa)",
+        groomBankName: "",
+        groomAccountName: "",
+        groomAccountNumber: "",
+        brideBankName: "",
+        brideAccountName: "",
+        brideAccountNumber: "",
       },
     },
   },
   "pro-1": {
     plan: "pro",
-    heroUrl: "/photos/5.jpg",
+    heroUrl: "/photos/5.webp",
     eyebrow: "Evening Gala",
     heroSubtitle: "Trân trọng đón tiếp trong đêm tiệc thành hôn ánh kim",
     defaultGuestName: "Quý Khách Danh Dự",
@@ -189,12 +189,12 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       groomPhotoId: "demo-groom",
       bridePhotoId: "demo-bride",
       gift: {
-        groomBankName: "Vietcombank",
-        groomAccountName: "HO TUAN KIET",
-        groomAccountNumber: "9999202701 (Minh họa)",
-        brideBankName: "Techcombank",
-        brideAccountName: "NGO LAN ANH",
-        brideAccountNumber: "8888202702 (Minh họa)",
+        groomBankName: "",
+        groomAccountName: "",
+        groomAccountNumber: "",
+        brideBankName: "",
+        brideAccountName: "",
+        brideAccountNumber: "",
       },
     },
   },
@@ -207,11 +207,14 @@ export function getDemoTemplateData(
   const preset = DEMO_PRESETS[key];
   const meta = getTemplateMeta(key);
 
+  const uniqueGalleryPhotos = DEMO_GALLERY_PHOTOS.filter(
+    (p) => p.url !== preset.heroUrl,
+  );
+
   const photos: WeddingPhoto[] = [
     { id: "demo-hero", kind: "banner", url: preset.heroUrl, position: 0 },
     ...DEMO_PORTRAITS,
-    ...DEMO_GALLERY_PHOTOS,
-    ...(preset.plan !== "free" ? DEMO_GIFT_QR_PHOTOS : []),
+    ...uniqueGalleryPhotos,
   ];
 
   return toTemplateData({

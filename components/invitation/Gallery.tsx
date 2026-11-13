@@ -13,7 +13,11 @@ export function Gallery() {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const isDesktopLayout = useInvitationDesktopLayout();
-  const photos = data.photos.gallery;
+  // Khi đã có dải 3 ảnh cưới phía trên (PhotoTriptych), thư viện ảnh hiển thị phần ảnh còn lại để không trùng lặp ảnh nào trên trang
+  const photos = React.useMemo(() => {
+    const all = data.photos.gallery;
+    return all.length > 3 ? all.slice(3) : all;
+  }, [data.photos.gallery]);
 
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
   const [mounted, setMounted] = React.useState(false);
@@ -170,6 +174,7 @@ export function Gallery() {
     >
       <div className="mx-auto max-w-[440px] text-center">
         <h2
+          aria-label="GOLDEN HOUR OF LOVE"
           className={cn(
             "flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 font-inv-serif leading-[1.15] font-normal tracking-[0.03em] text-inv-cream-text uppercase",
             isContained
@@ -180,13 +185,13 @@ export function Gallery() {
           <span>GOLDEN HOUR</span>
           <span
             className={cn(
-              "font-inv-script leading-none text-inv-cream-soft normal-case",
+              "font-inv-script leading-none text-inv-cream-soft uppercase",
               isContained
                 ? "text-[clamp(22px,8cqw,32px)]"
                 : "text-[clamp(28px,8vw,38px)]",
             )}
           >
-            Of
+            OF
           </span>
           <span>LOVE</span>
         </h2>

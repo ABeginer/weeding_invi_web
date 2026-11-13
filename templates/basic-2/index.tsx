@@ -70,9 +70,9 @@ export default function Basic2Template({
         "relative w-full bg-[#FAF7F0] text-[#1F1D1A] font-sans",
         contained ? "min-h-full" : "min-h-screen-dvh",
         !coverDismissed &&
-          (contained
-            ? "h-full overflow-hidden"
-            : "h-screen-dvh max-h-full overflow-hidden"),
+        (contained
+          ? "h-full overflow-hidden"
+          : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       <AnimatePresence
@@ -97,11 +97,11 @@ export default function Basic2Template({
               contained
                 ? "absolute inset-0"
                 : cn(
-                    "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
-                    isDesktopLayout
-                      ? "max-w-[960px] md:border-x md:border-[#C6A962]/25 md:shadow-[0_12px_40px_rgba(31,29,26,0.08)]"
-                      : "max-w-[460px]",
-                  ),
+                  "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
+                  isDesktopLayout
+                    ? "max-w-[960px] md:border-x md:border-[#C6A962]/25 md:shadow-[0_12px_40px_rgba(31,29,26,0.08)]"
+                    : "max-w-[460px]",
+                ),
               opened && "pointer-events-none",
             )}
           >
@@ -185,9 +185,9 @@ export default function Basic2Template({
           "mx-auto w-full overflow-x-clip bg-[#FAF7F0]",
           isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
           !coverDismissed &&
-            (contained
-              ? "h-full overflow-hidden"
-              : "h-screen-dvh overflow-hidden"),
+          (contained
+            ? "h-full overflow-hidden"
+            : "h-screen-dvh overflow-hidden"),
         )}
       >
         {/* Hero */}
@@ -196,7 +196,7 @@ export default function Basic2Template({
             "text-center",
             contained ? "px-3.5 pt-9 pb-6" : "px-5 pt-10 pb-8",
             isDesktopLayout &&
-              "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
+            "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-9 md:text-left",
           )}
         >
           <div className={cn(isDesktopLayout ? "md:col-span-6 space-y-3.5" : "space-y-3.5")}>
@@ -398,9 +398,9 @@ export default function Basic2Template({
             <div
               className={cn(
                 "mx-auto mt-6 grid gap-4",
-                isDesktopLayout
+                isDesktopLayout && data.events.length > 1
                   ? "max-w-[820px] grid-cols-1 md:grid-cols-2"
-                  : "max-w-[440px] grid-cols-1",
+                  : "max-w-[460px] grid-cols-1",
               )}
             >
               {data.events.map((evt, idx) => {
@@ -430,18 +430,6 @@ export default function Basic2Template({
                           {evt.venueAddress}
                         </p>
                       )}
-
-                      {evt.mapEmbedUrl && (
-                        <div className="mt-4 overflow-hidden border border-[#E2D9C8] bg-[#FAF7F0]">
-                          <iframe
-                            src={evt.mapEmbedUrl}
-                            title={`Bản đồ ${evt.venueName}`}
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            className="h-44 w-full border-0"
-                          />
-                        </div>
-                      )}
                     </div>
                     {evt.mapDirectionsUrl && (
                       <div className="mt-4">
@@ -462,44 +450,46 @@ export default function Basic2Template({
             </div>
           )}
 
-          <div className="mx-auto mt-8 max-w-[420px]">
-            <p className="text-[11px] tracking-[0.2em] text-[#706040] uppercase">
-              {data.ui.countdownTitle}
-            </p>
-            {countdown?.finished ? (
-              <p className="mt-2 font-display text-xl italic text-[#4F473A]">
-                {data.ui.countdownFinished}
+          {countdown && (
+            <div className="mx-auto mt-8 max-w-[420px]">
+              <p className="text-[11px] tracking-[0.2em] text-[#706040] uppercase">
+                {data.ui.countdownTitle}
               </p>
-            ) : (
-              <div className="mt-3 grid grid-cols-4 gap-2">
-                {[
-                  { label: "Ngày", value: countdown ? String(countdown.days) : "--" },
-                  {
-                    label: "Giờ",
-                    value: countdown ? padCountdownUnit(countdown.hours) : "--",
-                  },
-                  {
-                    label: "Phút",
-                    value: countdown ? padCountdownUnit(countdown.minutes) : "--",
-                  },
-                  {
-                    label: "Giây",
-                    value: countdown ? padCountdownUnit(countdown.seconds) : "--",
-                  },
-                ].map((unit) => (
-                  <div
-                    key={unit.label}
-                    className="border border-[#E2D9C8] bg-white py-2.5 text-center"
-                  >
-                    <p className="font-display text-2xl font-semibold tabular-nums text-[#1F1D1A]">
-                      {unit.value}
-                    </p>
-                    <p className="text-[11px] text-[#5E574B]">{unit.label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+              {countdown.finished ? (
+                <p className="mt-2 font-display text-xl italic text-[#4F473A]">
+                  {data.ui.countdownFinished}
+                </p>
+              ) : (
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  {[
+                    { label: "Ngày", value: String(countdown.days) },
+                    {
+                      label: "Giờ",
+                      value: padCountdownUnit(countdown.hours),
+                    },
+                    {
+                      label: "Phút",
+                      value: padCountdownUnit(countdown.minutes),
+                    },
+                    {
+                      label: "Giây",
+                      value: padCountdownUnit(countdown.seconds),
+                    },
+                  ].map((unit) => (
+                    <div
+                      key={unit.label}
+                      className="border border-[#E2D9C8] bg-white py-2.5 text-center"
+                    >
+                      <p className="font-display text-2xl font-semibold tabular-nums text-[#1F1D1A]">
+                        {unit.value}
+                      </p>
+                      <p className="text-[11px] text-[#5E574B]">{unit.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Gallery */}
@@ -573,18 +563,33 @@ export default function Basic2Template({
           onOpenGift={() => setGiftOpen(true)}
         />
 
-        <footer className="border-t border-[#E2D9C8] bg-[#23201C] px-5 py-10 text-center text-[#FAF7F0]">
-          <Heart className="mx-auto h-5 w-5 text-[#C6A962]" aria-hidden="true" />
-          <p className="mt-3 font-display text-3xl italic">
-            {data.ui.thankYouTitle}
-          </p>
-          <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-[#D8D0C2]">
-            {data.ui.thankYouBody}
-          </p>
-          <p className="mt-4 text-[11px] tracking-[0.2em] text-[#C6A962] uppercase">
-            {data.ui.signature}
-          </p>
-        </footer>
+        {contained ? (
+          <div className="border-t border-[#E2D9C8] bg-[#23201C] px-5 py-10 text-center text-[#FAF7F0]">
+            <Heart className="mx-auto h-5 w-5 text-[#C6A962]" aria-hidden="true" />
+            <p className="mt-3 font-display text-3xl italic">
+              {data.ui.thankYouTitle}
+            </p>
+            <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-[#D8D0C2]">
+              {data.ui.thankYouBody}
+            </p>
+            <p className="mt-4 text-[11px] tracking-[0.2em] text-[#C6A962] uppercase">
+              {data.ui.signature}
+            </p>
+          </div>
+        ) : (
+          <footer className="border-t border-[#E2D9C8] bg-[#23201C] px-5 py-10 text-center text-[#FAF7F0]">
+            <Heart className="mx-auto h-5 w-5 text-[#C6A962]" aria-hidden="true" />
+            <p className="mt-3 font-display text-3xl italic">
+              {data.ui.thankYouTitle}
+            </p>
+            <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-[#D8D0C2]">
+              {data.ui.thankYouBody}
+            </p>
+            <p className="mt-4 text-[11px] tracking-[0.2em] text-[#C6A962] uppercase">
+              {data.ui.signature}
+            </p>
+          </footer>
+        )}
       </div>
 
       <TemplateLightboxModal

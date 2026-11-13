@@ -70,9 +70,9 @@ export default function Basic3Template({
         "relative w-full bg-[#FCF5F0] text-[#322424] font-sans",
         contained ? "min-h-full" : "min-h-screen-dvh",
         !coverDismissed &&
-          (contained
-            ? "h-full overflow-hidden"
-            : "h-screen-dvh max-h-full overflow-hidden"),
+        (contained
+          ? "h-full overflow-hidden"
+          : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       <AnimatePresence
@@ -94,11 +94,11 @@ export default function Basic3Template({
               contained
                 ? "absolute inset-0"
                 : cn(
-                    "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
-                    isDesktopLayout
-                      ? "max-w-[960px] md:border-x md:border-[#D7B3A5]/45 md:shadow-[0_12px_40px_rgba(122,53,53,0.1)]"
-                      : "max-w-[460px]",
-                  ),
+                  "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
+                  isDesktopLayout
+                    ? "max-w-[960px] md:border-x md:border-[#D7B3A5]/45 md:shadow-[0_12px_40px_rgba(122,53,53,0.1)]"
+                    : "max-w-[460px]",
+                ),
               opened && "pointer-events-none",
             )}
           >
@@ -169,9 +169,9 @@ export default function Basic3Template({
           "mx-auto w-full overflow-x-clip bg-[#FCF5F0]",
           isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
           !coverDismissed &&
-            (contained
-              ? "h-full overflow-hidden"
-              : "h-screen-dvh overflow-hidden"),
+          (contained
+            ? "h-full overflow-hidden"
+            : "h-screen-dvh overflow-hidden"),
         )}
       >
         {/* Hero */}
@@ -370,8 +370,10 @@ export default function Basic3Template({
             ) : (
               <div
                 className={cn(
-                  "mt-6 grid gap-4",
-                  isDesktopLayout ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1",
+                  "mx-auto mt-6 grid gap-4",
+                  isDesktopLayout && data.events.length > 1
+                    ? "max-w-[820px] grid-cols-1 md:grid-cols-2"
+                    : "max-w-[460px] grid-cols-1",
                 )}
               >
                 {data.events.map((evt, idx) => {
@@ -398,19 +400,6 @@ export default function Basic3Template({
                       {evt.venueAddress && (
                         <p className="mt-1 text-xs text-[#6B504B]">{evt.venueAddress}</p>
                       )}
-
-                      {evt.mapEmbedUrl && (
-                        <div className="mt-3 overflow-hidden rounded-xl border border-[#E7CFC3] bg-white">
-                          <iframe
-                            src={evt.mapEmbedUrl}
-                            title={`Bản đồ ${evt.venueName}`}
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            className="h-44 w-full border-0"
-                          />
-                        </div>
-                      )}
-
                       {evt.mapDirectionsUrl && (
                         <div className="mt-3">
                           <a
@@ -430,21 +419,21 @@ export default function Basic3Template({
               </div>
             )}
 
-            {!countdown?.finished && (
+            {countdown && !countdown.finished && (
               <div className="mx-auto mt-6 grid max-w-[360px] grid-cols-4 gap-2">
                 {[
-                  { label: "Ngày", value: countdown ? String(countdown.days) : "--" },
+                  { label: "Ngày", value: String(countdown.days) },
                   {
                     label: "Giờ",
-                    value: countdown ? padCountdownUnit(countdown.hours) : "--",
+                    value: padCountdownUnit(countdown.hours),
                   },
                   {
                     label: "Phút",
-                    value: countdown ? padCountdownUnit(countdown.minutes) : "--",
+                    value: padCountdownUnit(countdown.minutes),
                   },
                   {
                     label: "Giây",
-                    value: countdown ? padCountdownUnit(countdown.seconds) : "--",
+                    value: padCountdownUnit(countdown.seconds),
                   },
                 ].map((unit) => (
                   <div key={unit.label} className="rounded-xl bg-[#FCF5F0] py-2">
@@ -527,17 +516,31 @@ export default function Basic3Template({
           onOpenGift={() => setGiftOpen(true)}
         />
 
-        <footer className="bg-gradient-to-t from-[#5C2626] to-[#7A3535] px-5 py-10 text-center text-[#FFF8F4]">
-          <p className="font-display text-3xl italic">
-            {data.ui.thankYouTitle}
-          </p>
-          <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-[#F5DDD4]">
-            {data.ui.thankYouBody}
-          </p>
-          <p className="mt-4 text-[11px] tracking-[0.2em] text-[#F2CFC2] uppercase">
-            {data.ui.signature}
-          </p>
-        </footer>
+        {contained ? (
+          <div className="bg-gradient-to-t from-[#5C2626] to-[#7A3535] px-5 py-10 text-center text-[#FFF8F4]">
+            <p className="font-display text-3xl italic">
+              {data.ui.thankYouTitle}
+            </p>
+            <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-[#F5DDD4]">
+              {data.ui.thankYouBody}
+            </p>
+            <p className="mt-4 text-[11px] tracking-[0.2em] text-[#F2CFC2] uppercase">
+              {data.ui.signature}
+            </p>
+          </div>
+        ) : (
+          <footer className="bg-gradient-to-t from-[#5C2626] to-[#7A3535] px-5 py-10 text-center text-[#FFF8F4]">
+            <p className="font-display text-3xl italic">
+              {data.ui.thankYouTitle}
+            </p>
+            <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-[#F5DDD4]">
+              {data.ui.thankYouBody}
+            </p>
+            <p className="mt-4 text-[11px] tracking-[0.2em] text-[#F2CFC2] uppercase">
+              {data.ui.signature}
+            </p>
+          </footer>
+        )}
       </div>
 
       <TemplateLightboxModal

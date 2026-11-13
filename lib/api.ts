@@ -3,6 +3,9 @@ import type { BrandThemeMode } from "./brand-theme";
 import type {
   Guest,
   GuestDiet,
+  Gift,
+  GiftMethod,
+  GiftTotals,
   InviteResponse,
   PhotoKind,
   PhotoSlot,
@@ -20,10 +23,12 @@ import type {
 export class ApiError extends Error {
   status: number;
   field?: string;
-  constructor(message: string, status: number, field?: string) {
+  code?: string;
+  constructor(message: string, status: number, field?: string, code?: string) {
     super(message);
     this.status = status;
     this.field = field;
+    this.code = code;
   }
 }
 
@@ -70,12 +75,14 @@ async function getBearerToken(): Promise<string> {
 async function parseErrorResponse(res: Response): Promise<never> {
   let message = "Có lỗi xảy ra, vui lòng thử lại.";
   let field: string | undefined;
+  let code: string | undefined;
   try {
     const body = await res.json();
     if (body && typeof body.error === "string") message = body.error;
     if (body && typeof body.field === "string") field = body.field;
+    if (body && typeof body.code === "string") code = body.code;
   } catch {}
-  throw new ApiError(message, res.status, field);
+  throw new ApiError(message, res.status, field, code);
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -186,6 +193,8 @@ export interface SubmitRsvpInput {
   status: "accepted" | "declined";
   plusOnes?: number;
   diet?: GuestDiet | null;
+  songRequest?: string | null;
+  rideNeeded?: boolean;
   wish?: string;
   turnstileToken?: string;
   website?: string;
@@ -203,6 +212,8 @@ export async function submitRsvp(
   extras?: {
     plusOnes?: number;
     diet?: GuestDiet | null;
+    songRequest?: string | null;
+    rideNeeded?: boolean;
     wish?: string;
     turnstileToken?: string;
   },
@@ -214,6 +225,8 @@ export async function submitRsvp(
   extras?: {
     plusOnes?: number;
     diet?: GuestDiet | null;
+    songRequest?: string | null;
+    rideNeeded?: boolean;
     wish?: string;
     turnstileToken?: string;
   },
@@ -225,6 +238,8 @@ export async function submitRsvp(
           status,
           ...(extras?.plusOnes !== undefined ? { plusOnes: extras.plusOnes } : {}),
           ...(extras?.diet !== undefined ? { diet: extras.diet } : {}),
+          ...(extras?.songRequest !== undefined ? { songRequest: extras.songRequest } : {}),
+          ...(extras?.rideNeeded !== undefined ? { rideNeeded: extras.rideNeeded } : {}),
           ...(extras?.wish ? { wish: extras.wish } : {}),
           ...(extras?.turnstileToken ? { turnstileToken: extras.turnstileToken } : {}),
         }
@@ -353,12 +368,17 @@ export function listPhotos(weddingId: string): Promise<WeddingPhoto[]> {
 
 export function uploadPhoto(
   weddingId: string,
-  file: File,
+  file: File | Blob,
   kind: PhotoKind,
   slot?: PhotoSlot,
+  fileName?: string,
 ): Promise<{ photo: WeddingPhoto; content: WeddingContent }> {
   const formData = new FormData();
-  formData.append("file", file);
+  if (file instanceof File) {
+    formData.append("file", file);
+  } else {
+    formData.append("file", file, fileName ?? "photo.webp");
+  }
   formData.append("kind", kind);
   if (slot) {
     formData.append("slot", slot);
@@ -433,6 +453,69 @@ export function setGuestEvents(
   return authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/${encodeURIComponent(guestId)}/events`,
     post({ eventIds }),
+  );
+}
+
+export function assignGuestEvents(
+  guestId: string,
+  eventIds: string[],
+): Promise<{ ok: boolean; eventIds: string[] }> {
+  return authRequest(
+    `/api/guests/${encodeURIComponent(guestId)}/events`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ eventIds }),
+    },
+  );
+}
+
+export function listGifts(
+  weddingId: string,
+): Promise<{ items: Gift[]; totals: GiftTotals }> {
+  return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}/gifts`);
+}
+
+export function createGift(
+  weddingId: string,
+  input: {
+    giverName: string;
+    amountVnd: number;
+    method: GiftMethod;
+    note?: string | null;
+    guestId?: string | null;
+  },
+): Promise<Gift> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/gifts`,
+    post(input),
+  );
+}
+
+export function updateGift(
+  weddingId: string,
+  giftId: string,
+  input: Partial<{
+    giverName: string;
+    amountVnd: number;
+    method: GiftMethod;
+    note: string | null;
+    guestId: string | null;
+    thanked: boolean;
+  }>,
+): Promise<Gift> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/gifts/${encodeURIComponent(giftId)}`,
+    patch(input),
+  );
+}
+
+export async function deleteGift(
+  weddingId: string,
+  giftId: string,
+): Promise<void> {
+  await authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/gifts/${encodeURIComponent(giftId)}`,
+    { method: "DELETE" },
   );
 }
 

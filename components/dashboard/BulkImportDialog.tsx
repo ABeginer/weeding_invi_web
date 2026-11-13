@@ -119,6 +119,12 @@ export function BulkImportDialog({
         window.location.assign("/auth/login");
         return;
       }
+      if (err instanceof ApiError && err.code === "PLAN_LIMIT") {
+        setError(
+          "Số lượng khách vượt quá giới hạn gói hiện tại. Vui lòng nâng cấp gói để nhập thêm khách.",
+        );
+        return;
+      }
       setError(
         err instanceof Error ? err.message : "Không thể nhập danh sách khách mời.",
       );

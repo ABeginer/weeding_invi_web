@@ -34,3 +34,4 @@ export function ToolFaqSection({ title, items }: ToolFaqSectionProps) {
     </section>
   );
 }
+

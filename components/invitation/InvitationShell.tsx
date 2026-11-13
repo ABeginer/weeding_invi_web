@@ -22,7 +22,7 @@ interface InvitationShellProps {
 
 const TARGET_VOLUME = 0.6;
 const FADE_DURATION_MS = 2000;
-const ENVELOPE_DISMISS_MS = 2100;
+const ENVELOPE_DISMISS_MS = 900;
 
 export function InvitationShell({
   guestName,
@@ -118,6 +118,14 @@ export function InvitationShell({
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    if (isReducedMotion) {
+      setEnvelopeDismissed(true);
+      if (!contained) {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
+      return;
+    }
+
     window.setTimeout(
       () => {
         setEnvelopeDismissed(true);
@@ -125,7 +133,7 @@ export function InvitationShell({
           window.scrollTo({ top: 0, behavior: "auto" });
         }
       },
-      isReducedMotion ? 320 : ENVELOPE_DISMISS_MS,
+      ENVELOPE_DISMISS_MS,
     );
   }, [contained, externalMusicControl, onOpenedChange, playAudio]);
 

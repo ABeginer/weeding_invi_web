@@ -252,12 +252,40 @@ export function GiftModal({
         {sides.length === 0 ? (
           <div
             className={cn(
-              "mt-5 rounded-xl border p-6 text-center text-sm",
+              "mt-5 flex flex-col items-center rounded-2xl border p-6 text-center space-y-3",
               toneTheme.subcard,
-              toneTheme.muted,
             )}
           >
-            Cô dâu &amp; chú rể chưa cập nhật thông tin mừng cưới.
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-current/10">
+              <HeartHandshake className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <h3 className={cn("font-display text-lg font-semibold", toneTheme.heading)}>
+                Lời chúc và quà bằng tin nhắn
+              </h3>
+              <p className={cn("max-w-md text-xs leading-relaxed sm:text-sm", toneTheme.muted)}>
+                Tấm lòng và những lời chúc tốt đẹp nhất gửi tới cô dâu &amp; chú rể chính là món quà ý nghĩa nhất. Bạn có thể để lại lời chúc phúc trân quý ở khung xác nhận tham dự.
+              </p>
+            </div>
+            {wishAnchorId && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  const target = document.getElementById(wishAnchorId);
+                  if (target) {
+                    target.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }}
+                className={cn(
+                  "inline-flex h-9 cursor-pointer items-center justify-center rounded-full px-5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2",
+                  toneTheme.copyBtn,
+                  toneTheme.ring,
+                )}
+              >
+                Gửi lời chúc ngay
+              </button>
+            )}
           </div>
         ) : (
           <div

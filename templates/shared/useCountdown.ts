@@ -26,15 +26,19 @@ function calcTimeLeft(targetIso: string): CountdownValues {
   };
 }
 
-export function useWeddingCountdown(dateInput: string, timeInput?: string): CountdownValues | null {
+export function useWeddingCountdown(dateInput?: string, timeInput?: string): CountdownValues | null {
   const targetIso = React.useMemo(
-    () => resolveEventIso(dateInput, timeInput),
+    () => (dateInput ? resolveEventIso(dateInput, timeInput) : ""),
     [dateInput, timeInput]
   );
 
   const [state, setState] = React.useState<CountdownValues | null>(null);
 
   React.useEffect(() => {
+    if (!targetIso) {
+      setState(null);
+      return;
+    }
     setState(calcTimeLeft(targetIso));
     const timer = window.setInterval(() => {
       setState(calcTimeLeft(targetIso));
@@ -42,6 +46,7 @@ export function useWeddingCountdown(dateInput: string, timeInput?: string): Coun
     return () => window.clearInterval(timer);
   }, [targetIso]);
 
+  if (!dateInput || !targetIso) return null;
   return state;
 }
 

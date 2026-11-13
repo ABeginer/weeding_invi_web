@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export type WeddingPlan = "free" | "pro" | "vip";
-export type PhotoKind = "banner" | "couple" | "gallery" | "og" | "gift";
+export type PhotoKind = "banner" | "couple" | "gallery" | "og" | "gift" | "album";
 export type PhotoSlot = "hero" | "groom" | "bride" | "og" | "gift-groom" | "gift-bride";
 export type TemplateMode = "demo" | "preview" | "live";
 

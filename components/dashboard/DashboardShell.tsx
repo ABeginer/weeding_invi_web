@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { BookOpen, Heart } from "lucide-react";
 import { ProfileMenu } from "@/components/theme/ProfileMenu";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
 import { SITE_LINKS, SITE_NAME } from "@/config/site";
 import { ApiError, syncMe } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface DashboardShellProps {
   userEmail?: string | null;
@@ -14,6 +16,7 @@ interface DashboardShellProps {
 }
 
 export function DashboardShell({ userEmail, children }: DashboardShellProps) {
+  const pathname = usePathname();
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
 
   React.useEffect(() => {
@@ -72,6 +75,31 @@ export function DashboardShell({ userEmail, children }: DashboardShellProps) {
                 Quản lý Thiệp Cưới
               </span>
             </Link>
+
+            <nav className="ml-1 flex items-center gap-1 sm:ml-3 sm:gap-1.5" aria-label="Điều hướng chính Dashboard">
+              <Link
+                href="/dashboard"
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+                  pathname === "/dashboard"
+                    ? "bg-accent-soft font-semibold text-accent-text"
+                    : "text-text-muted hover:bg-surface hover:text-text",
+                )}
+              >
+                Thiệp cưới
+              </Link>
+              <Link
+                href="/dashboard/so-mung"
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+                  pathname.startsWith("/dashboard/so-mung")
+                    ? "bg-accent-soft font-semibold text-accent-text"
+                    : "text-text-muted hover:bg-surface hover:text-text",
+                )}
+              >
+                Sổ mừng
+              </Link>
+            </nav>
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">

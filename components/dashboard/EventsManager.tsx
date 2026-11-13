@@ -43,6 +43,19 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { toDatetimeLocalVn } from "./WeddingInfoEditor";
+import { convertSolarToLunar, isValidSolarDate } from "@/lib/lunar";
+
+export function formatDefaultLunarDateFromSolar(dateStr: string): string {
+  if (!dateStr) return "";
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return "";
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  const day = parseInt(match[3], 10);
+  if (!isValidSolarDate(day, month, year)) return "";
+  const res = convertSolarToLunar(day, month, year);
+  return `Ngày ${res.lunarDay} tháng ${res.lunarMonth}${res.isLeapMonth ? " (nhuận)" : ""} năm ${res.yearCanChi}`;
+}
 
 interface EventsManagerProps {
   weddingId: string;
@@ -58,16 +71,19 @@ interface EventFormState {
   lunarDate: string;
   venueName: string;
   venueAddress: string;
+  mapEmbedUrl: string;
   mapDirectionsUrl: string;
 }
 
 function createEmptyEventForm(defaultDateIso: string): EventFormState {
+  const startsAtLocal = toDatetimeLocalVn(defaultDateIso) || "2027-01-01T10:00";
   return {
     title: "",
-    startsAtLocal: toDatetimeLocalVn(defaultDateIso) || "2027-01-01T10:00",
-    lunarDate: "",
+    startsAtLocal,
+    lunarDate: formatDefaultLunarDateFromSolar(startsAtLocal),
     venueName: "",
     venueAddress: "",
+    mapEmbedUrl: "",
     mapDirectionsUrl: "",
   };
 }
@@ -79,6 +95,7 @@ function toEventFormState(event: WeddingEvent): EventFormState {
     lunarDate: event.lunarDate,
     venueName: event.venueName,
     venueAddress: event.venueAddress,
+    mapEmbedUrl: event.mapEmbedUrl ?? "",
     mapDirectionsUrl: event.mapDirectionsUrl ?? "",
   };
 }
@@ -109,6 +126,12 @@ export function EventsManager({
   const [reordering, setReordering] = React.useState(false);
   const [draggingId, setDraggingId] = React.useState<string | null>(null);
 
+  const handleCloseForm = React.useCallback(() => {
+    if (!submitting) {
+      setFormOpen(false);
+    }
+  }, [submitting]);
+
   const openCreateModal = () => {
     setEditingEvent(null);
     setForm(createEmptyEventForm(defaultDateIso));
@@ -136,7 +159,7 @@ export function EventsManager({
       lunarDate: form.lunarDate,
       venueName: form.venueName,
       venueAddress: form.venueAddress,
-      mapEmbedUrl: editingEvent?.mapEmbedUrl ?? null,
+      mapEmbedUrl: null,
       mapDirectionsUrl: form.mapDirectionsUrl.trim() || null,
     };
 
@@ -172,6 +195,12 @@ export function EventsManager({
       if (err instanceof ApiError && err.status === 401) {
         setFormOpen(false);
         window.location.assign("/auth/login");
+        return;
+      }
+      if (err instanceof ApiError && err.code === "PLAN_LIMIT") {
+        setFormError(
+          "Bạn đã đạt giới hạn buổi lễ của gói hiện tại. Vui lòng nâng cấp gói Pro để tạo không giới hạn buổi lễ.",
+        );
         return;
       }
       if (err instanceof ApiError && err.field) {
@@ -274,16 +303,31 @@ export function EventsManager({
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={openCreateModal}
-          disabled={reachedLimit}
-          title={reachedLimit ? getEventLimitMessage(plan) : undefined}
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          <span>Thêm lễ mới</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={openCreateModal}
+            disabled={reachedLimit}
+            title={reachedLimit ? getEventLimitMessage(plan) : undefined}
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span>Thêm buổi lễ</span>
+            {reachedLimit && plan === "free" && (
+              <span className="ml-1.5 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-fg">
+                Pro
+              </span>
+            )}
+          </Button>
+          {reachedLimit && plan === "free" && (
+            <Link
+              href="/#bang-gia"
+              className="text-xs font-semibold text-accent-text underline underline-offset-2 hover:text-accent-hover"
+            >
+              Nâng cấp Pro
+            </Link>
+          )}
+        </div>
       </div>
 
       {reachedLimit && (
@@ -352,8 +396,8 @@ export function EventsManager({
                           </h3>
                         </div>
                         <p className="mt-1 text-xs font-medium text-accent-text">
-                          {dateParts.time} · {dateParts.weekday} · {dateParts.dotDate}
-                          {evt.lunarDate ? ` (${evt.lunarDate})` : ""}
+                          {dateParts.day}/{dateParts.month}/{dateParts.year} {dateParts.time}
+                          {evt.lunarDate ? ` (Âm lịch: ${evt.lunarDate})` : ""}
                         </p>
                       </div>
 
@@ -443,7 +487,7 @@ export function EventsManager({
       {/* Modal tạo / sửa lễ */}
       <Dialog
         open={formOpen}
-        onClose={() => !submitting && setFormOpen(false)}
+        onClose={handleCloseForm}
         title={editingEvent ? `Chỉnh sửa "${editingEvent.title}"` : "Thêm lễ cưới mới"}
         description="Thông tin ngày giờ, địa điểm và Google Maps sẽ hiển thị ngay trên thiệp cưới."
         className="max-w-lg"
@@ -464,19 +508,42 @@ export function EventsManager({
               type="datetime-local"
               label="Ngày giờ bắt đầu *"
               value={form.startsAtLocal}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, startsAtLocal: e.target.value }))
-              }
+              onChange={(e) => {
+                const nextStartsAt = e.target.value;
+                const autoLunar = formatDefaultLunarDateFromSolar(nextStartsAt);
+                setForm((p) => ({
+                  ...p,
+                  startsAtLocal: nextStartsAt,
+                  lunarDate: autoLunar || p.lunarDate,
+                }));
+              }}
               error={fieldErrors.startsAt}
             />
-            <Input
-              label="Ngày âm lịch"
-              value={form.lunarDate}
-              onChange={(e) => setForm((p) => ({ ...p, lunarDate: e.target.value }))}
-              maxLength={EVENT_LUNAR_MAX_LENGTH}
-              placeholder="Ngày 24 tháng 11 năm Bính Ngọ"
-              error={fieldErrors.lunarDate}
-            />
+            <div>
+              <Input
+                label="Ngày âm lịch"
+                value={form.lunarDate}
+                onChange={(e) => setForm((p) => ({ ...p, lunarDate: e.target.value }))}
+                maxLength={EVENT_LUNAR_MAX_LENGTH}
+                placeholder="Ngày 24 tháng 11 năm Bính Ngọ"
+                error={fieldErrors.lunarDate}
+              />
+              <div className="mt-1 flex items-center justify-between text-[11px]">
+                <span className="text-fg-muted">Tự động tính từ ngày dương</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const autoLunar = formatDefaultLunarDateFromSolar(form.startsAtLocal);
+                    if (autoLunar) {
+                      setForm((p) => ({ ...p, lunarDate: autoLunar }));
+                    }
+                  }}
+                  className="cursor-pointer text-accent-text hover:underline"
+                >
+                  Tính lại
+                </button>
+              </div>
+            </div>
           </div>
 
           <Input

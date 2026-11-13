@@ -68,7 +68,7 @@ export function EventDetails() {
                 key={event.id || `${event.title}-${index}`}
                 className={cn(
                   isMultiColumnDesktop &&
-                    "md:rounded-3xl md:border md:border-inv-olive/20 md:bg-inv-paper/60 md:p-6",
+                  "md:rounded-3xl md:border md:border-inv-olive/20 md:bg-inv-paper/60 md:p-6",
                 )}
               >
                 <article className="text-center">
@@ -157,18 +157,6 @@ export function EventDetails() {
                     >
                       {event.venueAddress}
                     </p>
-                  )}
-
-                  {event.mapEmbedUrl && (
-                    <div className="mt-4 overflow-hidden rounded-2xl border border-inv-olive/25 bg-inv-tint">
-                      <iframe
-                        src={event.mapEmbedUrl}
-                        title={`Bản đồ ${event.venueName}`}
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                        className="h-48 w-full border-0"
-                      />
-                    </div>
                   )}
 
                   {event.mapDirectionsUrl && (

@@ -8,9 +8,10 @@ export function Footer() {
   const isContained = useInvitationContained();
   const resolvedBannerImage =
     data.photos.gallery[1]?.url ?? data.photos.heroUrl ?? null;
+  const FooterTag = isContained ? "div" : "footer";
 
   return (
-    <footer
+    <FooterTag
       className={cn(
         "relative flex w-full flex-col justify-end overflow-hidden bg-inv-olive-deep text-center text-white",
         isContained ? "min-h-[380px]" : "min-h-[460px] sm:min-h-[540px]",
@@ -68,6 +69,6 @@ export function Footer() {
           {data.ui.signature}
         </p>
       </div>
-    </footer>
+    </FooterTag>
   );
 }

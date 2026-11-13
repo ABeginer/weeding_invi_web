@@ -728,3 +728,4 @@ export function WeddingCalcClient() {
     </div>
   );
 }
+

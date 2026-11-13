@@ -72,9 +72,9 @@ export default function Pro1Template({
         "landing-theme template-pro-obsidian relative w-full bg-lnd-bg text-lnd-body font-sans",
         contained ? "min-h-full" : "min-h-screen-dvh",
         !coverDismissed &&
-          (contained
-            ? "h-full overflow-hidden"
-            : "h-screen-dvh max-h-full overflow-hidden"),
+        (contained
+          ? "h-full overflow-hidden"
+          : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       {/* Pro Double-Curtain Art Deco Gate */}
@@ -97,11 +97,11 @@ export default function Pro1Template({
               contained
                 ? "absolute inset-0"
                 : cn(
-                    "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
-                    isDesktopLayout
-                      ? "max-w-[960px] md:border-x md:border-lnd-gold-soft/40 md:shadow-[0_0_50px_rgba(212,175,55,0.14)]"
-                      : "max-w-[460px]",
-                  ),
+                  "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
+                  isDesktopLayout
+                    ? "max-w-[960px] md:border-x md:border-lnd-gold-soft/40 md:shadow-[0_0_50px_rgba(212,175,55,0.14)]"
+                    : "max-w-[460px]",
+                ),
               opened && "pointer-events-none",
             )}
           >
@@ -201,9 +201,9 @@ export default function Pro1Template({
           "mx-auto w-full overflow-x-clip bg-lnd-bg",
           isDesktopLayout ? "max-w-[960px]" : "max-w-[460px]",
           !coverDismissed &&
-            (contained
-              ? "h-full overflow-hidden"
-              : "h-screen-dvh overflow-hidden"),
+          (contained
+            ? "h-full overflow-hidden"
+            : "h-screen-dvh overflow-hidden"),
         )}
       >
         {/* Hero */}
@@ -423,9 +423,9 @@ export default function Pro1Template({
             <div
               className={cn(
                 "mx-auto mt-6 grid gap-4",
-                isDesktopLayout
+                isDesktopLayout && data.events.length > 1
                   ? "max-w-[820px] grid-cols-1 md:grid-cols-2"
-                  : "max-w-[440px] grid-cols-1",
+                  : "max-w-[460px] grid-cols-1",
               )}
             >
               {data.events.map((evt, idx) => {
@@ -452,19 +452,6 @@ export default function Pro1Template({
                     {evt.venueAddress && (
                       <p className="mt-1 text-xs text-lnd-muted">{evt.venueAddress}</p>
                     )}
-
-                    {evt.mapEmbedUrl && (
-                      <div className="mt-4 overflow-hidden rounded-lg border border-lnd-border bg-lnd-surface">
-                        <iframe
-                          src={evt.mapEmbedUrl}
-                          title={`Bản đồ ${evt.venueName}`}
-                          loading="lazy"
-                          referrerPolicy="no-referrer-when-downgrade"
-                          className="h-44 w-full border-0"
-                        />
-                      </div>
-                    )}
-
                     {evt.mapDirectionsUrl && (
                       <div className="mt-4">
                         <a
@@ -484,21 +471,21 @@ export default function Pro1Template({
             </div>
           )}
 
-          {!countdown?.finished && (
+          {countdown && !countdown.finished && (
             <div className="mx-auto mt-7 grid max-w-[380px] grid-cols-4 gap-2">
               {[
-                { label: "Ngày", value: countdown ? String(countdown.days) : "--" },
+                { label: "Ngày", value: String(countdown.days) },
                 {
                   label: "Giờ",
-                  value: countdown ? padCountdownUnit(countdown.hours) : "--",
+                  value: padCountdownUnit(countdown.hours),
                 },
                 {
                   label: "Phút",
-                  value: countdown ? padCountdownUnit(countdown.minutes) : "--",
+                  value: padCountdownUnit(countdown.minutes),
                 },
                 {
                   label: "Giây",
-                  value: countdown ? padCountdownUnit(countdown.seconds) : "--",
+                  value: padCountdownUnit(countdown.seconds),
                 },
               ].map((unit) => (
                 <div
@@ -586,18 +573,33 @@ export default function Pro1Template({
           onOpenGift={() => setGiftOpen(true)}
         />
 
-        <footer className="border-t border-lnd-border bg-lnd-surface px-5 py-10 text-center">
-          <Diamond className="mx-auto h-5 w-5 text-lnd-gold" aria-hidden="true" />
-          <p className="mt-3 font-display text-3xl italic text-lnd-gold">
-            {data.ui.thankYouTitle}
-          </p>
-          <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-lnd-body">
-            {data.ui.thankYouBody}
-          </p>
-          <p className="mt-4 text-[11px] tracking-[0.2em] text-lnd-muted uppercase">
-            {data.ui.signature}
-          </p>
-        </footer>
+        {contained ? (
+          <div className="border-t border-lnd-border bg-lnd-surface px-5 py-10 text-center">
+            <Diamond className="mx-auto h-5 w-5 text-lnd-gold" aria-hidden="true" />
+            <p className="mt-3 font-display text-3xl italic text-lnd-gold">
+              {data.ui.thankYouTitle}
+            </p>
+            <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-lnd-body">
+              {data.ui.thankYouBody}
+            </p>
+            <p className="mt-4 text-[11px] tracking-[0.2em] text-lnd-muted uppercase">
+              {data.ui.signature}
+            </p>
+          </div>
+        ) : (
+          <footer className="border-t border-lnd-border bg-lnd-surface px-5 py-10 text-center">
+            <Diamond className="mx-auto h-5 w-5 text-lnd-gold" aria-hidden="true" />
+            <p className="mt-3 font-display text-3xl italic text-lnd-gold">
+              {data.ui.thankYouTitle}
+            </p>
+            <p className="mx-auto mt-2 max-w-[380px] text-xs leading-relaxed text-lnd-body">
+              {data.ui.thankYouBody}
+            </p>
+            <p className="mt-4 text-[11px] tracking-[0.2em] text-lnd-muted uppercase">
+              {data.ui.signature}
+            </p>
+          </footer>
+        )}
       </div>
 
       <TemplateLightboxModal

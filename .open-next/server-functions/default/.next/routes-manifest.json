@@ -1,0 +1,345 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    },
+    {
+      "source": "/cong-cu/du-tru-chi-phi",
+      "destination": "/cong-cu/bang-tinh-dam-cuoi",
+      "statusCode": 301,
+      "regex": "^(?!/_next)/cong-cu/du-tru-chi-phi(?:/)?$"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(templates|photos|images)/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ],
+      "regex": "^(?:/(templates|photos|images))(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    }
+  ],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/api/invite/[slug]",
+      "regex": "^/api/invite/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/api/invite/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/public/wedding/[slug]",
+      "regex": "^/api/public/wedding/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/api/public/wedding/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]",
+      "regex": "^/api/weddings/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/content",
+      "regex": "^/api/weddings/([^/]+?)/content(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/content(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/events",
+      "regex": "^/api/weddings/([^/]+?)/events(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/events(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/events/[eventId]",
+      "regex": "^/api/weddings/([^/]+?)/events/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid",
+        "nxtPeventId": "nxtPeventId"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/events/(?<nxtPeventId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/guests",
+      "regex": "^/api/weddings/([^/]+?)/guests(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/guests(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/guests/bulk",
+      "regex": "^/api/weddings/([^/]+?)/guests/bulk(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/guests/bulk(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/guests/[guestId]",
+      "regex": "^/api/weddings/([^/]+?)/guests/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid",
+        "nxtPguestId": "nxtPguestId"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/guests/(?<nxtPguestId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/guests/[guestId]/events",
+      "regex": "^/api/weddings/([^/]+?)/guests/([^/]+?)/events(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid",
+        "nxtPguestId": "nxtPguestId"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/guests/(?<nxtPguestId>[^/]+?)/events(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/photos",
+      "regex": "^/api/weddings/([^/]+?)/photos(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/photos(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/photos/[photoId]",
+      "regex": "^/api/weddings/([^/]+?)/photos/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid",
+        "nxtPphotoId": "nxtPphotoId"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/photos/(?<nxtPphotoId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/stats",
+      "regex": "^/api/weddings/([^/]+?)/stats(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/stats(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/[id]/wishes",
+      "regex": "^/api/weddings/([^/]+?)/wishes(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/weddings/(?<nxtPid>[^/]+?)/wishes(?:/)?$"
+    },
+    {
+      "page": "/dashboard/weddings/[id]",
+      "regex": "^/dashboard/weddings/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/weddings/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/m/[slug]",
+      "regex": "^/m/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/m/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/mau/[templateId]",
+      "regex": "^/mau/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPtemplateId": "nxtPtemplateId"
+      },
+      "namedRegex": "^/mau/(?<nxtPtemplateId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/media/[...key]",
+      "regex": "^/media/(.+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPkey": "nxtPkey"
+      },
+      "namedRegex": "^/media/(?<nxtPkey>.+?)(?:/)?$"
+    },
+    {
+      "page": "/w/[slug]",
+      "regex": "^/w/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/w/(?<nxtPslug>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/api/me",
+      "regex": "^/api/me(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/me(?:/)?$"
+    },
+    {
+      "page": "/api/me/theme",
+      "regex": "^/api/me/theme(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/me/theme(?:/)?$"
+    },
+    {
+      "page": "/api/rsvp",
+      "regex": "^/api/rsvp(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/rsvp(?:/)?$"
+    },
+    {
+      "page": "/api/weddings",
+      "regex": "^/api/weddings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/weddings(?:/)?$"
+    },
+    {
+      "page": "/api/weddings/check-slug",
+      "regex": "^/api/weddings/check\\-slug(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/weddings/check\\-slug(?:/)?$"
+    },
+    {
+      "page": "/api/wishes",
+      "regex": "^/api/wishes(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/wishes(?:/)?$"
+    },
+    {
+      "page": "/chinh-sach-bao-mat",
+      "regex": "^/chinh\\-sach\\-bao\\-mat(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/chinh\\-sach\\-bao\\-mat(?:/)?$"
+    },
+    {
+      "page": "/cong-cu",
+      "regex": "^/cong\\-cu(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/cong\\-cu(?:/)?$"
+    },
+    {
+      "page": "/cong-cu/bang-tinh-dam-cuoi",
+      "regex": "^/cong\\-cu/bang\\-tinh\\-dam\\-cuoi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/cong\\-cu/bang\\-tinh\\-dam\\-cuoi(?:/)?$"
+    },
+    {
+      "page": "/cong-cu/doi-am-lich",
+      "regex": "^/cong\\-cu/doi\\-am\\-lich(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/cong\\-cu/doi\\-am\\-lich(?:/)?$"
+    },
+    {
+      "page": "/cong-cu/du-tru-chi-phi",
+      "regex": "^/cong\\-cu/du\\-tru\\-chi\\-phi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/cong\\-cu/du\\-tru\\-chi\\-phi(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/new",
+      "regex": "^/dashboard/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/new(?:/)?$"
+    },
+    {
+      "page": "/dieu-khoan-su-dung",
+      "regex": "^/dieu\\-khoan\\-su\\-dung(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dieu\\-khoan\\-su\\-dung(?:/)?$"
+    },
+    {
+      "page": "/robots.txt",
+      "regex": "^/robots\\.txt(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/robots\\.txt(?:/)?$"
+    },
+    {
+      "page": "/sitemap.xml",
+      "regex": "^/sitemap\\.xml(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sitemap\\.xml(?:/)?$"
+    },
+    {
+      "page": "/tao-thiep",
+      "regex": "^/tao\\-thiep(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tao\\-thiep(?:/)?$"
+    },
+    {
+      "page": "/tao-thiep/luu",
+      "regex": "^/tao\\-thiep/luu(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tao\\-thiep/luu(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

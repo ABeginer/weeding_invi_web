@@ -15,7 +15,7 @@ interface EnvelopeProps {
   contained?: boolean;
 }
 
-const DOOR_EASE = [0.45, 0, 0.55, 1] as const;
+const DOOR_EASE = [0.22, 1, 0.36, 1] as const;
 
 function BotanicalLineArt() {
   return (
@@ -174,6 +174,10 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
 
   const handleOpen = () => {
     if (opening) return;
+    if (prefersReducedMotion) {
+      onOpen();
+      return;
+    }
     setOpening(true);
     onOpen();
   };
@@ -186,12 +190,12 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
             ? "pointer-events-none absolute inset-0 z-40 h-full w-full overflow-hidden"
             : "absolute inset-0 z-40 h-full w-full overflow-hidden"
           : cn(
-              "fixed inset-y-0 left-1/2 z-50 w-full -translate-x-1/2 overflow-hidden",
-              isDesktopLayout ? "max-w-[960px]" : "max-w-[500px]",
-              opening
-                ? "pointer-events-none md:border-x md:border-inv-olive/15"
-                : "md:border-x md:border-inv-olive/15 md:shadow-[0_12px_40px_color-mix(in_srgb,var(--inv-olive-deep)_10%,transparent)]",
-            )
+            "fixed inset-y-0 left-1/2 z-50 w-full -translate-x-1/2 overflow-hidden",
+            isDesktopLayout ? "max-w-[960px]" : "max-w-[500px]",
+            opening
+              ? "pointer-events-none md:border-x md:border-inv-olive/15"
+              : "md:border-x md:border-inv-olive/15 md:shadow-[0_12px_40px_color-mix(in_srgb,var(--inv-olive-deep)_10%,transparent)]",
+          )
       }
       aria-label="Thiệp mời cưới"
     >
@@ -207,8 +211,8 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         }
         transition={
           prefersReducedMotion
-            ? { duration: 0.3, ease: "easeOut" }
-            : { duration: 2.05, ease: DOOR_EASE }
+            ? { duration: 0.01 }
+            : { duration: 0.9, ease: DOOR_EASE }
         }
         className="pointer-events-none absolute inset-y-0 left-0 z-20 w-[63.2%] will-change-transform"
       >
@@ -260,8 +264,8 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         }
         transition={
           prefersReducedMotion
-            ? { duration: 0.3, ease: "easeOut" }
-            : { duration: 2.05, ease: DOOR_EASE }
+            ? { duration: 0.01 }
+            : { duration: 0.9, ease: DOOR_EASE }
         }
         className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[50%] overflow-hidden bg-inv-paper will-change-transform"
         style={{

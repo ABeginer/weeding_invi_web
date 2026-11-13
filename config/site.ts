@@ -19,11 +19,34 @@ export function toAbsoluteSiteUrl(pathOrUrl: string): string {
   return `${base}${normalizedPath}`;
 }
 
-// TODO: Chủ dự án xác nhận email liên hệ chính thức trước khi phát hành.
+export interface SiteConfig {
+  contactEmail: string;
+  contactPhone: string;
+  contactZalo: string;
+  contactFacebook: string;
+  companyName: string;
+  companyAddress: string;
+  taxCode: string;
+  legalNoticeVisible: boolean;
+  showDashboardPreview: boolean;
+}
+
+export const SITE_CONFIG: SiteConfig = {
+  contactEmail: "",
+  contactPhone: "",
+  contactZalo: "",
+  contactFacebook: "",
+  companyName: "",
+  companyAddress: "",
+  taxCode: "",
+  legalNoticeVisible: false,
+  showDashboardPreview: true,
+};
+
 export const SITE_NAME =
   process.env.NEXT_PUBLIC_SITE_NAME?.trim() || "Inviwedd";
 export const SITE_URL = resolveAppBaseUrl();
-export const SITE_EMAIL = "lienhe@inviwedd.example";
+export const SITE_EMAIL = SITE_CONFIG.contactEmail;
 export const SITE_COPYRIGHT = `© ${new Date().getFullYear()} ${SITE_NAME}. Bảo lưu mọi quyền.`;
 
 export const SITE_LINKS = {

@@ -1,0 +1,11 @@
+var R=require("../../../../../chunks/[turbopack]_runtime.js")("server/app/api/weddings/[id]/stats/route.js")
+R.c("server/chunks/[externals]__1pnsv_2hz9gvn._.js")
+R.c("server/chunks/_02weh-896tnyu._.js")
+R.c("server/chunks/lib_server_storage_ts_0mqj3vt0frzd7._.js")
+R.c("server/chunks/node_modules_zod_v4_classic_external_0_xnhi7_4vmfh.js")
+R.c("server/chunks/_1tf-54k5_jp6i._.js")
+R.c("server/chunks/[root-of-the-server]__1v1-l-83czzsr._.js")
+R.c("server/chunks/lib_server_weddings_ts_0gdam0mx64uqz._.js")
+R.c("server/chunks/_next-internal_server_app_api_weddings_[id]_stats_route_actions_0uve5kchwsvih.js")
+R.m(79505)
+module.exports=R.m(79505).exports

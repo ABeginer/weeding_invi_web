@@ -9,6 +9,7 @@ import type { WeddingPlan } from "@/lib/types";
 import { canPlanUseTemplate } from "@/templates/registry";
 import type { WeddingTemplateMeta } from "@/templates/types";
 import { LandingFooter } from "./footer";
+import { LandingFaq } from "./faq";
 import { HeroSection } from "./hero";
 import { HowItWorks } from "./how-it-works";
 import { LandingNavbar } from "./navbar";
@@ -91,7 +92,7 @@ export function LandingPageClient({
   };
 
   return (
-    <div className="landing-theme min-h-screen-dvh bg-bg text-text">
+    <div className="landing-theme min-h-screen-dvh bg-bg text-text overflow-x-hidden">
       <LandingNavbar isAuthenticated={isAuthenticated} userEmail={userEmail} />
       <main>
         <HeroSection />
@@ -102,6 +103,7 @@ export function LandingPageClient({
           isAuthenticated={isAuthenticated}
           onSelectPaidPlan={(plan) => setPaymentPlan(plan)}
         />
+        <LandingFaq />
       </main>
       <LandingFooter />
 

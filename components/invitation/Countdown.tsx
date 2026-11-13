@@ -37,14 +37,16 @@ export function Countdown() {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const primaryEvent = data.events[0];
+  const rawDate = primaryEvent?.startsAt ?? data.date;
   const targetIso = React.useMemo(
-    () => resolveEventIso(primaryEvent?.startsAt ?? data.date),
-    [primaryEvent?.startsAt, data.date],
+    () => (rawDate ? resolveEventIso(rawDate) : ""),
+    [rawDate],
   );
 
   const [timeLeft, setTimeLeft] = React.useState<TimeLeft | null>(null);
 
   React.useEffect(() => {
+    if (!targetIso) return;
     setTimeLeft(calculateTimeLeft(targetIso));
     const timer = window.setInterval(() => {
       setTimeLeft(calculateTimeLeft(targetIso));
@@ -52,19 +54,16 @@ export function Countdown() {
     return () => window.clearInterval(timer);
   }, [targetIso]);
 
-  const units = timeLeft
-    ? [
-        { label: "Ngày", value: String(timeLeft.days) },
-        { label: "Giờ", value: padTwo(timeLeft.hours) },
-        { label: "Phút", value: padTwo(timeLeft.minutes) },
-        { label: "Giây", value: padTwo(timeLeft.seconds) },
-      ]
-    : [
-        { label: "Ngày", value: "--" },
-        { label: "Giờ", value: "--" },
-        { label: "Phút", value: "--" },
-        { label: "Giây", value: "--" },
-      ];
+  if (!rawDate || !targetIso || !timeLeft) {
+    return null;
+  }
+
+  const units = [
+    { label: "Ngày", value: String(timeLeft.days) },
+    { label: "Giờ", value: padTwo(timeLeft.hours) },
+    { label: "Phút", value: padTwo(timeLeft.minutes) },
+    { label: "Giây", value: padTwo(timeLeft.seconds) },
+  ];
 
   return (
     <RevealSection

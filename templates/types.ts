@@ -6,7 +6,15 @@ import type {
   WeddingPlan,
 } from "@/lib/types";
 
-export type TemplateId = "basic-1" | "basic-2" | "basic-3" | "pro-1" | "vip-1";
+export type TemplateId =
+  | "basic-1"
+  | "basic-2"
+  | "basic-3"
+  | "pro-1"
+  | "vip-1"
+  | "ritual-an-hoi"
+  | "ritual-gia-tien"
+  | "ritual-vu-quy";
 
 export type TemplateRenderMode = TemplateMode;
 
@@ -24,6 +32,10 @@ export interface WeddingTemplateMeta {
   hasAdvancedEffects: boolean;
   isPlaceholder?: boolean;
   accentSwatch: string;
+  tone: "bright" | "neutral" | "dark";
+  ritualKey?: "an-hoi" | "gia-tien" | "vu-quy";
+  ritualLabel?: string;
+  styleTags?: string[];
 }
 
 export interface WeddingTemplateProps {

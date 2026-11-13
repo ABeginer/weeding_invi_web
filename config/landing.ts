@@ -13,7 +13,7 @@ export const LANDING_COPY = {
     links: [
       { label: "Mẫu thiệp", href: "/#mau-thiep" },
       { label: "Công cụ", href: "/cong-cu" },
-      { label: "Ưu điểm", href: "/#cach-hoat-dong" },
+      { label: "Cách hoạt động", href: "/#cach-hoat-dong" },
       { label: "Bảng giá", href: "/#bang-gia" },
     ],
     loginLabel: "Đăng nhập",
@@ -31,7 +31,6 @@ export const LANDING_COPY = {
     authenticatedCta: "Tạo thiệp miễn phí",
     noCardNote: "Miễn phí cho 20 khách, không cần thẻ",
     phoneFrameAriaLabel: "Khung xem thử mẫu thiệp cưới tương tác trên màn hình điện thoại",
-    phoneLoadingLabel: "Đang tải mẫu thiệp...",
     phoneHelperHint: "Vuốt hoặc cuộn ngay trong khung để xem thử",
     quickSwitchLabel: "Đổi nhanh mẫu thiệp:",
   },
@@ -55,57 +54,45 @@ export const LANDING_COPY = {
     useTemplateLabel: "Dùng mẫu này",
     comingSoonLabel: "Sắp ra mắt",
     vipPlaceholderBadge: "Sắp có",
-    loadingLabel: "Đang chuẩn bị kho mẫu...",
     emptyFilterLabel: "Chưa có mẫu nào trong nhóm này.",
   },
   howItWorks: {
-    eyebrow: "GIÁ TRỊ XỨNG ĐÁNG & QUẢN TRỊ THÔNG MINH",
-    title: "Giải quyết gọn nhẹ mọi khâu mời khách từ một Dashboard",
+    eyebrow: "CÁCH THỨC HOẠT ĐỘNG",
+    title: "3 bước đơn giản để trao gửi thiệp cưới online",
     description:
-      "Thay cho chi phí in thiệp giấy đắt đỏ và cảnh nhắn tin hỏi từng người, chỉ từ một khoản chi phí nhỏ bạn sở hữu trọn bộ thiệp cá nhân hóa cùng bảng điều khiển quản lý ngày cưới chuyên nghiệp.",
+      "Giải pháp mời cưới thông minh thay thế in thiệp giấy đắt đỏ, giúp bạn chuẩn bị chu đáo và quản lý ngày vui trọn vẹn.",
     steps: [
       {
         number: "01",
-        title: "Đúng tên từng khách mời",
+        title: "Chọn mẫu thiệp",
         description:
-          "Tiết kiệm công sức ghi tay và chi phí in lại khi sai tên. Mỗi khách mời nhận một liên kết mang đúng tên riêng đầy trân trọng.",
+          "Khám phá bộ sưu tập mẫu thiệp cưới trực tuyến tinh tế, tối ưu trải nghiệm chạm và lướt mượt mà trên điện thoại.",
         bullets: [
-          "Dán nhanh cả danh sách khách mời từ Excel hoặc Google Sheets trong vài giây",
-          "Tự sinh link mời cá nhân & tin nhắn mẫu copy 1 chạm gửi Zalo/SMS",
-          "Phân quyền mời riêng theo từng buổi lễ (Thành hôn hoặc Tiệc cưới)",
+          "Nghe thử nhạc nền lãng mạn và ngắm trọn album ảnh cưới kỷ niệm",
+          "Xem trước trực quan thiệp cưới trên màn hình di động thực tế",
+          "Đa dạng phong cách từ tối giản, cổ điển đến sang trọng hiện đại",
         ],
       },
       {
         number: "02",
-        title: "Dashboard chốt bàn chính xác",
+        title: "Nhập danh sách khách (tối đa 500 khách mỗi lần nhập)",
         description:
-          "Không còn cảnh ước lượng cảm tính khiến thừa hoặc thiếu cỗ. Theo dõi chính xác ai sẽ đến theo thời gian thực ngay trong Dashboard.",
+          "Không còn mất thời gian nắn nót viết tay từng phong bì. Nhập cả danh sách khách mời trong nháy mắt.",
         bullets: [
-          "Thống kê trực quan số khách xác nhận, báo bận và đang chờ phản hồi",
-          "Tự cộng dồn tổng khách kèm số người đi cùng cho từng buổi lễ",
-          "Tổng hợp sẵn chế độ ăn chay / ăn mặn để đặt thực đơn chuẩn xác",
+          "Dán nhanh danh sách khách từ Excel hoặc Google Sheets lên tới 500 khách",
+          "Phân quyền khách mời theo từng buổi lễ (Lễ Thành Hôn hoặc Tiệc Cưới)",
+          "Hệ thống tự động tạo mã và đường liên kết riêng mang tên từng vị khách",
         ],
       },
       {
         number: "03",
-        title: "Chỉnh sửa thiệp mọi lúc, không tốn phí in lại",
+        title: "Gửi link riêng cho từng khách",
         description:
-          "Đổi giờ tiệc, bổ sung bản đồ sảnh hay thay ảnh cưới sau khi đã phát hành — mọi cập nhật đồng bộ tức thì tới tất cả khách mời.",
+          "Trao gửi lời mời trân trọng và tiện lợi qua Zalo, Messenger hoặc SMS chỉ với một thao tác sao chép.",
         bullets: [
-          "Cập nhật thông tin cưới, lịch lễ và Google Maps chỉ đường dễ dàng",
-          "Quản lý thư viện ảnh HD, nhạc nền và QR mừng cưới hai gia đình",
-          "Xem trước trực tiếp trên khung điện thoại ngay trong trang quản trị",
-        ],
-      },
-      {
-        number: "04",
-        title: "Lưu giữ lời chúc & chia sẻ không giới hạn",
-        description:
-          "Mọi lời chúc tốt đẹp được gom gọn gàng thay vì trôi mất trên mạng xã hội, đi kèm chỉ đường một chạm và hộp mừng cưới tinh tế.",
-        bullets: [
-          "Tự động lưu và tìm kiếm toàn bộ lời chúc trong mục Quản lý Dashboard",
-          "Có sẵn đường dẫn công khai tiện đăng Facebook hoặc mời nhóm bạn",
-          "Khung quà mừng đặt gọn gàng sau bước xác nhận để giữ sự trang nhã",
+          "Tự động soạn sẵn tin nhắn mẫu lịch thiệp kèm link riêng của khách",
+          "Khách mời mở thiệp ngay không cần đăng nhập hay tải ứng dụng",
+          "Theo dõi phản hồi xác nhận tham dự (RSVP) theo thời gian thực",
         ],
       },
     ],

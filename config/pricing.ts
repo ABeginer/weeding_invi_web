@@ -6,7 +6,6 @@ export interface PricingTier {
   price: string;
   tagline: string;
   badge?: string;
-  pricePendingNote?: string;
   ctaLabel: string;
   highlighted?: boolean;
 }
@@ -22,7 +21,6 @@ export interface PricingRow {
   values: Record<WeddingPlan, PricingCell>;
 }
 
-// TODO: Chốt mức giá chính thức cho gói Pro và gói VIP trước khi mở bán.
 export const PRICING_TIERS: PricingTier[] = [
   {
     id: "free",
@@ -37,7 +35,6 @@ export const PRICING_TIERS: PricingTier[] = [
     price: "199.000đ",
     tagline: "Đầy đủ tính năng cho ngày trọng đại.",
     badge: "Phổ biến nhất",
-    pricePendingNote: "Giá dự kiến — sẽ chốt chính thức sau",
     ctaLabel: "Chọn gói Pro",
     highlighted: true,
   },
@@ -46,7 +43,6 @@ export const PRICING_TIERS: PricingTier[] = [
     name: "Gói Cao cấp (VIP)",
     price: "399.000đ",
     tagline: "Trọn bộ đặc quyền và mẫu độc quyền.",
-    pricePendingNote: "Giá dự kiến — sẽ chốt chính thức sau",
     ctaLabel: "Chọn gói VIP",
   },
 ];
@@ -54,61 +50,52 @@ export const PRICING_TIERS: PricingTier[] = [
 export const PRICING_ROWS: PricingRow[] = [
   {
     id: "guests",
-    feature: "Số khách mời",
+    feature: "Khách mời",
     values: {
       free: { text: "Tối đa 20 khách" },
-      pro: { text: "Không giới hạn" },
-      vip: { text: "Không giới hạn" },
+      pro: { text: "Không giới hạn tổng số khách" },
+      vip: { text: "Không giới hạn tổng số khách" },
     },
   },
   {
     id: "templates",
-    feature: "Kho giao diện",
+    feature: "Mẫu thiệp",
     values: {
-      free: { text: "3–5 mẫu tối giản" },
-      pro: { text: "Toàn bộ mẫu Pro" },
-      vip: { text: "Toàn bộ mẫu Pro + mẫu độc quyền có hiệu ứng nâng cao" },
+      free: { text: "3 mẫu" },
+      pro: { text: "Tất cả mẫu Pro" },
+      vip: { text: "Tất cả mẫu + mẫu độc quyền" },
     },
   },
   {
-    id: "domain",
-    feature: "Tên miền",
+    id: "music",
+    feature: "Nhạc nền",
     values: {
-      free: { text: "Đường dẫn chung" },
-      pro: { text: "Link gọn đẹp theo tên" },
-      vip: { text: "Tên miền riêng", comingSoon: true },
+      free: { text: "3 bài có sẵn" },
+      pro: { text: "Tải nhạc MP3 lên" },
+      vip: { text: "Tải nhạc MP3 lên" },
     },
   },
   {
-    id: "media",
-    feature: "Thư viện ảnh và nhạc",
+    id: "invitation-photos",
+    feature: "Ảnh trên thiệp",
     values: {
-      free: { text: "Tối đa 5 ảnh, 3 nhạc mặc định" },
-      pro: { text: "Tối đa 30 ảnh HD, tải nhạc MP3 riêng" },
-      vip: { text: "Ảnh không giới hạn, video pre-wedding", comingSoon: true },
+      free: { text: "5 ảnh" },
+      pro: { text: "30 ảnh HD" },
+      vip: { text: "30 ảnh HD" },
     },
   },
   {
-    id: "rsvp-wishes",
-    feature: "Quản lý xác nhận tham dự và lời chúc",
+    id: "album-qr",
+    feature: "Album QR cho khách",
     values: {
-      free: { text: "Xem cơ bản" },
-      pro: { text: "Xuất file Excel danh sách, lọc lời chúc" },
-      vip: { text: "Excel + QR check-in tại tiệc", comingSoon: true },
-    },
-  },
-  {
-    id: "gift-qr",
-    feature: "Mừng cưới QR",
-    values: {
-      free: { text: "Chỉ hiện thông tin chữ" },
-      pro: { text: "Mã QR chuyển khoản tự điền", comingSoon: true },
-      vip: { text: "Tùy biến giao diện hộp mừng cưới", comingSoon: true },
+      free: { text: "Không có" },
+      pro: { text: "30 ảnh" },
+      vip: { text: "300 ảnh" },
     },
   },
   {
     id: "retention",
-    feature: "Thời gian lưu trữ",
+    feature: "Lưu trữ",
     values: {
       free: { text: "30 ngày" },
       pro: { text: "1 năm" },
@@ -117,11 +104,29 @@ export const PRICING_ROWS: PricingRow[] = [
   },
   {
     id: "branding",
-    feature: "Logo thương hiệu",
+    feature: "Logo",
     values: {
-      free: { text: "Có logo nhỏ ở chân trang" },
-      pro: { text: "Không có logo" },
-      vip: { text: "Không có logo" },
+      free: { text: "Có logo chân trang" },
+      pro: { text: "Không logo" },
+      vip: { text: "Không logo" },
+    },
+  },
+  {
+    id: "rsvp-export",
+    feature: "Xuất danh sách khách ra Excel",
+    values: {
+      free: { text: "Không hỗ trợ" },
+      pro: { text: "Sắp có", comingSoon: true },
+      vip: { text: "Sắp có", comingSoon: true },
+    },
+  },
+  {
+    id: "gift-qr",
+    feature: "Mừng cưới QR",
+    values: {
+      free: { text: "Chỉ hiện thông tin chữ" },
+      pro: { text: "Sắp có", comingSoon: true },
+      vip: { text: "Sắp có", comingSoon: true },
     },
   },
 ];

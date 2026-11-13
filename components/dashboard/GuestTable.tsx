@@ -6,9 +6,11 @@ import {
   AlertCircle,
   CalendarHeart,
   Check,
+  ChevronDown,
   Copy,
   ExternalLink,
   MessageSquareShare,
+  Music,
   Pencil,
   Plus,
   Search,
@@ -20,6 +22,7 @@ import { getPlanLabel, getPlanLimits } from "@/config/plans";
 import { buildInviteShareMessage } from "@/config/share-templates";
 import {
   ApiError,
+  assignGuestEvents,
   buildGuestLink,
   deleteGuest,
   listGuests,
@@ -80,6 +83,12 @@ export function GuestTable({
   const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([]);
   const [assignError, setAssignError] = React.useState<string | null>(null);
   const [savingAssign, setSavingAssign] = React.useState(false);
+
+  const [selectedGuestIds, setSelectedGuestIds] = React.useState<string[]>([]);
+  const [bulkAssignOpen, setBulkAssignOpen] = React.useState(false);
+  const [bulkEventIds, setBulkEventIds] = React.useState<string[]>([]);
+  const [bulkAssignError, setBulkAssignError] = React.useState<string | null>(null);
+  const [savingBulkAssign, setSavingBulkAssign] = React.useState(false);
 
   const [deletingGuest, setDeletingGuest] = React.useState<Guest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
@@ -143,6 +152,76 @@ export function GuestTable({
     },
     [eventMap],
   );
+
+  const songRequests = React.useMemo(() => {
+    return guests
+      .filter((g) => Boolean(g.songRequest && g.songRequest.trim()))
+      .map((g) => ({
+        guestName: g.name,
+        song: g.songRequest!.trim(),
+      }));
+  }, [guests]);
+
+  const toggleSelectAll = () => {
+    if (selectedGuestIds.length === filteredGuests.length) {
+      setSelectedGuestIds([]);
+    } else {
+      setSelectedGuestIds(filteredGuests.map((g) => g.id));
+    }
+  };
+
+  const toggleSelectGuest = (guestId: string) => {
+    setSelectedGuestIds((prev) =>
+      prev.includes(guestId) ? prev.filter((id) => id !== guestId) : [...prev, guestId],
+    );
+  };
+
+  const openBulkAssignModal = () => {
+    setBulkEventIds([]);
+    setBulkAssignError(null);
+    setBulkAssignOpen(true);
+  };
+
+  const toggleBulkEventSelection = (eventId: string) => {
+    setBulkEventIds((prev) =>
+      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId],
+    );
+  };
+
+  const handleSaveBulkAssign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedGuestIds.length === 0) return;
+    setBulkAssignError(null);
+    setSavingBulkAssign(true);
+    try {
+      await Promise.all(
+        selectedGuestIds.map((guestId) => assignGuestEvents(guestId, bulkEventIds)),
+      );
+      setGuests((prev) =>
+        prev.map((g) =>
+          selectedGuestIds.includes(g.id) ? { ...g, eventIds: bulkEventIds } : g,
+        ),
+      );
+      showToast(
+        `Đã gán buổi lễ cho ${selectedGuestIds.length} khách mời đã chọn`,
+        "success",
+      );
+      setBulkAssignOpen(false);
+      setSelectedGuestIds([]);
+      onGuestsChanged?.();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setBulkAssignOpen(false);
+        window.location.assign("/auth/login");
+        return;
+      }
+      setBulkAssignError(
+        err instanceof Error ? err.message : "Không thể gán buổi lễ cho khách.",
+      );
+    } finally {
+      setSavingBulkAssign(false);
+    }
+  };
 
   const handleCopyLink = async (guest: Guest) => {
     const url = buildGuestLink(guest.slug);
@@ -450,6 +529,58 @@ export function GuestTable({
         </div>
       </Card>
 
+      {/* Collapsible song requests */}
+      {songRequests.length > 0 && (
+        <details className="group rounded-xl border border-border bg-surface p-4">
+          <summary className="flex cursor-pointer select-none items-center justify-between text-sm font-semibold text-fg">
+            <div className="flex items-center gap-2">
+              <Music className="h-4 w-4 text-accent-text" aria-hidden="true" />
+              <span>Bài hát yêu cầu ({songRequests.length})</span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-accent-text transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-3 max-h-48 divide-y divide-border/60 overflow-y-auto">
+            {songRequests.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between gap-2 py-2 text-xs"
+              >
+                <span className="font-medium text-fg">{item.song}</span>
+                <span className="shrink-0 text-[11px] text-fg-muted">
+                  ({item.guestName})
+                </span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {/* Bulk action bar */}
+      {selectedGuestIds.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-accent/50 bg-accent-soft px-4 py-3">
+          <span className="text-xs font-medium text-text sm:text-sm">
+            Đã chọn <strong>{selectedGuestIds.length}</strong> khách mời
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedGuestIds([])}
+            >
+              Bỏ chọn
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={openBulkAssignModal}
+            >
+              <CalendarHeart className="h-4 w-4" aria-hidden="true" />
+              <span>Gán buổi lễ cho khách đã chọn</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <Card className="space-y-3 p-4">
           {Array.from({ length: 4 }).map((_, idx) => (
@@ -500,8 +631,21 @@ export function GuestTable({
               <table className="w-full border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-wide text-fg-muted">
+                    <th className="w-10 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={
+                          filteredGuests.length > 0 &&
+                          selectedGuestIds.length === filteredGuests.length
+                        }
+                        onChange={toggleSelectAll}
+                        aria-label="Chọn tất cả khách"
+                        className="h-4 w-4 rounded border-border accent-accent"
+                      />
+                    </th>
                     <th className="whitespace-nowrap px-4 py-3">Khách mời</th>
                     <th className="whitespace-nowrap px-4 py-3">Trạng thái</th>
+                    <th className="whitespace-nowrap px-4 py-3">Bài hát yêu cầu</th>
                     <th className="whitespace-nowrap px-4 py-3">Các lễ được mời</th>
                     <th className="whitespace-nowrap px-4 py-3">Phản hồi lúc</th>
                     <th className="whitespace-nowrap px-4 py-3 text-right">Thao tác</th>
@@ -513,12 +657,30 @@ export function GuestTable({
                     const isInviteCopied = copiedInviteId === guest.id;
                     return (
                       <tr key={guest.id} className="hover:bg-surface-muted/45">
+                        <td className="w-10 px-4 py-3.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedGuestIds.includes(guest.id)}
+                            onChange={() => toggleSelectGuest(guest.id)}
+                            aria-label={`Chọn ${guest.name}`}
+                            className="h-4 w-4 rounded border-border accent-accent"
+                          />
+                        </td>
                         <td className="min-w-[160px] px-4 py-3.5">
                           <div className="font-medium text-fg">{guest.name}</div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3.5">
                           <StatusBadge status={guest.status} />
                           {renderGuestExtras(guest)}
+                        </td>
+                        <td className="max-w-[150px] px-4 py-3.5 text-xs text-fg">
+                          {guest.songRequest ? (
+                            <span className="block truncate" title={guest.songRequest}>
+                              {guest.songRequest}
+                            </span>
+                          ) : (
+                            <span className="text-fg-muted">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5">
                           {renderAssignedEventsSummary(guest)}
@@ -605,8 +767,23 @@ export function GuestTable({
               return (
                 <Card key={guest.id} className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-fg">{guest.name}</p>
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={selectedGuestIds.includes(guest.id)}
+                        onChange={() => toggleSelectGuest(guest.id)}
+                        aria-label={`Chọn ${guest.name}`}
+                        className="mt-1 h-4 w-4 rounded border-border accent-accent"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-fg">{guest.name}</p>
+                        {guest.songRequest && (
+                          <p className="mt-0.5 text-[11px] text-fg-muted">
+                            <span className="font-medium text-fg">Bài hát:</span>{" "}
+                            {guest.songRequest}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end">
                       <StatusBadge status={guest.status} />
@@ -698,6 +875,7 @@ export function GuestTable({
 
       <AddGuestDialog
         weddingId={weddingId}
+        events={events}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onCreated={(created) => {
@@ -765,6 +943,10 @@ export function GuestTable({
                 );
               })}
 
+              <p className="mt-2 text-xs text-fg-muted">
+                Khách không được gán buổi lễ nào sẽ thấy tất cả buổi lễ của thiệp.
+              </p>
+
               {selectedEventIds.length > 0 && (
                 <div className="flex justify-end">
                   <button
@@ -795,6 +977,90 @@ export function GuestTable({
             </Button>
             {events.length > 0 && (
               <Button type="submit" variant="primary" loading={savingAssign}>
+                Lưu phân bổ lễ
+              </Button>
+            )}
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Modal gán lễ hàng loạt */}
+      <Dialog
+        open={bulkAssignOpen}
+        onClose={() => !savingBulkAssign && setBulkAssignOpen(false)}
+        title="Gán buổi lễ cho khách đã chọn"
+        description={`Chọn các buổi lễ áp dụng cho ${selectedGuestIds.length} khách mời đã chọn.`}
+      >
+        <form onSubmit={handleSaveBulkAssign} className="space-y-4">
+          {events.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border px-4 py-5 text-center text-xs text-fg-muted">
+              Thiệp chưa có lễ nào. Hãy thêm lễ ở mục &ldquo;Lễ &amp; địa điểm&rdquo; trước.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {events.map((evt) => {
+                const checked = bulkEventIds.includes(evt.id);
+                const dateParts = formatWeddingDateParts(evt.startsAt);
+                return (
+                  <label
+                    key={evt.id}
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors",
+                      checked
+                        ? "border-accent bg-accent-soft"
+                        : "border-border bg-bg hover:border-accent/45",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleBulkEventSelection(evt.id)}
+                      className="mt-1 h-4 w-4 rounded border-border accent-accent"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-fg">{evt.title}</p>
+                      <p className="mt-0.5 text-xs text-fg-muted">
+                        {dateParts.time} · {dateParts.dotDate} · {evt.venueName}
+                      </p>
+                    </div>
+                  </label>
+                );
+              })}
+
+              <p className="mt-2 text-xs text-fg-muted">
+                Khách không được gán buổi lễ nào sẽ thấy tất cả buổi lễ của thiệp.
+              </p>
+
+              {bulkEventIds.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setBulkEventIds([])}
+                    className="cursor-pointer text-xs font-medium text-accent-text underline underline-offset-4 hover:text-accent-hover"
+                  >
+                    Bỏ chọn tất cả (hiển thị mọi lễ)
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {bulkAssignError && (
+            <p role="alert" className="text-xs text-danger-fg">
+              {bulkAssignError}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setBulkAssignOpen(false)}
+              disabled={savingBulkAssign}
+            >
+              Hủy
+            </Button>
+            {events.length > 0 && (
+              <Button type="submit" variant="primary" loading={savingBulkAssign}>
                 Lưu phân bổ lễ
               </Button>
             )}

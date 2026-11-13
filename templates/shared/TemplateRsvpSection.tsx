@@ -21,10 +21,12 @@ interface TemplateRsvpSectionProps {
   initialStatus?: GuestStatus;
   initialPlusOnes?: number;
   initialDiet?: GuestDiet | null;
+  initialSongRequest?: string | null;
+  initialRideNeeded?: boolean;
 }
 
 const MAX_WISH_LENGTH = 500;
-const PLUS_ONES_OPTIONS = Array.from({ length: 11 }, (_, idx) => idx);
+const ATTENDEE_OPTIONS = Array.from({ length: 11 }, (_, idx) => idx + 1);
 
 export function TemplateRsvpSection({
   data,
@@ -37,11 +39,13 @@ export function TemplateRsvpSection({
   guestName,
   initialStatus = "pending",
   initialPlusOnes = 0,
-  initialDiet = null,
+  initialDiet = "meat",
+  initialSongRequest = "",
+  initialRideNeeded = false,
 }: TemplateRsvpSectionProps) {
   const isReadOnlyPreview = mode === "demo" || mode === "preview";
   const isPublicMode = !isReadOnlyPreview && invitationMode === "public";
-  const isNameLocked = !isPublicMode && Boolean(guestName && guestName.trim().length > 0);
+  const isNameLocked = !isPublicMode && !isReadOnlyPreview && Boolean(guestName && guestName.trim().length > 0);
   const effectiveWeddingSlug = weddingSlug ?? data.weddingSlug;
 
   const [status, setStatus] = React.useState<GuestStatus>(initialStatus);
@@ -49,7 +53,8 @@ export function TemplateRsvpSection({
     "accepted" | "declined" | null
   >(initialStatus !== "pending" ? initialStatus : null);
   const [plusOnes, setPlusOnes] = React.useState<number>(initialPlusOnes);
-  const [diet, setDiet] = React.useState<GuestDiet | null>(initialDiet);
+  const [diet, setDiet] = React.useState<GuestDiet | null>(initialDiet ?? "meat");
+  const [songRequest, setSongRequest] = React.useState<string>(initialSongRequest ?? "");
 
   const [isEditingRsvp, setIsEditingRsvp] = React.useState(
     initialStatus === "pending",
@@ -59,7 +64,7 @@ export function TemplateRsvpSection({
     name: string;
   } | null>(null);
 
-  const [name, setName] = React.useState(guestName ?? "");
+  const [name, setName] = React.useState(guestName ?? (isReadOnlyPreview ? (data.ui.defaultGuestName ?? "") : ""));
   const [message, setMessage] = React.useState("");
   const [honeypot, setHoneypot] = React.useState("");
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
@@ -107,15 +112,51 @@ export function TemplateRsvpSection({
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnlyPreview) return;
     clearAlerts();
     setRsvpFeedback(null);
 
     const trimmedName = name.trim();
     const trimmedMessage = message.trim();
 
+    if (!trimmedName) {
+      setRsvpError("Vui lòng nhập Họ và tên trước khi gửi xác nhận.");
+      return;
+    }
+    if (trimmedName.length > 100) {
+      setRsvpError("Họ và tên tối đa 100 ký tự.");
+      return;
+    }
     if (!selectedChoice) {
       setRsvpError("Vui lòng chọn bạn sẽ tham dự hay không.");
+      return;
+    }
+    if (selectedChoice === "accepted") {
+      const attendeesCount = plusOnes + 1;
+      if (attendeesCount < 1 || attendeesCount > 11) {
+        setRsvpError("Số người đi từ 1 đến 11 người.");
+        return;
+      }
+    }
+    if (trimmedMessage.length > MAX_WISH_LENGTH) {
+      setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
+      return;
+    }
+
+    const nextPlusOnes = selectedChoice === "accepted" ? plusOnes : 0;
+    const nextDiet = selectedChoice === "accepted" ? (diet ?? "meat") : null;
+    const nextSongRequest =
+      selectedChoice === "accepted" && songRequest.trim() ? songRequest.trim() : null;
+    const nextRideNeeded = false;
+
+    if (isReadOnlyPreview) {
+      setStatus(selectedChoice);
+      setRsvpFeedback({
+        choice: selectedChoice,
+        plusOnes: nextPlusOnes,
+        diet: nextDiet,
+        wishIncluded: trimmedMessage.length > 0,
+      });
+      setIsEditingRsvp(false);
       return;
     }
 
@@ -124,29 +165,18 @@ export function TemplateRsvpSection({
       setMessage("");
       setRsvpFeedback({
         choice: selectedChoice,
-        plusOnes: selectedChoice === "accepted" ? plusOnes : 0,
-        diet: selectedChoice === "accepted" ? diet : null,
+        plusOnes: nextPlusOnes,
+        diet: nextDiet,
         wishIncluded: trimmedMessage.length > 0,
       });
       setIsEditingRsvp(false);
       return;
     }
 
-    if (!trimmedName) {
-      setRsvpError("Vui lòng nhập tên của bạn trước khi xác nhận tham dự.");
-      return;
-    }
-    if (trimmedMessage.length > MAX_WISH_LENGTH) {
-      setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
-      return;
-    }
     if (isTurnstileEnabled() && !turnstileToken) {
       setRsvpError("Vui lòng hoàn tất xác thực bảo mật trước khi gửi.");
       return;
     }
-
-    const nextPlusOnes = selectedChoice === "accepted" ? plusOnes : 0;
-    const nextDiet = selectedChoice === "accepted" ? diet : null;
 
     setSubmitting("rsvp");
     const savedSlug = getActiveSlug(trimmedName);
@@ -158,6 +188,8 @@ export function TemplateRsvpSection({
             status: selectedChoice,
             plusOnes: nextPlusOnes,
             diet: nextDiet,
+            songRequest: nextSongRequest,
+            rideNeeded: nextRideNeeded,
             wish: trimmedMessage || undefined,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
@@ -168,6 +200,8 @@ export function TemplateRsvpSection({
             status: selectedChoice,
             plusOnes: nextPlusOnes,
             diet: nextDiet,
+            songRequest: nextSongRequest,
+            rideNeeded: nextRideNeeded,
             wish: trimmedMessage || undefined,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
@@ -538,14 +572,21 @@ export function TemplateRsvpSection({
             />
 
             <div>
+              <label
+                htmlFor={`tpl-name-input-${tone}`}
+                className="block text-xs font-semibold mb-1.5"
+              >
+                Họ và tên <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <input
-                  aria-label="Tên của bạn"
-                  placeholder="Nhập tên hoặc biệt danh của bạn"
-                  value={isReadOnlyPreview ? data.ui.defaultGuestName : name}
+                  id={`tpl-name-input-${tone}`}
+                  aria-label="Họ và tên"
+                  placeholder="Nhập họ và tên của bạn"
+                  value={name}
                   onChange={(e) => setName(e.target.value)}
-                  readOnly={isReadOnlyPreview || isNameLocked}
-                  disabled={isReadOnlyPreview || isNameLocked || submitting !== null}
+                  readOnly={isNameLocked}
+                  disabled={isNameLocked || submitting !== null}
                   maxLength={100}
                   className={cn(
                     "h-11 w-full rounded-xl px-4 text-sm focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-65",
@@ -570,94 +611,95 @@ export function TemplateRsvpSection({
               )}
             </div>
 
-            <div
-              role="group"
-              aria-label="Lựa chọn tham dự"
-              className={cn(
-                "grid grid-cols-1 gap-2",
-                !contained && "sm:grid-cols-2",
-              )}
-            >
-              <button
-                type="button"
-                disabled={isReadOnlyPreview || submitting !== null}
-                aria-pressed={selectedChoice === "accepted"}
-                onClick={() => {
-                  clearAlerts();
-                  setSelectedChoice("accepted");
-                }}
+            <div>
+              <p className="text-xs font-semibold mb-1.5">
+                Phản hồi tham dự <span className="text-red-500">*</span>
+              </p>
+              <div
+                role="group"
+                aria-label="Lựa chọn tham dự"
                 className={cn(
-                  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-center text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
-                  selectedChoice === "accepted" ? styles.primaryBtn : styles.outlineBtn,
+                  "grid grid-cols-1 gap-2",
+                  !contained && "sm:grid-cols-2",
                 )}
               >
-                Tôi sẽ tham dự
-              </button>
-              <button
-                type="button"
-                disabled={isReadOnlyPreview || submitting !== null}
-                aria-pressed={selectedChoice === "declined"}
-                onClick={() => {
-                  clearAlerts();
-                  setSelectedChoice("declined");
-                }}
-                className={cn(
-                  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-center text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
-                  selectedChoice === "declined" ? styles.primaryBtn : styles.outlineBtn,
-                )}
-              >
-                Tiếc quá, mình bận mất rồi
-              </button>
+                <button
+                  type="button"
+                  disabled={submitting !== null}
+                  aria-pressed={selectedChoice === "accepted"}
+                  onClick={() => {
+                    clearAlerts();
+                    setSelectedChoice("accepted");
+                  }}
+                  className={cn(
+                    "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-center text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
+                    selectedChoice === "accepted" ? styles.primaryBtn : styles.outlineBtn,
+                  )}
+                >
+                  Tôi sẽ tham dự
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting !== null}
+                  aria-pressed={selectedChoice === "declined"}
+                  onClick={() => {
+                    clearAlerts();
+                    setSelectedChoice("declined");
+                  }}
+                  className={cn(
+                    "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-center text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
+                    selectedChoice === "declined" ? styles.primaryBtn : styles.outlineBtn,
+                  )}
+                >
+                  Tiếc quá, mình bận mất rồi
+                </button>
+              </div>
             </div>
 
-            {selectedChoice === "accepted" && !isReadOnlyPreview && (
+            {selectedChoice === "accepted" && (
               <div className={cn("space-y-3 rounded-xl p-3.5", styles.card)}>
                 <div>
                   <label
                     htmlFor={`tpl-plus-ones-${tone}`}
                     className="block text-xs font-semibold"
                   >
-                    Số người đi cùng
+                    Số người đi <span className="text-red-500">*</span>
                   </label>
                   <select
                     id={`tpl-plus-ones-${tone}`}
-                    value={plusOnes}
-                    onChange={(e) => setPlusOnes(Number(e.target.value))}
+                    value={plusOnes + 1}
+                    onChange={(e) => setPlusOnes(Math.max(0, Number(e.target.value) - 1))}
                     disabled={submitting !== null}
                     className={cn(
                       "mt-1.5 h-10 w-full rounded-lg px-3 text-xs sm:text-sm focus:outline-none focus:ring-2",
                       styles.input,
                     )}
                   >
-                    {PLUS_ONES_OPTIONS.map((count) => (
+                    {ATTENDEE_OPTIONS.map((count) => (
                       <option key={count} value={count}>
-                        {count === 0
-                          ? "Chỉ mình tôi (0 người đi cùng)"
-                          : `+${count} người đi cùng (tổng ${count + 1} người)`}
+                        {count === 1
+                          ? "1 người (chỉ mình tôi)"
+                          : `${count} người`}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <span className="block text-xs font-semibold">Chế độ ăn</span>
+                  <span className="block text-xs font-semibold">Ăn chay / Ăn mặn</span>
                   <div className="mt-1.5 grid grid-cols-2 gap-2">
                     {[
                       { value: "meat" as const, label: "Mặn" },
                       { value: "veg" as const, label: "Chay" },
                     ].map((opt) => {
-                      const active = diet === opt.value;
+                      const active = (diet ?? "meat") === opt.value;
                       return (
                         <button
                           key={opt.value}
                           type="button"
                           disabled={submitting !== null}
                           aria-pressed={active}
-                          onClick={() =>
-                            setDiet((prev) =>
-                              prev === opt.value ? null : opt.value,
-                            )
-                          }
+                          onClick={() => setDiet(opt.value)}
                           className={cn(
                             "inline-flex h-9 cursor-pointer items-center justify-center rounded-lg text-xs font-medium transition-colors",
                             active ? styles.primaryBtn : styles.outlineBtn,
@@ -669,17 +711,46 @@ export function TemplateRsvpSection({
                     })}
                   </div>
                 </div>
+
+                <div>
+                  <label
+                    htmlFor={`tpl-song-request-${tone}`}
+                    className="block text-xs font-semibold"
+                  >
+                    Bài hát bạn muốn nghe (tùy chọn)
+                  </label>
+                  <input
+                    id={`tpl-song-request-${tone}`}
+                    type="text"
+                    value={songRequest}
+                    onChange={(e) => setSongRequest(e.target.value)}
+                    maxLength={200}
+                    disabled={submitting !== null}
+                    placeholder="Gợi ý bài hát bạn muốn nghe tại tiệc cưới..."
+                    className={cn(
+                      "mt-1.5 h-10 w-full rounded-lg px-3 text-xs sm:text-sm focus:outline-none focus:ring-2",
+                      styles.input,
+                    )}
+                  />
+                </div>
               </div>
             )}
 
             <div>
+              <label
+                htmlFor={`tpl-wish-message-${tone}`}
+                className="block text-xs font-semibold mb-1.5"
+              >
+                Lời chúc dành cho cô dâu &amp; chú rể (không bắt buộc)
+              </label>
               <textarea
-                aria-label="Lời chúc dành cho cô dâu & chú rể (không bắt buộc)"
+                id={`tpl-wish-message-${tone}`}
+                aria-label="Lời chúc dành cho cô dâu & chú rể"
                 placeholder="Viết lời chúc tốt đẹp của bạn tại đây (không bắt buộc)..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={MAX_WISH_LENGTH}
-                disabled={isReadOnlyPreview || submitting !== null}
+                disabled={submitting !== null}
                 rows={3}
                 className={cn(
                   "w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-65",
@@ -706,16 +777,23 @@ export function TemplateRsvpSection({
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={isReadOnlyPreview || submitting !== null}
-              className={cn(
-                "inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
-                styles.primaryBtn,
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              <button
+                type="submit"
+                disabled={submitting !== null}
+                className={cn(
+                  "inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-full px-4 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
+                  styles.primaryBtn,
+                )}
+              >
+                {submitting === "rsvp" ? "Đang gửi..." : "Gửi xác nhận"}
+              </button>
+              {isReadOnlyPreview && (
+                <span className={cn("text-center text-xs whitespace-nowrap", styles.subtext)}>
+                  Đây là bản xem thử
+                </span>
               )}
-            >
-              {submitting === "rsvp" ? "Đang gửi..." : "Gửi xác nhận"}
-            </button>
+            </div>
 
             {isReadOnlyPreview && (
               <p className={cn("pt-1 text-center text-xs italic", styles.subtext)}>

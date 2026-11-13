@@ -67,3 +67,4 @@ export function ToolsPageShell({ breadcrumbs, children }: ToolsPageShellProps) {
     </div>
   );
 }
+

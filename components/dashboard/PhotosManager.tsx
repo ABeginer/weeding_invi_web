@@ -3,14 +3,18 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   GripVertical,
   ImageOff,
   ImagePlus,
   Loader2,
+  Lock,
+  RefreshCw,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import {
   getPhotoLimitMessage,
@@ -23,7 +27,13 @@ import {
   reorderPhotos,
   uploadPhoto,
 } from "@/lib/api";
-import { compressImageFile, createOgCoverImage } from "@/lib/image-compress";
+import {
+  compressImage,
+  formatSavedSize,
+  isAllowedImageFile,
+  isRawImageFile,
+} from "@/lib/image/compress";
+import { createOgCoverImage } from "@/lib/image-compress";
 import type {
   PhotoKind,
   PhotoSlot,
@@ -48,6 +58,13 @@ interface PhotosManagerProps {
     nextPhotos: WeddingPhoto[],
     nextContent?: WeddingContent,
   ) => void;
+}
+
+interface FailedUploadItem {
+  id: string;
+  file: File;
+  error: string;
+  retryable?: boolean;
 }
 
 type MainPhotoSlot = Extract<PhotoSlot, "hero" | "groom" | "bride">;
@@ -99,6 +116,10 @@ export function PhotosManager({
   const [galleryError, setGalleryError] = React.useState<string | null>(null);
   const [reordering, setReordering] = React.useState(false);
   const [draggingId, setDraggingId] = React.useState<string | null>(null);
+
+  const [albumStatus, setAlbumStatus] = React.useState<string | null>(null);
+  const [failedAlbumUploads, setFailedAlbumUploads] = React.useState<FailedUploadItem[]>([]);
+  const albumInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const [deletingTarget, setDeletingTarget] = React.useState<{
     photo: WeddingPhoto;
@@ -162,6 +183,17 @@ export function PhotosManager({
   const galleryLimit = limits.photos.gallery;
   const reachedGalleryLimit = galleryPhotos.length >= galleryLimit;
 
+  const albumPhotos = React.useMemo(
+    () =>
+      photos
+        .filter((p) => p.kind === "album")
+        .sort((a, b) => a.position - b.position),
+    [photos],
+  );
+
+  const albumLimit = limits.photos.album;
+  const reachedAlbumLimit = albumPhotos.length >= albumLimit;
+
   const handleSlotFileSelected = async (
     meta: SlotMeta,
     event: React.ChangeEvent<HTMLInputElement>,
@@ -171,13 +203,27 @@ export function PhotosManager({
     if (!file) return;
 
     setSlotError(null);
-    setSlotStatus((prev) => ({ ...prev, [meta.slot]: "Đang xử lý ảnh..." }));
+
+    if (isRawImageFile(file)) {
+      setSlotError("Ảnh RAW chưa được hỗ trợ. Vui lòng xuất sang JPEG rồi tải lên.");
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      setSlotError("Ảnh vượt quá 25 MB. Vui lòng chọn ảnh nhỏ hơn.");
+      return;
+    }
+    if (!isAllowedImageFile(file)) {
+      setSlotError("Định dạng ảnh chưa được hỗ trợ.");
+      return;
+    }
+
+    setSlotStatus((prev) => ({ ...prev, [meta.slot]: "Đang nén ảnh…" }));
 
     let workingPhotos = photos;
     let workingContent = content;
 
     try {
-      const compressed = await compressImageFile(file);
+      const compressRes = await compressImage(file, meta.kind);
       const existingPhoto = getSlotPhoto(meta.slot);
 
       if (existingPhoto) {
@@ -194,9 +240,10 @@ export function PhotosManager({
       setSlotStatus((prev) => ({ ...prev, [meta.slot]: "Đang tải lên..." }));
       const uploaded = await uploadPhoto(
         weddingId,
-        compressed,
+        compressRes.blob,
         meta.kind,
         meta.slot,
+        compressRes.contentType === "image/webp" ? "photo.webp" : "photo.jpg",
       );
 
       let nextPhotos = [...workingPhotos, uploaded.photo];
@@ -222,7 +269,14 @@ export function PhotosManager({
       }
 
       onPhotosStateChange(nextPhotos, uploaded.content);
-      showToast(`Đã cập nhật ${meta.title.toLowerCase()}`, "success");
+      const savedMsg = formatSavedSize(
+        compressRes.originalBytes,
+        compressRes.outputBytes,
+      );
+      showToast(
+        `Đã cập nhật ${meta.title.toLowerCase()} (${savedMsg})`,
+        "success",
+      );
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         window.location.assign("/auth/login");
@@ -251,9 +305,25 @@ export function PhotosManager({
     let workingPhotos = [...photos];
     let currentGalleryCount = galleryPhotos.length;
     let uploadedCount = 0;
+    let totalOriginalBytes = 0;
+    let totalOutputBytes = 0;
 
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
+
+      if (isRawImageFile(file)) {
+        setGalleryError("Ảnh RAW chưa được hỗ trợ. Vui lòng xuất sang JPEG rồi tải lên.");
+        continue;
+      }
+      if (file.size > 25 * 1024 * 1024) {
+        setGalleryError("Ảnh vượt quá 25 MB. Vui lòng chọn ảnh nhỏ hơn.");
+        continue;
+      }
+      if (!isAllowedImageFile(file)) {
+        setGalleryError("Định dạng ảnh chưa được hỗ trợ.");
+        continue;
+      }
+
       if (currentGalleryCount >= galleryLimit) {
         setGalleryError(getPhotoLimitMessage(plan, "gallery"));
         break;
@@ -262,21 +332,29 @@ export function PhotosManager({
       try {
         setGalleryStatus(
           selectedFiles.length > 1
-            ? `Đang xử lý ảnh (${i + 1}/${selectedFiles.length})...`
-            : "Đang xử lý ảnh...",
+            ? `Đang nén ảnh… (${i + 1}/${selectedFiles.length})`
+            : "Đang nén ảnh…",
         );
-        const compressed = await compressImageFile(file);
+        const compressRes = await compressImage(file, "gallery");
 
         setGalleryStatus(
           selectedFiles.length > 1
             ? `Đang tải lên (${i + 1}/${selectedFiles.length})...`
             : "Đang tải lên...",
         );
-        const res = await uploadPhoto(weddingId, compressed, "gallery");
+        const res = await uploadPhoto(
+          weddingId,
+          compressRes.blob,
+          "gallery",
+          undefined,
+          compressRes.contentType === "image/webp" ? "photo.webp" : "photo.jpg",
+        );
 
         workingPhotos = [...workingPhotos, res.photo];
         currentGalleryCount += 1;
         uploadedCount += 1;
+        totalOriginalBytes += compressRes.originalBytes;
+        totalOutputBytes += compressRes.outputBytes;
         onPhotosStateChange(workingPhotos, res.content);
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -293,8 +371,164 @@ export function PhotosManager({
 
     setGalleryStatus(null);
     if (uploadedCount > 0) {
-      showToast(`Đã tải lên ${uploadedCount} ảnh vào thư viện`, "success");
+      const savedMsg = formatSavedSize(totalOriginalBytes, totalOutputBytes);
+      showToast(
+        `Đã tải lên ${uploadedCount} ảnh vào thư viện (${savedMsg})`,
+        "success",
+      );
     }
+  };
+
+  const uploadSingleAlbumFile = async (
+    file: File,
+    currentCount: number,
+    workingPhotosRef: { current: WeddingPhoto[] },
+  ): Promise<{ success: boolean; error?: string; retryable?: boolean }> => {
+    if (isRawImageFile(file)) {
+      return {
+        success: false,
+        error: "Ảnh RAW chưa được hỗ trợ. Vui lòng xuất sang JPEG rồi tải lên.",
+        retryable: false,
+      };
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      return {
+        success: false,
+        error: "Ảnh vượt quá 25 MB. Vui lòng chọn ảnh nhỏ hơn.",
+        retryable: false,
+      };
+    }
+    if (!isAllowedImageFile(file)) {
+      return {
+        success: false,
+        error: "Định dạng ảnh chưa được hỗ trợ.",
+        retryable: false,
+      };
+    }
+    if (currentCount >= albumLimit) {
+      const limitMsg =
+        plan === "pro"
+          ? "Nâng cấp VIP để thêm ảnh"
+          : "Đã đạt giới hạn 300 ảnh";
+      return {
+        success: false,
+        error: limitMsg,
+        retryable: false,
+      };
+    }
+
+    try {
+      setAlbumStatus("Đang nén ảnh…");
+      const compressRes = await compressImage(file, "album");
+
+      setAlbumStatus("Đang tải lên...");
+      const res = await uploadPhoto(
+        weddingId,
+        compressRes.blob,
+        "album",
+        undefined,
+        compressRes.contentType === "image/webp" ? "photo.webp" : "photo.jpg",
+      );
+
+      workingPhotosRef.current = [...workingPhotosRef.current, res.photo];
+      onPhotosStateChange(workingPhotosRef.current, res.content);
+
+      const savedMsg = formatSavedSize(
+        compressRes.originalBytes,
+        compressRes.outputBytes,
+      );
+      showToast(`Đã tải lên ảnh album (${savedMsg})`, "success");
+      return { success: true };
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        window.location.assign("/auth/login");
+        return { success: false, error: "Phiên đăng nhập đã hết hạn.", retryable: false };
+      }
+      if (
+        err instanceof ApiError &&
+        (err.code === "PLAN_LIMIT" || err.message?.includes("PLAN_LIMIT"))
+      ) {
+        const limitMsg =
+          plan === "pro"
+            ? "Nâng cấp VIP để thêm ảnh"
+            : "Đã đạt giới hạn 300 ảnh";
+        return { success: false, error: limitMsg, retryable: false };
+      }
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Không thể tải ảnh lên.",
+        retryable: true,
+      };
+    }
+  };
+
+  const handleAlbumFilesSelected = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const selectedFiles = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (selectedFiles.length === 0) return;
+
+    const workingPhotosRef = { current: [...photos] };
+    let currentAlbumCount = photos.filter((p) => p.kind === "album").length;
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      setAlbumStatus(
+        selectedFiles.length > 1
+          ? `Đang tải ${i + 1} / ${selectedFiles.length}`
+          : "Đang tải ảnh…",
+      );
+
+      const result = await uploadSingleAlbumFile(
+        file,
+        currentAlbumCount,
+        workingPhotosRef,
+      );
+      if (result.success) {
+        currentAlbumCount += 1;
+      } else {
+        setFailedAlbumUploads((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            file,
+            error: result.error ?? "Tải ảnh thất bại.",
+            retryable: result.retryable ?? true,
+          },
+        ]);
+      }
+    }
+
+    setAlbumStatus(null);
+  };
+
+  const handleRetryFailedUpload = async (item: FailedUploadItem) => {
+    setFailedAlbumUploads((prev) => prev.filter((f) => f.id !== item.id));
+
+    const workingPhotosRef = { current: [...photos] };
+    const currentAlbumCount = photos.filter((p) => p.kind === "album").length;
+    setAlbumStatus("Đang tải lại ảnh…");
+
+    const result = await uploadSingleAlbumFile(
+      item.file,
+      currentAlbumCount,
+      workingPhotosRef,
+    );
+    if (!result.success) {
+      setFailedAlbumUploads((prev) => [
+        ...prev,
+        {
+          ...item,
+          error: result.error ?? "Tải ảnh thất bại.",
+        },
+      ]);
+    }
+    setAlbumStatus(null);
+  };
+
+  const handleDismissFailedUpload = (id: string) => {
+    setFailedAlbumUploads((prev) => prev.filter((f) => f.id !== id));
   };
 
   const handleConfirmDelete = async () => {
@@ -404,7 +638,7 @@ export function PhotosManager({
           Quản lý ảnh cưới
         </h2>
         <p className="text-xs text-fg-muted sm:text-sm">
-          Chọn ảnh từ điện thoại hoặc máy tính (tối đa 5 MB mỗi ảnh). Hệ thống tự tối ưu kích thước để thiệp mở nhanh.
+          Ảnh sẽ được nén tự động để tải nhanh hơn. Ảnh tối đa 10 MB.
         </p>
       </div>
 
@@ -478,7 +712,7 @@ export function PhotosManager({
                 <input
                   ref={inputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,image/heic,.heic,.heif"
                   onChange={(e) => handleSlotFileSelected(meta, e)}
                   className="hidden"
                 />
@@ -531,27 +765,32 @@ export function PhotosManager({
             ref={galleryInputRef}
             type="file"
             multiple
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/heic,.heic,.heif"
             onChange={handleGalleryFilesSelected}
             className="hidden"
           />
 
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => galleryInputRef.current?.click()}
-            disabled={reachedGalleryLimit || Boolean(galleryStatus)}
-            title={
-              reachedGalleryLimit ? getPhotoLimitMessage(plan, "gallery") : undefined
-            }
-          >
-            {galleryStatus ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <ImagePlus className="h-4 w-4" aria-hidden="true" />
-            )}
-            <span>{galleryStatus ?? "Thêm ảnh thư viện"}</span>
-          </Button>
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={reachedGalleryLimit || Boolean(galleryStatus)}
+              title={
+                reachedGalleryLimit ? getPhotoLimitMessage(plan, "gallery") : undefined
+              }
+            >
+              {galleryStatus ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <ImagePlus className="h-4 w-4" aria-hidden="true" />
+              )}
+              <span>{galleryStatus ?? "Thêm ảnh thư viện"}</span>
+            </Button>
+            <span className="text-[11px] text-fg-muted">
+              Ảnh sẽ được nén tự động để tải nhanh hơn. Ảnh tối đa 10 MB.
+            </span>
+          </div>
         </div>
 
         {reachedGalleryLimit && (
@@ -672,6 +911,214 @@ export function PhotosManager({
               </div>
             ))}
           </div>
+        )}
+      </Card>
+
+      {/* Album cho khách */}
+      <Card className="space-y-4 p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-sans text-base font-semibold text-fg">
+                Album cho khách ({albumPhotos.length} / {albumLimit} ảnh)
+              </h3>
+              {plan === "free" ? (
+                <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-fg">
+                  Pro &amp; VIP
+                </span>
+              ) : (
+                <span className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-text">
+                  Gói {getPlanLabel(plan)}
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-xs text-fg-muted">
+              Album ảnh để khách mời quét mã QR và xem toàn bộ album ảnh cưới trên điện thoại.
+            </p>
+          </div>
+
+          {plan !== "free" && (
+            <>
+              <input
+                ref={albumInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,image/heic,.heic,.heif"
+                onChange={handleAlbumFilesSelected}
+                className="hidden"
+              />
+
+              <div className="flex flex-col items-start gap-1 sm:items-end">
+                <div className="flex flex-wrap items-center gap-2">
+                  {reachedAlbumLimit && plan === "pro" && (
+                    <Link
+                      href="/#bang-gia"
+                      className="inline-flex h-8 items-center justify-center rounded-full bg-accent px-3.5 text-xs font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
+                    >
+                      Nâng cấp VIP để thêm ảnh
+                    </Link>
+                  )}
+                  {reachedAlbumLimit && plan === "vip" && (
+                    <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-fg-muted">
+                      Đã đạt giới hạn 300 ảnh
+                    </span>
+                  )}
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => albumInputRef.current?.click()}
+                    disabled={reachedAlbumLimit || Boolean(albumStatus)}
+                    title={
+                      reachedAlbumLimit
+                        ? plan === "pro"
+                          ? "Nâng cấp VIP để thêm ảnh"
+                          : "Đã đạt giới hạn 300 ảnh"
+                        : undefined
+                    }
+                  >
+                    {albumStatus ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <ImagePlus className="h-4 w-4" aria-hidden="true" />
+                    )}
+                    <span>{albumStatus ?? "Tải ảnh vào album"}</span>
+                  </Button>
+                </div>
+                <span className="text-[11px] text-fg-muted">
+                  Tự động nén WebP tối đa 1600px. Hỗ trợ chọn nhiều ảnh.
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {plan === "free" ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-bg p-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent-text">
+              <Lock className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <p className="mt-3 text-sm font-semibold text-fg">
+              Album cho khách dành riêng cho gói Pro và VIP
+            </p>
+            <p className="mt-1 max-w-md text-xs text-fg-muted">
+              Gói Pro hỗ trợ 30 ảnh, gói VIP hỗ trợ đến 300 ảnh sắc nét để chia sẻ với người thân và khách mời qua mã QR.
+            </p>
+            <Link
+              href="/#bang-gia"
+              className="mt-4 inline-flex h-9 items-center justify-center rounded-full bg-accent px-5 text-xs font-semibold text-accent-fg transition-colors hover:bg-accent-hover"
+            >
+              Nâng cấp gói để mở khóa Album
+            </Link>
+          </div>
+        ) : (
+          <>
+            {/* Danh sách các ảnh upload lỗi với nút Thử lại từng ảnh */}
+            {failedAlbumUploads.length > 0 && (
+              <div className="space-y-2">
+                {failedAlbumUploads.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-danger-border bg-danger-bg px-3.5 py-2.5 text-xs text-danger-fg"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <div className="min-w-0">
+                        <span className="font-semibold truncate block">
+                          {item.file.name}
+                        </span>
+                        <span className="text-[11px] opacity-90">{item.error}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {item.retryable !== false && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => handleRetryFailedUpload(item)}
+                          disabled={Boolean(albumStatus)}
+                        >
+                          <RefreshCw className="mr-1 h-3 w-3" aria-hidden="true" />
+                          Thử lại
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-danger-fg hover:bg-danger-border/30"
+                        onClick={() => handleDismissFailedUpload(item.id)}
+                        aria-label="Bỏ qua lỗi này"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {albumPhotos.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-bg p-8 text-center">
+                <ImageOff className="mx-auto h-7 w-7 text-accent-text" aria-hidden="true" />
+                <p className="mt-2 text-sm font-medium text-fg">
+                  Chưa có ảnh trong Album cho khách
+                </p>
+                <p className="mt-1 text-xs text-fg-muted">
+                  Tải lên những tấm hình kỷ niệm để khách mời có thể chiêm ngưỡng trọn bộ ngày vui.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                {albumPhotos.map((photo, index) => (
+                  <div
+                    key={photo.id}
+                    className="group relative overflow-hidden rounded-xl border border-border bg-bg p-2 transition-all hover:border-accent"
+                  >
+                    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-surface">
+                      <button
+                        type="button"
+                        onClick={() => openSingleLightbox(photo, `Ảnh album #${index + 1}`)}
+                        className="block h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        aria-label={`Xem ảnh album #${index + 1}`}
+                      >
+                        <img
+                          src={photo.url}
+                          alt={`Ảnh album #${index + 1}`}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                        />
+                      </button>
+
+                      <span className="pointer-events-none absolute top-1.5 left-1.5 rounded-full border border-border bg-bg/90 px-1.5 py-0.2 text-[9px] font-semibold text-accent-text">
+                        #{index + 1}
+                      </span>
+                    </div>
+
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <span className="text-[10px] text-fg-muted truncate">
+                        Ảnh #{index + 1}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-danger-fg hover:bg-danger-bg"
+                        onClick={() =>
+                          setDeletingTarget({
+                            photo,
+                            label: `Ảnh album #${index + 1}`,
+                          })
+                        }
+                        aria-label={`Xóa ảnh album #${index + 1}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </Card>
 

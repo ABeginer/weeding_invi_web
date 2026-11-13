@@ -23,10 +23,12 @@ interface RsvpWishBlockProps {
   initialStatus?: GuestStatus;
   initialPlusOnes?: number;
   initialDiet?: GuestDiet | null;
+  initialSongRequest?: string | null;
+  initialRideNeeded?: boolean;
 }
 
 const MAX_WISH_LENGTH = 500;
-const PLUS_ONES_OPTIONS = Array.from({ length: 11 }, (_, idx) => idx);
+const ATTENDEE_OPTIONS = Array.from({ length: 11 }, (_, idx) => idx + 1);
 
 export function RsvpWishBlock({
   slug,
@@ -35,13 +37,15 @@ export function RsvpWishBlock({
   guestName,
   initialStatus = "pending",
   initialPlusOnes = 0,
-  initialDiet = null,
+  initialDiet = "meat",
+  initialSongRequest = "",
+  initialRideNeeded = false,
 }: RsvpWishBlockProps) {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const isReadOnlyPreview = useInvitationReadOnly();
   const isPublicMode = !isReadOnlyPreview && mode === "public";
-  const isNameLocked = !isPublicMode && Boolean(guestName && guestName.trim().length > 0);
+  const isNameLocked = !isPublicMode && !isReadOnlyPreview && Boolean(guestName && guestName.trim().length > 0);
   const effectiveWeddingSlug = weddingSlug ?? data.weddingSlug;
 
   const [status, setStatus] = React.useState<GuestStatus>(initialStatus);
@@ -49,7 +53,8 @@ export function RsvpWishBlock({
     "accepted" | "declined" | null
   >(initialStatus !== "pending" ? initialStatus : null);
   const [plusOnes, setPlusOnes] = React.useState<number>(initialPlusOnes);
-  const [diet, setDiet] = React.useState<GuestDiet | null>(initialDiet);
+  const [diet, setDiet] = React.useState<GuestDiet | null>(initialDiet ?? "meat");
+  const [songRequest, setSongRequest] = React.useState<string>(initialSongRequest ?? "");
 
   const [isEditingRsvp, setIsEditingRsvp] = React.useState(
     initialStatus === "pending",
@@ -59,7 +64,7 @@ export function RsvpWishBlock({
     name: string;
   } | null>(null);
 
-  const [name, setName] = React.useState(guestName ?? "");
+  const [name, setName] = React.useState(guestName ?? (isReadOnlyPreview ? (data.ui.defaultGuestName ?? "") : ""));
   const [message, setMessage] = React.useState("");
   const [honeypot, setHoneypot] = React.useState("");
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
@@ -113,15 +118,51 @@ export function RsvpWishBlock({
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnlyPreview) return;
     clearAlerts();
     setRsvpFeedback(null);
 
     const trimmedName = name.trim();
     const trimmedMessage = message.trim();
 
+    if (!trimmedName) {
+      setRsvpError("Vui lòng nhập Họ và tên trước khi gửi xác nhận.");
+      return;
+    }
+    if (trimmedName.length > 100) {
+      setRsvpError("Họ và tên tối đa 100 ký tự.");
+      return;
+    }
     if (!selectedChoice) {
       setRsvpError("Vui lòng chọn bạn sẽ tham dự hay không.");
+      return;
+    }
+    if (selectedChoice === "accepted") {
+      const attendeesCount = plusOnes + 1;
+      if (attendeesCount < 1 || attendeesCount > 11) {
+        setRsvpError("Số người đi từ 1 đến 11 người.");
+        return;
+      }
+    }
+    if (trimmedMessage.length > MAX_WISH_LENGTH) {
+      setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
+      return;
+    }
+
+    const nextPlusOnes = selectedChoice === "accepted" ? plusOnes : 0;
+    const nextDiet = selectedChoice === "accepted" ? (diet ?? "meat") : null;
+    const nextSongRequest =
+      selectedChoice === "accepted" && songRequest.trim() ? songRequest.trim() : null;
+    const nextRideNeeded = false;
+
+    if (isReadOnlyPreview) {
+      setStatus(selectedChoice);
+      setRsvpFeedback({
+        choice: selectedChoice,
+        plusOnes: nextPlusOnes,
+        diet: nextDiet,
+        wishIncluded: trimmedMessage.length > 0,
+      });
+      setIsEditingRsvp(false);
       return;
     }
 
@@ -131,29 +172,18 @@ export function RsvpWishBlock({
       setMessage("");
       setRsvpFeedback({
         choice: selectedChoice,
-        plusOnes: selectedChoice === "accepted" ? plusOnes : 0,
-        diet: selectedChoice === "accepted" ? diet : null,
+        plusOnes: nextPlusOnes,
+        diet: nextDiet,
         wishIncluded: trimmedMessage.length > 0,
       });
       setIsEditingRsvp(false);
       return;
     }
 
-    if (!trimmedName) {
-      setRsvpError("Vui lòng nhập tên của bạn trước khi xác nhận tham dự.");
-      return;
-    }
-    if (trimmedMessage.length > MAX_WISH_LENGTH) {
-      setWishError(`Lời chúc tối đa ${MAX_WISH_LENGTH} ký tự.`);
-      return;
-    }
     if (isTurnstileEnabled() && !turnstileToken) {
       setRsvpError("Vui lòng hoàn tất xác thực bảo mật trước khi gửi.");
       return;
     }
-
-    const nextPlusOnes = selectedChoice === "accepted" ? plusOnes : 0;
-    const nextDiet = selectedChoice === "accepted" ? diet : null;
 
     setSubmitting("rsvp");
     const savedSlug = getActiveSlug(trimmedName);
@@ -166,6 +196,8 @@ export function RsvpWishBlock({
             status: selectedChoice,
             plusOnes: nextPlusOnes,
             diet: nextDiet,
+            songRequest: nextSongRequest,
+            rideNeeded: nextRideNeeded,
             wish: trimmedMessage || undefined,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
@@ -176,6 +208,8 @@ export function RsvpWishBlock({
             status: selectedChoice,
             plusOnes: nextPlusOnes,
             diet: nextDiet,
+            songRequest: nextSongRequest,
+            rideNeeded: nextRideNeeded,
             wish: trimmedMessage || undefined,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
@@ -534,16 +568,21 @@ export function RsvpWishBlock({
             />
 
             <div>
+              <label
+                htmlFor="rsvp-name-input"
+                className="block font-inv-serif text-xs font-semibold text-inv-ink mb-1.5"
+              >
+                Họ và tên <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <Input
-                  aria-label="Tên của bạn"
-                  placeholder="Nhập tên hoặc biệt danh của bạn"
-                  value={isReadOnlyPreview ? data.ui.defaultGuestName : name}
+                  id="rsvp-name-input"
+                  aria-label="Họ và tên"
+                  placeholder="Nhập họ và tên của bạn"
+                  value={name}
                   onChange={(e) => setName(e.target.value)}
-                  readOnly={isReadOnlyPreview || isNameLocked}
-                  disabled={
-                    isReadOnlyPreview || isNameLocked || submitting !== null
-                  }
+                  readOnly={isNameLocked}
+                  disabled={isNameLocked || submitting !== null}
                   required
                   maxLength={100}
                   className={
@@ -566,71 +605,76 @@ export function RsvpWishBlock({
               )}
             </div>
 
-            <div
-              role="group"
-              aria-label="Lựa chọn tham dự"
-              className={cn(
-                "grid grid-cols-1 gap-2",
-                !isContained && "sm:grid-cols-2",
-              )}
-            >
-              <button
-                type="button"
-                disabled={isReadOnlyPreview || submitting !== null}
-                aria-pressed={selectedChoice === "accepted"}
-                onClick={() => {
-                  clearAlerts();
-                  setSelectedChoice("accepted");
-                }}
+            <div>
+              <p className="font-inv-serif text-xs font-semibold text-inv-ink mb-1.5">
+                Phản hồi tham dự <span className="text-red-500">*</span>
+              </p>
+              <div
+                role="group"
+                aria-label="Lựa chọn tham dự"
                 className={cn(
-                  "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
-                  selectedChoice === "accepted"
-                    ? "border-inv-olive-deep bg-inv-olive-btn font-semibold text-white"
-                    : "border-inv-olive-btn bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                  "grid grid-cols-1 gap-2",
+                  !isContained && "sm:grid-cols-2",
                 )}
               >
-                Tôi sẽ tham dự
-              </button>
-              <button
-                type="button"
-                disabled={isReadOnlyPreview || submitting !== null}
-                aria-pressed={selectedChoice === "declined"}
-                onClick={() => {
-                  clearAlerts();
-                  setSelectedChoice("declined");
-                }}
-                className={cn(
-                  "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
-                  selectedChoice === "declined"
-                    ? "border-inv-olive-deep bg-inv-olive-deep font-semibold text-white"
-                    : "border-inv-olive/50 bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
-                )}
-              >
-                Tiếc quá, mình bận mất rồi
-              </button>
+                <button
+                  type="button"
+                  disabled={submitting !== null}
+                  aria-pressed={selectedChoice === "accepted"}
+                  onClick={() => {
+                    clearAlerts();
+                    setSelectedChoice("accepted");
+                  }}
+                  className={cn(
+                    "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                    selectedChoice === "accepted"
+                      ? "border-inv-olive-deep bg-inv-olive-btn font-semibold text-white"
+                      : "border-inv-olive-btn bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                  )}
+                >
+                  Tôi sẽ tham dự
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting !== null}
+                  aria-pressed={selectedChoice === "declined"}
+                  onClick={() => {
+                    clearAlerts();
+                    setSelectedChoice("declined");
+                  }}
+                  className={cn(
+                    "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                    selectedChoice === "declined"
+                      ? "border-inv-olive-deep bg-inv-olive-deep font-semibold text-white"
+                      : "border-inv-olive/50 bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                  )}
+                >
+                  Tiếc quá, mình bận mất rồi
+                </button>
+              </div>
             </div>
 
-            {selectedChoice === "accepted" && !isReadOnlyPreview && (
+            {selectedChoice === "accepted" && (
               <div className="space-y-3 rounded-2xl border border-inv-olive/30 bg-inv-tint p-4">
                 <div>
                   <label
                     htmlFor="olive-plus-ones"
                     className="block font-inv-serif text-xs font-semibold text-inv-ink"
                   >
-                    Số người đi cùng
+                    Số người đi <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="olive-plus-ones"
-                    value={plusOnes}
-                    onChange={(e) => setPlusOnes(Number(e.target.value))}
+                    value={plusOnes + 1}
+                    onChange={(e) => setPlusOnes(Math.max(0, Number(e.target.value) - 1))}
                     disabled={submitting !== null}
                     className="mt-1.5 h-10 w-full rounded-xl border border-inv-olive/45 bg-inv-bg px-3 font-inv-serif text-sm text-inv-ink focus:border-inv-olive-deep focus:outline-none focus:ring-2 focus:ring-inv-olive"
                   >
-                    {PLUS_ONES_OPTIONS.map((count) => (
+                    {ATTENDEE_OPTIONS.map((count) => (
                       <option key={count} value={count}>
-                        {count === 0
-                          ? "Chỉ mình tôi (0 người đi cùng)"
-                          : `+${count} người đi cùng (tổng ${count + 1} người)`}
+                        {count === 1
+                          ? "1 người (chỉ mình tôi)"
+                          : `${count} người`}
                       </option>
                     ))}
                   </select>
@@ -638,25 +682,21 @@ export function RsvpWishBlock({
 
                 <div>
                   <span className="block font-inv-serif text-xs font-semibold text-inv-ink">
-                    Chế độ ăn
+                    Ăn chay / Ăn mặn
                   </span>
                   <div className="mt-1.5 grid grid-cols-2 gap-2">
                     {[
                       { value: "meat" as const, label: "Mặn" },
                       { value: "veg" as const, label: "Chay" },
                     ].map((opt) => {
-                      const active = diet === opt.value;
+                      const active = (diet ?? "meat") === opt.value;
                       return (
                         <button
                           key={opt.value}
                           type="button"
                           disabled={submitting !== null}
                           aria-pressed={active}
-                          onClick={() =>
-                            setDiet((prev) =>
-                              prev === opt.value ? null : opt.value,
-                            )
-                          }
+                          onClick={() => setDiet(opt.value)}
                           className={cn(
                             "flex h-9 cursor-pointer items-center justify-center rounded-xl border font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                             active
@@ -670,17 +710,43 @@ export function RsvpWishBlock({
                     })}
                   </div>
                 </div>
+
+                <div>
+                  <label
+                    htmlFor="rsvp-song-request"
+                    className="block font-inv-serif text-xs font-semibold text-inv-ink mb-1.5"
+                  >
+                    Bài hát bạn muốn nghe (tùy chọn)
+                  </label>
+                  <Input
+                    id="rsvp-song-request"
+                    type="text"
+                    value={songRequest}
+                    onChange={(e) => setSongRequest(e.target.value)}
+                    maxLength={200}
+                    disabled={submitting !== null}
+                    placeholder="Gợi ý bài hát bạn muốn nghe tại tiệc cưới..."
+                    className="h-10 text-xs sm:text-sm"
+                  />
+                </div>
               </div>
             )}
 
             <div>
+              <label
+                htmlFor="rsvp-wish-message"
+                className="block font-inv-serif text-xs font-semibold text-inv-ink mb-1.5"
+              >
+                Lời chúc dành cho cô dâu &amp; chú rể (không bắt buộc)
+              </label>
               <Textarea
-                aria-label="Lời chúc dành cho cô dâu & chú rể (không bắt buộc)"
+                id="rsvp-wish-message"
+                aria-label="Lời chúc dành cho cô dâu & chú rể"
                 placeholder="Viết lời chúc tốt đẹp của bạn tại đây (không bắt buộc)..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={MAX_WISH_LENGTH}
-                disabled={isReadOnlyPreview || submitting !== null}
+                disabled={submitting !== null}
                 className="min-h-[96px] rounded-[19px] border-inv-olive-btn bg-inv-bg px-4 py-3 font-inv-serif text-base text-inv-ink placeholder:text-inv-olive-btn/80 focus-visible:border-inv-olive-deep focus-visible:ring-inv-olive sm:text-sm"
                 rows={3}
               />
@@ -716,16 +782,23 @@ export function RsvpWishBlock({
             )}
 
             <div className="space-y-2.5 pt-1">
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                loading={submitting === "rsvp"}
-                disabled={isReadOnlyPreview || submitting !== null}
-                className="h-11 w-full rounded-full bg-inv-olive-btn font-inv-serif text-sm tracking-[0.02em] text-white hover:bg-inv-olive-hover"
-              >
-                <span>Gửi xác nhận</span>
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  loading={submitting === "rsvp"}
+                  disabled={submitting !== null}
+                  className="h-11 w-full rounded-full bg-inv-olive-btn font-inv-serif text-sm tracking-[0.02em] text-white hover:bg-inv-olive-hover"
+                >
+                  <span>Gửi xác nhận</span>
+                </Button>
+                {isReadOnlyPreview && (
+                  <span className="text-center font-inv-serif text-xs text-inv-muted whitespace-nowrap">
+                    Đây là bản xem thử
+                  </span>
+                )}
+              </div>
 
               {isReadOnlyPreview && (
                 <p className="text-center font-inv-serif text-xs italic text-inv-muted">

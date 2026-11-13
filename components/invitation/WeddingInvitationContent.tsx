@@ -13,6 +13,7 @@ import { InvitationIntro } from "./InvitationIntro";
 import { Petals } from "./Petals";
 import { PhotoTriptych } from "./PhotoTriptych";
 import { RsvpWishBlock } from "./RsvpWishBlock";
+import { useInvitationContained } from "./WeddingContentProvider";
 
 interface WeddingInvitationContentProps {
   slug?: string;
@@ -35,10 +36,13 @@ export function WeddingInvitationContent({
   initialDiet = null,
   onOpenGift,
 }: WeddingInvitationContentProps) {
+  const isContained = useInvitationContained();
+  const MainTag = isContained ? "div" : "main";
+
   return (
     <>
       <Petals />
-      <main className="relative z-10">
+      <MainTag className="relative z-10">
         {/* #1 Hero */}
         <Hero guestName={guestName} />
         {/* #3 Gia đình hai bên */}
@@ -67,7 +71,7 @@ export function WeddingInvitationContent({
         />
         {/* #11 Mừng cưới (sau khi xác nhận) */}
         <GiftQR onOpenGift={onOpenGift} />
-      </main>
+      </MainTag>
       {/* #12 Lời cảm ơn */}
       <Footer />
     </>

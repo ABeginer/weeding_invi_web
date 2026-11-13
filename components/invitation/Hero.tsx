@@ -66,7 +66,7 @@ export function Hero({ guestName }: HeroProps) {
         )}
 
         <CoupleDisplayName
-          as="h1"
+          as={isContained ? "p" : "h1"}
           groomName={data.couple.groomName}
           brideName={data.couple.brideName}
           className={cn(
@@ -129,7 +129,7 @@ export function Hero({ guestName }: HeroProps) {
               decoding="async"
               fetchPriority="high"
               className={cn(
-                "block h-auto w-full object-cover",
+                "hero-photo-scale block h-auto w-full object-cover",
                 isDesktopLayout && "md:aspect-[3/4] md:object-[center_20%]",
               )}
             />

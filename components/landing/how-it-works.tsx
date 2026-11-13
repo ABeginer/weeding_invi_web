@@ -2,21 +2,20 @@ import * as React from "react";
 import Link from "next/link";
 import {
   ArrowRight,
-  BarChart3,
   Check,
   LayoutDashboard,
-  MessageSquareHeart,
-  SlidersHorizontal,
+  Send,
+  Sparkles,
   Users,
 } from "lucide-react";
 import { LANDING_COPY } from "@/config/landing";
 import { SITE_LINKS } from "@/config/site";
+import { ScrollReveal } from "./scroll-reveal";
 
 const FEATURE_ICONS = [
+  Sparkles,
   Users,
-  BarChart3,
-  SlidersHorizontal,
-  MessageSquareHeart,
+  Send,
 ];
 
 export function HowItWorks() {
@@ -28,25 +27,26 @@ export function HowItWorks() {
       className="scroll-mt-14 border-b border-border bg-bg py-10 sm:py-12"
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[11px] font-medium tracking-[0.18em] text-accent-text uppercase">
+        <ScrollReveal className="mx-auto max-w-2xl text-center">
+          <p className="text-[12px] sm:text-[13px] font-semibold tracking-[0.12em] text-accent-text uppercase">
             {copy.eyebrow}
           </p>
-          <h2 className="mt-1.5 font-display text-2xl leading-[1.15] font-semibold text-accent-text sm:text-3xl">
+          <h2 className="mt-1.5 font-display text-2xl font-semibold leading-[1.2] text-accent-text sm:text-3xl">
             {copy.title}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-text-muted">
+          <p className="mt-2 text-sm leading-[1.6] text-text-muted">
             {copy.description}
           </p>
-        </div>
+        </ScrollReveal>
 
-        <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-4">
+        <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-3">
           {copy.steps.map((step, index) => {
             const Icon = FEATURE_ICONS[index] ?? Users;
             return (
-              <article
+              <ScrollReveal
+                as="article"
                 key={step.number}
-                className="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs transition-colors hover:border-accent lg:p-5"
+                className="flex flex-col justify-between rounded-2xl border border-[var(--border-accent)] bg-[var(--surface-card)] backdrop-blur-[8px] p-4 sm:p-5 shadow-xs transition-colors hover:border-accent"
               >
                 <div>
                   <div className="flex items-center justify-between gap-3">
@@ -79,7 +79,7 @@ export function HowItWorks() {
                     </li>
                   ))}
                 </ul>
-              </article>
+              </ScrollReveal>
             );
           })}
         </div>

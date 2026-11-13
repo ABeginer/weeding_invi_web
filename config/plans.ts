@@ -29,6 +29,7 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
       banner: 1,
       couple: 2,
       gallery: 5,
+      album: 0,
       og: 1,
       gift: 0,
     },
@@ -43,6 +44,7 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
       banner: 1,
       couple: 2,
       gallery: 30,
+      album: 30,
       og: 1,
       gift: 2,
     },
@@ -56,7 +58,8 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
     photos: {
       banner: 1,
       couple: 2,
-      gallery: 100,
+      gallery: 30,
+      album: 300,
       og: 1,
       gift: 2,
     },
@@ -82,7 +85,8 @@ export function isTemplateAllowedForPlan(
 const PHOTO_KIND_LABEL: Record<PhotoKind, string> = {
   banner: "ảnh bìa",
   couple: "ảnh cặp đôi",
-  gallery: "ảnh trong thư viện",
+  gallery: "ảnh trên thiệp",
+  album: "ảnh trong Album cho khách",
   og: "ảnh chia sẻ mạng xã hội",
   gift: "ảnh QR quà mừng",
 };
@@ -90,11 +94,20 @@ const PHOTO_KIND_LABEL: Record<PhotoKind, string> = {
 export function getPhotoLimitMessage(plan: WeddingPlan, kind: PhotoKind): string {
   const limits = getPlanLimits(plan);
   const max = limits.photos[kind];
+  if (kind === "album") {
+    if (plan === "free") {
+      return "Gói Miễn phí chưa hỗ trợ Album cho khách. Vui lòng nâng cấp gói Pro hoặc VIP.";
+    }
+    if (plan === "pro") {
+      return "Nâng cấp VIP để thêm ảnh";
+    }
+    return "Đã đạt giới hạn 300 ảnh";
+  }
   if (kind === "gift" && max === 0) {
     return `Gói ${limits.label} chỉ hỗ trợ thông tin chuyển khoản dạng chữ. Nâng cấp lên Pro để tải ảnh QR quà mừng.`;
   }
   if (kind === "gallery") {
-    return `Gói ${limits.label} tối đa ${max} ảnh trong thư viện. Nâng cấp để thêm ảnh.`;
+    return `Gói ${limits.label} tối đa ${max} ảnh trên thiệp. Nâng cấp để thêm ảnh.`;
   }
   return `Gói ${limits.label} tối đa ${max} ${PHOTO_KIND_LABEL[kind]}. Hãy xóa bớt ảnh cũ trước khi tải lên.`;
 }

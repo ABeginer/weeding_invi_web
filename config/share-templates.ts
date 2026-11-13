@@ -8,3 +8,4 @@ export function buildInviteShareMessage(guestName: string, link: string): string
     link,
   );
 }
+

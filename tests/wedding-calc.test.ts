@@ -143,3 +143,4 @@ describe("lib/wedding-calc.ts — Bảng tính chi phí đám cưới", () => {
     assert.equal(precisionCheck.attendingGuests, 14);
   });
 });
+

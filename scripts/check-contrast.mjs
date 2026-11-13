@@ -103,3 +103,4 @@ if (failed > 0) {
 }
 
 console.log(`\nTất cả các cặp màu đều đạt tối thiểu ${MIN_CONTRAST}:1 trên cả Light & Dark.`);
+

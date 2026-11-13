@@ -3,16 +3,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-/**
- * QUY TẮC HIỂN THỊ TÊN CÔ DÂU & CHÚ RỂ TRÊN THIỆP:
- * - Nếu tổng chiều rộng 2 tên + ký hiệu "&" vừa trong 1 hàng -> giữ nguyên 1 hàng duy nhất,
- *   không bao giờ để bị ngắt dở chữ giữa chừng (ví dụ: "Minh Khôi & Thảo / Nguyên").
- * - Nếu quá dài so với chiều rộng khung hiển thị -> tự động chia làm đúng 3 dòng cân đối:
- *     Dòng 1: Tên chú rể
- *     Dòng 2: Ký hiệu "&" (và)
- *     Dòng 3: Tên cô dâu
- * Mọi mẫu thiệp hiện tại và tương lai đều dùng component này cho tên cặp đôi.
- */
 interface CoupleDisplayNameProps {
   as?: "h1" | "h2" | "p";
   groomName: string;
@@ -36,7 +26,6 @@ export function CoupleDisplayName({
   connector = "&",
 }: CoupleDisplayNameProps) {
   const containerRef = React.useRef<HTMLHeadingElement | null>(null);
-  const probeRef = React.useRef<HTMLSpanElement | null>(null);
 
   const cleanGroom = groomName.trim();
   const cleanBride = brideName.trim();
@@ -48,16 +37,33 @@ export function CoupleDisplayName({
 
   const measureFit = React.useCallback(() => {
     const container = containerRef.current;
-    const probe = probeRef.current;
-    if (!container || !probe) return;
+    if (!container || typeof window === "undefined" || typeof document === "undefined") return;
 
     const availableWidth = container.clientWidth;
     if (availableWidth <= 0) return;
 
+    // Đo độ dài 1 hàng bằng probe tách biệt, không render đúp vào trong Tag
+    const computed = window.getComputedStyle(container);
+    const probe = document.createElement("span");
+    probe.style.position = "fixed";
+    probe.style.left = "-9999px";
+    probe.style.top = "-9999px";
+    probe.style.visibility = "hidden";
+    probe.style.whiteSpace = "nowrap";
+    probe.style.font = computed.font;
+    probe.style.fontFamily = computed.fontFamily;
+    probe.style.fontSize = computed.fontSize;
+    probe.style.fontWeight = computed.fontWeight;
+    probe.style.letterSpacing = computed.letterSpacing;
+    probe.textContent = `${cleanGroom} ${connector} ${cleanBride}`;
+
+    document.body.appendChild(probe);
     const singleLineWidth = probe.getBoundingClientRect().width;
+    document.body.removeChild(probe);
+
     const shouldStack = singleLineWidth > availableWidth - 2;
     setIsStacked((prev) => (prev === shouldStack ? prev : shouldStack));
-  }, []);
+  }, [cleanGroom, cleanBride, connector]);
 
   useIsomorphicLayoutEffect(() => {
     measureFit();
@@ -92,24 +98,6 @@ export function CoupleDisplayName({
 
   return (
     <Tag ref={containerRef} className={cn("relative w-full", className)}>
-      {/* Bản đo ẩn giữ nguyên font/size từ thẻ cha để kiểm tra có vừa 1 hàng hay không */}
-      <span
-        ref={probeRef}
-        aria-hidden="true"
-        className="pointer-events-none invisible absolute top-0 left-0 inline-flex items-baseline whitespace-nowrap opacity-0"
-      >
-        <span>{cleanGroom}</span>
-        <span
-          className={cn(
-            "mx-[0.22em] font-normal italic",
-            inlineAmpersandClassName,
-          )}
-        >
-          {connector}
-        </span>
-        <span>{cleanBride}</span>
-      </span>
-
       {isStacked ? (
         <span className="inline-flex max-w-full flex-col items-center leading-[1.08]">
           <span className="block max-w-full break-words">{cleanGroom}</span>
@@ -142,4 +130,3 @@ export function CoupleDisplayName({
     </Tag>
   );
 }
-

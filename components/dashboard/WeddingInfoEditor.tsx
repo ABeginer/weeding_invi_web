@@ -19,7 +19,7 @@ import {
   isTemplateAllowedForPlan,
 } from "@/config/plans";
 import { ApiError, deletePhoto, deleteWedding, uploadPhoto } from "@/lib/api";
-import { compressImageFile } from "@/lib/image-compress";
+import { compressImage, formatSavedSize } from "@/lib/image/compress";
 import {
   GIFT_ACCOUNT_MAX_LENGTH,
   GIFT_TEXT_MAX_LENGTH,
@@ -136,8 +136,14 @@ export function WeddingInfoEditor({
     const targetPosition = slot === "gift-groom" ? 0 : 1;
 
     try {
-      const compressed = await compressImageFile(file);
-      const uploaded = await uploadPhoto(wedding.id, compressed, "gift", slot);
+      const compressRes = await compressImage(file, "gift");
+      const uploaded = await uploadPhoto(
+        wedding.id,
+        compressRes.blob,
+        "gift",
+        slot,
+        compressRes.contentType === "image/webp" ? "photo.webp" : "photo.jpg",
+      );
       const nextPhotos = [
         ...photos.filter(
           (p) => !(p.kind === "gift" && p.position === targetPosition),
@@ -145,10 +151,11 @@ export function WeddingInfoEditor({
         uploaded.photo,
       ];
       onPhotosStateChange(nextPhotos, uploaded.content);
+      const savedMsg = formatSavedSize(compressRes.originalBytes, compressRes.outputBytes);
       showToast(
         slot === "gift-groom"
-          ? "Đã cập nhật ảnh QR nhà trai"
-          : "Đã cập nhật ảnh QR nhà gái",
+          ? `Đã cập nhật ảnh QR nhà trai (${savedMsg})`
+          : `Đã cập nhật ảnh QR nhà gái (${savedMsg})`,
         "success",
       );
     } catch (err) {
@@ -549,35 +556,40 @@ export function WeddingInfoEditor({
                     <input
                       ref={groomQrInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/jpeg,image/png,image/webp,image/heic,.heic,.heif"
                       onChange={(e) => handleQrFileSelected("gift-groom", e)}
                       className="hidden"
                     />
 
-                    <div className="flex flex-wrap gap-1.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={Boolean(qrBusySlot)}
-                        onClick={() => groomQrInputRef.current?.click()}
-                      >
-                        <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span>{groomQrPhoto ? "Đổi QR" : "Tải ảnh QR"}</span>
-                      </Button>
-                      {groomQrPhoto && (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           disabled={Boolean(qrBusySlot)}
-                          onClick={() => handleDeleteQrPhoto("gift-groom", groomQrPhoto)}
-                          className="text-danger-fg hover:bg-danger-bg"
+                          onClick={() => groomQrInputRef.current?.click()}
                         >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                          <span>Xóa QR</span>
+                          <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>{groomQrPhoto ? "Đổi QR" : "Tải ảnh QR"}</span>
                         </Button>
-                      )}
+                        {groomQrPhoto && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={Boolean(qrBusySlot)}
+                            onClick={() => handleDeleteQrPhoto("gift-groom", groomQrPhoto)}
+                            className="text-danger-fg hover:bg-danger-bg"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Xóa QR</span>
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-fg-muted">
+                        Ảnh sẽ được nén tự động để tải nhanh hơn. Ảnh tối đa 10 MB.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -651,35 +663,40 @@ export function WeddingInfoEditor({
                     <input
                       ref={brideQrInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/jpeg,image/png,image/webp,image/heic,.heic,.heif"
                       onChange={(e) => handleQrFileSelected("gift-bride", e)}
                       className="hidden"
                     />
 
-                    <div className="flex flex-wrap gap-1.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={Boolean(qrBusySlot)}
-                        onClick={() => brideQrInputRef.current?.click()}
-                      >
-                        <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span>{brideQrPhoto ? "Đổi QR" : "Tải ảnh QR"}</span>
-                      </Button>
-                      {brideQrPhoto && (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           disabled={Boolean(qrBusySlot)}
-                          onClick={() => handleDeleteQrPhoto("gift-bride", brideQrPhoto)}
-                          className="text-danger-fg hover:bg-danger-bg"
+                          onClick={() => brideQrInputRef.current?.click()}
                         >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                          <span>Xóa QR</span>
+                          <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>{brideQrPhoto ? "Đổi QR" : "Tải ảnh QR"}</span>
                         </Button>
-                      )}
+                        {brideQrPhoto && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={Boolean(qrBusySlot)}
+                            onClick={() => handleDeleteQrPhoto("gift-bride", brideQrPhoto)}
+                            className="text-danger-fg hover:bg-danger-bg"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Xóa QR</span>
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-fg-muted">
+                        Ảnh sẽ được nén tự động để tải nhanh hơn. Ảnh tối đa 10 MB.
+                      </p>
                     </div>
                   </div>
                 )}

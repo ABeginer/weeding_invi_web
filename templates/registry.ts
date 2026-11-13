@@ -1,6 +1,11 @@
 import { isTemplateAllowedForPlan } from "@/config/plans";
+import { RITUAL_TEMPLATES_CONFIG } from "@/config/templates-ritual";
 import type { WeddingPlan } from "@/lib/types";
 import type { TemplateId, WeddingTemplateMeta } from "./types";
+
+const ritualAnHoi = RITUAL_TEMPLATES_CONFIG.find((r) => r.ritualKey === "an-hoi");
+const ritualGiaTien = RITUAL_TEMPLATES_CONFIG.find((r) => r.ritualKey === "gia-tien");
+const ritualVuQuy = RITUAL_TEMPLATES_CONFIG.find((r) => r.ritualKey === "vu-quy");
 
 export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
   {
@@ -17,6 +22,7 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     },
     hasAdvancedEffects: false,
     accentSwatch: "#5E733F",
+    tone: "bright",
   },
   {
     id: "basic-2",
@@ -32,6 +38,7 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     },
     hasAdvancedEffects: false,
     accentSwatch: "#C6A962",
+    tone: "bright",
   },
   {
     id: "basic-3",
@@ -47,6 +54,7 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     },
     hasAdvancedEffects: false,
     accentSwatch: "#8B4343",
+    tone: "neutral",
   },
   {
     id: "pro-1",
@@ -62,6 +70,7 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     },
     hasAdvancedEffects: true,
     accentSwatch: "#D4AF37",
+    tone: "dark",
   },
   {
     id: "vip-1",
@@ -78,6 +87,61 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     hasAdvancedEffects: true,
     isPlaceholder: true,
     accentSwatch: "#D4AF37",
+    tone: "neutral",
+  },
+  {
+    id: "ritual-an-hoi",
+    name: ritualAnHoi?.name ?? "Lễ ăn hỏi",
+    subtitle: ritualAnHoi?.ritualLabel ?? "Ăn hỏi",
+    description: ritualAnHoi?.description ?? "",
+    plan: "free",
+    coverImage: "/templates/basic-1/cover.webp",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Lễ Ăn Hỏi",
+    },
+    hasAdvancedEffects: false,
+    accentSwatch: "#A63D40",
+    tone: "bright",
+    ritualKey: "an-hoi",
+    ritualLabel: ritualAnHoi?.ritualLabel ?? "Ăn hỏi",
+    styleTags: ritualAnHoi?.styleTags ?? ["Nghi lễ truyền thống", "Trang trọng"],
+  },
+  {
+    id: "ritual-gia-tien",
+    name: ritualGiaTien?.name ?? "Lễ gia tiên",
+    subtitle: ritualGiaTien?.ritualLabel ?? "Gia tiên",
+    description: ritualGiaTien?.description ?? "",
+    plan: "free",
+    coverImage: "/templates/basic-2/cover.webp",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Lễ Gia Tiên",
+    },
+    hasAdvancedEffects: false,
+    accentSwatch: "#C6A962",
+    tone: "bright",
+    ritualKey: "gia-tien",
+    ritualLabel: ritualGiaTien?.ritualLabel ?? "Gia tiên",
+    styleTags: ritualGiaTien?.styleTags ?? ["Gia đình", "Ấm cúng"],
+  },
+  {
+    id: "ritual-vu-quy",
+    name: ritualVuQuy?.name ?? "Lễ vu quy",
+    subtitle: ritualVuQuy?.ritualLabel ?? "Vu quy",
+    description: ritualVuQuy?.description ?? "",
+    plan: "free",
+    coverImage: "/templates/basic-3/cover.webp",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Lễ Vu Quy",
+    },
+    hasAdvancedEffects: false,
+    accentSwatch: "#D4AF37",
+    tone: "neutral",
+    ritualKey: "vu-quy",
+    ritualLabel: ritualVuQuy?.ritualLabel ?? "Vu quy",
+    styleTags: ritualVuQuy?.styleTags ?? ["Nhà gái", "Thanh lịch"],
   },
 ];
 
@@ -97,7 +161,10 @@ export function isImplementedTemplateId(templateId: string): templateId is Exclu
     templateId === "basic-1" ||
     templateId === "basic-2" ||
     templateId === "basic-3" ||
-    templateId === "pro-1"
+    templateId === "pro-1" ||
+    templateId === "ritual-an-hoi" ||
+    templateId === "ritual-gia-tien" ||
+    templateId === "ritual-vu-quy"
   );
 }
 

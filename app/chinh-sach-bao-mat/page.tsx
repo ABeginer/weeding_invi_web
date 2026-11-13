@@ -22,12 +22,14 @@ export default function PrivacyPolicyPage() {
         <p className="mt-4 text-sm leading-relaxed text-text sm:text-base">
           {copy.placeholderNote}
         </p>
-        <p className="mt-3 text-xs text-text-muted sm:text-sm">
-          {LANDING_COPY.footer.contactPrefix}{" "}
-          <a href={`mailto:${SITE_EMAIL}`} className="text-accent-text underline">
-            {SITE_EMAIL}
-          </a>
-        </p>
+        {SITE_EMAIL && (
+          <p className="mt-3 text-xs text-text-muted sm:text-sm">
+            {LANDING_COPY.footer.contactPrefix}{" "}
+            <a href={`mailto:${SITE_EMAIL}`} className="text-accent-text underline">
+              {SITE_EMAIL}
+            </a>
+          </p>
+        )}
         <div className="mt-8">
           <Link
             href={SITE_LINKS.home}
