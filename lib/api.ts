@@ -464,7 +464,14 @@ export function createGuestsBulk(weddingId: string, names: string[]): Promise<Gu
 export function updateGuest(
   weddingId: string,
   guestId: string,
-  body: { name: string },
+  body: {
+    name: string;
+    relationshipGroup?: Guest["relationshipGroup"] | null;
+    customPronounHost?: string | null;
+    customPronounGuest?: string | null;
+    tableNumber?: string | null;
+    dietaryPreference?: Guest["dietaryPreference"] | null;
+  },
 ): Promise<Guest> {
   return authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/${encodeURIComponent(guestId)}`,

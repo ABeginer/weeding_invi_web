@@ -62,7 +62,7 @@ export function buildGuestsCsv(rows: GuestExportRow[]): string {
 
 export function buildGuestExportRows(
   guests: Guest[],
-  options: { weddingSlug: string; origin: string; gifts?: Gift[] },
+  options: { origin: string; gifts?: Gift[] },
 ): GuestExportRow[] {
   const giftsByGuest = new Map<string, Gift>();
   for (const gift of options.gifts ?? []) {

@@ -8,6 +8,7 @@ import {
   Check,
   ChevronDown,
   Copy,
+  Download,
   ExternalLink,
   MessageSquareShare,
   Music,
@@ -24,10 +25,16 @@ import {
   ApiError,
   buildGuestLink,
   deleteGuest,
+  listGifts,
+  listGuests,
   listGuestsPage,
   setGuestEvents,
   updateGuest,
 } from "@/lib/api";
+import {
+  buildGuestExportRows,
+  downloadGuestsCsv,
+} from "@/lib/export-guests-csv";
 import type { Guest, GuestStatus, WeddingEvent, WeddingPlan } from "@/lib/types";
 import { cn, formatDateTimeVi, formatWeddingDateParts } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -80,6 +87,14 @@ export function GuestTable({
 
   const [editingGuest, setEditingGuest] = React.useState<Guest | null>(null);
   const [editName, setEditName] = React.useState("");
+  const [editRelationship, setEditRelationship] = React.useState<
+    NonNullable<Guest["relationshipGroup"]> | ""
+  >("");
+  const [editTableNumber, setEditTableNumber] = React.useState("");
+  const [editDiet, setEditDiet] = React.useState<
+    NonNullable<Guest["dietaryPreference"]> | ""
+  >("");
+  const [exporting, setExporting] = React.useState(false);
   const [editError, setEditError] = React.useState<string | null>(null);
   const [savingEdit, setSavingEdit] = React.useState(false);
 
@@ -271,6 +286,37 @@ export function GuestTable({
     }, 1800);
   };
 
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      const allGuests = await listGuests(weddingId);
+      let gifts: Awaited<ReturnType<typeof listGifts>>["items"] = [];
+      if (plan !== "free") {
+        try {
+          gifts = (await listGifts(weddingId)).items;
+        } catch {
+          gifts = [];
+        }
+      }
+      const rows = buildGuestExportRows(allGuests, {
+        origin: window.location.origin,
+        gifts,
+      });
+      downloadGuestsCsv(
+        rows,
+        `khach-moi-${new Date().toISOString().slice(0, 10)}.csv`,
+      );
+      showToast(`Đã xuất ${rows.length} khách mời ra CSV`, "success");
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : "Không xuất được danh sách.",
+        "error",
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const renderGuestExtras = (guest: Guest) => {
     if (guest.status !== "accepted") return null;
     const plusOnes = typeof guest.plusOnes === "number" ? guest.plusOnes : 0;
@@ -297,6 +343,9 @@ export function GuestTable({
   const openEditDialog = (guest: Guest) => {
     setEditingGuest(guest);
     setEditName(guest.name);
+    setEditRelationship(guest.relationshipGroup ?? "");
+    setEditTableNumber(guest.tableNumber ?? "");
+    setEditDiet(guest.dietaryPreference ?? "");
     setEditError(null);
   };
 
@@ -366,7 +415,12 @@ export function GuestTable({
 
     setSavingEdit(true);
     try {
-      const updated = await updateGuest(weddingId, editingGuest.id, { name: trimmed });
+      const updated = await updateGuest(weddingId, editingGuest.id, {
+        name: trimmed,
+        relationshipGroup: editRelationship || null,
+        tableNumber: editTableNumber.trim() || null,
+        dietaryPreference: editDiet || null,
+      });
       setGuests((prev) =>
         prev.map((item) =>
           item.id === updated.id
@@ -374,7 +428,7 @@ export function GuestTable({
             : item,
         ),
       );
-      showToast("Đã cập nhật tên khách mời", "success");
+      showToast("Đã cập nhật thông tin khách mời", "success");
       setEditingGuest(null);
       onGuestsChanged?.();
     } catch (err) {
@@ -473,6 +527,16 @@ export function GuestTable({
           >
             <Upload className="h-4 w-4" aria-hidden="true" />
             <span>Dán danh sách</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+            loading={exporting}
+            disabled={total === 0}
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            <span>Xuất CSV</span>
           </Button>
           <Button
             variant="primary"
@@ -1117,8 +1181,8 @@ export function GuestTable({
       <Dialog
         open={Boolean(editingGuest)}
         onClose={() => !savingEdit && setEditingGuest(null)}
-        title="Sửa tên khách mời"
-        description="Link thiệp đã tạo cho khách vẫn giữ nguyên, bạn có thể yên tâm sửa tên hiển thị."
+        title="Sửa thông tin khách mời"
+        description="Link thiệp đã tạo cho khách vẫn giữ nguyên; bạn có thể sửa tên, vai vế, số bàn và thực đơn."
       >
         <form onSubmit={handleSaveEdit} className="space-y-4">
           <Input
@@ -1129,6 +1193,53 @@ export function GuestTable({
             maxLength={100}
             autoFocus
           />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-medium text-fg">
+              Vai vế / cách xưng hô
+              <select
+                value={editRelationship}
+                onChange={(e) =>
+                  setEditRelationship(
+                    e.target.value as NonNullable<Guest["relationshipGroup"]> | "",
+                  )
+                }
+                className="mt-1 h-10 w-full rounded-xl border border-border bg-bg px-3 text-sm text-fg focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                <option value="">Tự động (bạn bè/đồng nghiệp)</option>
+                <option value="elder">Bề trên / Họ hàng</option>
+                <option value="family">Gia đình</option>
+                <option value="close_friend">Bạn thân</option>
+                <option value="peer_formal">Bạn bè / Đồng nghiệp</option>
+              </select>
+            </label>
+
+            <Input
+              label="Số bàn tiệc"
+              value={editTableNumber}
+              onChange={(e) => setEditTableNumber(e.target.value)}
+              placeholder="Ví dụ: Bàn 08 - Khu VIP"
+              maxLength={40}
+            />
+          </div>
+
+          <label className="block text-xs font-medium text-fg">
+            Thực đơn
+            <select
+              value={editDiet}
+              onChange={(e) =>
+                setEditDiet(
+                  e.target.value as NonNullable<Guest["dietaryPreference"]> | "",
+                )
+              }
+              className="mt-1 h-10 w-full rounded-xl border border-border bg-bg px-3 text-sm text-fg focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            >
+              <option value="">Chưa chọn</option>
+              <option value="standard">Mặn (standard)</option>
+              <option value="vegetarian">Chay (vegetarian)</option>
+            </select>
+          </label>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button
               variant="outline"
