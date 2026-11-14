@@ -46,6 +46,31 @@ có màn hình chung cập nhật realtime.
 - [ ] Dashboard tạo/tải QR theo từng bàn trỏ tới link upload.
 - [ ] Test: token sai/hết hạn, vượt hạn mức ảnh, ảnh quá lớn, duyệt & từ chối, polling wall.
 
+## B3. Trang thiết kế thiệp cho designer trong /ops (đề xuất, chưa code)
+
+Mục tiêu: designer không cần code vẫn tạo được mẫu thiệp mới; cô dâu chú rể chỉ điền
+placeholder. Lưu dưới dạng **layout JSON + ảnh nền webp** (không flatten toàn bộ thiệp,
+để giữ RSVP/maps/nhạc là element tương tác).
+
+- [ ] Data model: `designer_templates` (name, plan, ritual, status draft/published, version,
+      canvas_json, background_key, snapshot_key, created_by), `designer_assets` (kind, r2_key,
+      width/height), lịch sử version.
+- [ ] Editor canvas: artboard 390×844 (xuất 2x 780×1688), zoom, pan, grid, snap, ruler,
+      layer panel, undo/redo, multi-page (bìa / nội dung / RSVP / thanks).
+- [ ] Text: 2 loại — text cố định và text placeholder (`{{groom}}`, `{{bride}}`, `{{date}}`,
+      `{{venue}}`, `{{guest}}`, `{{salutation}}`); chọn font self-hosted, size, line-height,
+      letter-spacing, align, auto-fit, max lines, overflow.
+- [ ] Element kéo thả: ảnh PNG/SVG upload R2, khung ảnh, shape, divider, icon; calendar block
+      (ngày giờ), map block (static image + link Google Maps), countdown, QR, music, RSVP anchor.
+- [ ] Ops UX: role `designer` (không phải admin), thư viện asset dùng chung, duplicate mẫu,
+      preview desktop/mobile, preview theo khách, publish cần duyệt, audit log.
+- [ ] Lưu & xuất: upload background webp (canvas `toBlob("image/webp", 0.9)` ở client, ≤300KB),
+      lưu JSON layout; version mỗi lần publish; snapshot OG xuất cùng lúc.
+- [ ] Runtime: registry trỏ `designerTemplateId`; renderer đọc JSON, đặt overlay theo toạ độ %
+      (scale theo bề rộng), fallback template code nếu thiếu layout.
+- [ ] Validation trước publish: placeholder thiếu, chữ tràn safe-area, contrast < 4.5:1,
+      asset quá lớn, block tương tác nằm ngoài vùng chạm 44px.
+
 ## C. Đã xong
 
 - [x] Đợt 1–4: 8 lỗi chặn, dữ liệu/bảo mật, dọn repo + docs + CI, Sổ mừng, Album,
