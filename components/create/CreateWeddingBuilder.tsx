@@ -42,7 +42,6 @@ import {
   type WeddingPlan,
 } from "@/lib/types";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
-import { toTemplateData } from "@/lib/wedding-data";
 import {
   clearWeddingDraft,
   readWeddingDraft,
@@ -54,7 +53,6 @@ import {
   validateWeddingSlug,
 } from "@/lib/wedding-slug";
 import { HERO_PREVIEW_TEMPLATES } from "@/templates/registry";
-import { TemplatePreviewRenderer } from "@/templates/TemplatePreviewRenderer";
 
 interface CreateWeddingBuilderProps {
   isAuthenticated: boolean;
@@ -79,6 +77,25 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, index) =>
 );
 
 const MINUTE_OPTIONS = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+
+function buildPreviewUrl(params: {
+  templateId: string;
+  groom: string;
+  bride: string;
+  date: string;
+  quote: string;
+  opened: boolean;
+}): string {
+  const search = new URLSearchParams({
+    template: params.templateId,
+    groom: params.groom,
+    bride: params.bride,
+    date: params.date,
+    quote: params.quote,
+    opened: params.opened ? "1" : "0",
+  });
+  return `/tao-thiep/preview?${search.toString()}`;
+}
 
 function resolveFreeTemplateId(candidate?: string): string {
   if (candidate) {
@@ -250,34 +267,23 @@ export function CreateWeddingBuilder({
     return () => window.clearTimeout(timer);
   }, [slug]);
 
-  const previewData = React.useMemo(() => {
-    return toTemplateData({
-      templateId,
-      plan: "free",
-      weddingSlug: slug.trim() || undefined,
-      content: {
-        couple: {
-          groomName: groomName.trim(),
-          brideName: brideName.trim(),
-          groomFullName: "",
-          brideFullName: "",
-          groomParents: "",
-          brideParents: "",
-        },
-        date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
-        quote: quote.trim(),
-        heroPhotoId: null,
-        groomPhotoId: null,
-        bridePhotoId: null,
-        gift: emptyGiftInfo(),
-      },
-      events: [],
-      photos: [],
-    });
-  }, [brideName, date, groomName, quote, slug, templateId]);
-
   const dateValue = toDatetimeLocalVn(date);
   const datePreview = formatWeddingDateParts(date);
+
+  const previewUrl = buildPreviewUrl({
+    templateId,
+    groom: groomName.trim(),
+    bride: brideName.trim(),
+    date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
+    quote: quote.trim(),
+    opened: previewOpened,
+  });
+  const [previewSrc, setPreviewSrc] = React.useState(previewUrl);
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setPreviewSrc(previewUrl), 300);
+    return () => window.clearTimeout(timer);
+  }, [previewUrl]);
 
   const selectedTemplate = HERO_PREVIEW_TEMPLATES.find((tpl) => tpl.id === templateId);
   const filteredTemplates = React.useMemo(() => {
@@ -787,19 +793,14 @@ export function CreateWeddingBuilder({
                   <PhoneFrame
                     scrollRef={phoneScrollRef}
                     enableFloat={false}
-                    lockedScroll={!previewOpened}
+                    lockedScroll
                     desktopOffsetPx={164}
                   >
-                    <TemplatePreviewRenderer
-                      key={templateId}
-                      templateId={templateId}
-                      data={previewData}
-                      mode="preview"
-                      contained
-                      viewport="phone"
-                      isOpened={previewOpened}
-                      onOpenedChange={setPreviewOpened}
-                      externalMusicControl
+                    <iframe
+                      key={previewSrc}
+                      src={previewSrc}
+                      title="Xem trước thiệp cưới"
+                      className="h-full w-full border-0 bg-bg"
                     />
                   </PhoneFrame>
                 </div>
