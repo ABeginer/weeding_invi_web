@@ -678,7 +678,11 @@ export function DesignerCanvas({
           <div
             ref={boardRef}
             className="relative w-full max-w-[390px] overflow-hidden rounded-xl border border-border shadow-lg"
-            style={{ aspectRatio: `${content.width} / ${content.height}`, background: content.background }}
+            style={{
+              aspectRatio: `${content.width} / ${content.height}`,
+              background: content.background,
+              containerType: "inline-size",
+            }}
             onPointerDown={(event) => {
               if (event.target === event.currentTarget) setSelectedId(null);
             }}
@@ -742,14 +746,19 @@ export function DesignerCanvas({
                     "absolute cursor-move touch-none select-none",
                     isSelected && "outline outline-2 outline-accent",
                   )}
-                  style={{ left: `${element.xPct}%`, top: `${element.yPct}%`, width: `${element.wPct}%` }}
+                  style={{
+                    left: `${element.xPct}%`,
+                    top: `${element.yPct}%`,
+                    width: `${element.wPct}%`,
+                    transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
+                  }}
                 >
                   {element.type === "text" ? (
                     <span
                       style={{
                         display: "block",
                         fontFamily: element.fontFamily,
-                        fontSize: element.fontSize,
+                        fontSize: `calc(${element.fontSize} * 100cqw / ${content.width})`,
                         color: element.color,
                         lineHeight: 1.2,
                       }}
@@ -1219,6 +1228,71 @@ export function DesignerCanvas({
               >
                 Xoá ảnh
               </button>
+            </div>
+          )}
+
+          {selected && (
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs font-semibold text-text">Vị trí &amp; kích thước</p>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-xs text-text">
+                  X (%)
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={Math.round(selected.xPct)}
+                    onChange={(event) => updateElement(selected.id, { xPct: Number(event.target.value) || 0 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+                <label className="block text-xs text-text">
+                  Y (%)
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={Math.round(selected.yPct)}
+                    onChange={(event) => updateElement(selected.id, { yPct: Number(event.target.value) || 0 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+                <label className="block text-xs text-text">
+                  Rộng (%)
+                  <input
+                    type="number"
+                    min={4}
+                    max={100}
+                    value={Math.round(selected.wPct)}
+                    onChange={(event) => updateElement(selected.id, { wPct: Number(event.target.value) || 10 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+                <label className="block text-xs text-text">
+                  Xoay (độ)
+                  <input
+                    type="number"
+                    min={-180}
+                    max={180}
+                    value={selected.rotation ?? 0}
+                    onChange={(event) => updateElement(selected.id, { rotation: Number(event.target.value) || 0 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+                {"hPct" in selected && (
+                  <label className="block text-xs text-text">
+                    Cao (%)
+                    <input
+                      type="number"
+                      min={4}
+                      max={100}
+                      value={Math.round(selected.hPct)}
+                      onChange={(event) => updateElement(selected.id, { hPct: Number(event.target.value) || 10 })}
+                      className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                    />
+                  </label>
+                )}
+              </div>
             </div>
           )}
 

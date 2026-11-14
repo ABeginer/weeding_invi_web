@@ -72,6 +72,7 @@ export function DesignerTemplateRenderer({
       style={{
         aspectRatio: `${canvas.width} / ${canvas.height}`,
         background,
+        containerType: "inline-size",
       }}
     >
       {backgroundUrl && (
@@ -88,6 +89,7 @@ export function DesignerTemplateRenderer({
           left: `${element.xPct}%`,
           top: `${element.yPct}%`,
           width: `${element.wPct}%`,
+          transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
         } as const;
 
         if (element.type === "image") {
@@ -220,7 +222,7 @@ export function DesignerTemplateRenderer({
               ...baseStyle,
               color: element.color,
               fontFamily: element.fontFamily,
-              fontSize: element.fontSize,
+              fontSize: `calc(${element.fontSize} * 100cqw / ${canvas.width})`,
               lineHeight: 1.25,
               whiteSpace: "pre-wrap",
             }}

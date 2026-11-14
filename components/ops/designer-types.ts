@@ -1,5 +1,6 @@
-export type DesignerTextElement = {
+﻿export type DesignerTextElement = {
   id: string;
+  rotation?: number;
   type: "text";
   xPct: number;
   yPct: number;
@@ -13,6 +14,7 @@ export type DesignerTextElement = {
 
 export type DesignerImageElement = {
   id: string;
+  rotation?: number;
   type: "image";
   xPct: number;
   yPct: number;
@@ -23,6 +25,7 @@ export type DesignerImageElement = {
 
 export interface DesignerBoxElement {
   id: string;
+  rotation?: number;
   type: "box";
   xPct: number;
   yPct: number;
@@ -50,6 +53,7 @@ export type DesignerIconName = (typeof DESIGNER_ICONS)[number];
 
 export interface DesignerIconElement {
   id: string;
+  rotation?: number;
   type: "icon";
   xPct: number;
   yPct: number;
@@ -63,6 +67,7 @@ export type DesignerAction = (typeof DESIGNER_ACTIONS)[number];
 
 export interface DesignerButtonElement {
   id: string;
+  rotation?: number;
   type: "button";
   xPct: number;
   yPct: number;
@@ -86,6 +91,7 @@ export type DesignerBlockKind = (typeof DESIGNER_BLOCKS)[number];
 
 export interface DesignerBlockElement {
   id: string;
+  rotation?: number;
   type: "block";
   xPct: number;
   yPct: number;
@@ -100,6 +106,7 @@ export type PhotoSlot = (typeof PHOTO_SLOTS)[number];
 
 export interface DesignerPhotoElement {
   id: string;
+  rotation?: number;
   type: "photo";
   xPct: number;
   yPct: number;
@@ -132,18 +139,18 @@ export interface DesignerCanvasContent {
   width: number;
   height: number;
   background: string;
-  /** Ảnh nền có sẵn (cover template) — designer vẽ đè lên khi tạo mẫu mới. */
+  /** áº¢nh ná»n cÃ³ sáºµn (cover template) â€” designer váº½ Ä‘Ã¨ lÃªn khi táº¡o máº«u má»›i. */
   backgroundUrl?: string;
   elements: DesignerElement[];
-  /** Multi-page: mỗi trang có nền + element riêng. */
+  /** Multi-page: má»—i trang cÃ³ ná»n + element riÃªng. */
   pages?: DesignerPage[];
 }
 
 export const PLACEHOLDER_OPTIONS = [
-  { id: "guestName", label: "Tên khách", sample: "Bạn Thanh Mai" },
-  { id: "groom", label: "Tên chú rể", sample: "Minh Khôi" },
-  { id: "bride", label: "Tên cô dâu", sample: "Thảo Nguyên" },
-  { id: "date", label: "Ngày cưới", sample: "20.03.2027" },
-  { id: "venue", label: "Địa điểm", sample: "White Palace" },
-  { id: "salutation", label: "Xưng hô", sample: "Trân trọng kính mời" },
+  { id: "guestName", label: "TÃªn khÃ¡ch", sample: "Báº¡n Thanh Mai" },
+  { id: "groom", label: "TÃªn chÃº rá»ƒ", sample: "Minh KhÃ´i" },
+  { id: "bride", label: "TÃªn cÃ´ dÃ¢u", sample: "Tháº£o NguyÃªn" },
+  { id: "date", label: "NgÃ y cÆ°á»›i", sample: "20.03.2027" },
+  { id: "venue", label: "Äá»‹a Ä‘iá»ƒm", sample: "White Palace" },
+  { id: "salutation", label: "XÆ°ng hÃ´", sample: "TrÃ¢n trá»ng kÃ­nh má»i" },
 ] as const;
