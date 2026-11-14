@@ -15,7 +15,6 @@ import { PaymentTransferModal } from "./pricing-modals";
 import { PricingTable } from "./pricing-table";
 import { SocialProofMarquee } from "./social-proof-marquee";
 import { TemplateShowcase } from "./template-showcase";
-import { TemplateTeaser } from "./template-teaser";
 import { ToolsPreviewSection } from "./tools-preview";
 
 interface LandingPageClientProps {
@@ -113,10 +112,9 @@ export function LandingPageClient({
         <HeroSection />
         <SocialProofMarquee />
         <TemplateShowcase />
-        <TemplateTeaser />
+        <InteractiveFeatureBento />
         <ToolsPreviewSection />
         <HowItWorks />
-        <InteractiveFeatureBento />
         <PricingTable
           isAuthenticated={resolvedAuthenticated}
           onSelectPaidPlan={(plan) => setPaymentPlan(plan)}

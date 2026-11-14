@@ -28,7 +28,15 @@ function writeThemeCookie(mode: BrandThemeMode): void {
 
 function applyThemeToDocument(mode: BrandThemeMode): void {
   if (typeof document === "undefined") return;
-  document.documentElement.dataset.theme = mode;
+  const root = document.documentElement;
+  const previous = root.dataset.theme;
+  root.dataset.theme = mode;
+
+  // Hiệu ứng tràn màu mượt khi người dùng chủ động đổi sáng/tối.
+  if (previous && previous !== mode) {
+    root.classList.add("theme-switching");
+    window.setTimeout(() => root.classList.remove("theme-switching"), 420);
+  }
 }
 
 /** Script inline trong <head> đã áp theme từ cookie trước khi React hydrate. */

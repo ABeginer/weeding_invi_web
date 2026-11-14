@@ -146,12 +146,21 @@ export function InteractiveFeatureBento() {
               Live QR Photo Wall
             </div>
             <div className="mt-3 grid grid-cols-3 gap-1.5" aria-hidden="true">
-              {Array.from({ length: 6 }, (_, index) => (
-                <div key={index} className="aspect-square rounded-md bg-surface-alt" />
+              {[1, 2, 3, 4, 5, 6].map((index) => (
+                <img
+                  key={index}
+                  src={`/photos/${index}.webp`}
+                  alt=""
+                  width={160}
+                  height={160}
+                  loading="lazy"
+                  className="aspect-square w-full rounded-md object-cover"
+                />
               ))}
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-text-muted">
-              Khách quét mã tại bàn, ảnh chụp bằng điện thoại hiện ngay lên màn hình chung.
+              Khách quét mã QR tại bàn để mở album, tải ảnh chụp bằng điện thoại;
+              ảnh đã duyệt sẽ xuất hiện trên màn hình chung của tiệc.
             </p>
           </div>
         </div>
