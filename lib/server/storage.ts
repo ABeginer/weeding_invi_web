@@ -25,6 +25,13 @@ interface R2BucketLike {
 export const MEDIA_KEY_RE =
   /^weddings\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(banner|couple|gallery|og|gift|album)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/i;
 
+/** Ảnh nền/asset của designer (ops), lưu cùng bucket PHOTOS. */
+export const DESIGNER_MEDIA_KEY_RE = /^designer\/[0-9a-f-]{36}\.webp$/i;
+
+export function buildDesignerAssetKey(): string {
+  return `designer/${crypto.randomUUID()}.webp`;
+}
+
 export function buildPhotoStorageKey(weddingId: string, kind: PhotoKind): string {
   return `weddings/${weddingId}/${kind}/${crypto.randomUUID()}.webp`;
 }
@@ -34,7 +41,7 @@ export function buildMediaUrl(storageKey: string): string {
 }
 
 export function isValidMediaStorageKey(key: string): boolean {
-  return MEDIA_KEY_RE.test(key);
+  return MEDIA_KEY_RE.test(key) || DESIGNER_MEDIA_KEY_RE.test(key);
 }
 
 export function detectImageMimeFromBytes(

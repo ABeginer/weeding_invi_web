@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Plus } from "lucide-react";
 
 interface DesignerTemplate {
@@ -159,6 +160,7 @@ export default function DesignerTemplatesPage() {
                 <th className="px-4 py-2.5 font-medium">Trạng thái</th>
                 <th className="px-4 py-2.5 font-medium">Version</th>
                 <th className="px-4 py-2.5 font-medium">Cập nhật</th>
+                <th className="px-4 py-2.5 font-medium" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -171,6 +173,14 @@ export default function DesignerTemplatesPage() {
                   <td className="px-4 py-3 text-text-muted">v{item.version}</td>
                   <td className="px-4 py-3 text-text-muted">
                     {new Date(item.updated_at).toLocaleDateString("vi-VN")}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/ops/designer/${item.id}`}
+                      className="text-xs font-semibold text-accent-text underline underline-offset-4"
+                    >
+                      Mở canvas
+                    </Link>
                   </td>
                 </tr>
               ))}
