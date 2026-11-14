@@ -37,10 +37,10 @@ Notes:
 - `NEXT_PUBLIC_*` values are inlined at build time by Next.js; they must be present when `opennextjs-cloudflare build` runs, not only at runtime.
 
 ## Local environment state (owner-confirmed 2026-11-14)
-- `SUPABASE_URL` points at the current project (`xklihgeirdxyormuxcoh.supabase.co`); no old project URL exists in any env file and no OS-level override is set.
-- `SUPABASE_SECRET_KEY` is a well-formed new-style secret key (`sb_secret_` + 31 chars) but the project rejects it: `401 {"message":"Unregistered API key"}`. The URL/key pair is mismatched — the key is not registered for this project (rotated, revoked, or from the previous project). Only the owner can paste the current secret key from Supabase Dashboard → Project Settings → API Keys. Until then every DB-backed route returns 500 locally.
+- `SUPABASE_URL` points at the current project (`xklihgeirdxyormuxcoh.supabase.co`); `SUPABASE_SECRET_KEY` was replaced by the owner and now returns 200 on `/rest/v1/*`, so DB-backed pages work locally.
 - `APP_BASE_URL` is still `http://localhost:3000`; production must set the real domain or canonical/OG/sitemap URLs will point at localhost.
 - `BANK_*` variables are not present locally, so `/api/orders` cannot build a VietQR payload in this environment.
+- `supabase/migration_v11_guest_preferences.sql` is **not applied yet**; RSVP writes fall back to the older columns and song/ride preferences are dropped until the owner runs it.
 
 
 ## Deploy

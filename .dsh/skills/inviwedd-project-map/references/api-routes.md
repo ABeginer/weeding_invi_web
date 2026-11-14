@@ -12,13 +12,13 @@ Auth legend:
 
 | Method | Path | Auth | Purpose | File |
 |---|---|---|---|---|
-| GET | `/api/invite/[slug]` | public | Guest name, status, plusOnes, diet and the events visible to that guest | `app/api/invite/[slug]/route.ts` |
+| GET | `/api/invite/[slug]` | public (rate-limited 60/min) | Guest name, status, plusOnes, diet, songRequest, rideNeeded and the events visible to that guest | `app/api/invite/[slug]/route.ts` |
 | POST | `/api/me` | JWT | Upsert `users` row, return profile + theme | `app/api/me/route.ts` |
 | PATCH | `/api/me/theme` | JWT | Persist light/dark brand theme | `app/api/me/theme/route.ts` |
-| POST | `/api/rsvp` | public+Turnstile | Update a guest RSVP by slug, or insert a walk-in guest by `weddingSlug`; optionally saves a wish; 403 when the wedding is suspended | `app/api/rsvp/route.ts` |
-| POST | `/api/wishes` | public+Turnstile | Insert one wish (guest slug or wedding slug); 403 when the wedding is suspended | `app/api/wishes/route.ts` |
+| POST | `/api/rsvp` | public+Turnstile (rate-limited 10/min) | Update a guest RSVP by slug, or insert a walk-in guest by `weddingSlug` (enforces the plan guest limit); persists plus-ones, diet, song request, ride; 403 when suspended | `app/api/rsvp/route.ts` |
+| POST | `/api/wishes` | public+Turnstile (rate-limited 10/min) | Insert one wish (guest slug or wedding slug); 403 when the wedding is suspended | `app/api/wishes/route.ts` |
 | GET | `/api/public/wedding/[slug]` | public | Public wedding payload: content, events, photos, plan | `app/api/public/wedding/[slug]/route.ts` |
-| GET | `/api/weddings/check-slug?slug=` | public | Slug validity + availability | `app/api/weddings/check-slug/route.ts` |
+| GET | `/api/weddings/check-slug?slug=` | public (rate-limited 30/min) | Slug validity + availability | `app/api/weddings/check-slug/route.ts` |
 | GET | `/api/weddings` | JWT | List weddings owned by the caller | `app/api/weddings/route.ts` |
 | POST | `/api/weddings` | JWT | Create a wedding (always `plan: free`, slug + allowed template) | `app/api/weddings/route.ts` |
 | GET | `/api/weddings/[id]` | JWT+owner | Wedding + events + photos | `app/api/weddings/[id]/route.ts` |
@@ -28,9 +28,9 @@ Auth legend:
 | GET | `/api/weddings/[id]/events` | JWT+owner | List events | `app/api/weddings/[id]/events/route.ts` |
 | POST | `/api/weddings/[id]/events` | JWT+owner | Create event (plan event limit) | `app/api/weddings/[id]/events/route.ts` |
 | PATCH | `/api/weddings/[id]/events` | JWT+owner | Reorder events | `app/api/weddings/[id]/events/route.ts` |
-| PATCH | `/api/weddings/[id]/events/[eventId]` | JWT+owner | Update one event | `app/api/weddings/[id]/events/[eventId]/route.ts` |
+| PATCH | `/api/weddings/[id]/events/[eventId]` | JWT+owner | Update one event; keeps `map_embed_url` untouched when the client omits it | `app/api/weddings/[id]/events/[eventId]/route.ts` |
 | DELETE | `/api/weddings/[id]/events/[eventId]` | JWT+owner | Delete one event | `app/api/weddings/[id]/events/[eventId]/route.ts` |
-| GET | `/api/weddings/[id]/guests` | JWT+owner | List guests (`.limit(2000)`) with event ids | `app/api/weddings/[id]/guests/route.ts` |
+| GET | `/api/weddings/[id]/guests` | JWT+owner | List guests (fetched page-by-page, no 1k truncation) with event ids | `app/api/weddings/[id]/guests/route.ts` |
 | POST | `/api/weddings/[id]/guests` | JWT+owner | Create guest (plan guest limit) | `app/api/weddings/[id]/guests/route.ts` |
 | POST | `/api/weddings/[id]/guests/bulk` | JWT+owner | Bulk create ≤500 names (plan guest limit) | `app/api/weddings/[id]/guests/bulk/route.ts` |
 | PATCH | `/api/weddings/[id]/guests/[guestId]` | JWT+owner | Rename guest | `app/api/weddings/[id]/guests/[guestId]/route.ts` |
@@ -46,7 +46,7 @@ Auth legend:
 | GET | `/api/orders/[id]` | JWT (owner) | Order status for polling | `app/api/orders/[id]/route.ts` |
 | POST | `/api/webhooks/bank` | webhook secret | Record bank transaction, match `INV-XXXXXX` in description, mark order paid, upgrade wedding plan | `app/api/webhooks/bank/route.ts` |
 | GET | `/api/ops/me` | none (manual JWT read) | Returns `{ email, isAdmin }`; fails closed (`isAdmin: false`) when unauthenticated or when `ADMIN_EMAIL` is unset | `app/api/ops/me/route.ts` |
-| GET | `/api/ops/stats` | admin | User/wedding/order/revenue counters | `app/api/ops/stats/route.ts` |
+| GET | `/api/ops/stats` | admin | Counters via head counts + month-bounded revenue query | `app/api/ops/stats/route.ts` |
 | GET | `/api/ops/users` | admin | Paginated user list (filter + slice in memory) | `app/api/ops/users/route.ts` |
 | GET | `/api/ops/users/[id]` | admin | One user + their weddings | `app/api/ops/users/[id]/route.ts` |
 | GET | `/api/ops/weddings` | admin | Paginated wedding list (loads all rows, filters in memory) | `app/api/ops/weddings/route.ts` |

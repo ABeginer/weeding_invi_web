@@ -1,47 +1,38 @@
 # Open items
 
 ## Handoff
-- Last task (2026-11-14): batch 1 (8 blockers) completed at git `0c3c7e5`; skill updated after owner answers (this revision). `tsc --noEmit` + `eslint .` clean, `next build` succeeds, `next start` smoke test passed.
-- Blocking local verification: `SUPABASE_SECRET_KEY` is rejected by the project (`Unregistered API key`). URL is correct; the key does not belong to it. Owner must paste the current secret key. Nothing DB-backed can be tested until then.
+- Last task (2026-11-14): **batch 2 completed** at git `db98d6c`; skill updated after it. `tsc --noEmit` + `eslint .` clean, `next build` succeeds, and a `next start` smoke test passed against the real database (`/`, `/w/huy-huiya`, `/m/56b24d81c86c`, `/api/public/wedding/huy-huiya`, `/api/invite/...`, `/dashboard` 307, `/ops` fail-closed, 404 paths, rate-limit 429).
+- Owner action required now: run `supabase/migration_v11_guest_preferences.sql` (new columns `guests.song_request`, `guests.ride_needed`). Until then RSVP writes silently fall back and song/ride preferences are not persisted.
 - In progress: nothing.
-- Next step: batch 2 — public RSVP guest-limit enforcement + rate limiting, persist `songRequest`/`rideNeeded` (new columns + RSVP write + mapper), stop wiping `map_embed_url`, pricing copy, pagination, `/w` noindex, `.env.example`, and implementation of the 30-day retention.
-- Files likely touched next: `app/api/rsvp/route.ts`, `lib/server/mappers.ts`, `supabase/` (new migration), `config/pricing.ts`, `lib/ops-api.ts`, `components/dashboard/*`, `app/w/[slug]/page.tsx`.
+- Next step: batch 3 — repository hygiene (`.open-next` committed), stale docs (README/HANDOFF/DESIGN_PLAN/TODO), test script + CI, ops error states instead of empty lists, guests UI pagination, retention implementation, and the Sổ mừng / Album build decision.
 
-## Owner answers received (2026-11-14)
-- **Migrations:** all migration files committed in this repository have been applied to the live project. Recorded as APPLIED in `db-schema.md`.
-- **Auth0:** the SDK configuration is present in the local env — `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`.
-- **Bank webhook sender:** a Google Apps Script project (hosted in Google Apps Script, source not in this repository).
-- **Ops admin:** `ADMIN_EMAIL` is configured with the owner's admin address (value not stored here).
-- **Retention:** the 30-day free-plan retention commitment stays.
-
-## Fixed in batch 1 (git `0c3c7e5`)
-1. Sổ mừng has no backend → nav entry removed and the page explains the feature is not ready. **Still not implemented** (no `gifts` route/table); restoring it needs a real route + migration.
-2. Album upload could never succeed → the upload control is disabled with a clear message. Still needs `album` in the DB check constraint, `VALID_KINDS` and `MEDIA_KEY_RE` before re-enabling.
-3. Bulk event assignment called a missing route → now uses `/api/weddings/[id]/guests/[guestId]/events`.
-4. Replacing a hero/portrait photo deleted the old file first → server inserts the new photo, then deletes the replaced row; content ids drive the replacement so legacy positions do not break.
-5. Turnstile could permanently lock the form → failed script loads are retryable and show a visible error.
-6. `/m/[slug]` discarded server-rendered data → renders from `initialData` immediately; the per-guest request only hydrates status/plus-ones/diet.
-7. Ops console showed fabricated data → mock fallback removed, `/api/ops/me` fails closed when `ADMIN_EMAIL` is unset, merge button hidden.
-8. `suspended` was never enforced → blocked on public pages, public API, invite API, RSVP and wishes.
+## Fixed in batch 2 (git `db98d6c`)
+- Public RSVP now enforces the wedding's plan guest limit (free = 20) before inserting a walk-in guest.
+- `songRequest` / `rideNeeded` are persisted (migration v11 + graceful fallback), returned by `/api/invite/[slug]`, prefilled through every template, and shown in the dashboard.
+- `map_embed_url` is no longer wiped on event edit: the client sends the existing value and the API keeps the column when the key is absent.
+- Public writes are rate-limited in memory (RSVP/wishes 10/min, invite 60/min, check-slug 30/min) with 429 + `Retry-After`.
+- Reads no longer truncate at 1,000 rows: `lib/server/pagination.ts` pages with `range()` and chunks `.in()` (guests, dashboard stats, ops lists); ops stats uses head counts and a month-bounded revenue query.
+- Pricing copy matches shipped features; `/w/[slug]` is `noindex`; `.env.example` documents every variable name.
+- Owner replaced the Supabase secret key, so local DB flows work again.
 
 ## Known issues (still open, verified)
-9. **Public RSVP bypasses the guest limit** — inserting a guest by `weddingSlug` in `/api/rsvp` does not check `plan.guests`; only the dashboard routes do.
-10. **`songRequest` / `rideNeeded` are collected and dropped** — sent by both RSVP components, never read by the server, no columns exist; the dashboard panel stays empty.
-11. **`map_embed_url` is wiped on every event edit** — `EventsManager` sends `mapEmbedUrl: null` unconditionally.
-12. **Pricing copy contradicts the code** — "3 mẫu" free vs 23 selectable free templates; VIP "mẫu độc quyền" while `vip-1` is a placeholder; "Tải nhạc MP3 lên" has no field/UI/route; gift QR is sold as "Sắp có" but ships. The retention row is correct as a promise and needs implementation, not a copy change (owner decision).
-13. **No rate limiting on any public endpoint** (`/api/rsvp`, `/api/wishes`, `/api/invite/[slug]`, `/api/weddings/check-slug`).
-14. **Ops lists load every row then paginate in memory**, and `.limit(2000)` on guests exceeds the Supabase PostgREST default cap of 1,000 rows.
-15. **`/w/[slug]` has no `robots: noindex`** (only `robots.txt` disallows it).
-16. **Docs are stale** — `HANDOFF.md`, `DESIGN_PLAN.md`, `TODO.md` describe removed `/admin/*` routes, a mock `lib/api.ts`, `WishForm.tsx`, and Cormorant as display font; `README.md` is a UTF-16 one-liner.
-17. **Repository hygiene** — 2,342 committed `.open-next/` files (~53 MB) plus `.wrangler/` and `scratch/`; `.gitignore` does not exclude them.
-18. **No test entry point / CI** — `tests/*.test.ts` use `node:test` but `package.json` has no `test` script and no runner is installed.
-19. **Supabase secret key rejected (blocks local DB testing)** — URL is the correct project; the `sb_secret_` key returns `401 Unregistered API key`, so every DB-backed route 500s locally. Owner must replace the key. Not caused by code changes.
+1. **Retention is a promise without implementation** — free plan advertises 30 days (owner re-confirmed on 2026-11-14) but there is no cron/cleanup job. Implementing deletion is destructive and needs explicit approval plus a scheduled mechanism (Cloudflare Cron Trigger) or a documented manual job.
+2. **Guests UI still loads the whole list** — the API no longer truncates, but `GuestTable` fetches every guest and filters client-side; a Pro wedding with thousands of guests will be heavy. Real pagination needs API params + UI.
+3. **Ops pages swallow API errors** — most `app/ops/*` pages catch a failed request and render an empty list/zero counters, which looks like "no data" instead of an error banner.
+4. **Sổ mừng and Album are hidden, not built** — both need a decision: implement (`gifts` route + table; `album` in the DB check constraint, `VALID_KINDS`, `MEDIA_KEY_RE`) or remove the remaining code.
+5. **Duplicate accounts** — the live `users` table already has the same email under `auth0|…` and `google-oauth2|…`; `POST /api/ops/users/[id]/merge` does not exist and the merge UI is hidden.
+6. **Unknown schemas** — `orders`, `bank_transactions`, `gifts` are still not created by any committed migration (the owner confirmed the committed migrations are applied, so these were either created manually or are missing).
+7. **Docs are stale** — `HANDOFF.md` (removed `/admin/*`, mock `lib/api.ts`, `WishForm.tsx`), `DESIGN_PLAN.md`, `TODO.md` (Cormorant as display font, migrations "chưa chạy"), `README.md` (UTF-16 one-liner).
+8. **Repository hygiene** — 2,342 committed `.open-next/` files (~53 MB) plus `.wrangler/` and `scratch/`; `.gitignore` does not exclude them.
+9. **No test entry point / CI** — `tests/*.test.ts` use `node:test`, but `package.json` has no `test` script and no runner is installed; `eslint-config-next` is 15.x while `next` is 16.x.
+10. **Production env gaps** — `APP_BASE_URL` is still `http://localhost:3000` (canonical/OG/sitemap would point at localhost) and `BANK_*` is unset locally.
+11. **`next dev` needs workerd** — `next.config.ts` starts Miniflare only in development, so a sandboxed agent cannot run `next dev`; verification uses `next build` + `next start`.
 
 ## Still blocked on the owner
-1. Do `orders`, `bank_transactions` and `gifts` exist in the live project, and with what schema? No committed migration creates them.
-2. Confirm the sellable feature set so `config/pricing.ts` can be rewritten to match reality.
-3. Should Sổ mừng and Album be built now (route + migration) or stay hidden?
-4. Paste the current Supabase secret key for this project (Dashboard → Project Settings → API Keys) so DB flows can be verified.
+1. Run `supabase/migration_v11_guest_preferences.sql`.
+2. Confirm the sellable feature set (or approve the current pricing copy).
+3. Decide Sổ mừng / Album: build or remove.
+4. Approve retention implementation (destructive deletion) and the schedule.
 5. Provide `BANK_*` values when the payment flow should be exercised locally.
 
 ## Deliberately not stored here

@@ -2,6 +2,14 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.3 · batch 2 (code `db98d6c`)
+- Public RSVP enforces the plan guest limit; `songRequest`/`rideNeeded` persist end-to-end (new `migration_v11_guest_preferences.sql`, **not applied yet**), are returned by the invite API and prefilled in every template; `map_embed_url` is preserved on event edit.
+- Added in-memory rate limiting for RSVP, wishes, invite and check-slug with 429 + `Retry-After`; verified 10×400 → 429 in a live smoke test.
+- Added `lib/server/pagination.ts` and removed the silent 1,000-row PostgREST truncation in guest lists, dashboard stats and ops lists; ops stats switched to head counts + month-bounded revenue.
+- Pricing copy now matches shipped features (template counts, MP3/album/Excel marked "Sắp có", gift QR stated as shipped, logo row removed); `/w/[slug]` is `noindex`; `.env.example` lists every variable name.
+- Owner replaced the Supabase secret key; DB-backed smoke tests (pages + public/invite APIs) now pass locally.
+- Files: `app/api/{rsvp,wishes,invite,w/[slug],weddings,ops}/**`, `lib/server/{rate-limit,pagination,mappers}.ts`, `lib/types.ts`, `config/pricing.ts`, `templates/**`, `components/{dashboard,invitation}/**`, `.env.example`, `supabase/migration_v11_guest_preferences.sql`.
+
 ## 2026-11-14 · v1.0.2 · owner confirmations + env diagnosis
 - Owner confirmed all committed migrations are applied; `db-schema.md` now records APPLIED for v2, v3, v4, v5, v10 and notes that no v6–v9 files exist.
 - Owner confirmed Auth0 SDK config lives in the local env (`AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`), the bank webhook is sent by a Google Apps Script project outside the repo, `ADMIN_EMAIL` is configured, and the 30-day free-plan retention commitment stays.

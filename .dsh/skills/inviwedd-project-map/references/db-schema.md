@@ -13,8 +13,11 @@ Owner confirmation (2026-11-14): **all migration files in this repository have b
 | `supabase/migration_v4.sql` | Adds `guests.plus_ones` (0–10) and `guests.diet` ('meat'/'veg'); widens `photos.kind` check to `banner, couple, gallery, og, gift` | APPLIED (owner) |
 | `supabase/migration_v5.sql` | Adds `users.theme` ('light'/'dark', default 'light') | APPLIED (owner) |
 | `supabase/migration_v10_ops.sql` | Adds `weddings.suspended`; creates `audit_logs`; RLS + revoke | APPLIED (owner) |
+| `supabase/migration_v11_guest_preferences.sql` | Adds `guests.song_request` (≤200 chars) and `guests.ride_needed` (bool) | **NOT APPLIED — pending owner** |
 
 The repository contains no v6–v9 files; the owner states the files present are the complete set that was run. Because v10 is applied, `weddings.suspended` exists — the `content.suspended` fallback in `lib/server/weddings.ts` stays as harmless defensive code.
+
+Migration v11 was written by the agent during batch 2 and has **not** been executed. Until the owner runs it, `/api/rsvp` falls back to writing only the older columns, so `songRequest`/`rideNeeded` are silently dropped and `/api/invite/[slug]` returns their defaults. The code detects the missing columns (42703/PGRST204) and retries without them.
 
 
 ## Tables
@@ -27,9 +30,8 @@ The repository contains no v6–v9 files; the owner states the files present are
 Note: `suspended` is also mirrored inside `content.suspended` by the suspend route and by `lib/ops-api.ts` fallbacks — two sources of truth.
 
 ### `guests`
-`id uuid PK`, `wedding_id uuid → weddings on delete cascade`, `name text check 1..100`, `slug text unique default 12 hex chars check '^[a-f0-9]{12}$'`, `status text default 'pending' check (pending|accepted|declined)`, `responded_at timestamptz`, `created_at`, `plus_ones int default 0 check 0..10` (v4), `diet text check (meat|veg)` (v4). Index `guests_wedding_idx (wedding_id)`.
+`id uuid PK`, `wedding_id uuid → weddings on delete cascade`, `name text check 1..100`, `slug text unique default 12 hex chars check '^[a-f0-9]{12}$'`, `status text default 'pending' check (pending|accepted|declined)`, `responded_at timestamptz`, `created_at`, `plus_ones int default 0 check 0..10` (v4), `diet text check (meat|veg)` (v4), `song_request text check ≤200` (v11, pending), `ride_needed boolean default false` (v11, pending). Index `guests_wedding_idx (wedding_id)`.
 Trigger `guests_set_responded_at` sets `responded_at = now()` when `status` changes from/to `pending` (v2).
-No `song_request` or `ride_needed` column exists, although the RSVP UI and `lib/types.ts` carry those fields.
 
 ### `wishes`
 `id uuid PK`, `wedding_id → weddings cascade`, `guest_id uuid → guests on delete set null`, `name 1..100`, `message 1..500`, `created_at`. Index `wishes_wedding_idx (wedding_id, created_at desc)`.

@@ -34,6 +34,13 @@ Each entry: decision → reason → where it lives in code. "Owner" means the re
 - **Ops staff can confirm, cancel and manually match transactions** — reconciliation must not depend only on the webhook. Code: `app/api/ops/orders`, `app/api/ops/bank-transactions/[id]/match`.
 - **Every ops mutation writes an audit log entry with a mandatory reason ≥5 characters** — accountability for plan changes, suspensions and matching. Code: `lib/server/ops.ts` (`recordAuditLog`), `migration_v10_ops.sql`.
 
+## Abuse protection and data volume
+- **Public writes are rate-limited in memory per isolate** (`lib/server/rate-limit.ts`): RSVP 10/min, wishes 10/min, invite 60/min, check-slug 30/min, answered with 429 + `Retry-After`. Chosen because no KV/Durable Object binding exists; it stops bursts on a warm isolate but is not a global quota, so a Cloudflare Rate Limiting rule at the edge is still recommended for production.
+- **A walk-in RSVP must respect the wedding's plan guest limit** — the public insert path counts guests and returns the same `getGuestLimitMessage` as the dashboard, closing the bypass where unlimited guests could be added to a free wedding. Code: `app/api/rsvp/route.ts`.
+- **Every "read all" query paginates with `range()`** (`lib/server/pagination.ts`, 1,000-row pages, chunked `.in()`), because Supabase PostgREST caps a response at 1,000 rows by default and silent truncation corrupts guest lists, dashboard stats and ops consoles. Code: guests/stats/ops routes.
+- **Ops counters use `head: true` counts instead of loading rows**, and monthly revenue fetches only paid orders inside the month window. Code: `app/api/ops/stats/route.ts`.
+- **Pricing may only describe shipped behaviour** — unimplemented capabilities carry the "Sắp có" badge (templates exclusive, MP3 upload, album, Excel export) while shipped ones (gift QR, 2 images) are stated plainly; the logo row was removed because nothing implements it. Code: `config/pricing.ts`.
+
 ## Security model
 - **The browser never talks to Supabase** — there is no Supabase JS client in components; all reads/writes go through Next API routes that use the secret key, and RLS has no policies plus `revoke all` for `anon`/`authenticated`. Code: `lib/server/supabase.ts`, `migration_v2.sql`.
 - **Owner auth is a Bearer JWT verified with `jose` (RS256, issuer + audience checked)** — `proxy.ts` guards `/dashboard` with the Auth0 session cookie, and the API trusts only the verified token. Code: `lib/server/auth.ts`, `proxy.ts`.
