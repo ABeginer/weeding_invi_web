@@ -484,6 +484,27 @@ export function WeddingInfoEditor({
               khách”. Tắt để ẩn tên khách khỏi ảnh chia sẻ.
             </span>
           </label>
+
+          {draftContent.shareGuestName === true && (
+            <div className="mt-2">
+              <img
+                src={`/api/og/invite?couple=${encodeURIComponent(
+                  `${draftContent.couple.groomName} & ${draftContent.couple.brideName}`,
+                )}&guest=${encodeURIComponent("Bạn Thanh Mai")}&date=${encodeURIComponent(
+                  draftContent.date.slice(0, 10).split("-").reverse().join("."),
+                )}&style=olive`}
+                alt="Xem trước ảnh chia sẻ Zalo/Facebook với tên khách mời"
+                width={1200}
+                height={630}
+                loading="lazy"
+                className="w-full rounded-xl border border-border"
+              />
+              <p className="mt-1.5 text-[11px] text-fg-muted">
+                Ảnh minh hoạ với khách mẫu “Bạn Thanh Mai”. Ảnh thật của từng
+                khách sẽ in đúng tên của họ khi bạn dán link vào Zalo/Facebook.
+              </p>
+            </div>
+          )}
         </Card>
 
         {/* Quà mừng & chuyển khoản */}

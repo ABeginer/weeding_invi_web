@@ -10,7 +10,12 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Dữ liệu được lưu bao lâu?",
     answer:
-      "Gói Free lưu 30 ngày. Gói Pro lưu 1 năm. Nâng cấp Pro để giữ thiệp lâu hơn.",
+      "Gói Free lưu 6 tháng. Gói Pro lưu 1 năm, gói VIP lưu vĩnh viễn. Nâng cấp bất cứ lúc nào để giữ thiệp lâu hơn.",
+  },
+  {
+    question: "Thiệp có giới hạn lượt xem không?",
+    answer:
+      "Không. Cả 3 gói đều cho khách mở thiệp không giới hạn lượt xem, không tính phí theo lượt.",
   },
   {
     question: "Thanh toán như thế nào?",
@@ -29,7 +34,8 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     question: "Có xuất được danh sách khách ra Excel không?",
-    answer: "Sắp có.",
+    answer:
+      "Có. Gói Pro/VIP xuất file CSV có UTF-8 BOM, mở trực tiếp bằng Excel trên Windows không lỗi font.",
   },
 ];
 
