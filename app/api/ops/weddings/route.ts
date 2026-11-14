@@ -1,6 +1,17 @@
 import { json } from "@/lib/server/http";
 import { opsRoute } from "@/lib/server/ops";
+import { fetchAllRows } from "@/lib/server/pagination";
 import { db } from "@/lib/server/supabase";
+
+interface WeddingListRow {
+  id: string;
+  slug: string;
+  plan: string;
+  content: unknown;
+  owner_id: string;
+  created_at: string;
+  suspended?: boolean | null;
+}
 
 export const GET = opsRoute(async (req: Request) => {
   const url = new URL(req.url);
@@ -12,7 +23,6 @@ export const GET = opsRoute(async (req: Request) => {
 
   const client = db();
 
-  // Query weddings
   let query = client
     .from("weddings")
     .select("id, slug, plan, content, owner_id, created_at")
@@ -22,8 +32,10 @@ export const GET = opsRoute(async (req: Request) => {
     query = query.eq("plan", plan);
   }
 
-  const { data: allWeddings, error } = await query;
-  if (error) throw error;
+  // Đọc theo trang 1.000 dòng để không bị PostgREST cắt âm thầm.
+  const allWeddings = await fetchAllRows<WeddingListRow>((from, to) =>
+    query.range(from, to),
+  );
 
   // Fetch users for ownerEmail
   const ownerIds = Array.from(new Set((allWeddings || []).map((w) => w.owner_id)));

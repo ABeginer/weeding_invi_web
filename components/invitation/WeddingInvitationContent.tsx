@@ -23,6 +23,8 @@ interface WeddingInvitationContentProps {
   initialStatus?: GuestStatus;
   initialPlusOnes?: number;
   initialDiet?: GuestDiet | null;
+  initialSongRequest?: string | null;
+  initialRideNeeded?: boolean;
   onOpenGift?: () => void;
 }
 
@@ -34,6 +36,8 @@ export function WeddingInvitationContent({
   initialStatus = "pending",
   initialPlusOnes = 0,
   initialDiet = null,
+  initialSongRequest = null,
+  initialRideNeeded = false,
   onOpenGift,
 }: WeddingInvitationContentProps) {
   const isContained = useInvitationContained();
@@ -68,6 +72,8 @@ export function WeddingInvitationContent({
           initialStatus={initialStatus}
           initialPlusOnes={initialPlusOnes}
           initialDiet={initialDiet}
+          initialSongRequest={initialSongRequest}
+          initialRideNeeded={initialRideNeeded}
         />
         {/* #11 Mừng cưới (sau khi xác nhận) */}
         <GiftQR onOpenGift={onOpenGift} />

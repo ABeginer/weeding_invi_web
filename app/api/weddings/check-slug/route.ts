@@ -1,8 +1,12 @@
 import { json, route } from "@/lib/server/http";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { db } from "@/lib/server/supabase";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 export const GET = route(async (req: Request) => {
+  const limited = rateLimit(req, "check-slug", 30, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const { searchParams } = new URL(req.url);
   const rawSlug = searchParams.get("slug") ?? "";
   const slugCheck = validateWeddingSlug(rawSlug);

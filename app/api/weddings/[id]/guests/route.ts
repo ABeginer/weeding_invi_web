@@ -1,5 +1,6 @@
 import { getGuestLimitMessage, getPlanLimits } from "@/config/plans";
 import { authRoute, fail, json, readBody, text } from "@/lib/server/http";
+import { chunkIds, fetchAllRows } from "@/lib/server/pagination";
 import { toGuest, type GuestRow } from "@/lib/server/mappers";
 import { db } from "@/lib/server/supabase";
 import { getOwnedWedding } from "@/lib/server/weddings";
@@ -12,31 +13,33 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
   if (!wedding) return fail("Không tìm thấy thiệp cưới.", 404);
 
   const client = db();
-  const { data, error } = await client
-    .from("guests")
-    .select("*")
-    .eq("wedding_id", wedding.id)
-    .order("created_at", { ascending: false })
-    .limit(2000);
-
-  if (error) throw error;
-  const rows = (data ?? []) as GuestRow[];
+  const rows = await fetchAllRows<GuestRow>((from, to) =>
+    client
+      .from("guests")
+      .select("*")
+      .eq("wedding_id", wedding.id)
+      .order("created_at", { ascending: false })
+      .range(from, to),
+  );
   const eventMap = new Map<string, string[]>();
 
   if (rows.length > 0) {
     const guestIds = rows.map((row) => row.id);
-    const { data: links, error: linkError } = await client
-      .from("guest_events")
-      .select("guest_id, event_id")
-      .in("guest_id", guestIds);
 
-    if (linkError) throw linkError;
-    for (const row of links ?? []) {
-      const gId = String(row.guest_id);
-      const eId = String(row.event_id);
-      const current = eventMap.get(gId) ?? [];
-      current.push(eId);
-      eventMap.set(gId, current);
+    for (const chunk of chunkIds(guestIds, 200)) {
+      const { data: links, error: linkError } = await client
+        .from("guest_events")
+        .select("guest_id, event_id")
+        .in("guest_id", chunk);
+
+      if (linkError) throw linkError;
+      for (const row of links ?? []) {
+        const gId = String(row.guest_id);
+        const eId = String(row.event_id);
+        const current = eventMap.get(gId) ?? [];
+        current.push(eId);
+        eventMap.set(gId, current);
+      }
     }
   }
 

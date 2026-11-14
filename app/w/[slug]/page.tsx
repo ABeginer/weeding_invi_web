@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!wedding) {
     return {
       title: "Không tìm thấy thiệp cưới",
+      robots: { index: false, follow: false },
     };
   }
 
@@ -47,6 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
+    robots: { index: false, follow: false },
     openGraph: {
       title,
       description,

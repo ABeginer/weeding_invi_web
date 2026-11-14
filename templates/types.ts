@@ -72,4 +72,6 @@ export interface WeddingTemplateProps {
   initialStatus?: GuestStatus;
   initialPlusOnes?: number;
   initialDiet?: GuestDiet | null;
+  initialSongRequest?: string | null;
+  initialRideNeeded?: boolean;
 }

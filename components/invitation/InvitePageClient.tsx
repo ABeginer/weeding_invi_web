@@ -114,6 +114,8 @@ export function InvitePageClient({
       initialStatus={invite?.status ?? "pending"}
       initialPlusOnes={invite?.plusOnes ?? 0}
       initialDiet={invite?.diet ?? null}
+      initialSongRequest={invite?.songRequest ?? null}
+      initialRideNeeded={invite?.rideNeeded ?? false}
     />
   );
 }

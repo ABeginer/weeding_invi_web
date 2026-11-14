@@ -32,6 +32,8 @@ export interface GuestRow {
   status: GuestStatus;
   plus_ones?: number | null;
   diet?: GuestDiet | null;
+  song_request?: string | null;
+  ride_needed?: boolean | null;
   responded_at: string | null;
   created_at: string;
 }
@@ -93,6 +95,11 @@ export function toGuest(row: GuestRow, eventIds?: string[]): Guest {
         ? Math.max(0, row.plus_ones)
         : 0,
     diet: row.diet === "meat" || row.diet === "veg" ? row.diet : null,
+    songRequest:
+      typeof row.song_request === "string" && row.song_request.trim()
+        ? row.song_request
+        : null,
+    rideNeeded: row.ride_needed === true,
     respondedAt: row.responded_at,
     createdAt: row.created_at,
     ...(eventIds !== undefined ? { eventIds } : {}),

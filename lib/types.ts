@@ -145,6 +145,8 @@ export interface InviteResponse {
   status: GuestStatus;
   plusOnes?: number;
   diet?: GuestDiet | null;
+  songRequest?: string | null;
+  rideNeeded?: boolean;
   events?: WeddingEvent[];
 }
 

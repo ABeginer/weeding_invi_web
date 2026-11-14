@@ -1,4 +1,5 @@
 import { authRoute, fail, json } from "@/lib/server/http";
+import { chunkIds, fetchAllRows } from "@/lib/server/pagination";
 import { db } from "@/lib/server/supabase";
 import { getOwnedWedding, listWeddingEvents } from "@/lib/server/weddings";
 
@@ -29,11 +30,7 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
   if (!wedding) return fail("Không tìm thấy thiệp cưới.", 404);
 
   const client = db();
-  const [guestsRes, wishes, events] = await Promise.all([
-    client
-      .from("guests")
-      .select("id, status, plus_ones, diet")
-      .eq("wedding_id", wedding.id),
+  const [wishes, events] = await Promise.all([
     client
       .from("wishes")
       .select("id", { count: "exact", head: true })
@@ -41,22 +38,27 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
     listWeddingEvents(wedding.id),
   ]);
 
-  let guestRows: GuestStatRow[] = [];
-  if (guestsRes.error) {
-    if (!isMissingV4GuestColumns(guestsRes.error)) {
-      throw guestsRes.error;
-    }
-    const fallback = await client
-      .from("guests")
-      .select("id, status")
-      .eq("wedding_id", wedding.id);
-    if (fallback.error) throw fallback.error;
-    guestRows = (fallback.data ?? []) as GuestStatRow[];
-  } else {
-    guestRows = (guestsRes.data ?? []) as GuestStatRow[];
-  }
-
   if (wishes.error) throw wishes.error;
+
+  let guestRows: GuestStatRow[] = [];
+  try {
+    guestRows = await fetchAllRows<GuestStatRow>((from, to) =>
+      client
+        .from("guests")
+        .select("id, status, plus_ones, diet")
+        .eq("wedding_id", wedding.id)
+        .range(from, to),
+    );
+  } catch (error) {
+    if (!isMissingV4GuestColumns(error)) throw error;
+    guestRows = await fetchAllRows<GuestStatRow>((from, to) =>
+      client
+        .from("guests")
+        .select("id, status")
+        .eq("wedding_id", wedding.id)
+        .range(from, to),
+    );
+  }
 
   const count = (status: string) =>
     guestRows.filter((row) => row.status === status).length;
@@ -81,18 +83,20 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
   const assignedPerEvent = new Map<string, number>();
 
   if (guestIds.length > 0 && events.length > 0) {
-    const { data: links, error: linkError } = await client
-      .from("guest_events")
-      .select("guest_id, event_id")
-      .in("guest_id", guestIds);
+    for (const chunk of chunkIds(guestIds, 200)) {
+      const { data: links, error: linkError } = await client
+        .from("guest_events")
+        .select("guest_id, event_id")
+        .in("guest_id", chunk);
 
-    if (linkError) throw linkError;
+      if (linkError) throw linkError;
 
-    for (const row of links ?? []) {
-      const gId = String(row.guest_id);
-      const eId = String(row.event_id);
-      assignedGuestIds.add(gId);
-      assignedPerEvent.set(eId, (assignedPerEvent.get(eId) ?? 0) + 1);
+      for (const row of links ?? []) {
+        const gId = String(row.guest_id);
+        const eId = String(row.event_id);
+        assignedGuestIds.add(gId);
+        assignedPerEvent.set(eId, (assignedPerEvent.get(eId) ?? 0) + 1);
+      }
     }
   }
 

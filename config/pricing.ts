@@ -61,18 +61,18 @@ export const PRICING_ROWS: PricingRow[] = [
     id: "templates",
     feature: "Mẫu thiệp",
     values: {
-      free: { text: "3 mẫu" },
-      pro: { text: "Tất cả mẫu Pro" },
-      vip: { text: "Tất cả mẫu + mẫu độc quyền" },
+      free: { text: "22 mẫu miễn phí" },
+      pro: { text: "Toàn bộ 23 mẫu hiện có" },
+      vip: { text: "Toàn bộ 23 mẫu + mẫu độc quyền", comingSoon: true },
     },
   },
   {
     id: "music",
     feature: "Nhạc nền",
     values: {
-      free: { text: "3 bài có sẵn" },
-      pro: { text: "Tải nhạc MP3 lên" },
-      vip: { text: "Tải nhạc MP3 lên" },
+      free: { text: "Nhạc nền có sẵn theo mẫu" },
+      pro: { text: "Tải nhạc MP3 lên", comingSoon: true },
+      vip: { text: "Tải nhạc MP3 lên", comingSoon: true },
     },
   },
   {
@@ -89,8 +89,8 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Album QR cho khách",
     values: {
       free: { text: "Không có" },
-      pro: { text: "30 ảnh" },
-      vip: { text: "300 ảnh" },
+      pro: { text: "30 ảnh", comingSoon: true },
+      vip: { text: "300 ảnh", comingSoon: true },
     },
   },
   {
@@ -100,15 +100,6 @@ export const PRICING_ROWS: PricingRow[] = [
       free: { text: "30 ngày" },
       pro: { text: "1 năm" },
       vip: { text: "Vĩnh viễn" },
-    },
-  },
-  {
-    id: "branding",
-    feature: "Logo",
-    values: {
-      free: { text: "Có logo chân trang" },
-      pro: { text: "Không logo" },
-      vip: { text: "Không logo" },
     },
   },
   {
@@ -125,8 +116,8 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Mừng cưới QR",
     values: {
       free: { text: "Chỉ hiện thông tin chữ" },
-      pro: { text: "Sắp có", comingSoon: true },
-      vip: { text: "Sắp có", comingSoon: true },
+      pro: { text: "2 ảnh QR (nhà trai & nhà gái)" },
+      vip: { text: "2 ảnh QR (nhà trai & nhà gái)" },
     },
   },
 ];

@@ -1,76 +1,61 @@
 import { json } from "@/lib/server/http";
 import { opsRoute } from "@/lib/server/ops";
+import { fetchAllRows } from "@/lib/server/pagination";
 import { db } from "@/lib/server/supabase";
 
 export const GET = opsRoute(async () => {
   const client = db();
 
-  // Users count
-  const { count: usersCount, error: usersErr } = await client
-    .from("users")
-    .select("id", { count: "exact", head: true });
-  if (usersErr) throw usersErr;
+  const [usersRes, freeRes, proRes, vipRes, suspendedRes, pendingRes] =
+    await Promise.all([
+      client.from("users").select("id", { count: "exact", head: true }),
+      client.from("weddings").select("id", { count: "exact", head: true }).eq("plan", "free"),
+      client.from("weddings").select("id", { count: "exact", head: true }).eq("plan", "pro"),
+      client.from("weddings").select("id", { count: "exact", head: true }).eq("plan", "vip"),
+      client.from("weddings").select("id", { count: "exact", head: true }).eq("suspended", true),
+      client.from("orders").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    ]);
 
-  // Weddings
-  const { data: weddings, error: weddingsErr } = await client
-    .from("weddings")
-    .select("id, plan, content");
-  if (weddingsErr) throw weddingsErr;
-
-  let freeCount = 0;
-  let proCount = 0;
-  let vipCount = 0;
-  let suspendedWeddings = 0;
-
-  for (const w of weddings || []) {
-    if (w.plan === "vip") vipCount += 1;
-    else if (w.plan === "pro") proCount += 1;
-    else freeCount += 1;
-
-    const isSuspended =
-      Boolean((w as { suspended?: boolean }).suspended) ||
-      Boolean((w.content as { suspended?: boolean })?.suspended);
-    if (isSuspended) suspendedWeddings += 1;
+  for (const res of [usersRes, freeRes, proRes, vipRes, suspendedRes, pendingRes]) {
+    if (res.error) throw res.error;
   }
 
-  // Orders
-  const { data: orders, error: ordersErr } = await client
-    .from("orders")
-    .select("id, status, amount_vnd, paid_at");
-  if (ordersErr) throw ordersErr;
-
+  // Doanh thu chỉ cần các đơn đã trả trong tháng hiện tại (UTC).
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const monthStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  ).toISOString();
+  const monthEnd = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+  ).toISOString();
 
-  let ordersPending = 0;
-  let ordersPaidThisMonth = 0;
-  let revenueThisMonthVnd = 0;
+  const paidRows = await fetchAllRows<{ amount_vnd: number | string | null }>(
+    (from, to) =>
+      client
+        .from("orders")
+        .select("amount_vnd")
+        .eq("status", "paid")
+        .gte("paid_at", monthStart)
+        .lt("paid_at", monthEnd)
+        .range(from, to),
+  );
 
-  for (const o of orders || []) {
-    if (o.status === "pending") {
-      ordersPending += 1;
-    } else if (o.status === "paid" && o.paid_at) {
-      const d = new Date(o.paid_at);
-      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-        ordersPaidThisMonth += 1;
-        revenueThisMonthVnd += Number(o.amount_vnd) || 0;
-      }
-    }
-  }
+  const revenueThisMonthVnd = paidRows.reduce(
+    (sum, row) => sum + (Number(row.amount_vnd) || 0),
+    0,
+  );
 
   return json({
-    users: usersCount || 0,
+    users: usersRes.count || 0,
     weddingsByPlan: {
-      free: freeCount,
-      pro: proCount,
-      vip: vipCount,
+      free: freeRes.count || 0,
+      pro: proRes.count || 0,
+      vip: vipRes.count || 0,
     },
-    suspendedWeddings,
-    ordersPending,
-    ordersPaidThisMonth,
+    suspendedWeddings: suspendedRes.count || 0,
+    ordersPending: pendingRes.count || 0,
+    ordersPaidThisMonth: paidRows.length,
     revenueThisMonthVnd,
     generatedAt: new Date().toISOString(),
   });
 });
-

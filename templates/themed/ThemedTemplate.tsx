@@ -58,6 +58,8 @@ export function ThemedTemplate({
   initialStatus = "pending",
   initialPlusOnes = 0,
   initialDiet = null,
+  initialSongRequest = null,
+  initialRideNeeded = false,
   externalMusicControl,
 }: ThemedTemplateProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -506,6 +508,8 @@ export function ThemedTemplate({
             initialStatus={initialStatus}
             initialPlusOnes={initialPlusOnes}
             initialDiet={initialDiet}
+            initialSongRequest={initialSongRequest}
+            initialRideNeeded={initialRideNeeded}
           />
         </section>
 

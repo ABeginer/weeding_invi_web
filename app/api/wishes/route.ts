@@ -1,10 +1,14 @@
 import { db } from "@/lib/server/supabase";
 import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { verifyTurnstileToken } from "@/lib/server/turnstile";
 import { isWeddingSuspended } from "@/lib/server/weddings";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 export const POST = route(async (req: Request) => {
+  const limited = rateLimit(req, "wishes", 10, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const body = await readBody(req);
 
   if (typeof body?.website === "string" && body.website.trim() !== "") {

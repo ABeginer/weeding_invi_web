@@ -1,20 +1,30 @@
+import { getGuestLimitMessage, getPlanLimits } from "@/config/plans";
 import { db } from "@/lib/server/supabase";
 import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { verifyTurnstileToken } from "@/lib/server/turnstile";
 import { isWeddingSuspended } from "@/lib/server/weddings";
-import type { GuestDiet } from "@/lib/types";
+import type { GuestDiet, WeddingPlan } from "@/lib/types";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
-function isMissingV4GuestColumns(error: unknown): boolean {
+const GUEST_SELECT = "id, slug, wedding_id, name";
+const SONG_REQUEST_MAX = 200;
+
+function hasColumnIssue(error: unknown, columns: string[]): boolean {
   if (!error || typeof error !== "object") return false;
   const err = error as { code?: unknown; message?: unknown };
   const code = typeof err.code === "string" ? err.code : "";
   const message = typeof err.message === "string" ? err.message : "";
-  return (
-    code === "42703" ||
-    code === "PGRST204" ||
-    /\b(plus_ones|diet)\b/i.test(message)
-  );
+  if (code === "42703" || code === "PGRST204") return true;
+  return columns.some((column) => new RegExp(`\\b${column}\\b`, "i").test(message));
+}
+
+function isMissingV4GuestColumns(error: unknown): boolean {
+  return hasColumnIssue(error, ["plus_ones", "diet"]);
+}
+
+function isMissingGuestPreferenceColumns(error: unknown): boolean {
+  return hasColumnIssue(error, ["song_request", "ride_needed"]);
 }
 
 function parsePlusOnes(raw: unknown): { ok: true; value: number } | { ok: false; error: string } {
@@ -41,6 +51,10 @@ function parseDiet(raw: unknown): { ok: true; value: GuestDiet | null } | { ok: 
 }
 
 export const POST = route(async (req: Request) => {
+  // Chặn burst trước khi gọi Turnstile để không đốt quota và tránh spam DB.
+  const limited = rateLimit(req, "rsvp", 10, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const body = await readBody(req);
 
   if (typeof body?.website === "string" && body.website.trim() !== "") {
@@ -75,11 +89,14 @@ export const POST = route(async (req: Request) => {
 
   const resolvedPlusOnes = status === "accepted" ? plusOnesResult.value : 0;
   const resolvedDiet = status === "accepted" ? dietResult.value : null;
+  const songRequest = status === "accepted" ? text(body?.songRequest, SONG_REQUEST_MAX) : null;
+  const rideNeeded = status === "accepted" && body?.rideNeeded === true;
   const wishMessage = text(body?.wish, 500);
   const respondedAt = new Date().toISOString();
 
   const client = db();
 
+  // ---- Cập nhật theo link khách cá nhân ----
   if (rawSlug) {
     if (!SLUG_RE.test(rawSlug)) return fail("Link không hợp lệ.", 404);
 
@@ -95,32 +112,56 @@ export const POST = route(async (req: Request) => {
       return fail("Thiệp cưới này đang tạm khoá.", 403);
     }
 
-    let { data, error } = await client
+    const fullUpdate = {
+      status,
+      plus_ones: resolvedPlusOnes,
+      diet: resolvedDiet,
+      song_request: songRequest,
+      ride_needed: rideNeeded,
+      responded_at: respondedAt,
+    };
+    const v4Update = {
+      status,
+      plus_ones: resolvedPlusOnes,
+      diet: resolvedDiet,
+      responded_at: respondedAt,
+    };
+    const baseUpdate = { status, responded_at: respondedAt };
+
+    let res = await client
       .from("guests")
-      .update({
-        status,
-        plus_ones: resolvedPlusOnes,
-        diet: resolvedDiet,
-        responded_at: respondedAt,
-      })
+      .update(fullUpdate)
       .eq("slug", rawSlug)
-      .select("id, slug, wedding_id, name")
+      .select(GUEST_SELECT)
       .maybeSingle();
 
-    if (error && isMissingV4GuestColumns(error) && resolvedPlusOnes === 0 && resolvedDiet === null) {
-      const fallback = await client
+    if (res.error && isMissingGuestPreferenceColumns(res.error)) {
+      res = await client
         .from("guests")
-        .update({ status, responded_at: respondedAt })
+        .update(v4Update)
         .eq("slug", rawSlug)
-        .select("id, slug, wedding_id, name")
+        .select(GUEST_SELECT)
         .maybeSingle();
-      data = fallback.data;
-      error = fallback.error;
     }
 
-    if (error) throw error;
-    if (!data) return fail("Link không hợp lệ.", 404);
+    if (
+      res.error &&
+      isMissingV4GuestColumns(res.error) &&
+      resolvedPlusOnes === 0 &&
+      resolvedDiet === null
+    ) {
+      res = await client
+        .from("guests")
+        .update(baseUpdate)
+        .eq("slug", rawSlug)
+        .select(GUEST_SELECT)
+        .maybeSingle();
+    }
 
+    if (res.error) throw res.error;
+    if (!res.data) return fail("Link không hợp lệ.", 404);
+
+    const data = res.data;
     let wishSaved = false;
     if (wishMessage) {
       const { error: wishError } = await client.from("wishes").insert({
@@ -137,6 +178,7 @@ export const POST = route(async (req: Request) => {
     return json({ ok: true, slug: data.slug, wishSaved });
   }
 
+  // ---- Khách tự xác nhận từ thiệp chung ----
   const weddingSlugCheck = validateWeddingSlug(body?.weddingSlug);
   if (!weddingSlugCheck.valid) {
     return fail("Thiếu thông tin thiệp mời.");
@@ -144,7 +186,7 @@ export const POST = route(async (req: Request) => {
 
   const { data: weddingRow, error: weddingError } = await client
     .from("weddings")
-    .select("id")
+    .select("id, plan")
     .eq("slug", weddingSlugCheck.slug)
     .maybeSingle();
 
@@ -154,40 +196,67 @@ export const POST = route(async (req: Request) => {
     return fail("Thiệp cưới này đang tạm khoá.", 403);
   }
 
+  const plan = ((weddingRow.plan as WeddingPlan | null) ?? "free") satisfies WeddingPlan;
+  const maxGuests = getPlanLimits(plan).guests;
+  if (maxGuests !== null) {
+    const { count, error: countError } = await client
+      .from("guests")
+      .select("id", { count: "exact", head: true })
+      .eq("wedding_id", weddingRow.id);
+
+    if (countError) throw countError;
+    if ((count ?? 0) >= maxGuests) {
+      return fail(getGuestLimitMessage(plan), 403);
+    }
+  }
+
   const name = text(body?.name, 100);
   if (!name) return fail("Vui lòng nhập tên của bạn (tối đa 100 ký tự).");
 
-  let { data, error } = await client
-    .from("guests")
-    .insert({
-      wedding_id: weddingRow.id,
-      name,
-      status,
-      plus_ones: resolvedPlusOnes,
-      diet: resolvedDiet,
-      responded_at: respondedAt,
-    })
-    .select("id, slug")
-    .single();
+  const fullInsert = {
+    wedding_id: weddingRow.id,
+    name,
+    status,
+    plus_ones: resolvedPlusOnes,
+    diet: resolvedDiet,
+    song_request: songRequest,
+    ride_needed: rideNeeded,
+    responded_at: respondedAt,
+  };
+  const v4Insert = {
+    wedding_id: weddingRow.id,
+    name,
+    status,
+    plus_ones: resolvedPlusOnes,
+    diet: resolvedDiet,
+    responded_at: respondedAt,
+  };
+  const baseInsert = {
+    wedding_id: weddingRow.id,
+    name,
+    status,
+    responded_at: respondedAt,
+  };
 
-  if (error && isMissingV4GuestColumns(error) && resolvedPlusOnes === 0 && resolvedDiet === null) {
-    const fallback = await client
-      .from("guests")
-      .insert({
-        wedding_id: weddingRow.id,
-        name,
-        status,
-        responded_at: respondedAt,
-      })
-      .select("id, slug")
-      .single();
-    data = fallback.data;
-    error = fallback.error;
+  let res = await client.from("guests").insert(fullInsert).select("id, slug").single();
+
+  if (res.error && isMissingGuestPreferenceColumns(res.error)) {
+    res = await client.from("guests").insert(v4Insert).select("id, slug").single();
   }
 
-  if (error) throw error;
-  if (!data) return fail("Không thể lưu xác nhận tham dự.", 500);
+  if (
+    res.error &&
+    isMissingV4GuestColumns(res.error) &&
+    resolvedPlusOnes === 0 &&
+    resolvedDiet === null
+  ) {
+    res = await client.from("guests").insert(baseInsert).select("id, slug").single();
+  }
 
+  if (res.error) throw res.error;
+  if (!res.data) return fail("Không thể lưu xác nhận tham dự.", 500);
+
+  const data = res.data;
   let wishSaved = false;
   if (wishMessage) {
     const { error: wishError } = await client.from("wishes").insert({

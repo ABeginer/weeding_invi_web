@@ -22,6 +22,8 @@ export default function Basic1Template({
   initialStatus = "pending",
   initialPlusOnes = 0,
   initialDiet = null,
+  initialSongRequest = null,
+  initialRideNeeded = false,
 }: WeddingTemplateProps) {
   const isReadOnlyPreview = mode === "demo" || mode === "preview";
   const resolvedExternalMusic = externalMusicControl ?? isReadOnlyPreview;
@@ -67,6 +69,8 @@ export default function Basic1Template({
             initialStatus={initialStatus}
             initialPlusOnes={initialPlusOnes}
             initialDiet={initialDiet}
+            initialSongRequest={initialSongRequest}
+            initialRideNeeded={initialRideNeeded}
             onOpenGift={() => setGiftOpen(true)}
           />
         </InvitationShell>

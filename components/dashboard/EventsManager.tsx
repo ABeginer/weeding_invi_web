@@ -159,7 +159,7 @@ export function EventsManager({
       lunarDate: form.lunarDate,
       venueName: form.venueName,
       venueAddress: form.venueAddress,
-      mapEmbedUrl: null,
+      mapEmbedUrl: form.mapEmbedUrl.trim() || null,
       mapDirectionsUrl: form.mapDirectionsUrl.trim() || null,
     };
 

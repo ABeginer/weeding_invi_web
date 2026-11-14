@@ -15,6 +15,8 @@ interface LiveTemplateRendererProps {
   initialStatus?: GuestStatus;
   initialPlusOnes?: number;
   initialDiet?: GuestDiet | null;
+  initialSongRequest?: string | null;
+  initialRideNeeded?: boolean;
 }
 
 export function LiveTemplateRenderer({
@@ -27,6 +29,8 @@ export function LiveTemplateRenderer({
   initialStatus = "pending",
   initialPlusOnes = 0,
   initialDiet = null,
+  initialSongRequest = null,
+  initialRideNeeded = false,
 }: LiveTemplateRendererProps) {
   if (templateId !== "basic-1" && templateId !== "ritual-an-hoi") {
     return (
@@ -44,6 +48,8 @@ export function LiveTemplateRenderer({
         initialStatus={initialStatus}
         initialPlusOnes={initialPlusOnes}
         initialDiet={initialDiet}
+        initialSongRequest={initialSongRequest}
+        initialRideNeeded={initialRideNeeded}
       />
     );
   }
@@ -62,6 +68,8 @@ export function LiveTemplateRenderer({
       initialStatus={initialStatus}
       initialPlusOnes={initialPlusOnes}
       initialDiet={initialDiet}
+      initialSongRequest={initialSongRequest}
+      initialRideNeeded={initialRideNeeded}
     />
   );
 }

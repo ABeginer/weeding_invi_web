@@ -28,6 +28,8 @@ export default function Basic3Template({
   initialStatus = "pending",
   initialPlusOnes = 0,
   initialDiet = null,
+  initialSongRequest = null,
+  initialRideNeeded = false,
   externalMusicControl,
 }: WeddingTemplateProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -507,6 +509,8 @@ export default function Basic3Template({
           initialStatus={initialStatus}
           initialPlusOnes={initialPlusOnes}
           initialDiet={initialDiet}
+          initialSongRequest={initialSongRequest}
+          initialRideNeeded={initialRideNeeded}
         />
 
         {/* Gift (sau khi xác nhận) */}
