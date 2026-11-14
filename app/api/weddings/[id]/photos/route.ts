@@ -24,7 +24,14 @@ import {
 
 type Ctx = { params: Promise<{ id: string }> };
 
-const VALID_KINDS = new Set<PhotoKind>(["banner", "couple", "gallery", "og", "gift"]);
+const VALID_KINDS = new Set<PhotoKind>([
+  "banner",
+  "couple",
+  "gallery",
+  "og",
+  "gift",
+  "album",
+]);
 const VALID_SLOTS = new Set<PhotoSlot>([
   "hero",
   "groom",

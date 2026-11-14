@@ -564,6 +564,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
           {activeTab === "photos" && (
             <PhotosManager
               weddingId={wedding.id}
+              weddingSlug={wedding.slug}
               plan={wedding.plan}
               content={draftContent}
               photos={photos}

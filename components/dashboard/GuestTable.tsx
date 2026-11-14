@@ -24,7 +24,7 @@ import {
   ApiError,
   buildGuestLink,
   deleteGuest,
-  listGuests,
+  listGuestsPage,
   setGuestEvents,
   updateGuest,
 } from "@/lib/api";
@@ -65,6 +65,11 @@ export function GuestTable({
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
+  const [page, setPage] = React.useState(1);
+  const [totalPages, setTotalPages] = React.useState(1);
+  const [total, setTotal] = React.useState(0);
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"all" | GuestStatus>("all");
 
@@ -96,8 +101,16 @@ export function GuestTable({
     setLoading(true);
     setError(null);
     try {
-      const data = await listGuests(weddingId);
-      setGuests(data);
+      const data = await listGuestsPage(weddingId, {
+        page,
+        pageSize: 50,
+        q: debouncedSearch,
+        status: statusFilter,
+      });
+      setGuests(data.items);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      if (page > data.totalPages) setPage(data.totalPages);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         window.location.assign("/auth/login");
@@ -109,38 +122,30 @@ export function GuestTable({
     } finally {
       setLoading(false);
     }
-  }, [weddingId]);
+  }, [weddingId, page, debouncedSearch, statusFilter]);
 
   React.useEffect(() => {
     loadGuests();
   }, [loadGuests]);
+
+  // Tìm kiếm phía server, debounce 300ms và quay về trang 1.
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const eventMap = React.useMemo(
     () => new Map(events.map((evt) => [evt.id, evt])),
     [events],
   );
 
-  const filteredGuests = React.useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    return guests.filter((guest) => {
-      if (statusFilter !== "all" && guest.status !== statusFilter) {
-        return false;
-      }
-      if (
-        keyword &&
-        !guest.name.toLowerCase().includes(keyword) &&
-        !guest.slug.toLowerCase().includes(keyword)
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }, [guests, search, statusFilter]);
-
   const limits = getPlanLimits(plan);
   const guestLimit = limits.guests;
   const reachedGuestLimit =
-    guestLimit !== null && !loading && guests.length >= guestLimit;
+    guestLimit !== null && !loading && total >= guestLimit;
 
   const getResolvedEvents = React.useCallback(
     (guest: Guest): WeddingEvent[] => {
@@ -162,10 +167,10 @@ export function GuestTable({
   }, [guests]);
 
   const toggleSelectAll = () => {
-    if (selectedGuestIds.length === filteredGuests.length) {
+    if (selectedGuestIds.length === guests.length) {
       setSelectedGuestIds([]);
     } else {
-      setSelectedGuestIds(filteredGuests.map((g) => g.id));
+      setSelectedGuestIds(guests.map((g) => g.id));
     }
   };
 
@@ -392,9 +397,16 @@ export function GuestTable({
     try {
       await deleteGuest(weddingId, deletingGuest.id);
       setGuests((prev) => prev.filter((item) => item.id !== deletingGuest.id));
+      setTotal((prev) => Math.max(0, prev - 1));
       showToast(`Đã xóa khách mời "${deletingGuest.name}"`, "success");
       setDeletingGuest(null);
       onGuestsChanged?.();
+      // Nếu xoá khách cuối cùng của trang hiện tại thì lùi về trang trước.
+      if (guests.length <= 1 && page > 1) {
+        setPage((prev) => Math.max(1, prev - 1));
+      } else {
+        void loadGuests();
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setDeletingGuest(null);
@@ -447,8 +459,8 @@ export function GuestTable({
           </h2>
           <p className="text-xs text-fg-muted sm:text-sm">
             {guestLimit !== null
-              ? `Đang dùng ${guests.length}/${guestLimit} khách mời (gói ${getPlanLabel(plan)}).`
-              : `Tổng cộng ${guests.length} khách mời.`}
+              ? `Đang dùng ${total}/${guestLimit} khách mời (gói ${getPlanLabel(plan)}).`
+              : `Tổng cộng ${total} khách mời.`}
           </p>
         </div>
 
@@ -514,7 +526,10 @@ export function GuestTable({
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setStatusFilter(opt.value)}
+                  onClick={() => {
+                    setStatusFilter(opt.value);
+                    setPage(1);
+                  }}
                   className={cn(
                     "cursor-pointer whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
                     active
@@ -596,7 +611,10 @@ export function GuestTable({
             Thử lại
           </Button>
         </Card>
-      ) : guests.length === 0 ? (
+      ) : guests.length === 0 &&
+        total === 0 &&
+        !debouncedSearch &&
+        statusFilter === "all" ? (
         <Card className="p-10 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/35 bg-accent-soft text-accent-text">
             <Users className="h-6 w-6" aria-hidden="true" />
@@ -618,7 +636,7 @@ export function GuestTable({
             </Button>
           </div>
         </Card>
-      ) : filteredGuests.length === 0 ? (
+      ) : guests.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-sm text-fg-muted">
             Không tìm thấy khách mời phù hợp với bộ lọc hiện tại.
@@ -636,8 +654,8 @@ export function GuestTable({
                       <input
                         type="checkbox"
                         checked={
-                          filteredGuests.length > 0 &&
-                          selectedGuestIds.length === filteredGuests.length
+                          guests.length > 0 &&
+                          selectedGuestIds.length === guests.length
                         }
                         onChange={toggleSelectAll}
                         aria-label="Chọn tất cả khách"
@@ -653,7 +671,7 @@ export function GuestTable({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/80">
-                  {filteredGuests.map((guest) => {
+                  {guests.map((guest) => {
                     const isCopied = copiedId === guest.id;
                     const isInviteCopied = copiedInviteId === guest.id;
                     return (
@@ -762,7 +780,7 @@ export function GuestTable({
 
           {/* Danh sách thẻ trên điện thoại */}
           <div className="space-y-3 md:hidden">
-            {filteredGuests.map((guest) => {
+            {guests.map((guest) => {
               const isCopied = copiedId === guest.id;
               const isInviteCopied = copiedInviteId === guest.id;
               return (
@@ -871,6 +889,31 @@ export function GuestTable({
               );
             })}
           </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+            <p className="text-xs text-fg-muted" aria-live="polite">
+              Trang <strong className="font-semibold text-fg">{page}</strong> /{" "}
+              {totalPages} · {total} khách mời
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              >
+                Trang trước
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages || loading}
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              >
+                Trang sau
+              </Button>
+            </div>
+          </div>
         </>
       )}
 
@@ -881,6 +924,7 @@ export function GuestTable({
         onClose={() => setAddOpen(false)}
         onCreated={(created) => {
           setGuests((prev) => [created, ...prev]);
+          setTotal((prev) => prev + 1);
           onGuestsChanged?.();
         }}
       />
@@ -888,12 +932,13 @@ export function GuestTable({
       <BulkImportDialog
         weddingId={weddingId}
         plan={plan}
-        currentGuestCount={guests.length}
+        currentGuestCount={total}
         existingGuestNames={guests.map((g) => g.name)}
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
         onCreated={(created) => {
           setGuests((prev) => [...created, ...prev]);
+          setTotal((prev) => prev + created.length);
           onGuestsChanged?.();
         }}
       />

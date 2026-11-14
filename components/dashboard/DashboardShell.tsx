@@ -88,6 +88,17 @@ export function DashboardShell({ userEmail, children }: DashboardShellProps) {
               >
                 Thiệp cưới
               </Link>
+              <Link
+                href="/dashboard/so-mung"
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+                  pathname.startsWith("/dashboard/so-mung")
+                    ? "bg-accent-soft font-semibold text-accent-text"
+                    : "text-text-muted hover:bg-surface hover:text-text",
+                )}
+              >
+                Sổ mừng
+              </Link>
             </nav>
           </div>
 

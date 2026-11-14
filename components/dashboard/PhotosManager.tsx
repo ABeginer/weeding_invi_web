@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
+  ExternalLink,
   GripVertical,
   ImageOff,
   ImagePlus,
@@ -51,6 +52,7 @@ import { useToast } from "@/components/ui/Toast";
 
 interface PhotosManagerProps {
   weddingId: string;
+  weddingSlug: string;
   plan: WeddingPlan;
   content: WeddingContent;
   photos: WeddingPhoto[];
@@ -97,13 +99,12 @@ const SINGLE_SLOTS: SlotMeta[] = [
   },
 ];
 
-// Album cho khách chưa có backend: DB check constraint và MEDIA_KEY_RE chưa
-// chấp nhận kind 'album' (xem .dsh/skills/inviwedd-project-map). Bật lại sau
-// khi migration bổ sung kind này đã được chạy.
-const ALBUM_ENABLED = false;
+// Album cho khách đã có backend sau migration_v13_album_kind.sql.
+const ALBUM_ENABLED = true;
 
 export function PhotosManager({
   weddingId,
+  weddingSlug,
   plan,
   content,
   photos,
@@ -932,6 +933,17 @@ export function PhotosManager({
               Album ảnh để khách mời quét mã QR và xem toàn bộ album ảnh cưới trên điện thoại.
               {!ALBUM_ENABLED && " Tính năng đang hoàn thiện và sẽ mở lại sau."}
             </p>
+            {ALBUM_ENABLED && (
+              <a
+                href={`/a/${weddingSlug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-accent-text underline-offset-2 hover:underline"
+              >
+                Mở album khách
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              </a>
+            )}
           </div>
 
           {plan !== "free" && (

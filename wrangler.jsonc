@@ -1,8 +1,14 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"main": ".open-next/worker.js",
+	"main": "worker-entry.ts",
 	"name": "wedding-invitation",
 	"compatibility_date": "2026-11-12",
+	"triggers": {
+		// 03:00 UTC mỗi ngày: job dọn thiệp gói free quá 30 ngày.
+		"crons": [
+			"0 3 * * *"
+		]
+	},
 	"compatibility_flags": [
 		"nodejs_compat",
 		"global_fetch_strictly_public"

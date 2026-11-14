@@ -3,6 +3,7 @@ import type { BrandThemeMode } from "./brand-theme";
 import type {
   Guest,
   GuestDiet,
+  GuestStatus,
   Gift,
   GiftMethod,
   GiftTotals,
@@ -414,6 +415,36 @@ export function reorderPhotos(
 
 export function listGuests(weddingId: string): Promise<Guest[]> {
   return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}/guests`);
+}
+
+export interface GuestPage {
+  items: Guest[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export function listGuestsPage(
+  weddingId: string,
+  options?: {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    status?: GuestStatus | "all";
+  },
+): Promise<GuestPage> {
+  const search = new URLSearchParams();
+  search.set("page", String(options?.page ?? 1));
+  if (options?.pageSize) search.set("pageSize", String(options.pageSize));
+  const q = options?.q?.trim();
+  if (q) search.set("q", q);
+  if (options?.status && options.status !== "all") {
+    search.set("status", options.status);
+  }
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/guests?${search.toString()}`,
+  );
 }
 
 export function createGuest(weddingId: string, name: string): Promise<Guest> {

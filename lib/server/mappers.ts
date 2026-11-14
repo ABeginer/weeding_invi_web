@@ -1,4 +1,6 @@
 import type {
+  Gift,
+  GiftMethod,
   Guest,
   GuestDiet,
   GuestStatus,
@@ -70,6 +72,18 @@ export interface PhotoRow {
   created_at: string;
 }
 
+export interface GiftRow {
+  id: string;
+  wedding_id: string;
+  guest_id: string | null;
+  giver_name: string;
+  amount_vnd: number | string;
+  method: GiftMethod;
+  note: string | null;
+  thanked_at: string | null;
+  created_at: string;
+}
+
 export function toWedding(row: WeddingRow): Wedding {
   return {
     id: row.id,
@@ -137,5 +151,18 @@ export function toPhoto(row: PhotoRow): WeddingPhoto {
     kind: row.kind,
     url: buildMediaUrl(row.storage_key),
     position: row.position,
+  };
+}
+
+export function toGift(row: GiftRow): Gift {
+  return {
+    id: row.id,
+    giverName: row.giver_name,
+    amountVnd: Number(row.amount_vnd) || 0,
+    method: row.method,
+    note: row.note,
+    guestId: row.guest_id,
+    thankedAt: row.thanked_at,
+    createdAt: row.created_at,
   };
 }
