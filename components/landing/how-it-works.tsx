@@ -49,16 +49,16 @@ export function HowItWorks() {
                 className="flex flex-col justify-between rounded-2xl border border-[var(--border-accent)] bg-[var(--surface-card)] backdrop-blur-[8px] p-4 sm:p-5 shadow-xs transition-colors hover:border-accent"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sage bg-surface-alt text-sage">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sage bg-surface-alt text-sage">
                         <Icon className="h-4 w-4" aria-hidden="true" />
                       </span>
                       <h3 className="font-display text-lg leading-snug font-semibold text-text sm:text-xl">
                         {step.title}
                       </h3>
                     </div>
-                    <span className="shrink-0 font-display text-lg leading-none font-semibold text-accent-text sm:text-xl">
+                    <span className="mt-0.5 shrink-0 font-display text-lg leading-none font-semibold text-accent-text sm:text-xl">
                       {step.number}
                     </span>
                   </div>

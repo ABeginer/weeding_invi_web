@@ -10,10 +10,7 @@ export function TemplateTeaser() {
   const copy = LANDING_COPY.templates;
 
   return (
-    <section
-      id="mau-thiep"
-      className="scroll-mt-14 border-b border-border bg-bg py-12 sm:py-16"
-    >
+    <section className="border-b border-border bg-bg py-12 sm:py-16">
       <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
         <p className="text-[12px] font-semibold tracking-[0.12em] text-accent-text uppercase">
           {copy.eyebrow}

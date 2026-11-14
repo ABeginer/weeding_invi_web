@@ -12,4 +12,6 @@ export interface CollectionTemplate {
   demoUrl?: string;
   isPlaceholder?: boolean;
   extraFeatureIds?: string[];
+  ritualLabel?: string;
+  styleTags?: string[];
 }

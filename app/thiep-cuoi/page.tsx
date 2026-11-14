@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TemplateCarousel } from "@/components/templates/template-carousel";
+import { TemplateGridBrowser } from "@/components/templates/template-grid-browser";
 import type { CollectionTemplate } from "@/components/templates/types";
 import { SITE_LINKS, SITE_NAME, toAbsoluteSiteUrl } from "@/config/site";
 import { getTemplateCollection } from "@/templates/registry";
@@ -34,6 +34,8 @@ export default function TemplateCollectionPage() {
       demoUrl: template.demoUrl,
       isPlaceholder: template.isPlaceholder,
       extraFeatureIds: template.extraFeatureIds,
+      ritualLabel: template.ritualLabel,
+      styleTags: template.styleTags,
     }),
   );
 
@@ -52,7 +54,7 @@ export default function TemplateCollectionPage() {
       </header>
 
       <div className="mt-8 sm:mt-10">
-        <TemplateCarousel templates={templates} />
+        <TemplateGridBrowser templates={templates} />
       </div>
 
       <p className="mx-auto mt-10 max-w-xl text-center text-xs leading-relaxed text-text-muted">

@@ -14,6 +14,7 @@ import { LandingNavbar } from "./navbar";
 import { PaymentTransferModal } from "./pricing-modals";
 import { PricingTable } from "./pricing-table";
 import { SocialProofMarquee } from "./social-proof-marquee";
+import { TemplateShowcase } from "./template-showcase";
 import { TemplateTeaser } from "./template-teaser";
 import { ToolsPreviewSection } from "./tools-preview";
 
@@ -111,6 +112,7 @@ export function LandingPageClient({
       <main>
         <HeroSection />
         <SocialProofMarquee />
+        <TemplateShowcase />
         <TemplateTeaser />
         <ToolsPreviewSection />
         <HowItWorks />

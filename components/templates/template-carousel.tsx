@@ -10,6 +10,8 @@ import type { CollectionTemplate } from "./types";
 
 interface TemplateCarouselProps {
   templates: CollectionTemplate[];
+  /** Bật để trượt vòng tròn: từ mẫu cuối sang mẫu đầu và ngược lại. */
+  infinite?: boolean;
 }
 
 function usePrefersReducedMotion(): boolean {
@@ -34,7 +36,7 @@ function visualFor(distance: number): { scale: number; opacity: number } {
   return { scale: 0.65, opacity: 0.25 };
 }
 
-export function TemplateCarousel({ templates }: TemplateCarouselProps) {
+export function TemplateCarousel({ templates, infinite = false }: TemplateCarouselProps) {
   const [selected, setSelected] = React.useState(0);
   const [openIndex, setOpenIndex] = React.useState<number | null>(null);
   const [failedImages, setFailedImages] = React.useState<Set<string>>(
@@ -57,9 +59,12 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
 
   const goTo = React.useCallback(
     (next: number) => {
-      setSelected(Math.min(total - 1, Math.max(0, next)));
+      setSelected((current) => {
+        if (!infinite) return Math.min(total - 1, Math.max(0, next));
+        return ((next % total) + total) % total;
+      });
     },
-    [total],
+    [infinite, total],
   );
 
   const openAt = React.useCallback((index: number) => {
@@ -230,7 +235,7 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
       <button
         type="button"
         onClick={() => goTo(selected - 1)}
-        disabled={selected === 0}
+        disabled={!infinite && selected === 0}
         aria-label="Mẫu trước"
         className="absolute top-[42%] left-1 z-30 inline-flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-text shadow-lg transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:left-2"
       >
@@ -239,7 +244,7 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
       <button
         type="button"
         onClick={() => goTo(selected + 1)}
-        disabled={selected === total - 1}
+        disabled={!infinite && selected === total - 1}
         aria-label="Mẫu tiếp theo"
         className="absolute top-[42%] right-1 z-30 inline-flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-text shadow-lg transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:right-2"
       >
