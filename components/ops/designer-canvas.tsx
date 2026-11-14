@@ -456,9 +456,20 @@ export function DesignerCanvas({
           <h2 className="text-sm font-semibold text-text">Thuộc tính</h2>
 
           {!selected ? (
-            <p className="text-xs text-text-muted">
-              Chọn một phần tử trên canvas để sửa. Kéo để di chuyển; nhấn Delete để xoá.
-            </p>
+            <div className="space-y-2 text-xs text-text-muted">
+              <p>
+                Chọn một phần tử trên canvas để sửa. Chéo để di chuyển; nhấn Delete để xoá.
+              </p>
+              {content.backgroundUrl && (
+                <button
+                  type="button"
+                  onClick={() => setContent((previous) => ({ ...previous, backgroundUrl: undefined }))}
+                  className="inline-flex h-8 w-full items-center justify-center rounded-full border border-border text-[11px] text-text"
+                >
+                  Bỏ ảnh nền (để tự dựng lại bằng element)
+                </button>
+              )}
+            </div>
           ) : selected.type === "text" ? (
             <div className="space-y-3">
               <label className="block text-xs text-text">
