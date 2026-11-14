@@ -1,17 +1,7 @@
 import type { DesignerCanvasContent } from "@/components/ops/designer-types";
-import { PLACEHOLDER_OPTIONS } from "@/components/ops/designer-types";
+import { resolveDesignerText } from "@/lib/designer-text";
 
 export type DesignerPreviewValues = Record<string, string>;
-
-function resolveText(
-  text: string,
-  placeholder: string | null,
-  values: DesignerPreviewValues,
-): string {
-  if (!placeholder) return text;
-  const fallback = PLACEHOLDER_OPTIONS.find((option) => option.id === placeholder)?.sample ?? "";
-  return values[placeholder] || fallback;
-}
 
 interface DesignerTemplateRendererProps {
   canvas: DesignerCanvasContent;
@@ -80,7 +70,7 @@ export function DesignerTemplateRenderer({
               whiteSpace: "pre-wrap",
             }}
           >
-            {resolveText(element.text, element.placeholder, values)}
+            {resolveDesignerText(element.text, element.placeholder, values)}
           </div>
         );
       })}
