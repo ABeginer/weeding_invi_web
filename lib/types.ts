@@ -68,6 +68,9 @@ export interface WeddingDetail extends Wedding {
   photos: WeddingPhoto[];
 }
 
+export type RelationshipGroup = "elder" | "peer_formal" | "close_friend" | "family";
+export type DietaryPreference = "standard" | "vegetarian";
+
 export interface Guest {
   id: string;
   weddingId?: string;
@@ -78,6 +81,11 @@ export interface Guest {
   diet?: GuestDiet | null;
   songRequest?: string | null;
   rideNeeded?: boolean;
+  relationshipGroup?: RelationshipGroup | null;
+  customPronounHost?: string | null;
+  customPronounGuest?: string | null;
+  tableNumber?: string | null;
+  dietaryPreference?: DietaryPreference | null;
   respondedAt: string | null;
   createdAt: string;
   eventIds?: string[];
@@ -147,6 +155,11 @@ export interface InviteResponse {
   diet?: GuestDiet | null;
   songRequest?: string | null;
   rideNeeded?: boolean;
+  tableNumber?: string | null;
+  relationshipGroup?: RelationshipGroup | null;
+  customPronounHost?: string | null;
+  customPronounGuest?: string | null;
+  dietaryPreference?: DietaryPreference | null;
   events?: WeddingEvent[];
 }
 
