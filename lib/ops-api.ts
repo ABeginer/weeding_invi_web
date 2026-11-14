@@ -565,6 +565,7 @@ async function fetchOrMock<T>(
   } catch {
     // Giữ thông báo mặc định khi body không phải JSON.
   }
+  notifyOpsError(message);
   throw new OpsApiError(message, code);
 }
 
@@ -692,6 +693,16 @@ export class OpsApiError extends Error {
     this.name = "OpsApiError";
     this.code = code;
   }
+}
+
+/** Sự kiện để layout /ops hiện banner lỗi thay vì im lặng hiển thị list rỗng. */
+export const OPS_ERROR_EVENT = "ops-api-error";
+
+function notifyOpsError(message: string): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<string>(OPS_ERROR_EVENT, { detail: message }),
+  );
 }
 
 /**
