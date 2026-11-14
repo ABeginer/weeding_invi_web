@@ -6,6 +6,7 @@ import { Check, Copy, Download, HeartHandshake, X } from "lucide-react";
 import { invitationThemeCssVars, landingThemeCssVars } from "@/lib/theme";
 import type { TemplateData, WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { VietQRGiftBox } from "@/components/wedding/VietQRGiftBox";
 
 export type GiftTone = "olive" | "minimal" | "sunset" | "obsidian";
 
@@ -14,6 +15,8 @@ interface GiftModalProps {
   onClose: () => void;
   gift: TemplateData["gift"];
   plan: WeddingPlan;
+  coupleName?: string;
+  guestName?: string | null;
   tone?: GiftTone;
   wishAnchorId?: string;
 }
@@ -47,6 +50,8 @@ export function GiftModal({
   onClose,
   gift,
   plan,
+  coupleName = "",
+  guestName = null,
   tone = "olive",
   wishAnchorId,
 }: GiftModalProps) {
@@ -397,6 +402,20 @@ export function GiftModal({
               );
             })}
           </div>
+        )}
+
+        {sides.length > 0 && coupleName && (
+          <VietQRGiftBox
+            coupleName={coupleName}
+            guestName={guestName}
+            sides={sides.map((side) => ({
+              id: side.id,
+              label: side.title,
+              bankName: side.bankName,
+              accountName: side.accountName,
+              accountNumber: side.accountNumber,
+            }))}
+          />
         )}
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-current/15 pt-4">

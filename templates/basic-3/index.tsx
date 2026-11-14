@@ -559,6 +559,8 @@ export default function Basic3Template({
         onClose={() => setGiftOpen(false)}
         gift={data.gift}
         plan={data.plan}
+        coupleName={`${data.couple.groomName} & ${data.couple.brideName}`}
+        guestName={guestName}
         tone="sunset"
         wishAnchorId="rsvp-wishes"
       />

@@ -618,6 +618,8 @@ export default function Pro1Template({
         onClose={() => setGiftOpen(false)}
         gift={data.gift}
         plan={data.plan}
+        coupleName={`${data.couple.groomName} & ${data.couple.brideName}`}
+        guestName={guestName}
         tone="obsidian"
         wishAnchorId="rsvp-wishes"
       />
