@@ -64,6 +64,16 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
+    // React dev cần eval() để dựng lại callstack; production tuyệt đối không bật.
+    const isDev = process.env.NODE_ENV !== "production";
+    const scriptSrc = [
+      "'self'",
+      "'unsafe-inline'",
+      ...(isDev ? ["'unsafe-eval'"] : []),
+      "https://challenges.cloudflare.com",
+      "https://static.cloudflareinsights.com",
+    ].join(" ");
+
     const contentSecurityPolicy = [
       "default-src 'self'",
       "base-uri 'self'",
@@ -74,7 +84,7 @@ const nextConfig: NextConfig = {
       "font-src 'self' data: https://fonts.gstatic.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // Next.js chèn bootstrap inline; Turnstile và Cloudflare Analytics cần domain riêng.
-      "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com",
+      `script-src ${scriptSrc}`,
       "connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com",
       "frame-src 'self' https://www.google.com https://maps.google.com https://challenges.cloudflare.com",
       "worker-src 'self' blob:",

@@ -64,42 +64,29 @@ export function LandingNavbar({
         </nav>
 
         <div className="hidden items-center gap-2.5 md:flex">
+          <ThemeToggle />
+          <Link
+            href={SITE_LINKS.createWedding}
+            className="inline-flex h-9 items-center justify-center rounded-full bg-accent px-5 text-xs font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          >
+            {LANDING_COPY.navbar.startLabel}
+          </Link>
           {isAuthenticated ? (
-            <>
-              <Link
-                href={SITE_LINKS.createWedding}
-                className="inline-flex h-9 items-center justify-center rounded-full bg-accent px-5 text-xs font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-              >
-                {LANDING_COPY.navbar.startLabel}
-              </Link>
-              <ProfileMenu email={userEmail} />
-            </>
+            <ProfileMenu email={userEmail} />
           ) : (
-            <>
-              <ThemeToggle />
-              <a
-                href={SITE_LINKS.login}
-                className="inline-flex h-9 items-center justify-center rounded-full border border-text bg-transparent px-4 text-xs font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-              >
-                {LANDING_COPY.navbar.loginLabel}
-              </a>
-              <Link
-                href={SITE_LINKS.createWedding}
-                className="inline-flex h-9 items-center justify-center rounded-full bg-accent px-5 text-xs font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-              >
-                {LANDING_COPY.navbar.startLabel}
-              </Link>
-            </>
+            <a
+              href={SITE_LINKS.login}
+              className="inline-flex h-9 items-center justify-center rounded-full border border-text bg-transparent px-4 text-xs font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            >
+              {LANDING_COPY.navbar.loginLabel}
+            </a>
           )}
         </div>
 
         {/* Điều khiển mobile: Theme / Profile + Nút mở menu */}
         <div className="flex items-center gap-2 md:hidden">
-          {isAuthenticated ? (
-            <ProfileMenu email={userEmail} />
-          ) : (
-            <ThemeToggle />
-          )}
+          <ThemeToggle />
+          {isAuthenticated && <ProfileMenu email={userEmail} />}
 
           <button
             type="button"
