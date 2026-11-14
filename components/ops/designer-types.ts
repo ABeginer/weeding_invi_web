@@ -1,10 +1,11 @@
-﻿export type DesignerTextElement = {
+export type DesignerTextElement = {
   id: string;
   rotation?: number;
   type: "text";
   xPct: number;
   yPct: number;
   wPct: number;
+  hPct?: number;
   text: string;
   fontSize: number;
   color: string;
@@ -58,6 +59,7 @@ export interface DesignerIconElement {
   xPct: number;
   yPct: number;
   wPct: number;
+  hPct?: number;
   icon: DesignerIconName;
   color: string;
 }
@@ -72,6 +74,7 @@ export interface DesignerButtonElement {
   xPct: number;
   yPct: number;
   wPct: number;
+  hPct?: number;
   label: string;
   action: DesignerAction;
   fill: string;
@@ -139,18 +142,18 @@ export interface DesignerCanvasContent {
   width: number;
   height: number;
   background: string;
-  /** áº¢nh ná»n cÃ³ sáºµn (cover template) â€” designer váº½ Ä‘Ã¨ lÃªn khi táº¡o máº«u má»›i. */
+  /** Ảnh nền có sẵn (cover template) �?" designer vẽ �'è lên khi tạo mẫu m�>i. */
   backgroundUrl?: string;
   elements: DesignerElement[];
-  /** Multi-page: má»—i trang cÃ³ ná»n + element riÃªng. */
+  /** Multi-page: m�-i trang có nền + element riêng. */
   pages?: DesignerPage[];
 }
 
 export const PLACEHOLDER_OPTIONS = [
-  { id: "guestName", label: "TÃªn khÃ¡ch", sample: "Báº¡n Thanh Mai" },
-  { id: "groom", label: "TÃªn chÃº rá»ƒ", sample: "Minh KhÃ´i" },
-  { id: "bride", label: "TÃªn cÃ´ dÃ¢u", sample: "Tháº£o NguyÃªn" },
-  { id: "date", label: "NgÃ y cÆ°á»›i", sample: "20.03.2027" },
-  { id: "venue", label: "Äá»‹a Ä‘iá»ƒm", sample: "White Palace" },
-  { id: "salutation", label: "XÆ°ng hÃ´", sample: "TrÃ¢n trá»ng kÃ­nh má»i" },
+  { id: "guestName", label: "Tên khách", sample: "Bạn Thanh Mai" },
+  { id: "groom", label: "Tên chú r�f", sample: "Minh Khôi" },
+  { id: "bride", label: "Tên cô dâu", sample: "Thảo Nguyên" },
+  { id: "date", label: "Ngày cư�>i", sample: "20.03.2027" },
+  { id: "venue", label: "Đ�<a �'i�fm", sample: "White Palace" },
+  { id: "salutation", label: "Xưng hô", sample: "Trân trọng kính mời" },
 ] as const;

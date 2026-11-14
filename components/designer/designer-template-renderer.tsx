@@ -89,6 +89,11 @@ export function DesignerTemplateRenderer({
           left: `${element.xPct}%`,
           top: `${element.yPct}%`,
           width: `${element.wPct}%`,
+          height:
+            "hPct" in element && typeof element.hPct === "number"
+              ? `${element.hPct}%`
+              : undefined,
+          overflow: "hPct" in element && typeof element.hPct === "number" ? "hidden" : undefined,
           transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
         } as const;
 

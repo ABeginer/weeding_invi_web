@@ -206,6 +206,13 @@ export function DesignerCanvas({
     const board = boardRef.current;
     if (!board) return;
     const rect = board.getBoundingClientRect();
+    const wrapper = event.currentTarget.parentElement;
+    const wrapperRect = wrapper?.getBoundingClientRect();
+    const existingHeight =
+      "hPct" in element && typeof element.hPct === "number" ? element.hPct : null;
+    const fallbackHeight =
+      wrapperRect && rect.height > 0 ? (wrapperRect.height / rect.height) * 100 : null;
+
     event.currentTarget.setPointerCapture(event.pointerId);
     resizeRef.current = {
       id: element.id,
@@ -215,7 +222,7 @@ export function DesignerCanvas({
       x: element.xPct,
       y: element.yPct,
       w: element.wPct,
-      h: "hPct" in element ? element.hPct : null,
+      h: existingHeight ?? fallbackHeight,
       boardW: rect.width,
       boardH: rect.height,
     };
@@ -838,6 +845,12 @@ export function DesignerCanvas({
                     left: `${element.xPct}%`,
                     top: `${element.yPct}%`,
                     width: `${element.wPct}%`,
+                    height:
+                      "hPct" in element && typeof element.hPct === "number"
+                        ? `${element.hPct}%`
+                        : undefined,
+                    overflow:
+                      "hPct" in element && typeof element.hPct === "number" ? "hidden" : undefined,
                     transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
                   }}
                 >
@@ -1428,7 +1441,7 @@ export function DesignerCanvas({
                     className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
                   />
                 </label>
-                {"hPct" in selected && (
+                {"hPct" in selected && typeof selected.hPct === "number" && (
                   <label className="block text-xs text-text">
                     Cao (%)
                     <input
