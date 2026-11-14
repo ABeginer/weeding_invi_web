@@ -70,6 +70,45 @@ export async function createDesignerTemplate(
   return data as DesignerTemplate;
 }
 
+export interface DesignerVersion {
+  template_id: string;
+  version: number;
+  canvas_json: Record<string, unknown>;
+  background_key: string | null;
+  published_at: string;
+}
+
+export async function getDesignerVersion(
+  templateId: string,
+  version?: number | null,
+): Promise<DesignerVersion | null> {
+  let request = db()
+    .from("designer_template_versions")
+    .select("template_id, version, canvas_json, background_key, published_at")
+    .eq("template_id", templateId);
+
+  if (version && Number.isInteger(version)) {
+    request = request.eq("version", version);
+  } else {
+    request = request.order("version", { ascending: false }).limit(1);
+  }
+
+  const { data, error } = await request.maybeSingle();
+  if (error) throw error;
+  return (data as DesignerVersion | null) ?? null;
+}
+
+export async function listPublishedDesignerTemplates(): Promise<DesignerTemplate[]> {
+  const { data, error } = await db()
+    .from("designer_templates")
+    .select("*")
+    .eq("status", "published")
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as DesignerTemplate[];
+}
+
 export async function updateDesignerTemplate(
   id: string,
   patch: Partial<Pick<DesignerTemplate, "name" | "plan" | "ritual" | "status" | "version" | "canvas_json" | "background_key" | "snapshot_key">>,
