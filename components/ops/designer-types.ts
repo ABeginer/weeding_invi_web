@@ -21,7 +21,87 @@ export type DesignerImageElement = {
   heightPct?: number;
 };
 
-export type DesignerElement = DesignerTextElement | DesignerImageElement;
+export interface DesignerBoxElement {
+  id: string;
+  type: "box";
+  xPct: number;
+  yPct: number;
+  wPct: number;
+  hPct: number;
+  fill: string;
+  border: string;
+  radius: number;
+}
+
+export const DESIGNER_ICONS = [
+  "Heart",
+  "Star",
+  "MapPin",
+  "CalendarDays",
+  "Music",
+  "QrCode",
+  "Camera",
+  "Flower2",
+  "Sparkles",
+  "Mail",
+] as const;
+
+export type DesignerIconName = (typeof DESIGNER_ICONS)[number];
+
+export interface DesignerIconElement {
+  id: string;
+  type: "icon";
+  xPct: number;
+  yPct: number;
+  wPct: number;
+  icon: DesignerIconName;
+  color: string;
+}
+
+export const DESIGNER_ACTIONS = ["rsvp", "map", "gift", "album", "music"] as const;
+export type DesignerAction = (typeof DESIGNER_ACTIONS)[number];
+
+export interface DesignerButtonElement {
+  id: string;
+  type: "button";
+  xPct: number;
+  yPct: number;
+  wPct: number;
+  label: string;
+  action: DesignerAction;
+  fill: string;
+  textColor: string;
+  radius: number;
+}
+
+export const DESIGNER_BLOCKS = [
+  "calendar",
+  "map",
+  "rsvp",
+  "gift",
+  "gallery",
+  "music",
+] as const;
+export type DesignerBlockKind = (typeof DESIGNER_BLOCKS)[number];
+
+export interface DesignerBlockElement {
+  id: string;
+  type: "block";
+  xPct: number;
+  yPct: number;
+  wPct: number;
+  hPct: number;
+  block: DesignerBlockKind;
+  color: string;
+}
+
+export type DesignerElement =
+  | DesignerTextElement
+  | DesignerImageElement
+  | DesignerBoxElement
+  | DesignerIconElement
+  | DesignerButtonElement
+  | DesignerBlockElement;
 
 export interface DesignerPage {
   id: string;

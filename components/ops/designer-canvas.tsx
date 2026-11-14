@@ -2,7 +2,20 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, ImagePlus, Loader2, Save, Type, Upload } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Heart,
+  ImagePlus,
+  Loader2,
+  MapPin,
+  Music,
+  QrCode,
+  Save,
+  Star,
+  Type,
+  Upload,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { opsRequest } from "@/lib/ops-api";
 import {
@@ -171,8 +184,7 @@ export function DesignerCanvas({
     }));
   };
 
-  const addText = (placeholder: string | null) => {
-    const id = crypto.randomUUID();
+  const addText = (placeholder: string | null) => {    const id = crypto.randomUUID();
     const element: DesignerTextElement = {
       id,
       type: "text",
@@ -188,6 +200,92 @@ export function DesignerCanvas({
       placeholder,
     };
     setContent((previous) => ({ ...previous, elements: [...previous.elements, element] }));
+    setSelectedId(id);
+  };
+
+  const addBox = () => {
+    const id = crypto.randomUUID();
+    setContent((previous) => ({
+      ...previous,
+      elements: [
+        ...previous.elements,
+        {
+          id,
+          type: "box",
+          xPct: 15,
+          yPct: 20,
+          wPct: 70,
+          hPct: 24,
+          fill: "#F3EFEA",
+          border: "#E6E0D6",
+          radius: 16,
+        },
+      ],
+    }));
+    setSelectedId(id);
+  };
+
+  const addIcon = () => {
+    const id = crypto.randomUUID();
+    setContent((previous) => ({
+      ...previous,
+      elements: [
+        ...previous.elements,
+        {
+          id,
+          type: "icon",
+          xPct: 44,
+          yPct: 24,
+          wPct: 12,
+          icon: "Heart",
+          color: "#B87D74",
+        },
+      ],
+    }));
+    setSelectedId(id);
+  };
+
+  const addButton = () => {
+    const id = crypto.randomUUID();
+    setContent((previous) => ({
+      ...previous,
+      elements: [
+        ...previous.elements,
+        {
+          id,
+          type: "button",
+          xPct: 25,
+          yPct: 70,
+          wPct: 50,
+          label: "Xác nhận tham dự",
+          action: "rsvp",
+          fill: "#4A5D4E",
+          textColor: "#FFFFFF",
+          radius: 999,
+        },
+      ],
+    }));
+    setSelectedId(id);
+  };
+
+  const addBlock = (block: "calendar" | "map" | "rsvp" | "gift" | "gallery" | "music") => {
+    const id = crypto.randomUUID();
+    setContent((previous) => ({
+      ...previous,
+      elements: [
+        ...previous.elements,
+        {
+          id,
+          type: "block",
+          xPct: 12,
+          yPct: 50,
+          wPct: 76,
+          hPct: 18,
+          block,
+          color: "#4A5D4E",
+        },
+      ],
+    }));
     setSelectedId(id);
   };
 
@@ -298,7 +396,7 @@ export function DesignerCanvas({
             image.onerror = () => reject(new Error("Không tải được ảnh để xuất."));
           });
           context.drawImage(image, x, y, width, (width * image.height) / image.width);
-        } else {
+        } else if (element.type === "text") {
           const text =
             element.placeholder
               ? PLACEHOLDER_OPTIONS.find((option) => option.id === element.placeholder)?.sample ??
@@ -401,6 +499,48 @@ export function DesignerCanvas({
               }}
             />
           </label>
+          <button
+            type="button"
+            onClick={addBox}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+          >
+            Khung
+          </button>
+          <button
+            type="button"
+            onClick={addIcon}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+          >
+            Icon
+          </button>
+          <button
+            type="button"
+            onClick={addButton}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+          >
+            Nút
+          </button>
+          <button
+            type="button"
+            onClick={() => addBlock("calendar")}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+          >
+            Lịch
+          </button>
+          <button
+            type="button"
+            onClick={() => addBlock("map")}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+          >
+            Map
+          </button>
+          <button
+            type="button"
+            onClick={() => addBlock("rsvp")}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+          >
+            RSVP
+          </button>
           <button
             type="button"
             onClick={save}
@@ -564,9 +704,39 @@ export function DesignerCanvas({
                           element.text
                         : element.text}
                     </span>
-                  ) : (
+                  ) : element.type === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={element.url} alt="" className="block h-auto w-full" />
+                  ) : element.type === "box" ? (
+                    <span
+                      className="block"
+                      style={{
+                        height: `${element.hPct}%`,
+                        minHeight: 20,
+                        background: element.fill,
+                        border:
+                          element.border === "none" ? undefined : `1px solid ${element.border}`,
+                        borderRadius: element.radius,
+                      }}
+                    />
+                  ) : element.type === "icon" ? (
+                    <span className="block" style={{ color: element.color }}>
+                      <Star className="h-10 w-10" aria-hidden="true" />
+                    </span>
+                  ) : element.type === "button" ? (
+                    <span
+                      className="flex h-10 items-center justify-center rounded-full px-3 text-xs font-semibold"
+                      style={{ background: element.fill, color: element.textColor }}
+                    >
+                      {element.label}
+                    </span>
+                  ) : (
+                    <span
+                      className="flex h-16 items-center justify-center rounded-lg border border-dashed text-[10px]"
+                      style={{ borderColor: element.color, color: element.color }}
+                    >
+                      {element.block}
+                    </span>
                   )}
                 </div>
               );
