@@ -7,10 +7,11 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   Info,
   Loader2,
-  Lock,
   MailOpen,
+  Search,
 } from "lucide-react";
 import { LandingFooter } from "@/components/landing/footer";
 import { LandingNavbar } from "@/components/landing/navbar";
@@ -63,6 +64,22 @@ interface CreateWeddingBuilderProps {
 
 const DEFAULT_WEDDING_DATE_ISO = "2027-03-20T10:00:00+07:00";
 
+const THEME_FILTERS = [
+  "Tất cả",
+  "Thanh lịch",
+  "Cổ điển",
+  "Tối giản",
+  "Hiện đại",
+  "Lãng mạn",
+  "Truyền thống",
+] as const;
+
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, index) =>
+  String(index).padStart(2, "0"),
+);
+
+const MINUTE_OPTIONS = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+
 function resolveFreeTemplateId(candidate?: string): string {
   if (candidate) {
     const matched = HERO_PREVIEW_TEMPLATES.find(
@@ -104,6 +121,9 @@ export function CreateWeddingBuilder({
   const [userPlan, setUserPlan] = React.useState<WeddingPlan>("free");
 
   const [previewOpened, setPreviewOpened] = React.useState(false);
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [templateQuery, setTemplateQuery] = React.useState("");
+  const [themeFilter, setThemeFilter] = React.useState<(typeof THEME_FILTERS)[number]>("Tất cả");
   const phoneScrollRef = React.useRef<HTMLDivElement | null>(null);
   const slugCheckSeqRef = React.useRef(0);
 
@@ -259,6 +279,19 @@ export function CreateWeddingBuilder({
   const dateValue = toDatetimeLocalVn(date);
   const datePreview = formatWeddingDateParts(date);
 
+  const selectedTemplate = HERO_PREVIEW_TEMPLATES.find((tpl) => tpl.id === templateId);
+  const filteredTemplates = React.useMemo(() => {
+    const needle = templateQuery.trim().toLowerCase();
+    return HERO_PREVIEW_TEMPLATES.filter((tpl) => {
+      const searchable = [tpl.name, tpl.subtitle, ...(tpl.styleTags ?? [])]
+        .join(" ")
+        .toLowerCase();
+      if (needle && !searchable.includes(needle)) return false;
+      if (themeFilter === "Tất cả") return true;
+      return searchable.includes(themeFilter.toLowerCase());
+    });
+  }, [templateQuery, themeFilter]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
@@ -413,52 +446,123 @@ export function CreateWeddingBuilder({
                   </Link>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {HERO_PREVIEW_TEMPLATES.map((tpl) => {
-                    const isSelected = templateId === tpl.id;
-                    const allowed = isTemplateAllowedForPlan("free", tpl.plan);
-                    return (
-                      <button
-                        key={tpl.id}
-                        type="button"
-                        disabled={!allowed}
-                        onClick={() => {
-                          if (!allowed) return;
-                          setTemplateId(tpl.id);
-                          setPreviewOpened(false);
-                          phoneScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
-                        }}
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen((prev) => !prev)}
+                    aria-expanded={pickerOpen}
+                    aria-controls="template-picker-panel"
+                    className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-bg px-3.5 py-3 text-left transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-text">
+                        {selectedTemplate?.name ?? "Chọn mẫu thiệp"}
+                      </span>
+                      <span className="block truncate text-xs text-text-muted">
+                        {selectedTemplate?.subtitle ?? "Bấm để chọn mẫu"}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-semibold text-text-muted">
+                        {selectedTemplate ? getPlanLabel(selectedTemplate.plan) : ""}
+                      </span>
+                      <ChevronDown
                         className={cn(
-                          "flex flex-col justify-between rounded-xl border p-3.5 text-left transition-colors",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
-                          isSelected
-                            ? "border-accent bg-accent-soft"
-                            : allowed
-                              ? "cursor-pointer border-border bg-bg hover:border-accent/60"
-                              : "cursor-not-allowed border-border/70 bg-surface-alt/60 opacity-75",
+                          "h-4 w-4 text-text-muted transition-transform",
+                          pickerOpen && "rotate-180",
                         )}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-sm font-semibold text-text">
-                            {tpl.name}
-                          </span>
-                          {!allowed ? (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-text">
-                              <Lock className="h-2.5 w-2.5" aria-hidden="true" />
-                              <span>Gói {getPlanLabel(tpl.plan)}</span>
-                            </span>
-                          ) : (
-                            <span className="rounded-full border border-sage bg-surface px-2 py-0.5 text-[10px] font-medium text-text">
-                              {getPlanLabel(tpl.plan)}
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1.5 text-xs text-text-muted">
-                          {tpl.subtitle}
-                        </p>
-                      </button>
-                    );
-                  })}
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </button>
+
+                  {pickerOpen && (
+                    <div
+                      id="template-picker-panel"
+                      className="rounded-xl border border-border bg-surface p-2.5 shadow-sm"
+                    >
+                      <div className="relative">
+                        <Search
+                          className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-text-muted"
+                          aria-hidden="true"
+                        />
+                        <input
+                          value={templateQuery}
+                          onChange={(event) => setTemplateQuery(event.target.value)}
+                          placeholder="Tìm mẫu thiệp…"
+                          aria-label="Tìm mẫu thiệp"
+                          className="h-9 w-full rounded-lg border border-border bg-bg pr-3 pl-8 text-xs text-text outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        />
+                      </div>
+
+                      <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {THEME_FILTERS.map((theme) => (
+                          <button
+                            key={theme}
+                            type="button"
+                            onClick={() => setThemeFilter(theme)}
+                            aria-pressed={themeFilter === theme}
+                            className={cn(
+                              "shrink-0 cursor-pointer rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                              themeFilter === theme
+                                ? "border-accent bg-accent-soft text-accent-text"
+                                : "border-border bg-bg text-text-muted hover:bg-surface-alt",
+                            )}
+                          >
+                            {theme}
+                          </button>
+                        ))}
+                      </div>
+
+                      <ul className="mt-2 max-h-[276px] divide-y divide-border overflow-y-auto rounded-lg border border-border">
+                        {filteredTemplates.map((tpl) => {
+                          const allowed = isTemplateAllowedForPlan("free", tpl.plan);
+                          const isSelected = templateId === tpl.id;
+                          return (
+                            <li key={tpl.id}>
+                              <button
+                                type="button"
+                                disabled={!allowed}
+                                onClick={() => {
+                                  if (!allowed) return;
+                                  setTemplateId(tpl.id);
+                                  setPreviewOpened(false);
+                                  setPickerOpen(false);
+                                  phoneScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+                                }}
+                                className={cn(
+                                  "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-xs transition-colors",
+                                  isSelected ? "bg-accent-soft" : "bg-bg hover:bg-surface-alt",
+                                  !allowed && "cursor-not-allowed opacity-60",
+                                )}
+                              >
+                                <span className="min-w-0">
+                                  <span className="block truncate font-semibold text-text">
+                                    {tpl.name}
+                                  </span>
+                                  <span className="block truncate text-[11px] text-text-muted">
+                                    {tpl.subtitle}
+                                  </span>
+                                </span>
+                                <span className="shrink-0 rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-text">
+                                  {allowed ? getPlanLabel(tpl.plan) : `Gói ${getPlanLabel(tpl.plan)}`}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                        {filteredTemplates.length === 0 && (
+                          <li className="px-3 py-6 text-center text-xs text-text-muted">
+                            Không tìm thấy mẫu phù hợp.
+                          </li>
+                        )}
+                      </ul>
+
+                      <p className="mt-2 text-[11px] text-text-muted">
+                        Hiển thị {Math.min(filteredTemplates.length, 6)} trong {filteredTemplates.length} mẫu · cuộn để xem thêm
+                      </p>
+                    </div>
+                  )}
                 </div>
               </Card>
 
@@ -492,22 +596,69 @@ export function CreateWeddingBuilder({
                   />
                 </div>
 
-                <Input
-                  type="datetime-local"
-                  label="Ngày giờ cưới dự kiến *"
-                  value={dateValue}
-                  onChange={(e) => {
-                    const nextIso = toIsoPlus07(e.target.value);
-                    setDate(nextIso || e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, date: "" }));
-                  }}
-                  hint={
-                    datePreview.day !== "--"
-                      ? `Hiển thị trên thiệp: ${datePreview.time}, ${datePreview.weekday} · ${datePreview.dotDate}`
-                      : undefined
-                  }
-                  error={fieldErrors.date || undefined}
-                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Input
+                    type="date"
+                    label="Ngày cưới *"
+                    value={dateValue.slice(0, 10)}
+                    onChange={(e) => {
+                      const nextIso = toIsoPlus07(
+                        `${e.target.value}T${dateValue.slice(11, 16) || "10:00"}`,
+                      );
+                      setDate(nextIso || e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, date: "" }));
+                    }}
+                    hint={
+                      datePreview.day !== "--"
+                        ? `Hiển thị trên thiệp: ${datePreview.weekday} · ${datePreview.dotDate}`
+                        : undefined
+                    }
+                    error={fieldErrors.date || undefined}
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block text-xs font-medium text-text">
+                      Giờ
+                      <select
+                        value={dateValue.slice(11, 13)}
+                        onChange={(e) => {
+                          const nextIso = toIsoPlus07(
+                            `${dateValue.slice(0, 10)}T${e.target.value}:${dateValue.slice(14, 16)}`,
+                          );
+                          setDate(nextIso || dateValue);
+                          setFieldErrors((prev) => ({ ...prev, date: "" }));
+                        }}
+                        className="mt-1 h-10 w-full rounded-xl border border-border bg-bg px-2 text-sm text-text outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-focus-ring"
+                      >
+                        {HOUR_OPTIONS.map((hour) => (
+                          <option key={hour} value={hour}>{hour}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block text-xs font-medium text-text">
+                      Phút
+                      <select
+                        value={dateValue.slice(14, 16)}
+                        onChange={(e) => {
+                          const nextIso = toIsoPlus07(
+                            `${dateValue.slice(0, 10)}T${dateValue.slice(11, 13)}:${e.target.value}`,
+                          );
+                          setDate(nextIso || dateValue);
+                          setFieldErrors((prev) => ({ ...prev, date: "" }));
+                        }}
+                        className="mt-1 h-10 w-full rounded-xl border border-border bg-bg px-2 text-sm text-text outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-focus-ring"
+                      >
+                        {MINUTE_OPTIONS.map((minute) => (
+                          <option key={minute} value={minute}>{minute}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <p className="col-span-2 text-[11px] text-text-muted">
+                      Định dạng 24 giờ · Giờ : Phút
+                    </p>
+                  </div>
+                </div>
 
                 <div>
                   <Textarea
