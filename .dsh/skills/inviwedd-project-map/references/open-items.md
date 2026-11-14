@@ -3,9 +3,9 @@
 ## Handoff
 - Last task (2026-11-14): **batch 4 completed** at git `04192e7` — Sổ mừng, Album, retention cron and guest pagination. Skill updated after it.
 - Verified: `npm run typecheck`, `npm run lint`, `npm run test` (8/8), `npm run build`, `wrangler deploy --dry-run` (custom worker entry + cron bundle ok), and a `next start` smoke test (`/a/huy-huiya` 200, `/a/<invalid>` 404, gifts API 401 without auth, retention endpoint 403 without admin).
-- Owner action required: run three migrations in Supabase SQL Editor — `migration_v11_guest_preferences.sql`, `migration_v12_gifts.sql`, `migration_v13_album_kind.sql`. Until then song/ride preferences are dropped, Sổ mừng errors (missing table), and album uploads are rejected by the constraint.
+- Owner ran migrations v11, v12 and v13 on 2026-11-14; the agent re-verified through the REST API and rendered `/a/<slug>` with a temporary album photo, then deleted all test rows (0 remaining).
 - In progress: nothing.
-- Next step: after the owner runs the SQL, verify gifts and album end-to-end with a Pro/VIP test wedding, then work through `TODO.md` (dead ops mock, CSP/HSTS, font imports, dependency alignment, gallery image sizing).
+- Next step: after the next deploy, confirm the retention cron fires (`wrangler tail` → `[retention]`, or call `POST /api/ops/retention/run` with `dryRun:true` as an admin), then work through `TODO.md`.
 
 ## Fixed in batch 4 (git `04192e7`)
 - Sổ mừng: `gifts` table migration + full CRUD API (Pro/VIP gate) + restored nav/page and summary UI.
@@ -23,8 +23,7 @@ Plan guest limit on public RSVP, song/ride persistence, map embed preservation, 
 Sổ mừng/Album no longer fake working; bulk event assignment fixed; photo replacement without data loss; Turnstile retry; `/m` SSR-first; ops fail-closed; suspended weddings blocked.
 
 ## Known issues (still open, verified)
-1. **Migrations v11–v13 are not applied** — gates the three features above.
-2. **Retention has never run** — cron is configured and bundle-validated, but its runtime behaviour (secret access from `process.env` in a scheduled event) is verified only after a real deploy; run the dry-run endpoint first.
+1. **Retention has never run** — cron is configured and bundle-validated, but its runtime behaviour (secret access from `process.env` in a scheduled event) is verified only after a real deploy; run the dry-run endpoint first.
 3. **Duplicate accounts** — the live `users` table has the same email under two Auth0 providers; `POST /api/ops/users/[id]/merge` does not exist and the merge UI is hidden.
 4. **Unknown schemas** — `orders`, `bank_transactions` are still not created by any committed migration.
 5. **Dead code** — ~350 lines of unreachable mock data in `lib/ops-api.ts`, unused `authClient()` in `lib/server/supabase.ts`.

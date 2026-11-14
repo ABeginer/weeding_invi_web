@@ -40,7 +40,7 @@ Notes:
 - `SUPABASE_URL` points at the current project (`xklihgeirdxyormuxcoh.supabase.co`); `SUPABASE_SECRET_KEY` was replaced by the owner and now returns 200 on `/rest/v1/*`, so DB-backed pages work locally.
 - `APP_BASE_URL` is still `http://localhost:3000`; production must set the real domain or canonical/OG/sitemap URLs will point at localhost.
 - `BANK_*` variables are not present locally, so `/api/orders` cannot build a VietQR payload in this environment.
-- `supabase/migration_v11_guest_preferences.sql` is **not applied yet**; RSVP writes fall back to the older columns and song/ride preferences are dropped until the owner runs it.
+- `supabase/migration_v11_guest_preferences.sql` (and v12/v13) are applied; RSVP preferences, Sổ mừng and Album now work against the live database.
 
 
 ## Deploy

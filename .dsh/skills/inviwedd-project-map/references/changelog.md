@@ -2,6 +2,13 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.6 · migrations applied + end-to-end verification
+- Owner ran migrations v11, v12 and v13. Verified through the service-key REST API: guest preference columns selectable (200), `gifts` selectable/insertable (200/201), `photos.kind = 'album'` insertable (201).
+- Created a temporary user + Pro wedding + album photo + gift, rendered `/a/<slug>` (200, heading, photo link, `noindex`) and `/w/<slug>` (200), then deleted everything: 0 remaining wedding/gift rows and `/a/<slug>` returns 404.
+- Authed gift CRUD routes were not exercised end-to-end (no Auth0 session in the agent environment); the DB layer and page rendering were.
+- Skill updated: migrations marked APPLIED, owner-blocked item removed, retention runtime still pending a real deploy.
+- Files: `references/{db-schema,env-and-deploy,open-items,changelog}.md`, `SKILL.md`.
+
 ## 2026-11-14 · v1.0.5 · batch 4 (code `04192e7`)
 - Built **Sổ mừng**: `gifts` table (migration v12), GET/POST/PATCH/DELETE routes gated to Pro/VIP, nav/page restored.
 - Built **Album**: migration v13 allows `kind = 'album'`, upload enabled, public `noindex` page at `/a/[slug]`, dashboard link.

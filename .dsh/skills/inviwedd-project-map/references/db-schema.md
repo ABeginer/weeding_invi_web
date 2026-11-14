@@ -13,13 +13,13 @@ Owner confirmation (2026-11-14): **all migration files in this repository have b
 | `supabase/migration_v4.sql` | Adds `guests.plus_ones` (0–10) and `guests.diet` ('meat'/'veg'); widens `photos.kind` check to `banner, couple, gallery, og, gift` | APPLIED (owner) |
 | `supabase/migration_v5.sql` | Adds `users.theme` ('light'/'dark', default 'light') | APPLIED (owner) |
 | `supabase/migration_v10_ops.sql` | Adds `weddings.suspended`; creates `audit_logs`; RLS + revoke | APPLIED (owner) |
-| `supabase/migration_v11_guest_preferences.sql` | Adds `guests.song_request` (≤200 chars) and `guests.ride_needed` (bool) | **NOT APPLIED — pending owner** |
-| `supabase/migration_v12_gifts.sql` | Creates `gifts` (Sổ mừng), index, RLS + revoke | **NOT APPLIED — pending owner** |
-| `supabase/migration_v13_album_kind.sql` | Recreates `photos_kind_check` to include `album` | **NOT APPLIED — pending owner** |
+| `supabase/migration_v11_guest_preferences.sql` | Adds `guests.song_request` (≤200 chars) and `guests.ride_needed` (bool) | APPLIED (owner + verified) |
+| `supabase/migration_v12_gifts.sql` | Creates `gifts` (Sổ mừng), index, RLS + revoke | APPLIED (owner + verified) |
+| `supabase/migration_v13_album_kind.sql` | Recreates `photos_kind_check` to include `album` | APPLIED (owner + verified) |
 
 The repository contains no v6–v9 files; the owner states the files present are the complete set that was run. Because v10 is applied, `weddings.suspended` exists — the `content.suspended` fallback in `lib/server/weddings.ts` stays as harmless defensive code.
 
-Migrations v11–v13 were written by the agent and have **not** been executed. Until the owner runs them: song/ride preferences fall back to being dropped, `/api/weddings/[id]/gifts` fails because the table is missing, and album uploads are rejected by the DB check constraint. The code already handles the missing guest columns; the gifts/album paths will start working as soon as the SQL runs.
+Migrations v11–v13 were run by the owner on 2026-11-14. Verified through the REST API with the service key: `guests.song_request`/`ride_needed` are selectable (200), `gifts` is selectable/insertable (200/201), and a `photos` row with `kind = 'album'` inserted successfully (201). The temporary verification rows were deleted afterwards (wedding cascade + user).
 
 
 ## Tables
