@@ -2,6 +2,15 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.9 · fonts, static landing, ESLint 16, validation tests
+- Removed the Google Fonts `@import`; the six families used by the themed templates are now self-hosted through `next/font` and referenced as CSS variables in `theme-configs.ts` (78 woff2 files, no external font CSS).
+- `/` is static again: removed `force-dynamic`, read the session client-side with `useUser()`, and apply the theme cookie with a pre-paint inline script that `ThemeProvider` then mirrors into state.
+- Upgraded `eslint-config-next` to 16.4.6 and migrated `eslint.config.mjs` to its flat config; fixed two `react-hooks/refs` violations, downgraded `set-state-in-effect` to warn (98 existing occurrences).
+- Extracted `lib/rsvp-input.ts` and `lib/gift-input.ts` (used by the RSVP + gift routes) and added 7 validation tests — 29 total.
+- Gallery compression lowered to 1600px; removed the duplicate `du-tru-chi-phi` page (redirect stays), unused `qr.jpg`, duplicate `FORBIDDEN_WEDDING_SLUGS`, the hardcoded `isImplementedTemplateId`, and the unused `critters` dependency.
+- Verified: tsc clean, lint 0 errors, 29/29 tests, build ok with `/` static, smoke test ok.
+- Files: `app/layout.tsx`, `app/page.tsx`, `components/theme/ThemeProvider.tsx`, `components/landing/landing-page-client.tsx`, `templates/themed/theme-configs.ts`, `lib/{rsvp-input,gift-input,image/compress}.ts`, `lib/server/http.ts`, `templates/registry.ts`, `eslint.config.mjs`, `package.json`, tests.
+
 ## 2026-11-14 · v1.0.8 · ops client rewritten (no mock)
 - `lib/ops-api.ts` reduced from 1,101 to 368 lines: all fabricated users/weddings/orders/transactions/audit data and the localStorage store are deleted; every function is now a thin fetch against `/api/ops/*`.
 - `mergeOpsUser` validates the reason and throws `NOT_SUPPORTED` (the server route does not exist; the UI button is already hidden).

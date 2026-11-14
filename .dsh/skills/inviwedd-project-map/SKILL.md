@@ -1,7 +1,7 @@
 ---
 name: inviwedd-project-map
 description: "Use at the start of any task on the Inviwedd wedding invitation project and after any major change to it"
-version: 1.0.8
+version: 1.1.0
 metadata:
   hermes:
     tags: [project, architecture, memory]
@@ -70,4 +70,4 @@ Steps: edit only the affected file with a small patch; prepend one dated line to
 At session start: read `references/open-items.md`, compare **Last verified** with `git log`, and patch this skill before starting the task if newer commits exist.
 
 ## Last verified
-2026-11-14 · migrations v11–v13 applied and verified · batch 5 adds CSP/HSTS + 22 unit tests · ops client rewritten with no mock data. Verified with `npm run typecheck`, `npm run lint`, `npm run test` (22/22), `next build`, `wrangler deploy --dry-run` and `next start` smoke tests. Retention cron and CSP still need a real-browser/production check.
+2026-11-14 · migrations v11–v13 applied · batch 6–7 adds self-hosted fonts, static landing, ESLint 16 flat config, validation tests (29) and removes the ops mock. Verified with `npm run typecheck`, `npm run lint` (0 errors, 98 warnings), `npm run test` (29/29), `next build` (`/` static) and `next start` smoke tests. Retention cron and CSP still need a production/browser check.

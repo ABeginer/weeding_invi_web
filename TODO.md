@@ -1,52 +1,42 @@
 # Việc còn lại
 
-Cập nhật: 2026-11-14 · code `04192e7` + các thay đổi sau đó. Chi tiết + lý do nằm trong
-`.dsh/skills/inviwedd-project-map/references/open-items.md`.
+Cập nhật: 2026-11-14. Toàn bộ việc kỹ thuật trong danh sách trước đã xong; dưới đây là
+những gì còn lại và lý do.
 
 ## A. Chủ dự án cần làm
 
-- [x] Chạy 3 migration (`v11`, `v12`, `v13`) — đã chạy, agent đã verify bằng REST + render trang.
-- [ ] Sau deploy: xác nhận cron dọn dữ liệu chạy (`wrangler tail` lúc 03:00 UTC, log `[retention]`).
-      Chạy thử trước bằng `POST /api/ops/retention/run` với `{ "dryRun": true, "reason": "..." }`.
-- [ ] Kiểm tra CSP trên trình duyệt thật (Turnstile, nhạc nền, Google Maps, chia sẻ Zalo).
-      Nếu console báo vi phạm, nới đúng directive trong `next.config.ts`.
-- [ ] Xác nhận bộ tính năng bán ra (bảng giá hiện đã khớp code nhưng vẫn là bản nháp).
+- [ ] Sau deploy: xác nhận cron dọn dữ liệu chạy (`wrangler tail` lúc 03:00 UTC, log `[retention]`);
+      chạy thử `POST /api/ops/retention/run` với `{ "dryRun": true, "reason": "..." }` trước.
+- [ ] Kiểm tra CSP trên trình duyệt thật: Turnstile, nhạc nền, Google Maps, preview Zalo.
+      Console báo vi phạm thì gửi directive để nới đúng chỗ trong `next.config.ts`.
+- [ ] Xác nhận bộ tính năng bán ra (bảng giá khớp code nhưng vẫn là bản nháp).
 
-## B. Kỹ thuật
+## B. Kỹ thuật (chưa làm được trong môi trường hiện tại)
 
-### Ưu tiên cao
-- [x] Xoá dữ liệu mẫu chết trong `lib/ops-api.ts` — viết lại thành client mỏng 368 dòng
-      (trước 1.101 dòng), merge tài khoản ném lỗi rõ ràng thay vì giả lập.
-- [ ] Test API có DB (RSVP limit, phân quyền, gifts): cần mock Supabase hoặc DB test riêng.
-      Hiện đã có 22 unit test cho helper thuần (rate limit, phân trang, VietQR, mã đơn).
+- [ ] **Test API có DB** (RSVP limit, phân quyền, gifts): route handler import alias `@/`
+      và `next/server`, nên `node:test` không import trực tiếp được; cần thêm Vitest/tsx
+      hoặc Supabase test project. Hiện đã tách logic thuần và test 29 case.
+- [ ] **98 cảnh báo `react-hooks/set-state-in-effect`** từ eslint-plugin-react-hooks v6
+      (React Compiler). Đang để mức `warn` để không chặn CI; muốn sạch phải refactor
+      pattern đồng bộ prop→state trong các template.
+- [ ] **5 lỗ hổng audit production** đều nằm trong `@opennextjs/cloudflare →
+      @opennextjs/aws → @node-minify/core → glob/minimatch` (công cụ build, không vào
+      runtime worker). `npm audit fix --force` sẽ hạ adapter về 0.3.0 — không làm.
+      Chờ bản `@opennextjs/cloudflare` mới.
 
-### Trung bình
-- [ ] Nâng `eslint-config-next` lên 16.x — `npm install` bị chặn trong sandbox (cache ngoài
-      workspace); chạy ngoài sandbox rồi `npm run lint`.
-- [ ] Giảm chi phí font: `app/globals.css:1` đang `@import` 6 font Google, và chúng đang được
-      `templates/themed/theme-configs.ts` dùng thật (Playfair, EB Garamond, Viaoda, Pinyon,
-      Nautigal, Carattere). Muốn bỏ `@import` phải chuyển sang `next/font` và đổi
-      `fontFamily` trong theme-configs sang CSS variable.
-- [ ] Trang chủ `force-dynamic` chỉ để đọc session → chuyển static/ISR + đọc session phía
-      client (vd `useUser()` của Auth0), rồi kiểm tra lại menu tài khoản.
-- [ ] Ảnh gallery 2048px, không srcset: hạ còn 1600px hoặc sinh bản nhỏ khi upload.
+## C. Đã xong
 
-### Thấp / dọn dẹp
-- [ ] Gộp `FORBIDDEN_WEDDING_SLUGS` (2 nơi) và `isImplementedTemplateId` (hardcode 24 id).
-- [ ] Bỏ redirect trùng `/cong-cu/du-tru-chi-phi` (vừa có page vừa có redirect trong next.config).
-- [ ] Rà lại `DESIGN_PLAN.md`, `CARD_CREATE_SKILL.md` khi có thay đổi lớn.
-- [ ] Dọn `public/images/qr.jpg` nếu không còn dùng.
-- [ ] Tài khoản trùng email (2 Auth0 provider) — chưa có route merge; hiện phải gộp tay trên Supabase.
-
-## C. Đã xong (để khỏi làm lại)
-
-- [x] Đợt 1: 8 lỗi chặn (ops fail-closed, khoá thiệp, thay ảnh không mất dữ liệu, Turnstile retry,
-      `/m` render từ SSR, gán lễ hàng loạt, ẩn Sổ mừng/Album khi chưa có backend).
-- [x] Đợt 2: RSVP tôn trọng hạn mức gói, lưu bài hát/phương tiện, giữ `map_embed_url`,
-      rate limit, hết cắt 1.000 dòng, bảng giá khớp code, `/w` noindex, `.env.example` đủ.
-- [x] Đợt 3: bỏ `.open-next/.wrangler/scratch` khỏi git, viết lại README/HANDOFF/TODO/INTEGRATION,
-      script `typecheck`/`test`, CI 4 bước, banner lỗi `/ops`.
-- [x] Đợt 4: Sổ mừng (bảng + API + UI), Album (upload + `/a/[slug]`), retention 30 ngày + cron,
-      phân trang khách phía server.
-- [x] Đợt 5: 22 unit test (rate limit, phân trang, VietQR, mã đơn), CSP + HSTS, bỏ `authClient()`
-      và biến `SUPABASE_PUBLISHABLE_KEY` không dùng.
+- [x] Đợt 1–4: 8 lỗi chặn, dữ liệu/bảo mật, dọn repo + docs + CI, Sổ mừng, Album,
+      retention cron, phân trang khách.
+- [x] Đợt 5: CSP + HSTS, 22 test helper, bỏ `authClient()`.
+- [x] Đợt 6: xoá mock `lib/ops-api.ts` (1.101 → 368 dòng).
+- [x] Đợt 7:
+  - Font: bỏ `@import` 7 family Google Fonts; 6 family dùng thật chuyển sang `next/font`
+    (self-host, 78 file woff2) + `theme-configs.ts` dùng CSS variable.
+  - Trang chủ `/` thành **static** (bỏ `force-dynamic`), session đọc client qua `useUser()`,
+    theme áp bằng script inline trước khi paint (không nháy sáng/tối).
+  - `eslint-config-next` nâng lên 16.4.6 (flat config), sửa 2 lỗi `react-hooks/refs`.
+  - Ảnh gallery hạ 2048px → 1600px.
+  - Gộp logic validate RSVP/gift thành `lib/rsvp-input.ts`, `lib/gift-input.ts` + 7 test mới (tổng 29).
+  - Xoá `FORBIDDEN_WEDDING_SLUGS` trùng, `isImplementedTemplateId` hardcode,
+    page redirect trùng `/cong-cu/du-tru-chi-phi`, ảnh `qr.jpg` không dùng, dependency `critters`.

@@ -55,9 +55,9 @@ Browser ──HTTPS──> Cloudflare Worker (Next.js 16 / OpenNext)
 npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
-Đã verify ngày 2026-11-14: tsc sạch, lint sạch, **22/22 test pass**, build thành công,
-`wrangler deploy --dry-run` bundle thành công, smoke test `next start` với DB thật,
-CSP + HSTS trả đúng header.
+Đã verify ngày 2026-11-14: tsc sạch, lint 0 error (98 warning React Compiler), **29/29 test pass**,
+build thành công, `wrangler deploy --dry-run` bundle thành công, smoke test `next start` với DB thật,
+CSP + HSTS trả đúng header, `/` là static và font self-host (không còn gọi Google Fonts CSS).
 
 ## 6. Tài liệu liên quan
 
