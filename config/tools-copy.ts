@@ -52,6 +52,16 @@ export const TOOLS_HUB_COPY = {
       badge: IS_LUNAR_TOOL_PUBLIC ? "Đang mở" : "Đang đối chiếu",
       available: IS_LUNAR_TOOL_PUBLIC,
     },
+    {
+      id: "zalo-invite",
+      title: "Tạo lời mời Zalo",
+      description:
+        "Soạn lời mời cưới gửi Zalo/Messenger đúng vai vế (ông bà, cô chú, sếp, bạn thân…) với 3 phương án chỉn chu, sao chép 1 chạm.",
+      href: "/cong-cu/tao-loi-moi-zalo",
+      ctaLabel: "Soạn lời mời",
+      badge: "Mới",
+      available: true,
+    },
   ] as const,
 } as const;
 
