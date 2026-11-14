@@ -8,7 +8,6 @@ Names only — never values. Do not read `.env*`; this list was derived from `en
 |---|---|---|---|
 | `SUPABASE_URL` | `lib/server/supabase.ts` (`env()`) | Supabase project URL | dev: local env file; prod: `npx wrangler secret put SUPABASE_URL` |
 | `SUPABASE_SECRET_KEY` | `lib/server/supabase.ts` | Server-side key used by `db()`; bypasses RLS | secret |
-| `SUPABASE_PUBLISHABLE_KEY` | `lib/server/supabase.ts` (`authClient()`, unused) | Dead code path; no caller exists | not needed today |
 | `AUTH0_DOMAIN` | `lib/server/auth.ts`, `lib/auth0.ts` | JWT issuer + JWKS URL for `jose`; Auth0 SDK domain | secret |
 | `AUTH0_AUDIENCE` | `lib/server/auth.ts`, `lib/auth0.ts` | Expected JWT audience; passed as `authorizationParameters.audience` | secret |
 | `AUTH0_CLIENT_ID` | Auth0 SDK (`@auth0/nextjs-auth0` SSR routes) | OAuth client id; not referenced by repository code | secret |

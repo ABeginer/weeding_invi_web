@@ -1,41 +1,38 @@
 # Open items
 
 ## Handoff
-- Last task (2026-11-14): **batch 4 completed** at git `04192e7` — Sổ mừng, Album, retention cron and guest pagination. Skill updated after it.
-- Verified: `npm run typecheck`, `npm run lint`, `npm run test` (8/8), `npm run build`, `wrangler deploy --dry-run` (custom worker entry + cron bundle ok), and a `next start` smoke test (`/a/huy-huiya` 200, `/a/<invalid>` 404, gifts API 401 without auth, retention endpoint 403 without admin).
-- Owner ran migrations v11, v12 and v13 on 2026-11-14; the agent re-verified through the REST API and rendered `/a/<slug>` with a temporary album photo, then deleted all test rows (0 remaining).
+- Last task (2026-11-14): **batch 5** — security headers, unit tests, dead-code cleanup. Verified: `tsc`, `eslint`, **22/22** tests, `next build`, `next start` smoke test with CSP/HSTS headers present.
+- Migrations v11–v13 are applied; Sổ mừng + Album verified end-to-end with temporary rows (deleted afterwards).
 - In progress: nothing.
-- Next step: after the next deploy, confirm the retention cron fires (`wrangler tail` → `[retention]`, or call `POST /api/ops/retention/run` with `dryRun:true` as an admin), then work through `TODO.md`.
+- Next step: after deploy, confirm the retention cron fires (`wrangler tail` → `[retention]`) and sanity-check CSP in a real browser (Turnstile, music, Google Maps, Zalo share). Then the remaining engineering items below.
+
+## Fixed in batch 5 (working tree, committed after `04192e7`)
+- Added `Strict-Transport-Security` and a CSP (with Turnstile/Cloudflare/Google Fonts/Google Maps allowances) to `next.config.ts`.
+- Added 22 unit tests: `tests/rate-limit.test.ts`, `tests/pagination.test.ts`, `tests/payments.test.ts` (VietQR, order codes, `safeEqual`).
+- Removed the unused `authClient()` from `lib/server/supabase.ts` and `SUPABASE_PUBLISHABLE_KEY` from `.env.example`.
 
 ## Fixed in batch 4 (git `04192e7`)
-- Sổ mừng: `gifts` table migration + full CRUD API (Pro/VIP gate) + restored nav/page and summary UI.
-- Album: `album` kind accepted by API/DB/regex, upload re-enabled, public `/a/[slug]` album page linked from the dashboard, `noindex`.
-- Retention: purge function (R2 + DB, batch 50, dry-run), ops endpoint with audit log, daily Cloudflare Cron at 03:00 UTC via `worker-entry.ts`.
-- Guest list: server-side search/status filtering and 50-per-page pagination with a pager; legacy no-`page` API response kept.
+Sổ mừng (table + CRUD + UI), Album (kind + upload + `/a/[slug]`), retention job + daily Cloudflare cron, server-side guest pagination.
 
-## Fixed in batch 3 (git `b06ebad`, `c638848`, `7ebded2`, `c0eb3ed`)
-Build output untracked (2,778 → 396 tracked files), docs rewritten, `typecheck`/`test` scripts + CI, ops error banner.
-
-## Fixed in batch 2 (git `db98d6c`)
-Plan guest limit on public RSVP, song/ride persistence, map embed preservation, in-memory rate limits, 1k-row truncation removed, pricing copy, `/w` noindex, `.env.example`.
-
-## Fixed in batch 1 (git `0c3c7e5`)
-Sổ mừng/Album no longer fake working; bulk event assignment fixed; photo replacement without data loss; Turnstile retry; `/m` SSR-first; ops fail-closed; suspended weddings blocked.
+## Fixed in batches 1–3
+See git history `0c3c7e5`, `db98d6c`, `b06ebad`, `c638848`, `7ebded2`, `c0eb3ed`: the eight blockers, RSVP/limit/rate-limit hardening, repo hygiene, docs rewrite, CI.
 
 ## Known issues (still open, verified)
-1. **Retention has never run** — cron is configured and bundle-validated, but its runtime behaviour (secret access from `process.env` in a scheduled event) is verified only after a real deploy; run the dry-run endpoint first.
-3. **Duplicate accounts** — the live `users` table has the same email under two Auth0 providers; `POST /api/ops/users/[id]/merge` does not exist and the merge UI is hidden.
-4. **Unknown schemas** — `orders`, `bank_transactions` are still not created by any committed migration.
-5. **Dead code** — ~350 lines of unreachable mock data in `lib/ops-api.ts`, unused `authClient()` in `lib/server/supabase.ts`.
-6. **Performance leftovers** — 7 Google Fonts `@import`ed in `app/globals.css` alongside 3 `next/font` families; landing page is `force-dynamic` just to read the session; gallery images are 2048px with no responsive variants.
-7. **Dependencies slightly misaligned** — `eslint-config-next` 15.x vs `next` 16.x; `critters` unused.
-8. **Bulk import dedupe is page-scoped** — `BulkImportDialog` receives only the current page of names, so duplicates across pages are not detected client-side.
-9. **`next dev` needs workerd** — sandboxed agents verify with `next build` + `next start`.
+1. **Retention has never fired in production** — configured and bundle-validated only. Test with the dry-run endpoint, then watch the 03:00 UTC cron.
+2. **CSP is untested in a browser** — `curl` only proves the header exists. Check the console for violations on `/`, `/w/<slug>`, `/m/<slug>` and inside Zalo/Messenger.
+3. **`lib/ops-api.ts` still carries ~350 lines of dead mock data** (unreachable, but shipped to the client bundle). Rewrite it as a thin fetch client.
+4. **No DB-backed route tests** — RSVP limits, ownership checks and gifts are only covered by typechecking and manual smoke tests.
+5. **`eslint-config-next` is 15.x while `next` is 16.x** — `npm install` is blocked inside the sandbox (npm cache outside workspace); run outside the sandbox then lint.
+6. **Google Fonts `@import`** — six families are used by `templates/themed/theme-configs.ts`; replacing the import with `next/font` requires switching those `fontFamily` values to CSS variables.
+7. **Landing page is `force-dynamic`** only to read the Auth0 session.
+8. **Gallery images are 2048px with no srcset.**
+9. **Duplicate accounts** — same email under two Auth0 providers; no merge route (UI hidden).
+10. **`orders` / `bank_transactions` are not created by any committed migration** — they exist in the live project or were created manually.
 
 ## Still blocked on the owner
-1. Run migrations v11, v12, v13.
-2. After deploy: confirm the cron fires (`wrangler tail` → `[retention]`), optionally after a `dryRun` call.
-3. Confirm the sellable feature set (pricing is now truthful but still a draft).
+1. Deploy, then verify the cron + CSP.
+2. Confirm the sellable feature set (pricing copy is truthful but a draft).
+3. Decide whether to merge duplicate accounts manually or fund a merge feature.
 
 ## Deliberately not stored here
 - Secret values, tokens, bank account numbers, real personal emails, and `.env*` contents.

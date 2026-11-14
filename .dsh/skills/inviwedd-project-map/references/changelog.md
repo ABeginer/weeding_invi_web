@@ -2,6 +2,13 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.7 · batch 5: headers, tests, dead code
+- Added HSTS and a CSP to `next.config.ts` (Turnstile, Cloudflare Analytics, Google Fonts, Google Maps; inline styles/scripts allowed until a nonce setup exists).
+- Added 22 unit tests for rate limiting, pagination and payment helpers (`tests/rate-limit.test.ts`, `pagination.test.ts`, `payments.test.ts`).
+- Removed unused `authClient()` and `SUPABASE_PUBLISHABLE_KEY`; updated `.env.example`.
+- Verified: tsc/lint clean, 22/22 tests, build ok, headers present on a live `next start`.
+- Files: `next.config.ts`, `lib/server/supabase.ts`, `.env.example`, `tests/*.test.ts`, `TODO.md`, `HANDOFF.md`.
+
 ## 2026-11-14 · v1.0.6 · migrations applied + end-to-end verification
 - Owner ran migrations v11, v12 and v13. Verified through the service-key REST API: guest preference columns selectable (200), `gifts` selectable/insertable (200/201), `photos.kind = 'album'` insertable (201).
 - Created a temporary user + Pro wedding + album photo + gift, rendered `/a/<slug>` (200, heading, photo link, `noindex`) and `/w/<slug>` (200), then deleted everything: 0 remaining wedding/gift rows and `/a/<slug>` returns 404.

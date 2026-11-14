@@ -41,17 +41,13 @@ Browser ──HTTPS──> Cloudflare Worker (Next.js 16 / OpenNext)
 
 ## 4. Trước khi phát hành — cần chủ dự án
 
-1. **Chạy 3 migration mới** trên Supabase SQL Editor:
-   `migration_v11_guest_preferences.sql`, `migration_v12_gifts.sql`,
-   `migration_v13_album_kind.sql`.
-   Chưa chạy: RSVP mất bài hát/phương tiện, Sổ mừng lỗi, upload Album bị DB từ chối.
-2. Điền `BANK_BIN`, `BANK_NAME`, `BANK_ACCOUNT_NO`, `BANK_ACCOUNT_NAME`,
-   `BANK_WEBHOOK_SECRET` để luồng thanh toán chạy.
-3. Production đã có `APP_BASE_URL`/`BANK_*` (xác nhận của chủ dự án 2026-11-14);
-   local không cần.
-4. Kiểm tra cron dọn dữ liệu sau deploy: `wrangler.jsonc` có `triggers.crons`
-   `0 3 * * *`, worker entry `worker-entry.ts` gọi `purgeExpiredFreeWeddings()`.
-   Có thể chạy thử trước bằng `POST /api/ops/retention/run` với `dryRun: true`.
+1. **Migration**: v11, v12, v13 đã chạy và đã được verify (REST + render trang).
+2. **Cron retention**: sau deploy kiểm tra `wrangler tail` lúc 03:00 UTC (log `[retention]`);
+   chạy thử `POST /api/ops/retention/run` với `dryRun: true` trước.
+3. **CSP**: kiểm tra trên trình duyệt thật (Turnstile, nhạc nền, Google Maps, Zalo);
+   nới directive trong `next.config.ts` nếu console báo vi phạm.
+4. **Production env**: `APP_BASE_URL`, `BANK_*`, `ADMIN_EMAIL` đã có trên production
+   (xác nhận của chủ dự án); local không cần.
 
 ## 5. Kiểm tra
 
@@ -59,8 +55,9 @@ Browser ──HTTPS──> Cloudflare Worker (Next.js 16 / OpenNext)
 npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
-Đã verify ngày 2026-11-14: tsc sạch, lint sạch, 8/8 test pass, build thành công,
-`wrangler deploy --dry-run` bundle thành công, smoke test `next start` với DB thật.
+Đã verify ngày 2026-11-14: tsc sạch, lint sạch, **22/22 test pass**, build thành công,
+`wrangler deploy --dry-run` bundle thành công, smoke test `next start` với DB thật,
+CSP + HSTS trả đúng header.
 
 ## 6. Tài liệu liên quan
 

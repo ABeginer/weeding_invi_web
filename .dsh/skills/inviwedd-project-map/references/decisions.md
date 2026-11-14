@@ -47,6 +47,10 @@ Each entry: decision → reason → where it lives in code. "Owner" means the re
 - **Retention deletes free weddings older than 30 days** — `purgeExpiredFreeWeddings()` runs in batches of 50, removes R2 objects first then the row (cascade), and supports `dryRun` via `POST /api/ops/retention/run` with an audit entry. It is scheduled daily at 03:00 UTC through `wrangler.jsonc` `triggers.crons` and `worker-entry.ts`; the custom entry re-exports OpenNext's Durable Objects and adds `scheduled`.
 - **Guest list is paginated server-side, 50 per page** — search and status filter run in SQL (`ilike`/`eq`), with `count` for `totalPages`; the legacy no-`page` response shape is preserved for other callers. Code: `app/api/weddings/[id]/guests/route.ts`, `components/dashboard/GuestTable.tsx`.
 
+## Security headers and tests
+- **HSTS (2 years, includeSubDomains, preload) and a permissive CSP are set in `next.config.ts`** — the CSP allows the inline Next.js bootstrap, Framer Motion inline styles, Google Fonts, Turnstile and Cloudflare Analytics, and limits frames to self + Google Maps. It is intentionally permissive (`'unsafe-inline'`) because the app cannot use nonces today; tighten only after moving to nonce-based script loading. Verify in a real browser after deploy, since curl cannot catch CSP violations.
+- **Pure helpers are unit-tested with `node:test`** — rate limiting (per-IP buckets, 429 + Retry-After), pagination (`fetchAllRows`, `chunkIds`), VietQR payload + order codes + `safeEqual`. DB-backed routes are not unit-tested yet; they need a test database or a Supabase mock.
+
 ## Security model
 - **The browser never talks to Supabase** — there is no Supabase JS client in components; all reads/writes go through Next API routes that use the secret key, and RLS has no policies plus `revoke all` for `anon`/`authenticated`. Code: `lib/server/supabase.ts`, `migration_v2.sql`.
 - **Owner auth is a Bearer JWT verified with `jose` (RS256, issuer + audience checked)** — `proxy.ts` guards `/dashboard` with the Auth0 session cookie, and the API trusts only the verified token. Code: `lib/server/auth.ts`, `proxy.ts`.

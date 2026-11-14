@@ -1,7 +1,7 @@
 ---
 name: inviwedd-project-map
 description: "Use at the start of any task on the Inviwedd wedding invitation project and after any major change to it"
-version: 1.0.6
+version: 1.0.7
 metadata:
   hermes:
     tags: [project, architecture, memory]
@@ -70,4 +70,4 @@ Steps: edit only the affected file with a small patch; prepend one dated line to
 At session start: read `references/open-items.md`, compare **Last verified** with `git log`, and patch this skill before starting the task if newer commits exist.
 
 ## Last verified
-2026-11-14 · code git `04192e7` (batch 4) · owner confirmed the migration/Auth0/Apps-Script/admin-email/retention facts and has applied migrations v11–v13. Verified with `npm run typecheck`, `npm run lint`, `npm run test` (8/8), `next build`, `wrangler deploy --dry-run`, and a REST + page end-to-end check of Sổ mừng/Album with temporary rows (deleted afterwards). The retention cron is configured but has not fired in production yet.
+2026-11-14 · migrations v11–v13 applied and verified · batch 5 adds CSP/HSTS + 22 unit tests. Verified with `npm run typecheck`, `npm run lint`, `npm run test` (22/22), `next build`, `wrangler deploy --dry-run`, and a `next start` smoke test with headers. Retention cron and CSP still need a real-browser/production check.
