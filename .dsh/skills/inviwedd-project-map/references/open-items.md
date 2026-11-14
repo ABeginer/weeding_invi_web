@@ -1,10 +1,12 @@
 # Open items
 
 ## Handoff
-- Last task (2026-11-14): **batch 6–7** — ops client rewritten without mock data, fonts self-hosted via `next/font`, landing page static, ESLint upgraded to Next 16 flat config, gallery downsized, validation helpers extracted + tests (29 total), duplicate constants/pages/assets removed.
-- Verified: `npm run typecheck` clean, `npm run lint` 0 errors (98 React Compiler warnings), `npm run test` 29/29, `npm run build` ok (`/` is now `○` static), `next start` smoke test ok, no `fonts.googleapis.com` reference in the built HTML/CSS.
+- Last task (2026-11-14): **template collection** — new `/thiep-cuoi` page with a flat focus carousel and a glass preview popup, feature config, homepage teaser, navbar/footer/sitemap links, registry asset fields.
+- Verified: `npm run typecheck` clean, `npm run lint` 0 errors, `npm run build` ok (`/thiep-cuoi` prerendered static), page 200 with h1/carousel/live region, homepage has no template cards, sitemap + canonical present, no 3D/hex/rgb/console.log in the new components.
+- **Missing assets:** none of the 24 templates has `public/templates/<id>/preview.webp` or `snapshot.webp`; the UI falls back to placeholders. Add ~700×1240 webp (<120KB) and 750px-wide snapshot webp (<600KB) per template.
 - In progress: nothing.
-- Next step: after deploy verify the retention cron (`wrangler tail` → `[retention]`) and CSP in a real browser.
+- Next step: add the preview/snapshot images, then verify the carousel/popup interactions in a real browser (keyboard, swipe, focus trap, snapshot pause, reduced motion) since the agent environment has no browser.
+
 
 ## Known issues (still open)
 1. **Retention has never fired in production** — configured and bundle-validated only; run the dry-run endpoint first.

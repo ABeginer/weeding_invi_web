@@ -2,6 +2,13 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.1.2 · template collection page + preview popup
+- Added `/thiep-cuoi` (`app/thiep-cuoi/page.tsx`): flat focus carousel over the template registry, keyboard/swipe/arrow controls, `aria-current`, live region, counter and dots; no 3D transforms.
+- Added `components/templates/template-preview-dialog.tsx`: glass panel (`bg-surface/90` + `backdrop-blur-[16px]`), focus trap + ESC/overlay close + focus return, auto-scrolling snapshot with pause button and reduced-motion fallback, feature lists and the two action buttons (`/mau/<id>` demo, `/tao-thiep?template=` with login-then-return).
+- Added `config/template-features.ts` (single source for base/Pro/VIP features, `comingSoon` flags matching pricing) and optional `previewImage`/`snapshotImage`/`demoUrl`/`extraFeatureIds` fields on the registry plus `getTemplateCollection()`.
+- Homepage: removed the template grid; replaced with a teaser section linking to `/thiep-cuoi`. Navbar and footer link to the new page; sitemap includes it.
+- Verified: tsc clean, lint 0 errors, build ok (`/thiep-cuoi` static), page 200 with h1/carousel/live region, homepage has no template cards, sitemap + canonical present. Images for all 24 templates are still missing (placeholders).
+
 ## 2026-11-14 · v1.1.1 · dev mode survives blocked workerd
 - `next dev` crashed on Windows when the repo sits under Desktop/OneDrive: workerd could not `CreateDirectory` its state dirs (Defender Controlled Folder Access), and the unhandled Miniflare rejection killed the process.
 - `next.config.ts` now persists Miniflare state under `os.tmpdir()` and catches the startup failure, logging one actionable warning; the dev server keeps running (R2/KV/cache bindings unavailable, `/media` 404).

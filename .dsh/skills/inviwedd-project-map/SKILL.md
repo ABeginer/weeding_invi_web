@@ -1,7 +1,7 @@
 ---
 name: inviwedd-project-map
 description: "Use at the start of any task on the Inviwedd wedding invitation project and after any major change to it"
-version: 1.1.1
+version: 1.1.2
 metadata:
   hermes:
     tags: [project, architecture, memory]
@@ -70,4 +70,4 @@ Steps: edit only the affected file with a small patch; prepend one dated line to
 At session start: read `references/open-items.md`, compare **Last verified** with `git log`, and patch this skill before starting the task if newer commits exist.
 
 ## Last verified
-2026-11-14 · migrations v11–v13 applied · batch 6–7 adds self-hosted fonts, static landing, ESLint 16 flat config, validation tests (29) and removes the ops mock. Verified with `npm run typecheck`, `npm run lint` (0 errors, 98 warnings), `npm run test` (29/29), `next build` (`/` static) and `next start` smoke tests. `next dev` also verified with workerd unavailable (fallback warning, pages 200). Retention cron and CSP still need a production/browser check.
+2026-11-14 · migrations v11–v13 applied · adds self-hosted fonts, static landing, ESLint 16 flat config, validation tests (29), no-mock ops client, and the `/thiep-cuoi` collection page + preview dialog. Verified with `npm run typecheck`, `npm run lint` (0 errors, 99 warnings), `npm run test` (29/29), `npm run build` (`/` and `/thiep-cuoi` static) and `next start` smoke tests. Template preview/snapshot images are missing; carousel/popup interactions still need a real-browser check; retention cron and CSP also await production.

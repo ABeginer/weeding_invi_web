@@ -69,6 +69,7 @@ bắt tay vào việc mới.
 4. Nâng gói: tạo đơn `INV-XXXXXX` → chuyển khoản theo VietQR → webhook/ops xác nhận → `weddings.plan` đổi.
 5. Album cho khách (gói Pro/VIP): tải ảnh trong tab Ảnh → chia sẻ `/a/<slug>`.
 6. Sổ mừng (gói Pro/VIP): ghi nhận tiền mừng, cảm ơn, tổng hợp ở `/dashboard/so-mung`.
+7. Bộ sưu tập mẫu thiệp: `/thiep-cuoi` (carousel + popup xem trước); trang chủ chỉ giới thiệu.
 
 ## Kiểm tra trước khi gửi PR
 

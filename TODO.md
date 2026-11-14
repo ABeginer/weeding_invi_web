@@ -13,6 +13,10 @@ những gì còn lại và lý do.
 
 ## B. Kỹ thuật (chưa làm được trong môi trường hiện tại)
 
+- [ ] **Ảnh cho bộ sưu tập mẫu thiệp**: `/thiep-cuoi` đang dùng placeholder vì chưa có
+      `public/templates/<id>/preview.webp` (700×1240) và `snapshot.webp` (750×≤6000)
+      cho 24 mẫu. Cần bổ sung ảnh thật; code đã tự fallback placeholder.
+
 - [ ] **Test API có DB** (RSVP limit, phân quyền, gifts): route handler import alias `@/`
       và `next/server`, nên `node:test` không import trực tiếp được; cần thêm Vitest/tsx
       hoặc Supabase test project. Hiện đã tách logic thuần và test 29 case.
