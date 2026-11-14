@@ -41,6 +41,12 @@ Each entry: decision → reason → where it lives in code. "Owner" means the re
 - **Ops counters use `head: true` counts instead of loading rows**, and monthly revenue fetches only paid orders inside the month window. Code: `app/api/ops/stats/route.ts`.
 - **Pricing may only describe shipped behaviour** — unimplemented capabilities carry the "Sắp có" badge (templates exclusive, MP3 upload, album, Excel export) while shipped ones (gift QR, 2 images) are stated plainly; the logo row was removed because nothing implements it. Code: `config/pricing.ts`.
 
+## Features built in batch 4
+- **Sổ mừng is a Pro/VIP feature** — GET/POST/PATCH/DELETE return 403 for free weddings; totals are computed from the fetched rows (`totalVnd`, `count`, `unthankedCount`), and `thanked` maps to `thanked_at`. Code: `app/api/weddings/[id]/gifts/**`, `config/pricing.ts`.
+- **Album is a public, unlisted page** — dashboards upload `kind: "album"`, guests open `/a/<slug>`; the page is `noindex` because it exposes private wedding photos without authentication. Code: `app/a/[slug]/page.tsx`, `app/api/weddings/[id]/photos/route.ts`.
+- **Retention deletes free weddings older than 30 days** — `purgeExpiredFreeWeddings()` runs in batches of 50, removes R2 objects first then the row (cascade), and supports `dryRun` via `POST /api/ops/retention/run` with an audit entry. It is scheduled daily at 03:00 UTC through `wrangler.jsonc` `triggers.crons` and `worker-entry.ts`; the custom entry re-exports OpenNext's Durable Objects and adds `scheduled`.
+- **Guest list is paginated server-side, 50 per page** — search and status filter run in SQL (`ilike`/`eq`), with `count` for `totalPages`; the legacy no-`page` response shape is preserved for other callers. Code: `app/api/weddings/[id]/guests/route.ts`, `components/dashboard/GuestTable.tsx`.
+
 ## Security model
 - **The browser never talks to Supabase** — there is no Supabase JS client in components; all reads/writes go through Next API routes that use the secret key, and RLS has no policies plus `revoke all` for `anon`/`authenticated`. Code: `lib/server/supabase.ts`, `migration_v2.sql`.
 - **Owner auth is a Bearer JWT verified with `jose` (RS256, issuer + audience checked)** — `proxy.ts` guards `/dashboard` with the Auth0 session cookie, and the API trusts only the verified token. Code: `lib/server/auth.ts`, `proxy.ts`.

@@ -1,6 +1,6 @@
 # API routes
 
-Verified against git `868ac95`. 37 `route.ts` files, 47 exported handlers.
+Verified against git `04192e7`. 40 `route.ts` files, 52 exported handlers.
 
 Auth legend:
 - `public` — no auth wrapper.
@@ -30,14 +30,14 @@ Auth legend:
 | PATCH | `/api/weddings/[id]/events` | JWT+owner | Reorder events | `app/api/weddings/[id]/events/route.ts` |
 | PATCH | `/api/weddings/[id]/events/[eventId]` | JWT+owner | Update one event; keeps `map_embed_url` untouched when the client omits it | `app/api/weddings/[id]/events/[eventId]/route.ts` |
 | DELETE | `/api/weddings/[id]/events/[eventId]` | JWT+owner | Delete one event | `app/api/weddings/[id]/events/[eventId]/route.ts` |
-| GET | `/api/weddings/[id]/guests` | JWT+owner | List guests (fetched page-by-page, no 1k truncation) with event ids | `app/api/weddings/[id]/guests/route.ts` |
+| GET | `/api/weddings/[id]/guests` | JWT+owner | List guests. Without `page` returns all rows (legacy); with `page` returns `{items,page,pageSize,total,totalPages}` and supports `q` + `status` filters | `app/api/weddings/[id]/guests/route.ts` |
 | POST | `/api/weddings/[id]/guests` | JWT+owner | Create guest (plan guest limit) | `app/api/weddings/[id]/guests/route.ts` |
 | POST | `/api/weddings/[id]/guests/bulk` | JWT+owner | Bulk create ≤500 names (plan guest limit) | `app/api/weddings/[id]/guests/bulk/route.ts` |
 | PATCH | `/api/weddings/[id]/guests/[guestId]` | JWT+owner | Rename guest | `app/api/weddings/[id]/guests/[guestId]/route.ts` |
 | DELETE | `/api/weddings/[id]/guests/[guestId]` | JWT+owner | Delete guest | `app/api/weddings/[id]/guests/[guestId]/route.ts` |
 | POST | `/api/weddings/[id]/guests/[guestId]/events` | JWT+owner | Replace the guest's event assignments | `app/api/weddings/[id]/guests/[guestId]/events/route.ts` |
 | GET | `/api/weddings/[id]/photos` | JWT+owner | List photos | `app/api/weddings/[id]/photos/route.ts` |
-| POST | `/api/weddings/[id]/photos` | JWT+owner | Upload photo (≤5 MB, jpeg/png/webp, magic-byte check) with per-kind plan limit; single-slot kinds replace the previous photo after a successful insert | `app/api/weddings/[id]/photos/route.ts` |
+| POST | `/api/weddings/[id]/photos` | JWT+owner | Upload photo (≤5 MB, jpeg/png/webp, magic-byte check) with per-kind plan limit; single-slot kinds replace the previous photo after a successful insert; accepts `album` | `app/api/weddings/[id]/photos/route.ts` |
 | PATCH | `/api/weddings/[id]/photos` | JWT+owner | Reorder gallery photos | `app/api/weddings/[id]/photos/route.ts` |
 | DELETE | `/api/weddings/[id]/photos/[photoId]` | JWT+owner | Delete photo row + R2 object | `app/api/weddings/[id]/photos/[photoId]/route.ts` |
 | GET | `/api/weddings/[id]/wishes` | JWT+owner | List wishes (`.limit(1000)`) | `app/api/weddings/[id]/wishes/route.ts` |
@@ -46,7 +46,12 @@ Auth legend:
 | GET | `/api/orders/[id]` | JWT (owner) | Order status for polling | `app/api/orders/[id]/route.ts` |
 | POST | `/api/webhooks/bank` | webhook secret | Record bank transaction, match `INV-XXXXXX` in description, mark order paid, upgrade wedding plan | `app/api/webhooks/bank/route.ts` |
 | GET | `/api/ops/me` | none (manual JWT read) | Returns `{ email, isAdmin }`; fails closed (`isAdmin: false`) when unauthenticated or when `ADMIN_EMAIL` is unset | `app/api/ops/me/route.ts` |
+| GET | `/api/weddings/[id]/gifts` | JWT+owner, Pro/VIP | Gift list + totals (`totalVnd`, `count`, `unthankedCount`) | `app/api/weddings/[id]/gifts/route.ts` |
+| POST | `/api/weddings/[id]/gifts` | JWT+owner, Pro/VIP | Create a gift entry (giver, amount, method, note, optional guest) | `app/api/weddings/[id]/gifts/route.ts` |
+| PATCH | `/api/weddings/[id]/gifts/[giftId]` | JWT+owner, Pro/VIP | Update a gift or toggle `thanked` (sets `thanked_at`) | `app/api/weddings/[id]/gifts/[giftId]/route.ts` |
+| DELETE | `/api/weddings/[id]/gifts/[giftId]` | JWT+owner, Pro/VIP | Delete a gift entry | `app/api/weddings/[id]/gifts/[giftId]/route.ts` |
 | GET | `/api/ops/stats` | admin | Counters via head counts + month-bounded revenue query | `app/api/ops/stats/route.ts` |
+| POST | `/api/ops/retention/run` | admin | Run the 30-day purge job; `dryRun` lists candidates, otherwise deletes DB rows + R2 objects and writes an audit log | `app/api/ops/retention/run/route.ts` |
 | GET | `/api/ops/users` | admin | Paginated user list (filter + slice in memory) | `app/api/ops/users/route.ts` |
 | GET | `/api/ops/users/[id]` | admin | One user + their weddings | `app/api/ops/users/[id]/route.ts` |
 | GET | `/api/ops/weddings` | admin | Paginated wedding list (loads all rows, filters in memory) | `app/api/ops/weddings/route.ts` |
@@ -61,9 +66,8 @@ Auth legend:
 | GET | `/api/ops/audit` | admin | Audit log list | `app/api/ops/audit/route.ts` |
 
 ## Called by the client but missing in `app/api`
-- `GET|POST /api/weddings/[id]/gifts`, `PATCH|DELETE /api/weddings/[id]/gifts/[giftId]` — called by `components/dashboard/GiftBookView.tsx` through `lib/api.ts`; no route and no `gifts` table exist, so "Sổ mừng" always fails.
-- `PUT /api/guests/[guestId]/events` — called by `assignGuestEvents` in `lib/api.ts` (used for bulk event assignment in `GuestTable`); only the nested `/api/weddings/[id]/guests/[guestId]/events` exists.
-- `POST /api/ops/users/[id]/merge` — called by `mergeOpsUser` in `lib/ops-api.ts`; no route exists, so the merge dialog falls back to the localStorage mock.
+- `PUT /api/guests/[guestId]/events` — no longer called; bulk assignment uses the nested route below.
+- `POST /api/ops/users/[id]/merge` — called by `mergeOpsUser` in `lib/ops-api.ts`; no route exists, so the merge UI is hidden.
 
 ## Not present (checked, absent)
 `/api/admin/*` routes and any `SESSION_SECRET` usage: not in the repository at git `868ac95`.

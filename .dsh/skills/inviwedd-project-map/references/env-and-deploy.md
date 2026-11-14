@@ -47,7 +47,9 @@ Notes:
 
 Scripts (`package.json`): `dev` = `next dev`; `build` = `next build`; `preview` = `opennextjs-cloudflare build && opennextjs-cloudflare preview`; `deploy` = `opennextjs-cloudflare build && opennextjs-cloudflare deploy`; `lint` = `eslint .`.
 
-`wrangler.jsonc`: worker `wedding-invitation`, entry `.open-next/worker.js`, assets `.open-next/assets` bound as `ASSETS`, self-reference binding `WORKER_SELF_REFERENCE`, image binding `IMAGES` (unused because `next.config.ts` sets `images.unoptimized`), R2 binding `PHOTOS` to bucket `thiep-cuoi-photos`, `compatibility_date` `2026-11-12`, flags `nodejs_compat` + `global_fetch_strictly_public`. There are no `vars` in the file.
+`wrangler.jsonc`: worker `wedding-invitation`, **main `worker-entry.ts`** (custom entry that re-exports the OpenNext handler and adds the retention `scheduled` handler), assets `.open-next/assets` bound as `ASSETS`, self-reference binding `WORKER_SELF_REFERENCE`, image binding `IMAGES` (unused because `next.config.ts` sets `images.unoptimized`), R2 binding `PHOTOS` to bucket `thiep-cuoi-photos`, `triggers.crons` `0 3 * * *`, `compatibility_date` `2026-11-12`, flags `nodejs_compat` + `global_fetch_strictly_public`. There are no `vars` in the file.
+
+`worker-entry.ts` is bundled by Wrangler, not Next, so it is excluded from `tsconfig.json` and ESLint; validate it with `npx wrangler deploy --dry-run`.
 
 `open-next.config.ts` uses the default config with the R2 incremental cache commented out, so ISR/caching runs without a shared incremental cache.
 

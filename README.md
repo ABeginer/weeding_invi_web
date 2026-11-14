@@ -67,6 +67,8 @@ bắt tay vào việc mới.
 2. Thêm khách (hoặc dán danh sách), mỗi khách có link `/m/<guestSlug>`.
 3. Khách mở link, xem thiệp, RSVP (số người đi cùng, chế độ ăn, bài hát), gửi lời chúc.
 4. Nâng gói: tạo đơn `INV-XXXXXX` → chuyển khoản theo VietQR → webhook/ops xác nhận → `weddings.plan` đổi.
+5. Album cho khách (gói Pro/VIP): tải ảnh trong tab Ảnh → chia sẻ `/a/<slug>`.
+6. Sổ mừng (gói Pro/VIP): ghi nhận tiền mừng, cảm ơn, tổng hợp ở `/dashboard/so-mung`.
 
 ## Kiểm tra trước khi gửi PR
 
@@ -86,13 +88,20 @@ npm run deploy
 ```
 
 Sau deploy kiểm tra: `/`, `/sitemap.xml` (domain thật, không phải localhost),
-`/w/<slug>`, `/m/<slug>`, `/dashboard` (redirect login), `/ops` (404 với người
-không phải admin), upload ảnh R2, Turnstile, preview OG trên Zalo/Facebook.
+`/w/<slug>`, `/m/<slug>`, `/a/<slug>` (album), `/dashboard` (redirect login),
+`/ops` (404 với người không phải admin), upload ảnh R2, Turnstile, preview OG
+trên Zalo/Facebook, và `wrangler tail` xem log `[retention]` sau 03:00 UTC.
 
 ## Ghi chú
 
 - Migration SQL trong `supabase/` được chạy **thủ công** trên Supabase SQL Editor,
-  theo thứ tự tên file. Không có công cụ migrate tự động.
+  theo thứ tự tên file. Không có công cụ migrate tự động. Danh sách hiện tại:
+  `v2` (bảng gốc), `v3` (sự kiện), `v4` (RSVP mở rộng), `v5` (theme),
+  `v10_ops` (ops), `v11_guest_preferences`, `v12_gifts`, `v13_album_kind`.
+- Job dọn dữ liệu gói free quá 30 ngày: `lib/server/retention.ts`, chạy qua
+  Cloudflare Cron (`wrangler.jsonc` → `triggers.crons`, 03:00 UTC mỗi ngày) trong
+  `worker-entry.ts`; có thể chạy thử bằng `POST /api/ops/retention/run`
+  (`dryRun: true`) với tài khoản admin.
 - Ảnh do người dùng tải lên được nén phía client trước khi gửi (Workers không chạy
   `sharp`), nên `next.config.ts` đặt `images.unoptimized`.
 - `next dev` cần workerd/Miniflare; trong môi trường bị giới hạn quyền, hãy kiểm tra

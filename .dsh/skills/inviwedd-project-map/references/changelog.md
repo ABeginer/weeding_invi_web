@@ -2,6 +2,14 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.5 · batch 4 (code `04192e7`)
+- Built **Sổ mừng**: `gifts` table (migration v12), GET/POST/PATCH/DELETE routes gated to Pro/VIP, nav/page restored.
+- Built **Album**: migration v13 allows `kind = 'album'`, upload enabled, public `noindex` page at `/a/[slug]`, dashboard link.
+- Built **retention job**: `purgeExpiredFreeWeddings()` (30 days, batch 50, R2 + DB, dry-run) + `POST /api/ops/retention/run` + daily cron 03:00 UTC through `worker-entry.ts`; validated with `wrangler deploy --dry-run`.
+- **Guest list pagination**: server-side `q`/`status` filters, 50 per page, `count`-based `totalPages`, pager in the UI; legacy API shape kept.
+- Owner must run migrations v11, v12, v13.
+- Files: `app/a/[slug]/page.tsx`, `app/api/weddings/[id]/gifts/**`, `app/api/ops/retention/run/route.ts`, `app/api/weddings/[id]/{guests,photos}/route.ts`, `lib/server/{retention,mappers,storage}.ts`, `lib/api.ts`, `worker-entry.ts`, `wrangler.jsonc`, `components/dashboard/**`, `supabase/migration_v1{1,2,3}*.sql`.
+
 ## 2026-11-14 · v1.0.4 · batch 3 (code `b06ebad`)
 - Untracked build output and local state: `.open-next/` (2,342 files, ~53 MB), `.wrangler/` and `scratch/` removed from the index and gitignored; tracked files went from 2,778 to 396.
 - Rewrote `README.md` (UTF-8), `HANDOFF.md`, `TODO.md`, `INTEGRATION.md`; marked `DESIGN_PLAN.md` historical.

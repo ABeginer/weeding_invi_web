@@ -12,9 +12,10 @@ Cập nhật: 2026-11-14 · code `db98d6c` · bản đồ chi tiết trong `.dsh
 | Xác thực (Auth0) + phân quyền chủ thiệp | Chạy được |
 | Ops console `/ops` | Chạy được khi `ADMIN_EMAIL` được set; fail-closed khi thiếu |
 | Thanh toán chuyển khoản (đơn + VietQR + webhook) | Có code; **chưa cấu hình `BANK_*`** ở local |
-| Sổ mừng (`/dashboard/so-mung`) | **Chưa có backend** — đang ẩn, trang chỉ thông báo |
-| Album cho khách | **Chưa có backend** — nút upload bị khoá |
-| Lưu trữ 30 ngày (gói free) | Cam kết có, **chưa triển khai** |
+| Sổ mừng (`/dashboard/so-mung`) | Đã có API + bảng `gifts` (migration v12, Pro/VIP) |
+| Album cho khách (`/a/[slug]`) | Đã có upload + trang album công khai (migration v13) |
+| Lưu trữ 30 ngày (gói free) | Đã có job: `lib/server/retention.ts` + cron 03:00 UTC + endpoint ops |
+| Phân trang danh sách khách | Server-side search/filter + 50 khách/trang |
 
 ## 2. Kiến trúc tóm tắt
 
@@ -40,15 +41,17 @@ Browser ──HTTPS──> Cloudflare Worker (Next.js 16 / OpenNext)
 
 ## 4. Trước khi phát hành — cần chủ dự án
 
-1. **Chạy `supabase/migration_v11_guest_preferences.sql`** (thêm `song_request`,
-   `ride_needed`). Chưa chạy thì RSVP vẫn hoạt động nhưng mất 2 thông tin này.
+1. **Chạy 3 migration mới** trên Supabase SQL Editor:
+   `migration_v11_guest_preferences.sql`, `migration_v12_gifts.sql`,
+   `migration_v13_album_kind.sql`.
+   Chưa chạy: RSVP mất bài hát/phương tiện, Sổ mừng lỗi, upload Album bị DB từ chối.
 2. Điền `BANK_BIN`, `BANK_NAME`, `BANK_ACCOUNT_NO`, `BANK_ACCOUNT_NAME`,
    `BANK_WEBHOOK_SECRET` để luồng thanh toán chạy.
-3. Đặt `APP_BASE_URL`/`SITE_URL` là domain thật (hiện fallback `localhost:3000`,
-   làm sai canonical/OG/sitemap).
-4. Xác nhận `ADMIN_EMAIL` trên production (đã set ở local).
-5. Quyết định: xây hay bỏ Sổ mừng + Album; có triển khai retention 30 ngày không
-   (thao tác xoá dữ liệu, cần duyệt).
+3. Production đã có `APP_BASE_URL`/`BANK_*` (xác nhận của chủ dự án 2026-11-14);
+   local không cần.
+4. Kiểm tra cron dọn dữ liệu sau deploy: `wrangler.jsonc` có `triggers.crons`
+   `0 3 * * *`, worker entry `worker-entry.ts` gọi `purgeExpiredFreeWeddings()`.
+   Có thể chạy thử trước bằng `POST /api/ops/retention/run` với `dryRun: true`.
 
 ## 5. Kiểm tra
 
@@ -57,8 +60,7 @@ npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
 Đã verify ngày 2026-11-14: tsc sạch, lint sạch, 8/8 test pass, build thành công,
-smoke test `next start` với DB thật (trang công khai 200, `/dashboard` 307,
-`/ops` fail-closed, rate limit trả 429).
+`wrangler deploy --dry-run` bundle thành công, smoke test `next start` với DB thật.
 
 ## 6. Tài liệu liên quan
 

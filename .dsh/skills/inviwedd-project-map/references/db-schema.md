@@ -14,10 +14,12 @@ Owner confirmation (2026-11-14): **all migration files in this repository have b
 | `supabase/migration_v5.sql` | Adds `users.theme` ('light'/'dark', default 'light') | APPLIED (owner) |
 | `supabase/migration_v10_ops.sql` | Adds `weddings.suspended`; creates `audit_logs`; RLS + revoke | APPLIED (owner) |
 | `supabase/migration_v11_guest_preferences.sql` | Adds `guests.song_request` (≤200 chars) and `guests.ride_needed` (bool) | **NOT APPLIED — pending owner** |
+| `supabase/migration_v12_gifts.sql` | Creates `gifts` (Sổ mừng), index, RLS + revoke | **NOT APPLIED — pending owner** |
+| `supabase/migration_v13_album_kind.sql` | Recreates `photos_kind_check` to include `album` | **NOT APPLIED — pending owner** |
 
 The repository contains no v6–v9 files; the owner states the files present are the complete set that was run. Because v10 is applied, `weddings.suspended` exists — the `content.suspended` fallback in `lib/server/weddings.ts` stays as harmless defensive code.
 
-Migration v11 was written by the agent during batch 2 and has **not** been executed. Until the owner runs it, `/api/rsvp` falls back to writing only the older columns, so `songRequest`/`rideNeeded` are silently dropped and `/api/invite/[slug]` returns their defaults. The code detects the missing columns (42703/PGRST204) and retries without them.
+Migrations v11–v13 were written by the agent and have **not** been executed. Until the owner runs them: song/ride preferences fall back to being dropped, `/api/weddings/[id]/gifts` fails because the table is missing, and album uploads are rejected by the DB check constraint. The code already handles the missing guest columns; the gifts/album paths will start working as soon as the SQL runs.
 
 
 ## Tables
@@ -37,8 +39,11 @@ Trigger `guests_set_responded_at` sets `responded_at = now()` when `status` chan
 `id uuid PK`, `wedding_id → weddings cascade`, `guest_id uuid → guests on delete set null`, `name 1..100`, `message 1..500`, `created_at`. Index `wishes_wedding_idx (wedding_id, created_at desc)`.
 
 ### `photos`
-`id uuid PK`, `wedding_id → weddings cascade`, `kind text check (banner|couple|gallery|og|gift)` after v4, `storage_key text unique`, `position int default 0`, `created_at`. Index `photos_wedding_idx (wedding_id, kind, position)`.
-`album` is not an allowed kind in the committed check constraint, and `MEDIA_KEY_RE` in `lib/server/storage.ts` does not accept an `album` segment.
+`id uuid PK`, `wedding_id → weddings cascade`, `kind text check (banner|couple|gallery|og|gift)` after v4 and `+album` after v13, `storage_key text unique`, `position int default 0`, `created_at`. Index `photos_wedding_idx (wedding_id, kind, position)`.
+`MEDIA_KEY_RE` in `lib/server/storage.ts` accepts the same six kind segments; album files are served by `/media/...` like the others.
+
+### `gifts` (v12, pending)
+`id uuid PK`, `wedding_id → weddings cascade`, `guest_id → guests on delete set null`, `giver_name 1..100`, `amount_vnd bigint 0..1e9`, `method text check (cash|bank|other)`, `note ≤300`, `thanked_at timestamptz`, `created_at`. Index `gifts_wedding_idx (wedding_id, created_at desc)`. RLS + revoke. API gates the whole feature on `plan` being pro/vip.
 
 ### `events`
 `id uuid PK`, `wedding_id → weddings cascade`, `title 1..120`, `starts_at timestamptz`, `lunar_date ≤60`, `venue_name 1..120`, `venue_address ≤300`, `map_embed_url ≤2000`, `map_directions_url ≤2000`, `position int default 0`, `created_at`. Index `events_wedding_idx (wedding_id, position)`.

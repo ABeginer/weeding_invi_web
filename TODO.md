@@ -5,22 +5,21 @@ Cập nhật: 2026-11-14 · code `db98d6c`. Chi tiết + lý do nằm trong
 
 ## A. Chủ dự án cần làm (chặn phát hành)
 
-- [ ] Chạy `supabase/migration_v11_guest_preferences.sql` trên Supabase SQL Editor.
-- [ ] Điền `BANK_BIN`, `BANK_NAME`, `BANK_ACCOUNT_NO`, `BANK_ACCOUNT_NAME`,
-      `BANK_WEBHOOK_SECRET` (local + `wrangler secret put` cho production).
-- [ ] Đặt `APP_BASE_URL`/`SITE_URL` là domain thật trước khi deploy.
-- [ ] Xác nhận `ADMIN_EMAIL` trên production.
-- [ ] Quyết định: xây hay bỏ **Sổ mừng** và **Album cho khách**.
-- [ ] Duyệt triển khai **lưu trữ 30 ngày** cho gói free (xoá dữ liệu, không hoàn tác).
+- [ ] Chạy 3 migration trên Supabase SQL Editor:
+      `migration_v11_guest_preferences.sql`, `migration_v12_gifts.sql`,
+      `migration_v13_album_kind.sql`.
+- [ ] Xác nhận cron dọn dữ liệu chạy đúng sau deploy (`triggers.crons` 03:00 UTC),
+      chạy thử `POST /api/ops/retention/run` với `{ "dryRun": true, "reason": "..." }` trước.
 
 ## B. Kỹ thuật
 
 ### Ưu tiên cao
-- [ ] Phân trang UI danh sách khách (`GuestTable` đang tải toàn bộ rồi lọc client-side).
-- [x] Hiện banner lỗi ở `/ops` thay vì danh sách rỗng khi API fail (sự kiện
-      `ops-api-error` + banner trong `app/ops/layout.tsx`).
+- [x] Phân trang UI danh sách khách (server-side search/status, 50/trang).
+- [x] Sổ mừng: bảng `gifts` + API CRUD + trang `/dashboard/so-mung`.
+- [x] Album: kind `album` + upload + trang công khai `/a/[slug]`.
+- [x] Retention 30 ngày: `lib/server/retention.ts` + endpoint ops + cron Cloudflare.
 - [ ] Xoá dữ liệu mẫu chết trong `lib/ops-api.ts` (~350 dòng) và các hàm gifts
-      chưa dùng trong `lib/api.ts`.
+      cũ trong `lib/api.ts` nếu trùng lặp.
 - [ ] Viết `route.ts` + bảng `gifts` nếu chọn xây Sổ mừng; thêm `album` vào
       constraint DB, `VALID_KINDS`, `MEDIA_KEY_RE` nếu chọn xây Album.
 
