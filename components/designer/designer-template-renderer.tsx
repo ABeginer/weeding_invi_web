@@ -103,6 +103,35 @@ export function DesignerTemplateRenderer({
           );
         }
 
+        if (element.type === "photo") {
+          return (
+            <div
+              key={element.id}
+              className="absolute overflow-hidden"
+              style={{
+                ...baseStyle,
+                height: `${element.hPct}%`,
+                borderRadius: element.radius,
+                background: "rgba(0,0,0,0.06)",
+              }}
+            >
+              {element.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={element.url}
+                  alt=""
+                  className="h-full w-full"
+                  style={{ objectFit: element.fit }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[10px] opacity-60">
+                  Ảnh: {element.slot}
+                </div>
+              )}
+            </div>
+          );
+        }
+
         if (element.type === "box") {
           return (
             <div

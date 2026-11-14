@@ -22,6 +22,7 @@ import {
   DESIGNER_ACTIONS,
   DESIGNER_BLOCKS,
   DESIGNER_ICONS,
+  PHOTO_SLOTS,
   PLACEHOLDER_OPTIONS,
   type DesignerCanvasContent,
   type DesignerElement,
@@ -206,6 +207,28 @@ export function DesignerCanvas({
     setSelectedId(id);
   };
 
+  const addPhoto = () => {
+    const id = crypto.randomUUID();
+    setContent((previous) => ({
+      ...previous,
+      elements: [
+        ...previous.elements,
+        {
+          id,
+          type: "photo",
+          xPct: 20,
+          yPct: 18,
+          wPct: 60,
+          hPct: 34,
+          slot: "hero",
+          radius: 16,
+          fit: "cover",
+        },
+      ],
+    }));
+    setSelectedId(id);
+  };
+
   const addBox = () => {
     const id = crypto.randomUUID();
     setContent((previous) => ({
@@ -290,6 +313,28 @@ export function DesignerCanvas({
       ],
     }));
     setSelectedId(id);
+  };
+
+  const [assets, setAssets] = React.useState<{ key: string; url: string }[] | null>(null);
+  const [loadingAssets, setLoadingAssets] = React.useState(false);
+
+  const loadAssets = async () => {
+    setLoadingAssets(true);
+    try {
+      const result = await opsRequest<{ items?: { r2_key: string }[] }>(
+        "/api/ops/designer/assets",
+      );
+      setAssets(
+        (result.items ?? []).map((item) => ({
+          key: item.r2_key,
+          url: `/media/${item.r2_key}`,
+        })),
+      );
+    } catch {
+      setAssets([]);
+    } finally {
+      setLoadingAssets(false);
+    }
   };
 
   const handleUpload = async (file: File) => {
@@ -504,6 +549,13 @@ export function DesignerCanvas({
           </label>
           <button
             type="button"
+            onClick={addPhoto}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+          >
+            Khung ảnh
+          </button>
+          <button
+            type="button"
             onClick={addBox}
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
           >
@@ -710,6 +762,23 @@ export function DesignerCanvas({
                   ) : element.type === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={element.url} alt="" className="block h-auto w-full" />
+                  ) : element.type === "photo" ? (
+                    <span
+                      className="flex h-full w-full items-center justify-center overflow-hidden text-[10px] opacity-70"
+                      style={{ borderRadius: element.radius, background: "rgba(0,0,0,0.06)" }}
+                    >
+                      {element.url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={element.url}
+                          alt=""
+                          className="h-full w-full"
+                          style={{ objectFit: element.fit }}
+                        />
+                      ) : (
+                        `Ảnh: ${element.slot}`
+                      )}
+                    </span>
                   ) : element.type === "box" ? (
                     <span
                       className="block"
@@ -839,6 +908,85 @@ export function DesignerCanvas({
                 className="inline-flex h-9 w-full items-center justify-center rounded-full border border-danger-border text-xs font-medium text-danger-fg"
               >
                 Xoá phần tử
+              </button>
+            </div>
+          ) : selected.type === "photo" ? (
+            <div className="space-y-3">
+              <label className="block text-xs text-text">
+                Ảnh cưới (slot)
+                <select
+                  value={selected.slot}
+                  onChange={(event) => updateElement(selected.id, { slot: event.target.value as (typeof PHOTO_SLOTS)[number] })}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                >
+                  {PHOTO_SLOTS.map((slot) => (
+                    <option key={slot} value={slot}>{slot}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-xs text-text">
+                  Bo góc
+                  <input
+                    type="number"
+                    min={0}
+                    max={80}
+                    value={selected.radius}
+                    onChange={(event) => updateElement(selected.id, { radius: Number(event.target.value) || 0 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+                <label className="block text-xs text-text">
+                  Fit
+                  <select
+                    value={selected.fit}
+                    onChange={(event) => updateElement(selected.id, { fit: event.target.value as "cover" | "contain" })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  >
+                    <option value="cover">cover</option>
+                    <option value="contain">contain</option>
+                  </select>
+                </label>
+              </div>
+
+              <button
+                type="button"
+                onClick={loadAssets}
+                disabled={loadingAssets}
+                className="inline-flex h-9 w-full items-center justify-center rounded-full border border-border text-xs font-medium text-text disabled:opacity-60"
+              >
+                {loadingAssets ? "Đang tải…" : "Chọn ảnh từ thư viện"}
+              </button>
+
+              {assets && assets.length > 0 && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {assets.slice(0, 12).map((asset) => (
+                    <button
+                      key={asset.key}
+                      type="button"
+                      onClick={() => updateElement(selected.id, { url: asset.url })}
+                      className="overflow-hidden rounded-md border border-border focus-visible:ring-2 focus-visible:ring-focus-ring"
+                      aria-label="Dùng ảnh này"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={asset.url} alt="" className="aspect-square h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setContent((previous) => ({
+                    ...previous,
+                    elements: previous.elements.filter((item) => item.id !== selected.id),
+                  }));
+                  setSelectedId(null);
+                }}
+                className="inline-flex h-9 w-full items-center justify-center rounded-full border border-danger-border text-xs font-medium text-danger-fg"
+              >
+                Xoá khung ảnh
               </button>
             </div>
           ) : selected.type === "box" ? (

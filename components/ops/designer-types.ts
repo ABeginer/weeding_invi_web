@@ -95,13 +95,30 @@ export interface DesignerBlockElement {
   color: string;
 }
 
+export const PHOTO_SLOTS = ["hero", "groom", "bride", "gallery"] as const;
+export type PhotoSlot = (typeof PHOTO_SLOTS)[number];
+
+export interface DesignerPhotoElement {
+  id: string;
+  type: "photo";
+  xPct: number;
+  yPct: number;
+  wPct: number;
+  hPct: number;
+  slot: PhotoSlot;
+  url?: string;
+  radius: number;
+  fit: "cover" | "contain";
+}
+
 export type DesignerElement =
   | DesignerTextElement
   | DesignerImageElement
   | DesignerBoxElement
   | DesignerIconElement
   | DesignerButtonElement
-  | DesignerBlockElement;
+  | DesignerBlockElement
+  | DesignerPhotoElement;
 
 export interface DesignerPage {
   id: string;
