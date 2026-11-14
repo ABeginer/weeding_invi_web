@@ -2,6 +2,21 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.1 · batch 1 unblock fixes (code `0c3c7e5`)
+- Fixed the eight blockers recorded at v1.0.0:
+  - Sổ mừng: nav entry removed; page renders a "đang hoàn thiện" notice (no route/table existed).
+  - Album: upload disabled with an explicit message until the DB kind and `MEDIA_KEY_RE` support it.
+  - Bulk event assignment: calls the existing nested route instead of a missing `/api/guests/[id]/events`.
+  - Single-slot photos: the API now uploads the new object first and replaces the old row afterwards (no delete-first data loss), keyed by the content photo id.
+  - Turnstile: a failed script load is retryable and shows a visible error instead of silently locking the form.
+  - `/m/[slug]`: renders immediately from server data; the per-guest fetch only hydrates RSVP status and never blocks first paint.
+  - Ops: the client mock fallback is gone, `/api/ops/me` fails closed when `ADMIN_EMAIL` is unset, the merge button is hidden (no route), and no fabricated data is displayed.
+  - Suspended weddings: blocked on `/w`, `/m`, `/api/public/wedding/[slug]`, `/api/invite/[slug]`, RSVP and wishes; `suspended` is read with a fallback to `content.suspended` when migration v10 has not run.
+- `next.config.ts`: Miniflare/workerd starts only for `next dev`, so production builds no longer need the Workers runtime.
+- Verified: `tsc --noEmit` and `eslint .` clean; `next build` succeeds; `next start` smoke test passed for `/`, `/cong-cu*`, `/m/<invalid>`, `/ops`, `/sitemap.xml`, `/robots.txt`, `/dashboard` (307 to login), and 404 paths for `/w/ab`, `/api/public/wedding/ab`, `/api/invite/ab`, `/media/*`.
+- New known issue: the local Supabase credential is rejected ("Unregistered API key"), so every DB-backed route returns 500 locally; owner must rotate/update it. Not caused by these changes.
+- Files: `app/api/{invite,rsvp,wishes,ops/me}/**`, `app/api/weddings/[id]/photos/route.ts`, `app/dashboard/so-mung/page.tsx`, `app/m/[slug]/page.tsx`, `app/ops/users/[id]/page.tsx`, `components/{TurnstileWidget,dashboard/*,invitation/InvitePageClient}.tsx`, `lib/{api,ops-api}.ts`, `lib/server/{weddings,public-wedding}.ts`, `next.config.ts`.
+
 ## 2026-11-14 · v1.0.0 · initial skill creation
 - Created `inviwedd-project-map` on the owner's request, because context is lost between sessions and the repository had no durable project map.
 - Recorded: architecture and repo layout, all 37 `route.ts` files / 47 handlers with their auth layer, the 5 committed migrations and the tables they create (plus the three tables used by code but absent from migrations), the 20 environment variable names and where each is read, the product/technical decisions with reasons, and the open blockers found in a read-only review.

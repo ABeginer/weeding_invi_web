@@ -38,3 +38,10 @@ Each entry: decision → reason → where it lives in code. "Owner" means the re
 - **The browser never talks to Supabase** — there is no Supabase JS client in components; all reads/writes go through Next API routes that use the secret key, and RLS has no policies plus `revoke all` for `anon`/`authenticated`. Code: `lib/server/supabase.ts`, `migration_v2.sql`.
 - **Owner auth is a Bearer JWT verified with `jose` (RS256, issuer + audience checked)** — `proxy.ts` guards `/dashboard` with the Auth0 session cookie, and the API trusts only the verified token. Code: `lib/server/auth.ts`, `proxy.ts`.
 - **Ops access is an email allowlist on top of the same JWT** — no separate admin role table. Code: `lib/server/ops.ts`.
+- **Ops fails closed and never shows fabricated data** — when `ADMIN_EMAIL` is unset, `/api/ops/me` reports `isAdmin: false` and every ops page 404s; there is no localStorage fallback, so API errors surface instead of being replaced by mock rows. Code: `app/api/ops/me/route.ts`, `lib/ops-api.ts`.
+
+## Media and lifecycle
+- **Single-slot photos are replaced on the server after a successful upload** — the new object is written and the new row inserted first, then the previous row and its R2 object are deleted; the replaced row is found through `content.heroPhotoId/groomPhotoId/bridePhotoId` so legacy rows with non-zero positions still work. This avoids the data loss of delete-first and never leaves the slot empty. Code: `app/api/weddings/[id]/photos/route.ts`.
+- **A suspended wedding is indistinguishable from a missing one for guests** — public pages, the public API, the invite API, RSVP and wishes all return not-found/403. Chosen over a dedicated "locked" page so a suspension cannot be used to confirm that a private invitation exists. Code: `lib/server/weddings.ts`, `lib/server/public-wedding.ts`, `app/api/rsvp`, `app/api/wishes`.
+- **Miniflare/workerd only starts for `next dev`** — production builds and the deployed Worker get bindings from Cloudflare, so starting the local Workers runtime during `next build` only adds failure modes and build time. Code: `next.config.ts`.
+

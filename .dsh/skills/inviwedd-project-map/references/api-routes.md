@@ -15,8 +15,8 @@ Auth legend:
 | GET | `/api/invite/[slug]` | public | Guest name, status, plusOnes, diet and the events visible to that guest | `app/api/invite/[slug]/route.ts` |
 | POST | `/api/me` | JWT | Upsert `users` row, return profile + theme | `app/api/me/route.ts` |
 | PATCH | `/api/me/theme` | JWT | Persist light/dark brand theme | `app/api/me/theme/route.ts` |
-| POST | `/api/rsvp` | public+Turnstile | Update a guest RSVP by slug, or insert a walk-in guest by `weddingSlug`; optionally saves a wish | `app/api/rsvp/route.ts` |
-| POST | `/api/wishes` | public+Turnstile | Insert one wish (guest slug or wedding slug) | `app/api/wishes/route.ts` |
+| POST | `/api/rsvp` | public+Turnstile | Update a guest RSVP by slug, or insert a walk-in guest by `weddingSlug`; optionally saves a wish; 403 when the wedding is suspended | `app/api/rsvp/route.ts` |
+| POST | `/api/wishes` | public+Turnstile | Insert one wish (guest slug or wedding slug); 403 when the wedding is suspended | `app/api/wishes/route.ts` |
 | GET | `/api/public/wedding/[slug]` | public | Public wedding payload: content, events, photos, plan | `app/api/public/wedding/[slug]/route.ts` |
 | GET | `/api/weddings/check-slug?slug=` | public | Slug validity + availability | `app/api/weddings/check-slug/route.ts` |
 | GET | `/api/weddings` | JWT | List weddings owned by the caller | `app/api/weddings/route.ts` |
@@ -37,7 +37,7 @@ Auth legend:
 | DELETE | `/api/weddings/[id]/guests/[guestId]` | JWT+owner | Delete guest | `app/api/weddings/[id]/guests/[guestId]/route.ts` |
 | POST | `/api/weddings/[id]/guests/[guestId]/events` | JWT+owner | Replace the guest's event assignments | `app/api/weddings/[id]/guests/[guestId]/events/route.ts` |
 | GET | `/api/weddings/[id]/photos` | JWT+owner | List photos | `app/api/weddings/[id]/photos/route.ts` |
-| POST | `/api/weddings/[id]/photos` | JWT+owner | Upload photo (≤5 MB, jpeg/png/webp, magic-byte check) with per-kind plan limit | `app/api/weddings/[id]/photos/route.ts` |
+| POST | `/api/weddings/[id]/photos` | JWT+owner | Upload photo (≤5 MB, jpeg/png/webp, magic-byte check) with per-kind plan limit; single-slot kinds replace the previous photo after a successful insert | `app/api/weddings/[id]/photos/route.ts` |
 | PATCH | `/api/weddings/[id]/photos` | JWT+owner | Reorder gallery photos | `app/api/weddings/[id]/photos/route.ts` |
 | DELETE | `/api/weddings/[id]/photos/[photoId]` | JWT+owner | Delete photo row + R2 object | `app/api/weddings/[id]/photos/[photoId]/route.ts` |
 | GET | `/api/weddings/[id]/wishes` | JWT+owner | List wishes (`.limit(1000)`) | `app/api/weddings/[id]/wishes/route.ts` |
@@ -45,7 +45,7 @@ Auth legend:
 | POST | `/api/orders` | JWT | Create or reuse (24 h) a pending order and return VietQR payload + bank info | `app/api/orders/route.ts` |
 | GET | `/api/orders/[id]` | JWT (owner) | Order status for polling | `app/api/orders/[id]/route.ts` |
 | POST | `/api/webhooks/bank` | webhook secret | Record bank transaction, match `INV-XXXXXX` in description, mark order paid, upgrade wedding plan | `app/api/webhooks/bank/route.ts` |
-| GET | `/api/ops/me` | none (manual JWT read) | Returns `{ email, isAdmin }`; returns 200 with `isAdmin: true` when `ADMIN_EMAIL` is unset | `app/api/ops/me/route.ts` |
+| GET | `/api/ops/me` | none (manual JWT read) | Returns `{ email, isAdmin }`; fails closed (`isAdmin: false`) when unauthenticated or when `ADMIN_EMAIL` is unset | `app/api/ops/me/route.ts` |
 | GET | `/api/ops/stats` | admin | User/wedding/order/revenue counters | `app/api/ops/stats/route.ts` |
 | GET | `/api/ops/users` | admin | Paginated user list (filter + slice in memory) | `app/api/ops/users/route.ts` |
 | GET | `/api/ops/users/[id]` | admin | One user + their weddings | `app/api/ops/users/[id]/route.ts` |

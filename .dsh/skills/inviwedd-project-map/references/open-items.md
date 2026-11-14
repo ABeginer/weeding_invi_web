@@ -1,38 +1,43 @@
 # Open items
 
 ## Handoff
-- Last task (2026-11-14): full read-only review of the repository at git `868ac95`. No source file was modified. `npx tsc --noEmit` and `npm run lint` both pass clean, so the problems below are logical/behavioural, not type or lint errors.
+- Last task (2026-11-14): **batch 1 (8 blockers) completed** at git `0c3c7e5`. Code was modified, `tsc --noEmit` + `eslint .` are clean, `next build` succeeds, and a production-server smoke test passed.
 - In progress: nothing.
-- Next step: the owner picks a fix batch. Suggested order — (1) the 8 blockers in "Known bugs", (2) data-loss and plan-bypass items, (3) repo hygiene (committed build output, missing migrations, stale docs).
-- Files that will be touched first when fixing: `components/dashboard/GiftBookView.tsx` + a new `app/api/weddings/[id]/gifts/route.ts`, `app/api/weddings/[id]/photos/route.ts` (+ album migration), `lib/api.ts`, `components/dashboard/PhotosManager.tsx`, `components/dashboard/GuestTable.tsx`, `lib/ops-api.ts`, `lib/server/public-wedding.ts`.
+- Next step: batch 2 — data/security. Suggested order: public RSVP guest-limit enforcement + rate limiting, persist `songRequest`/`rideNeeded` (new columns + RSVP write + mapper) or remove the inputs, stop wiping `map_embed_url`, real pricing copy, pagination instead of load-all, `/w` noindex, `.env.example` completeness.
+- Owner must do first: replace the rejected Supabase credential in the local env (see Known issue 1); otherwise no DB-backed page can be tested locally.
+- Files likely touched next: `app/api/rsvp/route.ts`, `lib/server/mappers.ts`, `supabase/` (new migration), `config/pricing.ts`, `lib/ops-api.ts`, `components/dashboard/*`, `app/w/[slug]/page.tsx`.
 
-## Known bugs (verified at git `868ac95`)
-1. **Gift book has no backend** — `GiftBookView` calls `/api/weddings/{id}/gifts`; no route, no `gifts` table. Pro/VIP users see a load error; every add/edit/delete fails.
-2. **Album uploads cannot succeed** — API `VALID_KINDS` omits `album`, the DB check constraint omits it, and `MEDIA_KEY_RE` rejects an `album` path segment; the dashboard still offers the upload. `PLAN_LIMITS` and the pricing table sell 30/300 album photos.
-3. **Bulk event assignment always fails** — `assignGuestEvents` calls the non-existent `PUT /api/guests/{id}/events`.
-4. **Replacing a hero/portrait photo deletes the old one first** — `PhotosManager` deletes then uploads, so a failed upload leaves the slot empty.
-5. **Ops console shows fabricated data** — `fetchOrMock` silently falls back to a localStorage mock on any failed request; `/api/ops/me` returns `isAdmin: true` when `ADMIN_EMAIL` is unset; a `?mock_non_admin=1` debug switch remains in the code. "Suspend wedding" and "confirm order" report success while only mutating the mock.
-6. **`suspended` is never enforced on public pages** — ops can suspend a wedding but `/w`, `/m` and `/api/public/wedding/*` keep serving it (no public query selects the flag).
-7. **Turnstile can permanently block RSVP/wishes** — a failed script load is cached forever, the widget silently renders nothing, and the server rejects every submit for a missing token.
-8. **`/m/[slug]` throws away its server-rendered data** — `InvitePageClient` starts in a full-page loading skeleton and shows "Không thể tải thiệp mời" if the follow-up `/api/invite/[slug]` call fails.
-9. **Public RSVP bypasses the guest limit** — inserting a guest by `weddingSlug` in `/api/rsvp` does not check `plan.guests` (only the dashboard routes do), so a free wedding can receive unlimited guests.
-10. **`songRequest` / `rideNeeded` are collected and dropped** — sent by both RSVP components, never read by the server, no columns exist, and the dashboard "Bài hát yêu cầu" panel is therefore always empty.
+## Fixed in batch 1 (git `0c3c7e5`)
+1. Sổ mừng has no backend → nav entry removed and the page now explains the feature is not ready. **Still not implemented** (no `gifts` route/table); restoring it needs a real route + migration.
+2. Album upload could never succeed → the upload control is disabled with a clear message. Still needs `album` in the DB check constraint, `VALID_KINDS` and `MEDIA_KEY_RE` before re-enabling.
+3. Bulk event assignment called a missing route → now uses `/api/weddings/[id]/guests/[guestId]/events`.
+4. Replacing a hero/portrait photo deleted the old file first → server now inserts the new photo, then deletes the replaced row; content ids drive the replacement so legacy positions do not break.
+5. Turnstile could permanently lock the form → failed script loads are retryable and show a visible error.
+6. `/m/[slug]` discarded server-rendered data → renders from `initialData` immediately; the per-guest request only hydrates status/plus-ones/diet.
+7. Ops console showed fabricated data → mock fallback removed, `/api/ops/me` fails closed when `ADMIN_EMAIL` is unset, merge button hidden.
+8. `suspended` was never enforced → blocked on public pages, public API, invite API, RSVP and wishes. Suspended weddings now behave as "not found" for guests.
+
+## Known issues (still open, verified)
+9. **Public RSVP bypasses the guest limit** — inserting a guest by `weddingSlug` in `/api/rsvp` does not check `plan.guests`; only the dashboard routes do.
+10. **`songRequest` / `rideNeeded` are collected and dropped** — sent by both RSVP components, never read by the server, no columns exist; the dashboard panel stays empty.
 11. **`map_embed_url` is wiped on every event edit** — `EventsManager` sends `mapEmbedUrl: null` unconditionally.
-12. **Pricing copy contradicts the code** — "3 mẫu" free vs 23 selectable free templates; "mẫu độc quyền" VIP while `vip-1` is a placeholder; "Tải nhạc MP3 lên" has no field, UI or route; storage retention (30 days / 1 year / forever) has no implementation; "no logo" for paid plans has no variant; gift QR is sold as "Sắp có" but is fully shipped.
-13. **No rate limiting on any public endpoint** (`/api/rsvp`, `/api/wishes`, `/api/invite/[slug]`, `/api/weddings/check-slug`); Turnstile is the only gate.
-14. **Ops lists load every row then paginate in memory**, and `.limit(2000)` on guests exceeds the Supabase PostgREST default cap of 1,000 rows — data is silently truncated.
+12. **Pricing copy contradicts the code** — "3 mẫu" free vs 23 selectable free templates; VIP "mẫu độc quyền" while `vip-1` is a placeholder; "Tải nhạc MP3 lên" has no field/UI/route; retention has no implementation; gift QR is sold as "Sắp có" but ships.
+13. **No rate limiting on any public endpoint** (`/api/rsvp`, `/api/wishes`, `/api/invite/[slug]`, `/api/weddings/check-slug`).
+14. **Ops lists load every row then paginate in memory**, and `.limit(2000)` on guests exceeds the Supabase PostgREST default cap of 1,000 rows.
 15. **`/w/[slug]` has no `robots: noindex`** (only `robots.txt` disallows it).
-16. **Docs are stale** — `HANDOFF.md` describes `/admin/*`, a mock `lib/api.ts` and a `WishForm.tsx` that no longer exist; `DESIGN_PLAN.md` describes the old layout; `TODO.md` names Cormorant Garamond as the display font (the code uses Lora); `README.md` is a UTF-16 one-liner.
-17. **Repository hygiene** — `git ls-files` = 2,778 files, of which 2,342 are committed `.open-next/` build output (~53 MB) plus 10 `.wrangler/` and 40 `scratch/` files; `.gitignore` does not exclude them.
-18. **No test entry point** — `tests/*.test.ts` use `node:test`, but `package.json` has no `test` script, no runner/loader is installed, and there is no CI directory.
+16. **Docs are stale** — `HANDOFF.md`, `DESIGN_PLAN.md`, `TODO.md` describe removed `/admin/*` routes, a mock `lib/api.ts`, `WishForm.tsx`, and Cormorant as display font; `README.md` is a UTF-16 one-liner.
+17. **Repository hygiene** — 2,342 committed `.open-next/` files (~53 MB) plus `.wrangler/` and `scratch/`; `.gitignore` does not exclude them.
+18. **No test entry point / CI** — `tests/*.test.ts` use `node:test` but `package.json` has no `test` script and no runner is installed.
+19. **Local Supabase credential rejected** — `next start` logs `"Unregistered API key"` for every DB query, so DB-backed routes return 500 in this environment. Owner must update the secret; not caused by code changes.
 
 ## Owner-blocked questions
 1. Which of the five committed migrations have actually been applied, and what do the missing v6–v9 do? (Status is `UNKNOWN` everywhere in this skill.)
-2. Do `orders`, `bank_transactions` and `gifts` exist in the live project? Their schemas are `UNVERIFIED`; only columns inferable from code are recorded.
-3. Confirm the sellable feature set so `config/pricing.ts` can be rewritten to match reality (templates per tier, music upload, retention, logo, gift QR).
+2. Do `orders`, `bank_transactions` and `gifts` exist in the live project? Their schemas are `UNVERIFIED`.
+3. Confirm the sellable feature set so `config/pricing.ts` can be rewritten to match reality.
 4. Which email address(es) belong in `ADMIN_EMAIL` for production ops access?
 5. Should the 30-day free retention be implemented (cron + cleanup) or removed from the pricing copy?
-6. Where is the Google Apps Script that sends the bank webhook? It is not in this repository (`UNVERIFIED`); it determines whether the webhook contract can be changed safely.
+6. Where is the Google Apps Script that sends the bank webhook? Not in this repository (`UNVERIFIED`).
+7. Should the Sổ mừng and Album features be built now (route + migration) or stay hidden?
 
 ## Deliberately not stored here
 - Secret values, tokens, bank account numbers, real personal emails, and `.env*` contents.
