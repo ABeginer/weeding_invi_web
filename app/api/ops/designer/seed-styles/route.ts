@@ -20,6 +20,12 @@ const STYLES: StyleSeed[] = [
   { name: "Ren Trắng", ritual: "Vu Quy", background: "#FBFAF7", ink: "#2C2523", accent: "#A99A86", serif: "var(--font-cormorant)", script: "var(--font-pinyon)" },
   { name: "Mộc Nâu", ritual: "Thành Hôn", background: "#F6F0E7", ink: "#3B2A20", accent: "#8D6F32", serif: "var(--font-playfair)", script: "var(--font-nautigal)" },
   { name: "Chibi Hồng", ritual: "Báo Hỷ", background: "#FFF1F3", ink: "#5A2B3A", accent: "#E08A9B", serif: "var(--font-playfair)", script: "var(--font-carattere)" },
+  { name: "Tử Đằng", ritual: "Vu Quy", background: "#F5F1F7", ink: "#3E2A4A", accent: "#9B7FB5", serif: "var(--font-cormorant)", script: "var(--font-pinyon)" },
+  { name: "Mai Lanh", ritual: "Thành Hôn", background: "#FBF8EC", ink: "#4A3A12", accent: "#D4AF37", serif: "var(--font-playfair)", script: "var(--font-nautigal)" },
+  { name: "Bạch Sứ", ritual: "Vu Quy", background: "#FCFBF8", ink: "#2F3A3C", accent: "#8FA6A9", serif: "var(--font-eb-garamond)", script: "var(--font-pinyon)" },
+  { name: "Riviera", ritual: "Báo Hỷ", background: "#F1F6F7", ink: "#1F3A40", accent: "#3F7C86", serif: "var(--font-eb-garamond)", script: "var(--font-viaoda)" },
+  { name: "Rượu Vang", ritual: "Thành Hôn", background: "#F7EFEA", ink: "#3A1A1F", accent: "#7C2D3A", serif: "var(--font-playfair)", script: "var(--font-nautigal)" },
+  { name: "Lan Ngọc", ritual: "Vu Quy", background: "#F0F5F1", ink: "#22362B", accent: "#5E8C6A", serif: "var(--font-cormorant)", script: "var(--font-carattere)" },
 ];
 
 function text(page: DesignerPage, style: StyleSeed, id: string, yPct: number, text: string, fontSize: number, placeholder: string | null, font: string): void {
