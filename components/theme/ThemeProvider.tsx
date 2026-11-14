@@ -30,13 +30,33 @@ function applyThemeToDocument(mode: BrandThemeMode): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   const previous = root.dataset.theme;
-  root.dataset.theme = mode;
+  if (previous === mode) return;
 
-  // Hiệu ứng tràn màu mượt khi người dùng chủ động đổi sáng/tối.
-  if (previous && previous !== mode) {
-    root.classList.add("theme-switching");
-    window.setTimeout(() => root.classList.remove("theme-switching"), 420);
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+
+  // Bật transition TRƯỚC, ép trình duyệt chốt màu cũ, rồi mới đổi biến màu.
+  // Nếu đổi data-theme trước khi transition có hiệu lực thì trình duyệt gộp
+  // hai thay đổi trong cùng một lần tính style và màu chữ nhảy tức thì.
+  root.classList.add("theme-switching");
+  void root.offsetWidth;
+
+  const apply = () => {
+    root.dataset.theme = mode;
+  };
+
+  const doc = document as Document & {
+    startViewTransition?: (callback: () => void) => { finished: Promise<unknown> };
+  };
+
+  if (!reducedMotion && typeof doc.startViewTransition === "function") {
+    doc.startViewTransition(apply);
+  } else {
+    apply();
   }
+
+  window.setTimeout(() => root.classList.remove("theme-switching"), 520);
 }
 
 /** Script inline trong <head> đã áp theme từ cookie trước khi React hydrate. */
