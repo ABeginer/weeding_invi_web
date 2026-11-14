@@ -23,12 +23,12 @@ export const LANDING_COPY = {
     logoutLabel: "Đăng xuất",
   },
   hero: {
-    eyebrow: "THIỆP CƯỚI TRỰC TUYẾN",
+    eyebrow: "THIỆP CƯỚI TRỰC TUYẾN THẾ HỆ MỚI",
     title: "Trao gửi lời mời trân trọng đến từng vị khách quý",
     description:
-      "Tạo thiệp cưới online cá nhân hóa tên từng khách, chỉ trong vài phút. Miễn phí cho 20 khách, không cần thẻ.",
+      "Tạo thiệp cưới online tự động đổi cách xưng hô theo vai vế, cá nhân hóa ảnh hiển thị Zalo và quản lý bàn tiệc thông minh. Miễn phí 20 khách, lưu trữ 6 tháng, không giới hạn lượt xem.",
     primaryCta: "Tạo thiệp miễn phí",
-    secondaryCta: "Xem mẫu thiệp",
+    secondaryCta: "Xem bộ sưu tập mẫu",
     authenticatedCta: "Tạo thiệp miễn phí",
     noCardNote: "Miễn phí cho 20 khách, không cần thẻ",
     phoneFrameAriaLabel: "Khung xem thử mẫu thiệp cưới tương tác trên màn hình điện thoại",
