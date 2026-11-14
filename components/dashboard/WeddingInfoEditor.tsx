@@ -463,6 +463,27 @@ export function WeddingInfoEditor({
               </span>
             </div>
           </div>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface-alt p-3">
+            <input
+              type="checkbox"
+              checked={draftContent.shareGuestName === true}
+              onChange={(e) =>
+                onDraftChange({
+                  ...draftContent,
+                  shareGuestName: e.target.checked,
+                })
+              }
+              className="mt-0.5 h-4 w-4 rounded border-border accent-accent"
+            />
+            <span className="text-xs leading-relaxed text-text">
+              <span className="block text-sm font-semibold">
+                In tên khách trên ảnh chia sẻ Zalo/Facebook
+              </span>
+              Bật để ảnh xem trước khi dán link hiện “Trân trọng kính mời: Tên
+              khách”. Tắt để ẩn tên khách khỏi ảnh chia sẻ.
+            </span>
+          </label>
         </Card>
 
         {/* Quà mừng & chuyển khoản */}

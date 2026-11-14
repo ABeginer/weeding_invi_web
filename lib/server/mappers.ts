@@ -36,6 +36,11 @@ export interface GuestRow {
   diet?: GuestDiet | null;
   song_request?: string | null;
   ride_needed?: boolean | null;
+  relationship_group?: string | null;
+  custom_pronoun_host?: string | null;
+  custom_pronoun_guest?: string | null;
+  table_number?: string | null;
+  dietary_preference?: string | null;
   responded_at: string | null;
   created_at: string;
 }
@@ -114,6 +119,21 @@ export function toGuest(row: GuestRow, eventIds?: string[]): Guest {
         ? row.song_request
         : null,
     rideNeeded: row.ride_needed === true,
+    relationshipGroup:
+      row.relationship_group === "elder" ||
+      row.relationship_group === "peer_formal" ||
+      row.relationship_group === "close_friend" ||
+      row.relationship_group === "family"
+        ? row.relationship_group
+        : null,
+    customPronounHost: row.custom_pronoun_host ?? null,
+    customPronounGuest: row.custom_pronoun_guest ?? null,
+    tableNumber: row.table_number ?? null,
+    dietaryPreference:
+      row.dietary_preference === "vegetarian" ||
+      row.dietary_preference === "standard"
+        ? row.dietary_preference
+        : null,
     respondedAt: row.responded_at,
     createdAt: row.created_at,
     ...(eventIds !== undefined ? { eventIds } : {}),

@@ -35,6 +35,7 @@ export type WeddingContent = {
   };
   date: string; // ISO, có +07:00
   quote: string; // lời dẫn ngắn, tối đa 200 ký tự
+  shareGuestName?: boolean; // in tên khách trên ảnh OG khi chia sẻ
   heroPhotoId: string | null;
   groomPhotoId: string | null;
   bridePhotoId: string | null;
@@ -278,6 +279,7 @@ export const weddingContentInputSchema = z.object({
     .string()
     .trim()
     .max(QUOTE_MAX_LENGTH, `Lời dẫn ngắn tối đa ${QUOTE_MAX_LENGTH} ký tự.`),
+  shareGuestName: z.boolean().optional().transform((val) => val ?? false),
   heroPhotoId: uuidOrNullSchema,
   groomPhotoId: uuidOrNullSchema,
   bridePhotoId: uuidOrNullSchema,

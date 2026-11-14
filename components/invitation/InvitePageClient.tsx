@@ -12,6 +12,8 @@ import type {
   WeddingPlan,
 } from "@/lib/types";
 import { toTemplateData } from "@/lib/wedding-data";
+import { buildSalutation } from "@/lib/salutation-engine";
+import { GuestBoardingPass } from "./GuestBoardingPass";
 import { LiveTemplateRenderer } from "@/templates/LiveTemplateRenderer";
 
 interface InvitePageClientProps {
@@ -69,6 +71,32 @@ export function InvitePageClient({
     });
   }, [initialData, invite, plan, rawContent, rawPhotos, templateId, weddingSlug]);
 
+  const salutation = React.useMemo(
+    () =>
+      invite
+        ? buildSalutation({
+            guestName: invite.name,
+            relationshipGroup: invite.relationshipGroup,
+            customPronounHost: invite.customPronounHost,
+            customPronounGuest: invite.customPronounGuest,
+          })
+        : null,
+    [invite],
+  );
+
+  const displayData = React.useMemo(
+    () =>
+      salutation
+        ? {
+            ...resolvedData,
+            ui: { ...resolvedData.ui, invitePrefix: salutation.invitePrefix },
+          }
+        : resolvedData,
+    [resolvedData, salutation],
+  );
+
+  const guestLabel = salutation?.guestLabel ?? invite?.name ?? initialGuestName;
+
   if (!guestExists) {
     return (
       <div
@@ -104,18 +132,28 @@ export function InvitePageClient({
   }
 
   return (
-    <LiveTemplateRenderer
-      templateId={templateId}
-      data={resolvedData}
-      inviteSlug={slug}
-      weddingSlug={weddingSlug}
-      invitationMode="personal"
-      guestName={invite?.name ?? initialGuestName}
-      initialStatus={invite?.status ?? "pending"}
-      initialPlusOnes={invite?.plusOnes ?? 0}
-      initialDiet={invite?.diet ?? null}
-      initialSongRequest={invite?.songRequest ?? null}
-      initialRideNeeded={invite?.rideNeeded ?? false}
-    />
+    <>
+      {invite?.tableNumber && (
+        <GuestBoardingPass
+          guestName={guestLabel ?? invite.name}
+          plusOnes={invite.plusOnes ?? 0}
+          diet={invite.diet}
+          tableNumber={invite.tableNumber}
+        />
+      )}
+      <LiveTemplateRenderer
+        templateId={templateId}
+        data={displayData}
+        inviteSlug={slug}
+        weddingSlug={weddingSlug}
+        invitationMode="personal"
+        guestName={guestLabel}
+        initialStatus={invite?.status ?? "pending"}
+        initialPlusOnes={invite?.plusOnes ?? 0}
+        initialDiet={invite?.diet ?? null}
+        initialSongRequest={invite?.songRequest ?? null}
+        initialRideNeeded={invite?.rideNeeded ?? false}
+      />
+    </>
   );
 }

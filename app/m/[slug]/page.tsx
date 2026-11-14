@@ -28,7 +28,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseTitle = wedding
     ? `Thiệp cưới ${templateData.couple.groomName} & ${templateData.couple.brideName}`
     : "Thiệp Cưới Online";
-  const showGuestName = process.env.SHARE_SHOW_GUEST_NAME === "true";
+  // Chủ thiệp bật/tắt trong dashboard (content.shareGuestName); ENV chỉ là fallback cũ.
+  const showGuestName =
+    content.shareGuestName === true ||
+    process.env.SHARE_SHOW_GUEST_NAME === "true";
   const title =
     wedding && showGuestName && wedding.guestName?.trim()
       ? `${baseTitle} — Kính mời ${wedding.guestName.trim()}`
@@ -40,11 +43,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? trimmedQuote.slice(0, 160)
       : "Mời bạn xem thiệp cưới của chúng tôi";
 
+  const coupleLabel = `${templateData.couple.groomName} & ${templateData.couple.brideName}`;
+  const dateLabel = content.date.slice(0, 10).split("-").reverse().join(".");
   const rawOgImage =
     wedding?.photos.find((p) => p.kind === "og")?.url ??
     templateData.photos.heroUrl ??
     getTemplateMeta(templateId)?.coverImage;
-  const ogImageUrl = rawOgImage ? toAbsoluteSiteUrl(rawOgImage) : undefined;
+  const ogImageUrl = showGuestName && wedding?.guestName
+    ? toAbsoluteSiteUrl(
+        `/api/og/invite?couple=${encodeURIComponent(coupleLabel)}&guest=${encodeURIComponent(wedding.guestName)}&date=${encodeURIComponent(dateLabel)}&style=olive`,
+      )
+    : rawOgImage
+      ? toAbsoluteSiteUrl(rawOgImage)
+      : undefined;
   const pageUrl = toAbsoluteSiteUrl(`/m/${slug}`);
 
   return {

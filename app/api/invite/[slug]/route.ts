@@ -6,7 +6,7 @@ import type { GuestDiet, GuestStatus } from "@/lib/types";
 
 const GUEST_BASE_COLUMNS = "id, wedding_id, name, status";
 const GUEST_V4_COLUMNS = `${GUEST_BASE_COLUMNS}, plus_ones, diet`;
-const GUEST_FULL_COLUMNS = `${GUEST_V4_COLUMNS}, song_request, ride_needed`;
+const GUEST_FULL_COLUMNS = `${GUEST_V4_COLUMNS}, song_request, ride_needed, relationship_group, custom_pronoun_host, custom_pronoun_guest, table_number, dietary_preference`;
 
 interface GuestInviteRow {
   id: string;
@@ -17,6 +17,11 @@ interface GuestInviteRow {
   diet?: GuestDiet | null;
   song_request?: string | null;
   ride_needed?: boolean | null;
+  relationship_group?: string | null;
+  custom_pronoun_host?: string | null;
+  custom_pronoun_guest?: string | null;
+  table_number?: string | null;
+  dietary_preference?: string | null;
 }
 
 function isMissingColumn(error: unknown, columns: string[]): boolean {
@@ -83,6 +88,21 @@ export const GET = route(
           ? row.song_request
           : null,
       rideNeeded: row.ride_needed === true,
+      relationshipGroup:
+        row.relationship_group === "elder" ||
+        row.relationship_group === "peer_formal" ||
+        row.relationship_group === "close_friend" ||
+        row.relationship_group === "family"
+          ? row.relationship_group
+          : null,
+      customPronounHost: row.custom_pronoun_host ?? null,
+      customPronounGuest: row.custom_pronoun_guest ?? null,
+      tableNumber: row.table_number ?? null,
+      dietaryPreference:
+        row.dietary_preference === "vegetarian" ||
+        row.dietary_preference === "standard"
+          ? row.dietary_preference
+          : null,
       events,
     });
   },
