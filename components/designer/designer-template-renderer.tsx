@@ -16,31 +16,38 @@ function resolveText(
 interface DesignerTemplateRendererProps {
   canvas: DesignerCanvasContent;
   values?: DesignerPreviewValues;
+  pageIndex?: number;
 }
 
 /** Render layout JSON của designer: nền + element đặt theo %, thay placeholder bằng dữ liệu thật. */
 export function DesignerTemplateRenderer({
   canvas,
   values = {},
+  pageIndex = 0,
 }: DesignerTemplateRendererProps) {
+  const page = canvas.pages?.[pageIndex] ?? canvas;
+  const elements = page.elements ?? canvas.elements ?? [];
+  const background = page.background ?? canvas.background;
+  const backgroundUrl = page.backgroundUrl ?? canvas.backgroundUrl;
+
   return (
     <div
       className="relative mx-auto w-full max-w-[390px] overflow-hidden rounded-2xl border border-border shadow-xl"
       style={{
         aspectRatio: `${canvas.width} / ${canvas.height}`,
-        background: canvas.background,
+        background,
       }}
     >
-      {canvas.backgroundUrl && (
+      {backgroundUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={canvas.backgroundUrl}
+          src={backgroundUrl}
           alt=""
           className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
       )}
 
-      {canvas.elements.map((element) => {
+      {elements.map((element) => {
         if (element.type === "image") {
           return (
             // eslint-disable-next-line @next/next/no-img-element

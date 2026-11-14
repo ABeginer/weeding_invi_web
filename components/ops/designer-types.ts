@@ -23,6 +23,14 @@ export type DesignerImageElement = {
 
 export type DesignerElement = DesignerTextElement | DesignerImageElement;
 
+export interface DesignerPage {
+  id: string;
+  name: string;
+  background: string;
+  backgroundUrl?: string;
+  elements: DesignerElement[];
+}
+
 export interface DesignerCanvasContent {
   width: number;
   height: number;
@@ -30,6 +38,8 @@ export interface DesignerCanvasContent {
   /** Ảnh nền có sẵn (cover template) — designer vẽ đè lên khi tạo mẫu mới. */
   backgroundUrl?: string;
   elements: DesignerElement[];
+  /** Multi-page: mỗi trang có nền + element riêng. */
+  pages?: DesignerPage[];
 }
 
 export const PLACEHOLDER_OPTIONS = [

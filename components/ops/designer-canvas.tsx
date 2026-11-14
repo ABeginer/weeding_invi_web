@@ -9,6 +9,7 @@ import {
   PLACEHOLDER_OPTIONS,
   type DesignerCanvasContent,
   type DesignerElement,
+  type DesignerPage,
   type DesignerTextElement,
 } from "./designer-types";
 
@@ -29,6 +30,19 @@ function resolveCanvasFont(family: string): string {
   if (family.includes("playfair")) return "Georgia, serif";
   if (family.includes("garamond")) return "Garamond, serif";
   return "Arial, sans-serif";
+}
+
+function normalizePages(canvas: DesignerCanvasContent): DesignerPage[] {
+  if (Array.isArray(canvas.pages) && canvas.pages.length > 0) return canvas.pages;
+  return [
+    {
+      id: "page-1",
+      name: "Bìa",
+      background: canvas.background || "#FAF8F5",
+      backgroundUrl: canvas.backgroundUrl,
+      elements: Array.isArray(canvas.elements) ? canvas.elements : [],
+    },
+  ];
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
@@ -66,7 +80,69 @@ export function DesignerCanvas({
   initialCanvas,
   backgroundKey,
 }: DesignerCanvasProps) {
-  const [content, setContent] = React.useState<DesignerCanvasContent>(initialCanvas);
+  const [pages, setPages] = React.useState<DesignerPage[]>(() =>
+    normalizePages(initialCanvas),
+  );
+  const [activeId, setActiveId] = React.useState(() => normalizePages(initialCanvas)[0].id);
+  const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId));
+  const activePage = pages[activeIndex] ?? pages[0];
+
+  const content: DesignerCanvasContent = {
+    width: initialCanvas.width,
+    height: initialCanvas.height,
+    background: activePage.background,
+    backgroundUrl: activePage.backgroundUrl,
+    elements: activePage.elements,
+  };
+
+  const setContent = React.useCallback(
+    (updater: React.SetStateAction<DesignerCanvasContent>) => {
+      setPages((previous) => {
+        const index = previous.findIndex((page) => page.id === activeId);
+        if (index < 0) return previous;
+        const current = previous[index];
+        const currentContent: DesignerCanvasContent = {
+          width: initialCanvas.width,
+          height: initialCanvas.height,
+          ...current,
+        };
+        const next =
+          typeof updater === "function"
+            ? (updater as (prev: DesignerCanvasContent) => DesignerCanvasContent)(currentContent)
+            : updater;
+        const updated = previous.slice();
+        updated[index] = {
+          ...current,
+          background: next.background,
+          backgroundUrl: next.backgroundUrl,
+          elements: next.elements,
+        };
+        return updated;
+      });
+    },
+    [activeId, initialCanvas.height, initialCanvas.width],
+  );
+
+  const addPage = () => {
+    const id = crypto.randomUUID();
+    setPages((previous) => [
+      ...previous,
+      {
+        id,
+        name: previous.length === 1 ? "Nội dung" : `Nội dung ${previous.length}`,
+        background: "#FAF8F5",
+        elements: [],
+      },
+    ]);
+    setActiveId(id);
+  };
+
+  const removePage = (id: string) => {
+    if (pages.length <= 1) return;
+    const remaining = pages.filter((page) => page.id !== id);
+    setPages(remaining);
+    if (activeId === id) setActiveId(remaining[0].id);
+  };
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [exporting, setExporting] = React.useState(false);
@@ -148,7 +224,7 @@ export function DesignerCanvas({
     try {
       await opsRequest(`/api/ops/designer/templates/${templateId}`, {
         method: "PATCH",
-        body: JSON.stringify({ canvas_json: content }),
+        body: JSON.stringify({ canvas_json: { ...content, pages } }),
       });
       setMessage("Đã lưu layout.");
     } catch (err) {
@@ -242,7 +318,7 @@ export function DesignerCanvas({
       await opsRequest(`/api/ops/designer/templates/${templateId}`, {
         method: "PATCH",
         body: JSON.stringify({
-          canvas_json: content,
+          canvas_json: { ...content, pages },
           background_key: uploaded.key,
         }),
       });
@@ -355,6 +431,40 @@ export function DesignerCanvas({
           {error}
         </p>
       )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {pages.map((page) => (
+          <button
+            key={page.id}
+            type="button"
+            onClick={() => setActiveId(page.id)}
+            className={cn(
+              "h-9 rounded-full border px-3 text-xs font-medium transition-colors",
+              page.id === activeId
+                ? "border-accent bg-accent-soft text-accent-text"
+                : "border-border bg-surface text-text-muted hover:bg-surface-alt",
+            )}
+          >
+            {page.name}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={addPage}
+          className="h-9 rounded-full border border-dashed border-border px-3 text-xs font-medium text-text"
+        >
+          + Trang
+        </button>
+        {pages.length > 1 && (
+          <button
+            type="button"
+            onClick={() => removePage(activeId)}
+            className="h-9 rounded-full border border-danger-border px-3 text-xs font-medium text-danger-fg"
+          >
+            Xoá trang
+          </button>
+        )}
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex justify-center rounded-2xl border border-border bg-surface-alt p-4">
