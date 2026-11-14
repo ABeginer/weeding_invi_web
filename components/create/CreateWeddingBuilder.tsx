@@ -270,20 +270,49 @@ export function CreateWeddingBuilder({
   const dateValue = toDatetimeLocalVn(date);
   const datePreview = formatWeddingDateParts(date);
 
-  const previewUrl = buildPreviewUrl({
-    templateId,
-    groom: groomName.trim(),
-    bride: brideName.trim(),
-    date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
-    quote: quote.trim(),
-    opened: previewOpened,
-  });
-  const [previewSrc, setPreviewSrc] = React.useState(previewUrl);
+  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+  const [iframeSrc] = React.useState(() =>
+    buildPreviewUrl({
+      templateId,
+      groom: groomName.trim(),
+      bride: brideName.trim(),
+      date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
+      quote: quote.trim(),
+      opened: previewOpened,
+    }),
+  );
+
+  const sendPreview = React.useCallback(() => {
+    iframeRef.current?.contentWindow?.postMessage(
+      {
+        type: "inviwedd:preview",
+        payload: {
+          templateId,
+          groom: groomName.trim(),
+          bride: brideName.trim(),
+          date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
+          quote: quote.trim(),
+          opened: previewOpened,
+        },
+      },
+      window.location.origin,
+    );
+  }, [brideName, date, groomName, previewOpened, quote, templateId]);
 
   React.useEffect(() => {
-    const timer = window.setTimeout(() => setPreviewSrc(previewUrl), 300);
+    const timer = window.setTimeout(sendPreview, 200);
     return () => window.clearTimeout(timer);
-  }, [previewUrl]);
+  }, [sendPreview]);
+
+  React.useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string } | null;
+      if (data?.type === "inviwedd:preview:ready") sendPreview();
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [sendPreview]);
 
   const selectedTemplate = HERO_PREVIEW_TEMPLATES.find((tpl) => tpl.id === templateId);
   const filteredTemplates = React.useMemo(() => {
@@ -797,8 +826,9 @@ export function CreateWeddingBuilder({
                     desktopOffsetPx={164}
                   >
                     <iframe
-                      key={previewSrc}
-                      src={previewSrc}
+                      ref={iframeRef}
+                      src={iframeSrc}
+                      onLoad={sendPreview}
                       title="Xem trước thiệp cưới"
                       className="h-full w-full border-0 bg-bg"
                     />
