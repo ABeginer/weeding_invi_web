@@ -184,6 +184,86 @@ export function DesignerCanvas({
     startAngle: number;
     startRotation: number;
   } | null>(null);
+  const resizeRef = React.useRef<{
+    id: string;
+    corner: "nw" | "ne" | "sw" | "se";
+    startX: number;
+    startY: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number | null;
+    boardW: number;
+    boardH: number;
+  } | null>(null);
+
+  const startResize = (
+    event: React.PointerEvent<HTMLSpanElement>,
+    element: DesignerElement,
+    corner: "nw" | "ne" | "sw" | "se",
+  ) => {
+    event.stopPropagation();
+    const board = boardRef.current;
+    if (!board) return;
+    const rect = board.getBoundingClientRect();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeRef.current = {
+      id: element.id,
+      corner,
+      startX: event.clientX,
+      startY: event.clientY,
+      x: element.xPct,
+      y: element.yPct,
+      w: element.wPct,
+      h: "hPct" in element ? element.hPct : null,
+      boardW: rect.width,
+      boardH: rect.height,
+    };
+  };
+
+  const moveResize = (
+    event: React.PointerEvent<HTMLSpanElement>,
+    element: DesignerElement,
+  ) => {
+    const resize = resizeRef.current;
+    if (!resize || resize.id !== element.id) return;
+
+    const dx = ((event.clientX - resize.startX) / resize.boardW) * 100;
+    const dy = ((event.clientY - resize.startY) / resize.boardH) * 100;
+    let { x, y, w } = resize;
+
+    if (resize.corner === "ne" || resize.corner === "se") w = resize.w + dx;
+    if (resize.corner === "nw" || resize.corner === "sw") {
+      x = resize.x + dx;
+      w = resize.w - dx;
+    }
+
+    const baseH = resize.h;
+    let h = baseH;
+    if (h !== null && baseH !== null) {
+      if (resize.corner === "sw" || resize.corner === "se") h = baseH + dy;
+      if (resize.corner === "nw" || resize.corner === "ne") {
+        y = resize.y + dy;
+        h = baseH - dy;
+      }
+    }
+
+    w = Math.max(4, Math.min(100, w));
+    x = Math.max(0, Math.min(100 - w, x));
+    if (h !== null) {
+      h = Math.max(4, Math.min(100, h));
+      y = Math.max(0, Math.min(100 - h, y));
+    } else {
+      y = Math.max(0, Math.min(96, y));
+    }
+
+    updateElement(element.id, {
+      xPct: x,
+      yPct: y,
+      wPct: w,
+      ...(h !== null ? { hPct: h } : {}),
+    } as Partial<DesignerElement>);
+  };
 
   const selected = content.elements.find((element) => element.id === selectedId) ?? null;
 
@@ -868,6 +948,26 @@ export function DesignerCanvas({
                       <RotateCw className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                   )}
+                  {isSelected &&
+                    (["nw", "ne", "sw", "se"] as const).map((corner) => (
+                      <span
+                        key={corner}
+                        role="button"
+                        aria-label={`Kéo để đổi kích thước (${corner})`}
+                        onPointerDown={(event) => startResize(event, element, corner)}
+                        onPointerMove={(event) => moveResize(event, element)}
+                        onPointerUp={() => {
+                          resizeRef.current = null;
+                        }}
+                        className={cn(
+                          "absolute z-30 h-2.5 w-2.5 rounded-sm border border-accent bg-surface shadow",
+                          corner === "nw" && "-top-1 -left-1 cursor-nwse-resize",
+                          corner === "ne" && "-top-1 -right-1 cursor-nesw-resize",
+                          corner === "sw" && "-bottom-1 -left-1 cursor-nesw-resize",
+                          corner === "se" && "-right-1 -bottom-1 cursor-nwse-resize",
+                        )}
+                      />
+                    ))}
                 </div>
               );
             })}
