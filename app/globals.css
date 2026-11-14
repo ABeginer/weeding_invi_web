@@ -465,25 +465,6 @@ body:has(.template-pro-obsidian) {
   }
 }
 
-/* ===== Chuyển theme sáng/tối mượt ===== */
-html.theme-switching,
-html.theme-switching * {
-  transition:
-    background-color 360ms ease,
-    color 360ms ease,
-    border-color 360ms ease,
-    fill 360ms ease,
-    stroke 360ms ease,
-    box-shadow 360ms ease !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html.theme-switching,
-  html.theme-switching * {
-    transition: none !important;
-  }
-}
-
 /* ===== Phone preview: ẩn thanh cuộn nhưng vẫn cuộn được ===== */
 .lnd-phone-scroll {
   scrollbar-width: none;

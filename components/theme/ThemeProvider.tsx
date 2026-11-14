@@ -26,35 +26,9 @@ function writeThemeCookie(mode: BrandThemeMode): void {
   document.cookie = `${BRAND_THEME_COOKIE_NAME}=${mode}; path=/; max-age=${BRAND_THEME_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
-let themeSwitchTimer: number | null = null;
-
 function applyThemeToDocument(mode: BrandThemeMode): void {
   if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  const previous = root.dataset.theme;
-  if (previous === mode) return;
-
-  const reducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
-
-  if (reducedMotion) {
-    root.dataset.theme = mode;
-    return;
-  }
-
-  // Bật transition trước rồi mới đổi biến màu ở frame kế tiếp: nhờ vậy trình
-  // duyệt có màu cũ để animate, mà không phải ép layout đồng bộ (gây khựng).
-  root.classList.add("theme-switching");
-  if (themeSwitchTimer !== null) window.clearTimeout(themeSwitchTimer);
-
-  window.requestAnimationFrame(() => {
-    root.dataset.theme = mode;
-    themeSwitchTimer = window.setTimeout(() => {
-      root.classList.remove("theme-switching");
-      themeSwitchTimer = null;
-    }, 460);
-  });
+  document.documentElement.dataset.theme = mode;
 }
 
 /** Script inline trong <head> đã áp theme từ cookie trước khi React hydrate. */
