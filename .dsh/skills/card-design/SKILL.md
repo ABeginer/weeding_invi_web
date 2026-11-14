@@ -35,6 +35,8 @@ Quy tắc:
 - `EB Garamond` + `Viaoda Libre` + `Be Vietnam Pro` — vườn, mộc.
 - `Playfair Display` + `Carattere` + `Be Vietnam Pro` — chibi, trẻ trung.
 
+Text element có `align: "left" | "center" | "right"` (mặc định `left` cho dữ liệu cũ); preview, trang thiệp thật và ảnh nền export đều tôn trọng giá trị này.
+
 Cỡ gợi ý trên canvas 390×844:
 - Tên cặp đôi (script): 32–42px, line-height 1.1–1.25.
 - Tiêu đề/nhãn: 11–14px, letter-spacing 0.18–0.3em, uppercase.
@@ -43,10 +45,10 @@ Cỡ gợi ý trên canvas 390×844:
 
 ## 3. Archetype bố cục (dùng toạ độ %)
 
-A. **Center cổ điển** — mọi thứ căn giữa: x 10–90%.
+A. **Center cổ điển** — mọi thứ căn giữa: x 5–95, w 90, `align: "center"`.
    nhãn 10% · xưng hô 16% · tên khách 22% · tên cặp đôi 40–52% · ngày 66% · địa điểm 72%.
 
-B. **Editorial trái** — x 8, w 84:
+B. **Editorial trái** — x 8, w 84, `align: "left"`:
    nhãn 12% · tiêu đề 20% · tên cặp đôi 34/42% · ngày 62% · địa điểm 68% · ghi chú 80%.
 
 C. **Script name-led**:
@@ -76,9 +78,10 @@ Quy tắc an toàn: chừa **8% mỗi cạnh**; vùng chạm CTA ≥ 44px; khôn
       "name": "Bìa",
       "background": "#FAF3F0",
       "elements": [
-        { "id": "s", "type": "text", "xPct": 10, "yPct": 10, "wPct": 80,
+        { "id": "s", "type": "text", "xPct": 5, "yPct": 10, "wPct": 90,
           "text": "Trân trọng kính mời", "placeholder": "salutation",
-          "fontSize": 12, "color": "#5A2B33", "fontFamily": "var(--font-playfair)" }
+          "fontSize": 12, "color": "#5A2B33", "fontFamily": "var(--font-playfair)",
+          "align": "center" }
       ]
     }
   ]

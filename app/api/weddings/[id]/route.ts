@@ -1,5 +1,6 @@
 import { getTemplateLockedMessage, isTemplateAllowedForPlan } from "@/config/plans";
 import { authRoute, fail, json, readBody, text } from "@/lib/server/http";
+import { getWeddingDesignerTemplateInfo } from "@/lib/server/designer";
 import { toWedding, type WeddingRow } from "@/lib/server/mappers";
 import { deletePhotoObject } from "@/lib/server/storage";
 import { db } from "@/lib/server/supabase";
@@ -20,15 +21,17 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
   const wedding = await getOwnedWedding(id, user.id);
   if (!wedding) return fail("Không tìm thấy thiệp cưới.", 404);
 
-  const [events, photos] = await Promise.all([
+  const [events, photos, designerTemplate] = await Promise.all([
     listWeddingEvents(wedding.id),
     listWeddingPhotos(wedding.id),
+    getWeddingDesignerTemplateInfo(wedding),
   ]);
 
   return json({
     ...toWedding(wedding),
     events,
     photos,
+    designerTemplate,
   });
 });
 

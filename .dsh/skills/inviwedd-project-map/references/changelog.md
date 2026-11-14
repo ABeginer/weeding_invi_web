@@ -2,6 +2,30 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.1.5 · mẫu Đào Phấn hoàn chỉnh + căn chữ trong designer
+- Thêm `align` (left/center/right) cho text element của designer: type, renderer thiệp thật, canvas editor và bước xuất ảnh nền; property panel có nút Trái / Giữa / Phải. Lý do: mẫu căn giữa kiểu thiệp cưới không dựng được nếu text luôn bám trái.
+- Thiết kế lại mẫu **Đào Phấn** từ đầu: 3 trang (Bìa / Nội dung / Cảm ơn), 42 element, palette `#FAF3F0` / `#5A2B33` / `#7A3B44` / `#8C4A46` (nhấn `#B87D74` chỉ cho đường kẻ/icon), font Playfair + The Nautigal + Be Vietnam Pro; placeholder đủ 6 loại, không dùng block tương tác (chờ giai đoạn sau).
+- Publish v1 rồi v2 (chỉnh tim giữa hai đường kẻ) đúng luồng version: version row bất biến, `designer_templates.version = 2`.
+- Gán mẫu cho thiệp test `aaaaa` (slug) ở version 2. Đã chứng minh ghim version: khi publish v2, `/m/998c376174ee` vẫn render v1; sau khi đổi pin sang v2, HTML đổi sang v2. Kiểm tra bằng ảnh chụp headless Chrome (430×2800) và so khớp HTML.
+- Verified: `/m/<guest>` trả 200 với dữ liệu thật (Văn A & Thị B, 01.01.2027, tên khách, "Trân trọng mời"), **không** còn giá trị mẫu (White Palace / Minh Khôi / Thảo Nguyên / Bạn Thanh Mai) và không có placeholder ảnh; preview `/mau/designer/<id>?v=2&p=0..2` trả 200.
+- Files: `components/ops/designer-types.ts`, `components/ops/designer-canvas.tsx`, `components/designer/designer-template-renderer.tsx`, dữ liệu `designer_templates` / `designer_template_versions` / `weddings.designer_template_*`; docs `.dsh/skills/inviwedd-project-map/references/*` + `.dsh/skills/card-design/SKILL.md`.
+
+## 2026-11-14 · v1.1.4 · xác nhận migration designer đã chạy
+- Owner chạy `migration_v14_designer.sql` + `migration_v15_designer_versions.sql`.
+- Verified read-only through `lib/server/supabase.ts` (service key, no secrets printed): `designer_templates` 37 rows (all `draft`), `designer_template_versions` 0, `designer_assets` 0, `weddings.designer_template_id`/`designer_template_version` selectable on 4 weddings (0 pinned).
+- Consequence recorded: the dashboard picker is empty and `/m` still uses code templates until a designer publishes a template.
+- Files: `references/db-schema.md`, `references/env-and-deploy.md`, `references/open-items.md`, `SKILL.md`.
+
+## 2026-11-14 · v1.1.3 · gán mẫu designer + render thiệp theo version ghim
+- Dashboard: `DesignerTemplateCard` (tab “Thông tin cưới”) liệt kê mẫu designer đã publish, gán/bỏ gán, hiện “Đang ghim vN” và nút “Cập nhật lên vN” khi mẫu có bản mới. Ghi `weddings.designer_template_id` + `designer_template_version`; `template_id` vẫn giữ làm fallback.
+- API mới: `GET /api/designer-templates` (JWT, chỉ trả mẫu `published` + cover url) và `PATCH /api/weddings/[id]/designer-template` (JWT+owner; chặn mẫu chưa publish, sai gói; ghim đúng version được yêu cầu; 503 kèm hướng dẫn khi DB chưa chạy migration v14/v15).
+- `/m/<slug>`: thiệp có mẫu designer thì render toàn bộ trang của **đúng version đã ghim** bằng `DesignerTemplateRenderer` (variant `plain`), đổ dữ liệu thật vào placeholder: tên khách, xưng hô (`buildSalutation`), ngày (dot date), địa điểm lễ đầu tiên. Placeholder thiếu dữ liệu để trống thay vì hiện giá trị mẫu; thiếu layout/version thì rơi về template code.
+- Hạ tầng đọc thiệp công khai giờ thử cột giàu → nghèo (`suspended`, cột designer) nên vẫn chạy trên DB cũ; guest query lấy thêm `relationship_group`/`custom_pronoun_*` với fallback.
+- Thêm `lib/designer-invite.ts` (thuần, có test) + 9 test designer (tổng 38).
+- Lint: bọc `eslint-disable-next-line react-hooks/refs` cho khối element của `designer-canvas.tsx` (ref chỉ đọc trong pointer handler; lỗi có từ commit resize/rotate trước đó) — CI về 0 error.
+- Verified: `npm run typecheck`, `npm run lint` (0 error), `npm run test` 38/38, `npm run build` ok (có `/api/designer-templates`, `/api/weddings/[id]/designer-template`), `next start` smoke: `/` 200, `/m/<slug lạ>` 200 (trang link không hợp lệ, query DB chạy), `/api/designer-templates` 401, `/api/public/wedding/abc` 404, `/mau/designer/<uuid lạ>` 404.
+- Chưa kiểm chứng được bằng browser: giao diện card trong dashboard và thiệp designer thật (cần đăng nhập + một mẫu đã publish; xem v1.1.4 — DB đã có schema nhưng chưa có mẫu publish).
+
 ## 2026-11-14 · v1.1.2 · template collection page + preview popup
 - Added `/thiep-cuoi` (`app/thiep-cuoi/page.tsx`): flat focus carousel over the template registry, keyboard/swipe/arrow controls, `aria-current`, live region, counter and dots; no 3D transforms.
 - Added `components/templates/template-preview-dialog.tsx`: glass panel (`bg-surface/90` + `backdrop-blur-[16px]`), focus trap + ESC/overlay close + focus return, auto-scrolling snapshot with pause button and reduced-motion fallback, feature lists and the two action buttons (`/mau/<id>` demo, `/tao-thiep?template=` with login-then-return).

@@ -22,6 +22,9 @@ export interface WeddingRow {
   template_id: string;
   plan: WeddingPlan;
   content: unknown;
+  /** Có từ migration_v15; DB cũ hơn sẽ không trả về hai cột này. */
+  designer_template_id?: string | null;
+  designer_template_version?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -97,6 +100,11 @@ export function toWedding(row: WeddingRow): Wedding {
     templateId: row.template_id,
     plan: row.plan,
     content: normalizeWeddingContent(row.content),
+    designerTemplateId: row.designer_template_id ?? null,
+    designerTemplateVersion:
+      typeof row.designer_template_version === "number"
+        ? row.designer_template_version
+        : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

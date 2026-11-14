@@ -23,6 +23,7 @@ import {
   DESIGNER_ACTIONS,
   DESIGNER_BLOCKS,
   DESIGNER_ICONS,
+  DESIGNER_TEXT_ALIGNS,
   PHOTO_SLOTS,
   PLACEHOLDER_OPTIONS,
   type DesignerCanvasContent,
@@ -547,8 +548,15 @@ export function DesignerCanvas({
               : element.text;
           context.fillStyle = element.color;
           context.textBaseline = "top";
+          context.textAlign = element.align ?? "left";
           context.font = `${element.fontSize * scale}px ${resolveCanvasFont(element.fontFamily)}`;
-          context.fillText(text, x, y, width);
+          const textX =
+            element.align === "center"
+              ? x + width / 2
+              : element.align === "right"
+                ? x + width
+                : x;
+          context.fillText(text, textX, y, width);
         }
       }
 
@@ -791,6 +799,9 @@ export function DesignerCanvas({
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover"
               />
             )}
+            {/* Các ref bên dưới chỉ được đọc/ghi trong pointer handler; React Compiler
+                báo nhầm cả khối JSX là truy cập ref khi render. */}
+            {/* eslint-disable-next-line react-hooks/refs */}
             {content.elements.map((element) => {
               const isSelected = element.id === selectedId;
               return (
@@ -862,6 +873,7 @@ export function DesignerCanvas({
                         fontSize: `calc(${element.fontSize} * 100cqw / ${content.width})`,
                         color: element.color,
                         lineHeight: 1.2,
+                        textAlign: element.align ?? "left",
                       }}
                     >
                       {element.placeholder
@@ -1045,6 +1057,30 @@ export function DesignerCanvas({
                   ))}
                 </select>
               </label>
+              <div>
+                <p className="text-xs text-text">Căn chữ</p>
+                <div className="mt-1 grid grid-cols-3 gap-1">
+                  {DESIGNER_TEXT_ALIGNS.map((align) => {
+                    const active = (selected.align ?? "left") === align;
+                    return (
+                      <button
+                        key={align}
+                        type="button"
+                        onClick={() => updateElement(selected.id, { align })}
+                        aria-pressed={active}
+                        className={cn(
+                          "h-8 rounded-lg border text-[11px] font-medium transition-colors",
+                          active
+                            ? "border-accent bg-accent-soft text-accent-text"
+                            : "border-border bg-bg text-text-muted hover:bg-surface-alt",
+                        )}
+                      >
+                        {align === "left" ? "Trái" : align === "center" ? "Giữa" : "Phải"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <label className="block text-xs text-text">
                   Cỡ chữ

@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { toAbsoluteSiteUrl } from "@/config/site";
+import { DesignerInvitation } from "@/components/designer/designer-invitation";
+import type { DesignerCanvasContent } from "@/components/ops/designer-types";
 import { InvitePageClient } from "@/components/invitation/InvitePageClient";
+import { buildDesignerInviteValues } from "@/lib/designer-invite";
 import { getPublicWeddingByGuestSlug } from "@/lib/server/public-wedding";
+import { buildSalutation } from "@/lib/salutation-engine";
+import { formatWeddingDateParts } from "@/lib/utils";
 import { createDefaultWeddingContent, toTemplateData } from "@/lib/wedding-data";
 import { getTemplateMeta } from "@/templates/registry";
 
@@ -95,6 +100,35 @@ export default async function PersonalInvitePage({ params }: PageProps) {
   const { slug } = await params;
   const wedding = await getPublicWeddingByGuestSlug(slug).catch(() => null);
   const content = wedding?.content ?? createDefaultWeddingContent();
+
+  // Thiệp đã ghim mẫu designer: render đúng layout của version đó với dữ liệu thật.
+  if (wedding?.designerTemplate) {
+    const salutation = buildSalutation({
+      guestName: wedding.guestName,
+      relationshipGroup: wedding.guestSalutation.relationshipGroup,
+      customPronounHost: wedding.guestSalutation.customPronounHost,
+      customPronounGuest: wedding.guestSalutation.customPronounGuest,
+    });
+    const values = buildDesignerInviteValues({
+      groomName: content.couple.groomName,
+      brideName: content.couple.brideName,
+      dateLabel: formatWeddingDateParts(content.date).dotDate,
+      events: wedding.events,
+      guestName: wedding.guestName,
+      salutation: salutation.invitePrefix,
+    });
+
+    return (
+      <DesignerInvitation
+        canvas={
+          wedding.designerTemplate.canvas as unknown as DesignerCanvasContent
+        }
+        values={values}
+        coupleLabel={`${content.couple.groomName} & ${content.couple.brideName}`}
+      />
+    );
+  }
+
   const plan = wedding?.plan ?? "free";
   const initialData = toTemplateData({
     templateId: wedding?.templateId ?? "basic-1",

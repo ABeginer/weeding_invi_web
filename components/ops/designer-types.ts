@@ -1,3 +1,6 @@
+export const DESIGNER_TEXT_ALIGNS = ["left", "center", "right"] as const;
+export type DesignerTextAlign = (typeof DESIGNER_TEXT_ALIGNS)[number];
+
 export type DesignerTextElement = {
   id: string;
   rotation?: number;
@@ -11,6 +14,8 @@ export type DesignerTextElement = {
   color: string;
   fontFamily: string;
   placeholder: string | null;
+  /** Căn chữ trong khung; mặc định "left" cho dữ liệu cũ. */
+  align?: DesignerTextAlign;
 };
 
 export type DesignerImageElement = {

@@ -1,6 +1,6 @@
 # API routes
 
-Verified against git `04192e7`. 40 `route.ts` files, 52 exported handlers.
+Verified against the working tree at 2026-11-14 (designer assignment batch). 49 `route.ts` files, 63 exported handlers.
 
 Auth legend:
 - `public` — no auth wrapper.
@@ -17,13 +17,15 @@ Auth legend:
 | PATCH | `/api/me/theme` | JWT | Persist light/dark brand theme | `app/api/me/theme/route.ts` |
 | POST | `/api/rsvp` | public+Turnstile (rate-limited 10/min) | Update a guest RSVP by slug, or insert a walk-in guest by `weddingSlug` (enforces the plan guest limit); persists plus-ones, diet, song request, ride; 403 when suspended | `app/api/rsvp/route.ts` |
 | POST | `/api/wishes` | public+Turnstile (rate-limited 10/min) | Insert one wish (guest slug or wedding slug); 403 when the wedding is suspended | `app/api/wishes/route.ts` |
-| GET | `/api/public/wedding/[slug]` | public | Public wedding payload: content, events, photos, plan | `app/api/public/wedding/[slug]/route.ts` |
+| GET | `/api/public/wedding/[slug]` | public | Public wedding payload: content, events, photos, plan, `designerTemplate` (pinned version canvas or `null`) | `app/api/public/wedding/[slug]/route.ts` |
 | GET | `/api/weddings/check-slug?slug=` | public (rate-limited 30/min) | Slug validity + availability | `app/api/weddings/check-slug/route.ts` |
 | GET | `/api/weddings` | JWT | List weddings owned by the caller | `app/api/weddings/route.ts` |
 | POST | `/api/weddings` | JWT | Create a wedding (always `plan: free`, slug + allowed template) | `app/api/weddings/route.ts` |
-| GET | `/api/weddings/[id]` | JWT+owner | Wedding + events + photos | `app/api/weddings/[id]/route.ts` |
+| GET | `/api/weddings/[id]` | JWT+owner | Wedding + events + photos + `designerTemplate` info (`pinnedVersion`, `latestVersion`) | `app/api/weddings/[id]/route.ts` |
 | PATCH | `/api/weddings/[id]` | JWT+owner | Update template and/or full content | `app/api/weddings/[id]/route.ts` |
 | DELETE | `/api/weddings/[id]` | JWT+owner | Delete wedding and its R2 objects | `app/api/weddings/[id]/route.ts` |
+| GET | `/api/designer-templates` | JWT | Published designer templates for the dashboard picker (id, name, plan, ritual, latest version, cover url) | `app/api/designer-templates/route.ts` |
+| PATCH | `/api/weddings/[id]/designer-template` | JWT+owner | Assign/clear a designer template and pin a version; blocks unpublished templates and plan mismatch; 503 when migrations v14/v15 are missing | `app/api/weddings/[id]/designer-template/route.ts` |
 | PATCH | `/api/weddings/[id]/content` | JWT+owner | Update content + template, validates that referenced photo ids belong to the wedding | `app/api/weddings/[id]/content/route.ts` |
 | GET | `/api/weddings/[id]/events` | JWT+owner | List events | `app/api/weddings/[id]/events/route.ts` |
 | POST | `/api/weddings/[id]/events` | JWT+owner | Create event (plan event limit) | `app/api/weddings/[id]/events/route.ts` |
@@ -51,6 +53,15 @@ Auth legend:
 | PATCH | `/api/weddings/[id]/gifts/[giftId]` | JWT+owner, Pro/VIP | Update a gift or toggle `thanked` (sets `thanked_at`) | `app/api/weddings/[id]/gifts/[giftId]/route.ts` |
 | DELETE | `/api/weddings/[id]/gifts/[giftId]` | JWT+owner, Pro/VIP | Delete a gift entry | `app/api/weddings/[id]/gifts/[giftId]/route.ts` |
 | GET | `/api/ops/stats` | admin | Counters via head counts + month-bounded revenue query | `app/api/ops/stats/route.ts` |
+| GET | `/api/ops/designer/templates` | admin | List designer templates (optional `q` name search) | `app/api/ops/designer/templates/route.ts` |
+| POST | `/api/ops/designer/templates` | admin | Create a designer template (`name`, `plan`, `ritual`) | `app/api/ops/designer/templates/route.ts` |
+| GET | `/api/ops/designer/templates/[id]` | admin | One designer template incl. `canvas_json` | `app/api/ops/designer/templates/[id]/route.ts` |
+| PATCH | `/api/ops/designer/templates/[id]` | admin | Save canvas JSON, name, status or `background_key` | `app/api/ops/designer/templates/[id]/route.ts` |
+| POST | `/api/ops/designer/templates/[id]/publish` | admin | Copy the current canvas into `designer_template_versions` (version+1) and mark published | `app/api/ops/designer/templates/[id]/publish/route.ts` |
+| GET | `/api/ops/designer/assets` | admin | List designer assets | `app/api/ops/designer/assets/route.ts` |
+| POST | `/api/ops/designer/assets` | admin | Upload a designer webp asset to R2 (`kind`, `dataUrl`) | `app/api/ops/designer/assets/route.ts` |
+| POST | `/api/ops/designer/import` | admin | Import a code template into a designer template | `app/api/ops/designer/import/route.ts` |
+| POST | `/api/ops/designer/seed-styles` | admin | Seed the original draggable style set | `app/api/ops/designer/seed-styles/route.ts` |
 | POST | `/api/ops/retention/run` | admin | Run the 30-day purge job; `dryRun` lists candidates, otherwise deletes DB rows + R2 objects and writes an audit log | `app/api/ops/retention/run/route.ts` |
 | GET | `/api/ops/users` | admin | Paginated user list (filter + slice in memory) | `app/api/ops/users/route.ts` |
 | GET | `/api/ops/users/[id]` | admin | One user + their weddings | `app/api/ops/users/[id]/route.ts` |

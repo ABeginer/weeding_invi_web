@@ -1,6 +1,6 @@
 # Database schema
 
-Source of truth is `supabase/*.sql` as committed at git `868ac95`. Nothing here was executed by the agent.
+Source of truth is `supabase/*.sql` in the working tree. Nothing here was executed by the agent.
 
 ## Migration files (run by hand in Supabase SQL Editor)
 
@@ -16,10 +16,14 @@ Owner confirmation (2026-11-14): **all migration files in this repository have b
 | `supabase/migration_v11_guest_preferences.sql` | Adds `guests.song_request` (≤200 chars) and `guests.ride_needed` (bool) | APPLIED (owner + verified) |
 | `supabase/migration_v12_gifts.sql` | Creates `gifts` (Sổ mừng), index, RLS + revoke | APPLIED (owner + verified) |
 | `supabase/migration_v13_album_kind.sql` | Recreates `photos_kind_check` to include `album` | APPLIED (owner + verified) |
+| `supabase/migration_v14_designer.sql` | Creates `designer_templates`, `designer_template_versions`, `designer_assets`; RLS + revoke | APPLIED (owner-confirmed 2026-11-14, verified read-only) |
+| `supabase/migration_v15_designer_versions.sql` | Adds `weddings.designer_template_id` (FK → `designer_templates`, `on delete set null`) + `weddings.designer_template_version`, index | APPLIED (owner-confirmed 2026-11-14, verified read-only) |
 
 The repository contains no v6–v9 files; the owner states the files present are the complete set that was run. Because v10 is applied, `weddings.suspended` exists — the `content.suspended` fallback in `lib/server/weddings.ts` stays as harmless defensive code.
 
 Migrations v11–v13 were run by the owner on 2026-11-14. Verified through the REST API with the service key: `guests.song_request`/`ride_needed` are selectable (200), `gifts` is selectable/insertable (200/201), and a `photos` row with `kind = 'album'` inserted successfully (201). The temporary verification rows were deleted afterwards (wedding cascade + user).
+
+Migrations v14–v15 were run by the owner on 2026-11-14. Verified read-only with the service key through `lib/server/supabase.ts` (no secrets printed): `designer_templates` (37 rows — 1 published **Đào Phấn** v2, 36 draft), `designer_template_versions` (2 rows: v1, v2), `designer_assets` (0 rows) and `weddings.designer_template_id` / `designer_template_version` (4 weddings, 1 pinned: slug `aaaaa` → Đào Phấn v2) are all selectable.
 
 
 ## Tables
@@ -28,8 +32,9 @@ Migrations v11–v13 were run by the owner on 2026-11-14. Verified through the R
 `id text PK` (Auth0 `sub`), `email text`, `created_at timestamptz default now()`, `theme text default 'light' check (theme in ('light','dark'))` (v5). No RLS policies; backend only.
 
 ### `weddings`
-`id uuid PK`, `owner_id text → users(id) on delete cascade`, `slug text unique check '^[a-z0-9-]{3,40}$'`, `template_id text default 'basic-1'`, `plan text default 'free' check (free|pro|vip)`, `content jsonb default '{}'`, `created_at`, `updated_at`, `suspended boolean default false` (v10). Index `weddings_owner_idx (owner_id)`.
+`id uuid PK`, `owner_id text → users(id) on delete cascade`, `slug text unique check '^[a-z0-9-]{3,40}$'`, `template_id text default 'basic-1'`, `plan text default 'free' check (free|pro|vip)`, `content jsonb default '{}'`, `created_at`, `updated_at`, `suspended boolean default false` (v10), `designer_template_id uuid → designer_templates on delete set null` (v15), `designer_template_version integer` (v15). Indexes `weddings_owner_idx (owner_id)`, `weddings_designer_template_idx (designer_template_id)`.
 Note: `suspended` is also mirrored inside `content.suspended` by the suspend route and by `lib/ops-api.ts` fallbacks — two sources of truth.
+Designer semantics: `designer_template_id` + `designer_template_version` pin the exact row in `designer_template_versions` rendered on `/m/<slug>`; `template_id` stays as the code-template fallback. Public reads fall back to the leaner column sets when v10/v15 are missing (`lib/server/public-wedding.ts`).
 
 ### `guests`
 `id uuid PK`, `wedding_id uuid → weddings on delete cascade`, `name text check 1..100`, `slug text unique default 12 hex chars check '^[a-f0-9]{12}$'`, `status text default 'pending' check (pending|accepted|declined)`, `responded_at timestamptz`, `created_at`, `plus_ones int default 0 check 0..10` (v4), `diet text check (meat|veg)` (v4), `song_request text check ≤200` (v11, pending), `ride_needed boolean default false` (v11, pending). Index `guests_wedding_idx (wedding_id)`.
@@ -54,6 +59,15 @@ Visibility rule implemented in `lib/server/weddings.ts`: a guest with no rows se
 
 ### `audit_logs` (v10)
 `id uuid PK`, `admin_email text`, `action text`, `target_type text`, `target_id text`, `reason text check length ≥ 5`, `created_at`. Index `audit_logs_created_idx (created_at desc)`. Writes are best-effort: `recordAuditLog()` swallows insert errors.
+
+### `designer_templates` (v14)
+`id uuid PK`, `name 2..80`, `plan check (free|pro|vip)`, `ritual ≤40`, `status check (draft|review|published|archived)`, `version integer default 1` (latest published), `canvas_json jsonb` (multi-page: `{ width, height, pages[] }`), `background_key text`, `snapshot_key text`, `created_by text`, timestamps. Index `(status, updated_at desc)`. RLS + revoke; server-only through `lib/server/designer.ts`.
+
+### `designer_template_versions` (v14)
+`id uuid PK`, `template_id → designer_templates cascade`, `version integer`, `canvas_json jsonb`, `background_key`, `snapshot_key`, `published_at`, unique `(template_id, version)`. Immutable snapshot written by `POST /api/ops/designer/templates/[id]/publish`; weddings render a pinned row, so publishing a new version never changes an existing invitation.
+
+### `designer_assets` (v14)
+`id uuid PK`, `kind check (photo|png|svg|background|snapshot)`, `r2_key unique`, `width`, `height`, `uploaded_by`, `created_at`. Files live in the `PHOTOS` bucket under `designer/<uuid>.webp` and are served by `/media/[...key]`.
 
 ## Tables used by code but absent from every committed migration
 The owner confirmed that every committed migration was applied, and none of them creates these three tables. Their live existence therefore still needs confirmation — they may have been created manually in the dashboard.

@@ -59,6 +59,10 @@ export interface Wedding {
   templateId: string;
   plan: WeddingPlan;
   content: WeddingContent;
+  /** Mẫu thiết kế (designer) được gán; `templateId` vẫn là fallback. */
+  designerTemplateId: string | null;
+  /** Version đã ghim lúc gán — không tự đổi khi designer publish bản mới. */
+  designerTemplateVersion: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -66,6 +70,34 @@ export interface Wedding {
 export interface WeddingDetail extends Wedding {
   events: WeddingEvent[];
   photos: WeddingPhoto[];
+  designerTemplate?: WeddingDesignerTemplateInfo | null;
+}
+
+export type DesignerTemplateStatus = "draft" | "review" | "published" | "archived";
+
+/** Một mẫu designer đã publish, dùng cho danh sách trong dashboard. */
+export interface DesignerTemplateOption {
+  id: string;
+  name: string;
+  plan: WeddingPlan;
+  ritual: string | null;
+  version: number;
+  coverUrl: string | null;
+}
+
+/** Thông tin mẫu designer đang gán cho một thiệp. */
+export interface WeddingDesignerTemplateInfo {
+  id: string;
+  name: string;
+  /** Version đang ghim; `null` khi dữ liệu cũ chưa có version. */
+  pinnedVersion: number | null;
+  latestVersion: number;
+  status: DesignerTemplateStatus;
+}
+
+export interface DesignerTemplateAssignmentResult {
+  wedding: Wedding;
+  designerTemplate: WeddingDesignerTemplateInfo | null;
 }
 
 export type RelationshipGroup = "elder" | "peer_formal" | "close_friend" | "family";

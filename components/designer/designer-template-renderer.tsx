@@ -53,6 +53,16 @@ interface DesignerTemplateRendererProps {
   canvas: DesignerCanvasContent;
   values?: DesignerPreviewValues;
   pageIndex?: number;
+  /**
+   * `framed` (mặc định) là khung xem trước có viền; `plain` dùng cho thiệp thật,
+   * tràn viền theo bề rộng khung chứa.
+   */
+  variant?: "framed" | "plain";
+  /**
+   * Placeholder thiếu dữ liệu: `true` (mặc định) hiện giá trị mẫu cho preview,
+   * `false` để trống trên thiệp thật.
+   */
+  sampleFallback?: boolean;
 }
 
 /** Render layout JSON của designer: nền + element đặt theo %, thay placeholder bằng dữ liệu thật. */
@@ -60,15 +70,29 @@ export function DesignerTemplateRenderer({
   canvas,
   values = {},
   pageIndex = 0,
+  variant = "framed",
+  sampleFallback = true,
 }: DesignerTemplateRendererProps) {
-  const page = canvas.pages?.[pageIndex] ?? canvas;
-  const elements = page.elements ?? canvas.elements ?? [];
+  const page =
+    Array.isArray(canvas.pages) && canvas.pages[pageIndex]
+      ? canvas.pages[pageIndex]
+      : canvas;
+  const elements = Array.isArray(page.elements)
+    ? page.elements
+    : Array.isArray(canvas.elements)
+      ? canvas.elements
+      : [];
   const background = page.background ?? canvas.background;
   const backgroundUrl = page.backgroundUrl ?? canvas.backgroundUrl;
+  const pageWidth = canvas.width > 0 ? canvas.width : 390;
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[390px] overflow-hidden rounded-2xl border border-border shadow-xl"
+      className={
+        variant === "plain"
+          ? "relative w-full overflow-hidden"
+          : "relative mx-auto w-full max-w-[390px] overflow-hidden rounded-2xl border border-border shadow-xl"
+      }
       style={{
         aspectRatio: `${canvas.width} / ${canvas.height}`,
         background,
@@ -227,12 +251,18 @@ export function DesignerTemplateRenderer({
               ...baseStyle,
               color: element.color,
               fontFamily: element.fontFamily,
-              fontSize: `calc(${element.fontSize} * 100cqw / ${canvas.width})`,
+              fontSize: `calc(${element.fontSize} * 100cqw / ${pageWidth})`,
               lineHeight: 1.25,
               whiteSpace: "pre-wrap",
+              textAlign: element.align ?? "left",
             }}
           >
-            {resolveDesignerText(element.text, element.placeholder, values)}
+            {resolveDesignerText(
+              element.text,
+              element.placeholder,
+              values,
+              sampleFallback,
+            )}
           </div>
         );
       })}

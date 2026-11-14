@@ -11,14 +11,20 @@ export const DESIGNER_PLACEHOLDER_SAMPLES: Record<string, string> = {
 /**
  * Thay placeholder bằng dữ liệu thật; thiếu dữ liệu thì dùng giá trị mẫu,
  * placeholder lạ thì giữ nguyên text cố định.
+ *
+ * `allowSampleFallback = false` dùng cho thiệp thật: placeholder thiếu dữ liệu
+ * sẽ để trống thay vì hiện tên/địa điểm mẫu (tránh thông tin giả trên thiệp khách).
  */
 export function resolveDesignerText(
   text: string,
   placeholder: string | null,
   values: Record<string, string>,
+  allowSampleFallback = true,
 ): string {
   if (!placeholder) return text;
   const fallback = DESIGNER_PLACEHOLDER_SAMPLES[placeholder];
   if (fallback === undefined) return text;
-  return values[placeholder]?.trim() ? values[placeholder] : fallback;
+  const provided = values[placeholder]?.trim();
+  if (provided) return provided;
+  return allowSampleFallback ? fallback : "";
 }

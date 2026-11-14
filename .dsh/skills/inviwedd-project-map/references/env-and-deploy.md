@@ -40,7 +40,7 @@ Notes:
 - **Windows dev caveat:** `next dev` starts workerd through `initOpenNextCloudflareForDev()`. If the repository sits under `Desktop`/`OneDrive`, Windows Defender Controlled Folder Access blocks `CreateDirectory` and workerd dies with `ERR_RUNTIME_FAILURE`. `next.config.ts` therefore persists Miniflare state in `os.tmpdir()` and catches the failure, logging a warning and continuing without Cloudflare bindings — the dev server runs, but `/media/[...key]` returns 404 (R2 unavailable). Set `CLOUDFLARE_DEV_BINDINGS=0` to skip workerd entirely, or move the repo outside Desktop / allow `workerd.exe` in Defender for full dev parity.
 - `APP_BASE_URL` is still `http://localhost:3000` locally; production sets the real domain.
 - `BANK_*` variables are not present locally, so `/api/orders` cannot build a VietQR payload in this environment.
-- `supabase/migration_v11_guest_preferences.sql` (and v12/v13) are applied; RSVP preferences, Sổ mừng and Album now work against the live database.
+- `supabase/migration_v11_guest_preferences.sql` (and v12/v13) are applied; RSVP preferences, Sổ mừng and Album now work against the live database. `migration_v14_designer.sql` and `migration_v15_designer_versions.sql` were run by the owner on 2026-11-14 and verified read-only. One designer template is published (**Đào Phấn** v2) and pinned to the test wedding slug `aaaaa` (guest slug `998c376174ee`); the remaining 36 templates are drafts.
 
 
 ## Deploy

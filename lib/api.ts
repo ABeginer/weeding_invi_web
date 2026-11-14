@@ -1,6 +1,8 @@
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import type { BrandThemeMode } from "./brand-theme";
 import type {
+  DesignerTemplateAssignmentResult,
+  DesignerTemplateOption,
   Guest,
   GuestDiet,
   GuestStatus,
@@ -309,6 +311,22 @@ export async function deleteWedding(weddingId: string): Promise<void> {
   await authRequest(`/api/weddings/${encodeURIComponent(weddingId)}`, {
     method: "DELETE",
   });
+}
+
+export function listDesignerTemplateOptions(): Promise<{
+  items: DesignerTemplateOption[];
+}> {
+  return authRequest("/api/designer-templates");
+}
+
+export function assignDesignerTemplate(
+  weddingId: string,
+  input: { designerTemplateId: string | null; version?: number },
+): Promise<DesignerTemplateAssignmentResult> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/designer-template`,
+    patch(input),
+  );
 }
 
 export interface WeddingEventPayload {

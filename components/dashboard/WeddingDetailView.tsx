@@ -21,6 +21,7 @@ import {
 import { getPlanLabel } from "@/config/plans";
 import { ApiError, buildWeddingLink, getWedding, updateContent } from "@/lib/api";
 import type {
+  DesignerTemplateAssignmentResult,
   WeddingContent,
   WeddingDetail,
   WeddingEvent,
@@ -37,6 +38,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { EventsManager } from "./EventsManager";
+import { DesignerTemplateCard } from "./DesignerTemplateCard";
 import { GuestTable } from "./GuestTable";
 import { PhotosManager } from "./PhotosManager";
 import { StatCards } from "./StatCards";
@@ -205,6 +207,23 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
     setFieldErrors({});
     setSaveError(null);
   };
+
+  const handleDesignerAssignment = React.useCallback(
+    (result: DesignerTemplateAssignmentResult) => {
+      // Chỉ cập nhật phần gán mẫu; không đụng vào draft nội dung đang sửa.
+      setWedding((prev) =>
+        prev
+          ? {
+              ...prev,
+              designerTemplateId: result.wedding.designerTemplateId,
+              designerTemplateVersion: result.wedding.designerTemplateVersion,
+              designerTemplate: result.designerTemplate,
+            }
+          : prev,
+      );
+    },
+    [],
+  );
 
   const handleSelectTab = (nextTab: DetailTab) => {
     if (nextTab === activeTab) return;
@@ -530,25 +549,32 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
 
         <section className="min-w-0">
           {activeTab === "info" && (
-            <WeddingInfoEditor
-              wedding={wedding}
-              draftContent={draftContent}
-              draftTemplateId={draftTemplateId}
-              photos={photos}
-              isDirty={isDirty}
-              saving={savingInfo}
-              saveError={saveError}
-              fieldErrors={fieldErrors}
-              onDraftChange={setDraftContent}
-              onTemplateChange={(tplId) => {
-                setDraftTemplateId(tplId);
-                setPreviewOpened(false);
-              }}
-              onPhotosStateChange={handlePhotosStateChange}
-              onSave={handleSaveInfo}
-              onResetDraft={handleResetDraft}
-              onDeleted={() => router.replace("/dashboard")}
-            />
+            <div className="space-y-6">
+              <WeddingInfoEditor
+                wedding={wedding}
+                draftContent={draftContent}
+                draftTemplateId={draftTemplateId}
+                photos={photos}
+                isDirty={isDirty}
+                saving={savingInfo}
+                saveError={saveError}
+                fieldErrors={fieldErrors}
+                onDraftChange={setDraftContent}
+                onTemplateChange={(tplId) => {
+                  setDraftTemplateId(tplId);
+                  setPreviewOpened(false);
+                }}
+                onPhotosStateChange={handlePhotosStateChange}
+                onSave={handleSaveInfo}
+                onResetDraft={handleResetDraft}
+                onDeleted={() => router.replace("/dashboard")}
+              />
+              <DesignerTemplateCard
+                wedding={wedding}
+                current={wedding.designerTemplate ?? null}
+                onChanged={handleDesignerAssignment}
+              />
+            </div>
           )}
 
           {activeTab === "events" && (
