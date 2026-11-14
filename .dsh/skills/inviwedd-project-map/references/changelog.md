@@ -2,6 +2,14 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.4 · batch 3 (code `b06ebad`)
+- Untracked build output and local state: `.open-next/` (2,342 files, ~53 MB), `.wrangler/` and `scratch/` removed from the index and gitignored; tracked files went from 2,778 to 396.
+- Rewrote `README.md` (UTF-8), `HANDOFF.md`, `TODO.md`, `INTEGRATION.md`; marked `DESIGN_PLAN.md` historical.
+- Added `typecheck` and `test` scripts (`node --test --test-isolation=none`) and `.github/workflows/ci.yml` (install → typecheck → lint → test → build).
+- Ops pages now surface API failures: `lib/ops-api.ts` dispatches `ops-api-error`, `app/ops/layout.tsx` renders a dismissible banner with retry.
+- Verified: tsc/lint clean, 8/8 tests, build ok, `next start` smoke test ok.
+- Files: `.gitignore`, `package.json`, `.github/workflows/ci.yml`, `README.md`, `HANDOFF.md`, `TODO.md`, `INTEGRATION.md`, `DESIGN_PLAN.md`, `lib/ops-api.ts`, `app/ops/layout.tsx`.
+
 ## 2026-11-14 · v1.0.3 · batch 2 (code `db98d6c`)
 - Public RSVP enforces the plan guest limit; `songRequest`/`rideNeeded` persist end-to-end (new `migration_v11_guest_preferences.sql`, **not applied yet**), are returned by the invite API and prefilled in every template; `map_embed_url` is preserved on event edit.
 - Added in-memory rate limiting for RSVP, wishes, invite and check-slug with 429 + `Retry-After`; verified 10×400 → 429 in a live smoke test.

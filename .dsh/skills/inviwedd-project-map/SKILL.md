@@ -1,7 +1,7 @@
 ---
 name: inviwedd-project-map
 description: "Use at the start of any task on the Inviwedd wedding invitation project and after any major change to it"
-version: 1.0.3
+version: 1.0.4
 metadata:
   hermes:
     tags: [project, architecture, memory]
@@ -43,8 +43,8 @@ Photos: Cloudflare R2 bucket `thiep-cuoi-photos` (binding PHOTOS), served by /me
 - `content/` — demo wedding data used by template demos.
 - `supabase/` — hand-run SQL migrations (v2, v3, v4, v5, v10).
 - `public/` — photos, music, template covers, QR images.
-- `tests/`, `scripts/` — node:test files and `check-contrast.mjs`; `scratch/` and `new_item/` are local working material, not product code.
-- `.open-next/`, `.wrangler/`, `.next/` — build output; `.open-next/` and `.wrangler/` are currently committed (see open-items).
+- `.open-next/`, `.wrangler/`, `.next/`, `scratch/` — build output and local state; all gitignored since batch 3 (they used to be committed).
+- `tests/`, `scripts/` — node:test files and `check-contrast.mjs`; run checks with `npm run typecheck|lint|test|build` (CI runs the same four).
 
 ## Where to look
 - `references/api-routes.md` — every `route.ts`: method, path, auth, purpose.
@@ -70,4 +70,4 @@ Steps: edit only the affected file with a small patch; prepend one dated line to
 At session start: read `references/open-items.md`, compare **Last verified** with `git log`, and patch this skill before starting the task if newer commits exist.
 
 ## Last verified
-2026-11-14 · code git `db98d6c` (batch 2) · owner confirmed the migration/Auth0/Apps-Script/admin-email/retention facts. Verified with `tsc --noEmit`, `eslint .`, `next build` and a `next start` smoke test against the live database. Migration v11 is written but **not applied**; retention is still unimplemented.
+2026-11-14 · code git `b06ebad` (batch 3) · owner confirmed the migration/Auth0/Apps-Script/admin-email/retention facts. Verified with `npm run typecheck`, `npm run lint`, `npm run test` (8/8), `next build` and a `next start` smoke test against the live database. Migration v11 is written but **not applied**; retention is still unimplemented.
