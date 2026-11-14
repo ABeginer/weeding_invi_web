@@ -53,7 +53,3 @@ const options = { auth: { persistSession: false, autoRefreshToken: false } };
 export function db() {
   return createClient(env("SUPABASE_URL"), env("SUPABASE_SECRET_KEY"), options);
 }
-
-export function authClient() {
-  return createClient(env("SUPABASE_URL"), env("SUPABASE_PUBLISHABLE_KEY"), options);
-}
