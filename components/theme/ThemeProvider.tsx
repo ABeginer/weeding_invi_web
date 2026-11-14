@@ -26,6 +26,8 @@ function writeThemeCookie(mode: BrandThemeMode): void {
   document.cookie = `${BRAND_THEME_COOKIE_NAME}=${mode}; path=/; max-age=${BRAND_THEME_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
+let themeSwitchTimer: number | null = null;
+
 function applyThemeToDocument(mode: BrandThemeMode): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -36,27 +38,23 @@ function applyThemeToDocument(mode: BrandThemeMode): void {
     "(prefers-reduced-motion: reduce)",
   ).matches;
 
-  // Bật transition TRƯỚC, ép trình duyệt chốt màu cũ, rồi mới đổi biến màu.
-  // Nếu đổi data-theme trước khi transition có hiệu lực thì trình duyệt gộp
-  // hai thay đổi trong cùng một lần tính style và màu chữ nhảy tức thì.
-  root.classList.add("theme-switching");
-  void root.offsetWidth;
-
-  const apply = () => {
+  if (reducedMotion) {
     root.dataset.theme = mode;
-  };
-
-  const doc = document as Document & {
-    startViewTransition?: (callback: () => void) => { finished: Promise<unknown> };
-  };
-
-  if (!reducedMotion && typeof doc.startViewTransition === "function") {
-    doc.startViewTransition(apply);
-  } else {
-    apply();
+    return;
   }
 
-  window.setTimeout(() => root.classList.remove("theme-switching"), 520);
+  // Bật transition trước rồi mới đổi biến màu ở frame kế tiếp: nhờ vậy trình
+  // duyệt có màu cũ để animate, mà không phải ép layout đồng bộ (gây khựng).
+  root.classList.add("theme-switching");
+  if (themeSwitchTimer !== null) window.clearTimeout(themeSwitchTimer);
+
+  window.requestAnimationFrame(() => {
+    root.dataset.theme = mode;
+    themeSwitchTimer = window.setTimeout(() => {
+      root.classList.remove("theme-switching");
+      themeSwitchTimer = null;
+    }, 460);
+  });
 }
 
 /** Script inline trong <head> đã áp theme từ cookie trước khi React hydrate. */

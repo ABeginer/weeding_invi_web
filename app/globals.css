@@ -469,19 +469,12 @@ body:has(.template-pro-obsidian) {
 html.theme-switching,
 html.theme-switching * {
   transition:
-    background-color 380ms ease,
-    color 380ms ease,
-    border-color 380ms ease,
-    fill 380ms ease,
-    stroke 380ms ease,
-    box-shadow 380ms ease !important;
-}
-
-/* Trình duyệt hỗ trợ View Transitions: cross-fade toàn trang. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 380ms;
-  animation-timing-function: ease;
+    background-color 360ms ease,
+    color 360ms ease,
+    border-color 360ms ease,
+    fill 360ms ease,
+    stroke 360ms ease,
+    box-shadow 360ms ease !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

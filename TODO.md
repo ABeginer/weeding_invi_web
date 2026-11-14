@@ -28,6 +28,24 @@ những gì còn lại và lý do.
       runtime worker). `npm audit fix --force` sẽ hạ adapter về 0.3.0 — không làm.
       Chờ bản `@opennextjs/cloudflare` mới.
 
+## B2. Live QR Photo Wall (đã có UI demo, chưa có backend)
+
+Hiện trạng: ô bento trên landing là **demo** với 6 ảnh mẫu. Album QR (`/a/<slug>`) đã chạy
+cho gói Pro/VIP nhưng chỉ chủ thiệp upload trong dashboard; khách chưa tự upload và chưa
+có màn hình chung cập nhật realtime.
+
+- [ ] Migration: bảng `album_photo_uploads` (wedding_id, guest_id?, table_number, r2_key,
+      status pending/approved/rejected, created_at) + token QR theo bàn.
+- [ ] API khách upload `POST /api/album/[slug]/upload?t=<token>`: kiểm tra token theo bàn,
+      giới hạn số ảnh, rate limit, ảnh nén client ≤1600px, lưu R2 + row `pending`.
+- [ ] API/UI duyệt ảnh trong dashboard (duyệt/từ chối, đếm theo hạn mức 30/300).
+- [ ] Trang upload mobile `/a/<slug>/upload` (chọn ảnh, xem tiến trình, thông báo chờ duyệt).
+- [ ] Trang wall `/a/<slug>/wall`: chỉ hiện ảnh approved, tự cập nhật bằng polling 8–10s
+      (Workers không giữ WebSocket lâu; Supabase Realtime là phương án thay thế), chế độ
+      fullscreen cho TV/màn hình tiệc.
+- [ ] Dashboard tạo/tải QR theo từng bàn trỏ tới link upload.
+- [ ] Test: token sai/hết hạn, vượt hạn mức ảnh, ảnh quá lớn, duyệt & từ chối, polling wall.
+
 ## C. Đã xong
 
 - [x] Đợt 1–4: 8 lỗi chặn, dữ liệu/bảo mật, dọn repo + docs + CI, Sổ mừng, Album,
