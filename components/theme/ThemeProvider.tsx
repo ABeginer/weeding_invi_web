@@ -31,6 +31,13 @@ function applyThemeToDocument(mode: BrandThemeMode): void {
   document.documentElement.dataset.theme = mode;
 }
 
+/** Script inline trong <head> đã áp theme từ cookie trước khi React hydrate. */
+function readThemeFromDom(): BrandThemeMode | null {
+  if (typeof document === "undefined") return null;
+  const value = document.documentElement.dataset.theme;
+  return value === "dark" || value === "light" ? value : null;
+}
+
 export function ThemeProvider({
   initialTheme,
   children,
@@ -40,6 +47,13 @@ export function ThemeProvider({
 }) {
   const { showToast } = useToast();
   const [theme, setThemeState] = React.useState<BrandThemeMode>(initialTheme);
+
+  // Giữ hydration khớp với server (initialTheme), sau đó đồng bộ theo theme mà
+  // script inline đã đọc từ cookie.
+  React.useEffect(() => {
+    const domTheme = readThemeFromDom();
+    if (domTheme) setThemeState(domTheme);
+  }, []);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
   const [announcement, setAnnouncement] = React.useState("");

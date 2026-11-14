@@ -1,7 +1,7 @@
 import { isTemplateAllowedForPlan } from "@/config/plans";
 import { RITUAL_TEMPLATES_CONFIG } from "@/config/templates-ritual";
 import type { WeddingPlan } from "@/lib/types";
-import type { TemplateId, WeddingTemplateMeta } from "./types";
+import type { WeddingTemplateMeta } from "./types";
 
 const ritualAnHoi = RITUAL_TEMPLATES_CONFIG.find((r) => r.ritualKey === "an-hoi");
 const ritualGiaTien = RITUAL_TEMPLATES_CONFIG.find((r) => r.ritualKey === "gia-tien");
@@ -443,35 +443,6 @@ export const SELECTABLE_DASHBOARD_TEMPLATES: WeddingTemplateMeta[] =
 
 export function getTemplateMeta(templateId: string): WeddingTemplateMeta | undefined {
   return TEMPLATE_REGISTRY.find((tpl) => tpl.id === templateId);
-}
-
-export function isImplementedTemplateId(templateId: string): templateId is Exclude<TemplateId, "vip-1"> {
-  return (
-    templateId === "basic-1" ||
-    templateId === "basic-2" ||
-    templateId === "basic-3" ||
-    templateId === "pro-1" ||
-    templateId === "ritual-an-hoi" ||
-    templateId === "ritual-gia-tien" ||
-    templateId === "ritual-vu-quy" ||
-    templateId === "anh-dao-hong" ||
-    templateId === "bach-su-do" ||
-    templateId === "bach-su-nau" ||
-    templateId === "chibi-red" ||
-    templateId === "hoa-moc-nau" ||
-    templateId === "hoang-kim-do" ||
-    templateId === "long-phung-v2-do" ||
-    templateId === "mai-lan-xanh" ||
-    templateId === "ren-theu-trang" ||
-    templateId === "song-hy-v2-do" ||
-    templateId === "song-phung-xanh" ||
-    templateId === "to-duyen-do-dam" ||
-    templateId === "to-duyen-hong" ||
-    templateId === "vuon-xuan-do" ||
-    templateId === "vuon-xuan-xanh" ||
-    templateId === "vuonkinh-xanh-nhat" ||
-    templateId === "vuonkinh-xanh"
-  );
 }
 
 export function canPlanUseTemplate(

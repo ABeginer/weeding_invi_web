@@ -4,13 +4,14 @@ import { isPaid } from "@/lib/server/owner";
 import { db } from "@/lib/server/supabase";
 import { isUuid } from "@/lib/server/validate";
 import { getOwnedWedding } from "@/lib/server/weddings";
-import type { GiftMethod } from "@/lib/types";
+import {
+  GIFT_METHODS,
+  GIFT_NOTE_MAX,
+  MAX_GIFT_AMOUNT_VND,
+  parseGiftAmount,
+} from "@/lib/gift-input";
 
 type Ctx = { params: Promise<{ id: string; giftId: string }> };
-
-const GIFT_METHODS: GiftMethod[] = ["cash", "bank", "other"];
-const MAX_AMOUNT_VND = 1_000_000_000;
-const NOTE_MAX = 300;
 
 const PLAN_LOCKED_MESSAGE =
   "Sổ mừng dành cho gói Pro và VIP. Vui lòng nâng cấp gói để sử dụng.";
@@ -34,14 +35,11 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   }
 
   if (body.amountVnd !== undefined) {
-    const amountVnd = body.amountVnd;
-    if (
-      typeof amountVnd !== "number" ||
-      !Number.isSafeInteger(amountVnd) ||
-      amountVnd < 0 ||
-      amountVnd > MAX_AMOUNT_VND
-    ) {
-      return fail("Số tiền mừng không hợp lệ.");
+    const amountVnd = parseGiftAmount(body.amountVnd);
+    if (amountVnd === null) {
+      return fail(
+        `Số tiền mừng phải là số nguyên từ 0 đến ${MAX_GIFT_AMOUNT_VND.toLocaleString("vi-VN")}.`,
+      );
     }
     patch.amount_vnd = amountVnd;
   }
@@ -49,7 +47,7 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   if (body.method !== undefined) {
     if (
       typeof body.method !== "string" ||
-      !GIFT_METHODS.includes(body.method as GiftMethod)
+      !GIFT_METHODS.includes(body.method as (typeof GIFT_METHODS)[number])
     ) {
       return fail("Hình thức mừng không hợp lệ.");
     }
@@ -57,7 +55,7 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   }
 
   if (body.note !== undefined) {
-    patch.note = text(body.note, NOTE_MAX);
+    patch.note = text(body.note, GIFT_NOTE_MAX);
   }
 
   if (body.guestId !== undefined) {

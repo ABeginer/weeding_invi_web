@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { LandingPageClient } from "@/components/landing/landing-page-client";
 import { LANDING_COPY } from "@/config/landing";
 import { resolveAppBaseUrl, toAbsoluteSiteUrl } from "@/config/site";
-import { getAuth0 } from "@/lib/auth0";
 
-export const dynamic = "force-dynamic";
+// Trang chủ là static; trạng thái đăng nhập được đọc phía client (/auth/profile)
+// để không phải render lại toàn trang theo session.
+export const dynamic = "force-static";
 
 export const metadata: Metadata = {
   title: LANDING_COPY.seo.title,
@@ -32,29 +33,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function HomePage() {
-  let isAuthenticated = false;
-  let userEmail: string | null = null;
-
-  try {
-    const session = await getAuth0().getSession();
-    isAuthenticated = Boolean(session);
-    if (session?.user) {
-      const userObj = session.user as Record<string, unknown>;
-      const rawEmail = userObj.email ?? userObj["https://thiepcuoi/email"];
-      if (typeof rawEmail === "string" && rawEmail.trim()) {
-        userEmail = rawEmail.trim();
-      }
-    }
-  } catch {
-    isAuthenticated = false;
-    userEmail = null;
-  }
-
-  return (
-    <LandingPageClient
-      isAuthenticated={isAuthenticated}
-      userEmail={userEmail}
-    />
-  );
+export default function HomePage() {
+  return <LandingPageClient />;
 }

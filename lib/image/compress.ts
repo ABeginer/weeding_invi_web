@@ -118,7 +118,8 @@ export async function compressImage(
     targetWidth = 1200;
     targetHeight = 630;
   } else {
-    const maxDimension = kind === "gallery" ? 2048 : 1600;
+    // 1600px đủ nét trên điện thoại và nhẹ hơn 2048px ~35%.
+    const maxDimension = 1600;
     const longerSide = Math.max(sourceWidth, sourceHeight);
 
     if (longerSide > maxDimension) {

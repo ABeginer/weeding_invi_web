@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
 import { SITE_LINKS } from "@/config/site";
 import { listWeddings, syncMe } from "@/lib/api";
@@ -19,16 +20,27 @@ import { TemplateGrid } from "./template-grid";
 import { ToolsPreviewSection } from "./tools-preview";
 
 interface LandingPageClientProps {
-  isAuthenticated: boolean;
+  isAuthenticated?: boolean;
   userEmail?: string | null;
 }
 
 export function LandingPageClient({
-  isAuthenticated,
+  isAuthenticated = false,
   userEmail = null,
 }: LandingPageClientProps) {
   const router = useRouter();
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
+
+  // Trang chủ là static: trạng thái đăng nhập lấy từ /auth/profile phía client.
+  const { user } = useUser();
+  const sessionEmail = React.useMemo(() => {
+    const record = user as Record<string, unknown> | null | undefined;
+    const raw = record?.email ?? record?.["https://thiepcuoi/email"];
+    return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  }, [user]);
+  const resolvedEmail = sessionEmail ?? userEmail;
+  const resolvedAuthenticated = Boolean(user) || isAuthenticated;
+
   const [userPlan, setUserPlan] = React.useState<WeddingPlan>("free");
   const [userWeddings, setUserWeddings] = React.useState<Wedding[]>([]);
   const [upgradeTemplate, setUpgradeTemplate] = React.useState<WeddingTemplateMeta | null>(null);
@@ -62,11 +74,11 @@ export function LandingPageClient({
   }, []);
 
   React.useEffect(() => {
-    setSessionInfo({ isAuthenticated, email: userEmail });
-  }, [isAuthenticated, setSessionInfo, userEmail]);
+    setSessionInfo({ isAuthenticated: resolvedAuthenticated, email: resolvedEmail });
+  }, [resolvedAuthenticated, resolvedEmail, setSessionInfo]);
 
   React.useEffect(() => {
-    if (!isAuthenticated) {
+    if (!resolvedAuthenticated) {
       setUserPlan("free");
       return;
     }
@@ -78,7 +90,7 @@ export function LandingPageClient({
         if (cancelled) return;
         setSessionInfo({
           isAuthenticated: true,
-          email: profile.email ?? userEmail,
+          email: profile.email ?? resolvedEmail,
         });
         if (profile.theme) {
           adoptAccountTheme(profile.theme);
@@ -104,7 +116,7 @@ export function LandingPageClient({
     return () => {
       cancelled = true;
     };
-  }, [adoptAccountTheme, isAuthenticated, setSessionInfo, userEmail]);
+  }, [adoptAccountTheme, resolvedAuthenticated, resolvedEmail, setSessionInfo]);
 
   const handleUseTemplate = (template: WeddingTemplateMeta) => {
     if (template.plan === "free") {
@@ -125,14 +137,14 @@ export function LandingPageClient({
 
   return (
     <div className="landing-theme min-h-screen-dvh bg-bg text-text overflow-x-hidden">
-      <LandingNavbar isAuthenticated={isAuthenticated} userEmail={userEmail} />
+      <LandingNavbar isAuthenticated={resolvedAuthenticated} userEmail={resolvedEmail} />
       <main>
         <HeroSection />
         <TemplateGrid userPlan={userPlan} onUseTemplate={handleUseTemplate} />
         <ToolsPreviewSection />
         <HowItWorks />
         <PricingTable
-          isAuthenticated={isAuthenticated}
+          isAuthenticated={resolvedAuthenticated}
           onSelectPaidPlan={(plan) => setPaymentPlan(plan)}
         />
         <LandingFaq />
@@ -148,7 +160,7 @@ export function LandingPageClient({
       <PaymentTransferModal
         plan={paymentPlan}
         weddings={userWeddings}
-        isAuthenticated={isAuthenticated}
+        isAuthenticated={resolvedAuthenticated}
         onClose={() => setPaymentPlan(null)}
         onSuccess={refreshPlan}
       />

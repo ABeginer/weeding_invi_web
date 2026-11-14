@@ -4,11 +4,11 @@ import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
 import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { verifyTurnstileToken } from "@/lib/server/turnstile";
 import { isWeddingSuspended } from "@/lib/server/weddings";
-import type { GuestDiet, WeddingPlan } from "@/lib/types";
+import { parseDiet, parsePlusOnes, sanitizeSongRequest } from "@/lib/rsvp-input";
+import type { WeddingPlan } from "@/lib/types";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 const GUEST_SELECT = "id, slug, wedding_id, name";
-const SONG_REQUEST_MAX = 200;
 
 function hasColumnIssue(error: unknown, columns: string[]): boolean {
   if (!error || typeof error !== "object") return false;
@@ -25,29 +25,6 @@ function isMissingV4GuestColumns(error: unknown): boolean {
 
 function isMissingGuestPreferenceColumns(error: unknown): boolean {
   return hasColumnIssue(error, ["song_request", "ride_needed"]);
-}
-
-function parsePlusOnes(raw: unknown): { ok: true; value: number } | { ok: false; error: string } {
-  if (raw === undefined || raw === null || raw === "") {
-    return { ok: true, value: 0 };
-  }
-  if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 0 || raw > 10) {
-    return {
-      ok: false,
-      error: "Số người đi cùng phải là số nguyên từ 0 đến 10.",
-    };
-  }
-  return { ok: true, value: raw };
-}
-
-function parseDiet(raw: unknown): { ok: true; value: GuestDiet | null } | { ok: false; error: string } {
-  if (raw === undefined || raw === null || raw === "") {
-    return { ok: true, value: null };
-  }
-  if (raw === "meat" || raw === "veg") {
-    return { ok: true, value: raw };
-  }
-  return { ok: false, error: "Lựa chọn chế độ ăn không hợp lệ." };
 }
 
 export const POST = route(async (req: Request) => {
@@ -89,7 +66,7 @@ export const POST = route(async (req: Request) => {
 
   const resolvedPlusOnes = status === "accepted" ? plusOnesResult.value : 0;
   const resolvedDiet = status === "accepted" ? dietResult.value : null;
-  const songRequest = status === "accepted" ? text(body?.songRequest, SONG_REQUEST_MAX) : null;
+  const songRequest = status === "accepted" ? sanitizeSongRequest(body?.songRequest) : null;
   const rideNeeded = status === "accepted" && body?.rideNeeded === true;
   const wishMessage = text(body?.wish, 500);
   const respondedAt = new Date().toISOString();

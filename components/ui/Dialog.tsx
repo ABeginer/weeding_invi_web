@@ -24,7 +24,10 @@ export function Dialog({
   const titleId = React.useId();
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const onCloseRef = React.useRef(onClose);
-  onCloseRef.current = onClose;
+
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   React.useEffect(() => {
     if (!open) return;

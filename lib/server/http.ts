@@ -3,22 +3,6 @@ import { getUser, type AuthUser } from "./auth";
 
 export const SLUG_RE = /^[a-f0-9]{12}$/;
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const WEDDING_SLUG_RE = /^[a-z0-9-]{3,40}$/;
-export const FORBIDDEN_WEDDING_SLUGS = new Set([
-  "admin",
-  "api",
-  "dashboard",
-  "auth",
-  "login",
-  "logout",
-  "w",
-  "m",
-  "mau",
-  "tao-thiep",
-  "media",
-  "static",
-  "_next",
-]);
 
 export function json(data: unknown, status = 200): Response {
   return NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });

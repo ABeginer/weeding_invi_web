@@ -97,7 +97,10 @@ export function TurnstileWidget({
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const widgetIdRef = React.useRef<string | null>(null);
   const callbackRef = React.useRef(onTokenChange);
-  callbackRef.current = onTokenChange;
+
+  React.useEffect(() => {
+    callbackRef.current = onTokenChange;
+  }, [onTokenChange]);
 
   const [status, setStatus] = React.useState<WidgetStatus>(
     SITE_KEY ? "loading" : "ready",
