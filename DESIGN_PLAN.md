@@ -1,5 +1,11 @@
 # Kế hoạch dựng giao diện: Web thiệp cưới
 
+> **Tài liệu lịch sử (2026-11-14):** đây là brief giao diện ban đầu (mock data,
+> cấu trúc `/admin/*` cũ). Code hiện tại đã khác: dashboard nằm ở `/dashboard`,
+> backend thật nằm trong `app/api`, dữ liệu mẫu chỉ còn trong `content/demo.ts`.
+> Xem `README.md`, `HANDOFF.md` và `.dsh/skills/inviwedd-project-map/` để biết
+> trạng thái hiện tại.
+
 > Tài liệu này dành cho Antigravity CLI. Bạn chỉ làm **phần giao diện (UI)** với dữ liệu giả (mock). Phần database, API thật, đăng nhập admin do người khác nối vào sau, nên phải tuân theo "Hợp đồng dữ liệu" ở mục 5.
 
 ## 0. Prompt để dán vào Antigravity
