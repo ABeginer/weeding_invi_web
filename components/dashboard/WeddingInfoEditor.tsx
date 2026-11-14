@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  ChevronDown,
   Gift,
   LayoutTemplate,
   Loader2,
@@ -10,6 +11,7 @@ import {
   QrCode,
   RotateCcw,
   Save,
+  Search,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -68,6 +70,16 @@ export function toDatetimeLocalVn(isoString: string): string {
   return directMatch ? directMatch[1] : "";
 }
 
+const TEMPLATE_THEME_FILTERS = [
+  "Tất cả",
+  "Thanh lịch",
+  "Cổ điển",
+  "Tối giản",
+  "Hiện đại",
+  "Lãng mạn",
+  "Truyền thống",
+];
+
 export function WeddingInfoEditor({
   wedding,
   draftContent,
@@ -91,6 +103,27 @@ export function WeddingInfoEditor({
     null,
   );
   const [qrError, setQrError] = React.useState<string | null>(null);
+
+  const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
+  const [templateQuery, setTemplateQuery] = React.useState("");
+  const [templateTheme, setTemplateTheme] = React.useState("Tất cả");
+
+  const selectedTemplate = TEMPLATE_REGISTRY.find(
+    (tpl) => tpl.id === draftTemplateId,
+  );
+  const filteredTemplates = TEMPLATE_REGISTRY.filter((tpl) => {
+    const searchable = [tpl.name, tpl.subtitle ?? "", ...(tpl.styleTags ?? [])]
+      .join(" ")
+      .toLowerCase();
+    if (
+      templateQuery.trim() &&
+      !searchable.includes(templateQuery.trim().toLowerCase())
+    ) {
+      return false;
+    }
+    if (templateTheme === "Tất cả") return true;
+    return searchable.includes(templateTheme.toLowerCase());
+  });
   const groomQrInputRef = React.useRef<HTMLInputElement | null>(null);
   const brideQrInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -294,60 +327,113 @@ export function WeddingInfoEditor({
             )}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {TEMPLATE_REGISTRY.map((tpl) => {
-              const isSelected = draftTemplateId === tpl.id;
-              const allowed =
-                !tpl.isPlaceholder &&
-                (isTemplateAllowedForPlan(wedding.plan, tpl.plan) ||
-                  tpl.id === wedding.templateId);
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setTemplatePickerOpen((prev) => !prev)}
+              aria-expanded={templatePickerOpen}
+              aria-controls="dashboard-template-picker"
+              className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-bg px-3.5 py-3 text-left transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-fg">
+                  {selectedTemplate?.name ?? "Chọn mẫu thiệp"}
+                </span>
+                <span className="block truncate text-xs text-fg-muted">
+                  {selectedTemplate?.subtitle ?? "Bấm để chọn mẫu"}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-semibold text-fg-muted">
+                  {selectedTemplate ? getPlanLabel(selectedTemplate.plan) : ""}
+                </span>
+                <ChevronDown
+                  className={cn("h-4 w-4 text-fg-muted transition-transform", templatePickerOpen && "rotate-180")}
+                  aria-hidden="true"
+                />
+              </span>
+            </button>
 
-              return (
-                <button
-                  key={tpl.id}
-                  type="button"
-                  disabled={!allowed}
-                  onClick={() => allowed && onTemplateChange(tpl.id)}
-                  className={cn(
-                    "flex flex-col justify-between rounded-xl border p-3.5 text-left transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring",
-                    isSelected
-                      ? "border-accent bg-accent-soft"
-                      : allowed
-                        ? "cursor-pointer border-border bg-bg hover:border-accent/55"
-                        : "cursor-not-allowed border-border/70 bg-surface-muted/45 opacity-70",
+            {templatePickerOpen && (
+              <div id="dashboard-template-picker" className="rounded-xl border border-border bg-surface p-2.5 shadow-sm">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-fg-muted" aria-hidden="true" />
+                  <input
+                    value={templateQuery}
+                    onChange={(event) => setTemplateQuery(event.target.value)}
+                    placeholder="Tìm mẫu thiệp…"
+                    aria-label="Tìm mẫu thiệp"
+                    className="h-9 w-full rounded-lg border border-border bg-bg pr-3 pl-8 text-xs text-fg outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  />
+                </div>
+
+                <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {TEMPLATE_THEME_FILTERS.map((theme) => (
+                    <button
+                      key={theme}
+                      type="button"
+                      onClick={() => setTemplateTheme(theme)}
+                      aria-pressed={templateTheme === theme}
+                      className={cn(
+                        "shrink-0 cursor-pointer rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                        templateTheme === theme
+                          ? "border-accent bg-accent-soft text-accent-text"
+                          : "border-border bg-bg text-fg-muted hover:bg-surface-alt",
+                      )}
+                    >
+                      {theme}
+                    </button>
+                  ))}
+                </div>
+
+                <ul className="mt-2 max-h-[276px] divide-y divide-border overflow-y-auto rounded-lg border border-border">
+                  {filteredTemplates.map((tpl) => {
+                    const isSelected = draftTemplateId === tpl.id;
+                    const allowed =
+                      !tpl.isPlaceholder &&
+                      (isTemplateAllowedForPlan(wedding.plan, tpl.plan) ||
+                        tpl.id === wedding.templateId);
+                    return (
+                      <li key={tpl.id}>
+                        <button
+                          type="button"
+                          disabled={!allowed}
+                          onClick={() => {
+                            if (!allowed) return;
+                            onTemplateChange(tpl.id);
+                            setTemplatePickerOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-xs transition-colors",
+                            isSelected ? "bg-accent-soft" : "bg-bg hover:bg-surface-alt",
+                            !allowed && "cursor-not-allowed opacity-60",
+                          )}
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-semibold text-fg">{tpl.name}</span>
+                            <span className="block truncate text-[11px] text-fg-muted">{tpl.subtitle}</span>
+                          </span>
+                          <span className="shrink-0 rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-fg-muted">
+                            {tpl.isPlaceholder
+                              ? "Sắp có"
+                              : allowed
+                                ? getPlanLabel(tpl.plan)
+                                : `Gói ${getPlanLabel(tpl.plan)}`}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {filteredTemplates.length === 0 && (
+                    <li className="px-3 py-6 text-center text-xs text-fg-muted">Không tìm thấy mẫu phù hợp.</li>
                   )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="h-3.5 w-3.5 shrink-0 rounded-full border border-border"
-                        style={{ backgroundColor: tpl.accentSwatch }}
-                        aria-hidden="true"
-                      />
-                      <span className="text-sm font-semibold text-fg">{tpl.name}</span>
-                    </div>
-                    {tpl.isPlaceholder ? (
-                      <span className="rounded-full border border-soon-border bg-soon-bg px-2 py-0.5 text-[10px] font-medium text-soon-fg">
-                        Sắp có
-                      </span>
-                    ) : !allowed ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-text">
-                        <Lock className="h-2.5 w-2.5" aria-hidden="true" />
-                        <span>Gói {getPlanLabel(tpl.plan)}</span>
-                      </span>
-                    ) : (
-                      <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-fg-muted">
-                        {getPlanLabel(tpl.plan)}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-fg-muted">
-                    {tpl.subtitle}
-                  </p>
-                </button>
-              );
-            })}
+                </ul>
+
+                <p className="mt-2 text-[11px] text-fg-muted">
+                  Hiển thị {Math.min(filteredTemplates.length, 6)} trong {filteredTemplates.length} mẫu · cuộn để xem thêm
+                </p>
+              </div>
+            )}
           </div>
           {fieldErrors.templateId && (
             <p role="alert" className="text-xs text-danger-fg">
