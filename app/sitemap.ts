@@ -18,6 +18,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: toAbsoluteSiteUrl("/cong-cu/tao-loi-moi-zalo"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: toAbsoluteSiteUrl(SITE_LINKS.templates),
       lastModified: now,
       changeFrequency: "weekly",

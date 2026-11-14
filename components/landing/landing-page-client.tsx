@@ -9,9 +9,11 @@ import { LandingFooter } from "./footer";
 import { LandingFaq } from "./faq";
 import { HeroSection } from "./hero";
 import { HowItWorks } from "./how-it-works";
+import { InteractiveFeatureBento } from "./interactive-feature-bento";
 import { LandingNavbar } from "./navbar";
 import { PaymentTransferModal } from "./pricing-modals";
 import { PricingTable } from "./pricing-table";
+import { SocialProofMarquee } from "./social-proof-marquee";
 import { TemplateTeaser } from "./template-teaser";
 import { ToolsPreviewSection } from "./tools-preview";
 
@@ -108,9 +110,11 @@ export function LandingPageClient({
       <LandingNavbar isAuthenticated={resolvedAuthenticated} userEmail={resolvedEmail} />
       <main>
         <HeroSection />
+        <SocialProofMarquee />
         <TemplateTeaser />
         <ToolsPreviewSection />
         <HowItWorks />
+        <InteractiveFeatureBento />
         <PricingTable
           isAuthenticated={resolvedAuthenticated}
           onSelectPaidPlan={(plan) => setPaymentPlan(plan)}

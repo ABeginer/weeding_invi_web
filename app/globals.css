@@ -464,3 +464,23 @@ body:has(.template-pro-obsidian) {
     animation: template-fade-out 160ms ease-in forwards;
   }
 }
+
+/* ===== Social proof marquee ===== */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  animation: marquee-scroll 42s linear infinite;
+}
+
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, currentColor 6%, currentColor 94%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}

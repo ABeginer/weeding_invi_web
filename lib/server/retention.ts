@@ -1,7 +1,7 @@
 import { db } from "./supabase";
 
 /** Gói free được lưu 30 ngày kể từ ngày tạo thiệp (cam kết với khách hàng). */
-export const RETENTION_DAYS = 30;
+export const RETENTION_DAYS = 180;
 const MAX_BATCH = 50;
 
 export interface RetentionCandidate {

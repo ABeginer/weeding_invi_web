@@ -89,15 +89,24 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Album QR cho khách",
     values: {
       free: { text: "Không có" },
-      pro: { text: "30 ảnh", comingSoon: true },
-      vip: { text: "300 ảnh", comingSoon: true },
+      pro: { text: "30 ảnh" },
+      vip: { text: "300 ảnh" },
+    },
+  },
+  {
+    id: "views",
+    feature: "Lượt xem thiệp",
+    values: {
+      free: { text: "Không giới hạn" },
+      pro: { text: "Không giới hạn" },
+      vip: { text: "Không giới hạn" },
     },
   },
   {
     id: "retention",
     feature: "Lưu trữ",
     values: {
-      free: { text: "30 ngày" },
+      free: { text: "6 tháng" },
       pro: { text: "1 năm" },
       vip: { text: "Vĩnh viễn" },
     },
@@ -107,8 +116,8 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Xuất danh sách khách ra Excel",
     values: {
       free: { text: "Không hỗ trợ" },
-      pro: { text: "Sắp có", comingSoon: true },
-      vip: { text: "Sắp có", comingSoon: true },
+      pro: { text: "CSV mở bằng Excel (UTF-8)" },
+      vip: { text: "CSV mở bằng Excel (UTF-8)" },
     },
   },
   {
