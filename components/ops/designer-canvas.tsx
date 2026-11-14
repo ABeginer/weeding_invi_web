@@ -172,6 +172,30 @@ export function DesignerCanvas({
       context.fillStyle = content.background;
       context.fillRect(0, 0, canvas.width, canvas.height);
 
+      if (content.backgroundUrl) {
+        const background = new Image();
+        background.src = content.backgroundUrl;
+        await new Promise<void>((resolve) => {
+          background.onload = () => resolve();
+          background.onerror = () => resolve();
+        });
+        if (background.width > 0) {
+          const ratio = Math.max(
+            canvas.width / background.width,
+            canvas.height / background.height,
+          );
+          const drawWidth = background.width * ratio;
+          const drawHeight = background.height * ratio;
+          context.drawImage(
+            background,
+            (canvas.width - drawWidth) / 2,
+            (canvas.height - drawHeight) / 2,
+            drawWidth,
+            drawHeight,
+          );
+        }
+      }
+
       for (const element of content.elements) {
         const x = (element.xPct / 100) * canvas.width;
         const y = (element.yPct / 100) * canvas.height;
@@ -310,6 +334,15 @@ export function DesignerCanvas({
               if (event.target === event.currentTarget) setSelectedId(null);
             }}
           >
+            {content.backgroundUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={content.backgroundUrl}
+                alt=""
+                draggable={false}
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+              />
+            )}
             {content.elements.map((element) => {
               const isSelected = element.id === selectedId;
               return (

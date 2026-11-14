@@ -33,6 +33,7 @@ export default function DesignerTemplatesPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [creating, setCreating] = React.useState(false);
+  const [importing, setImporting] = React.useState(false);
   const [name, setName] = React.useState("");
   const [plan, setPlan] = React.useState<DesignerTemplate["plan"]>("free");
   const [ritual, setRitual] = React.useState("");
@@ -75,16 +76,47 @@ export default function DesignerTemplatesPage() {
     }
   };
 
+  const importExisting = async () => {
+    setImporting(true);
+    setError(null);
+    try {
+      const result = await opsRequest<{ imported?: number }>(
+        "/api/ops/designer/import",
+        { method: "POST" },
+      );
+      await load();
+      setError(
+        result.imported && result.imported > 0
+          ? null
+          : "Không có mẫu mới nào để nhập (có thể đã nhập trước đó).",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không nhập được mẫu có sẵn.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
       <header className="space-y-1">
         <p className="text-[11px] font-semibold tracking-[0.18em] text-accent-text uppercase">
           Ops · Designer
         </p>
-        <h1 className="font-display text-2xl font-semibold text-text">Mẫu thiệp thiết kế</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-display text-2xl font-semibold text-text">Mẫu thiệp thiết kế</h1>
+          <button
+            type="button"
+            onClick={importExisting}
+            disabled={importing}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text disabled:opacity-60"
+          >
+            {importing ? "Đang nhập…" : "Nhập mẫu có sẵn từ thư viện"}
+          </button>
+        </div>
         <p className="text-sm text-text-muted">
-          Tạo mẫu mới, mỗi mẫu lưu layout JSON + ảnh nền webp. Canvas kéo thả sẽ được bổ sung
-          ở bước tiếp theo.
+          Tạo mẫu mới hoặc nhập 21 mẫu code sẵn có làm nền draft để chỉnh trong canvas.
+          Canvas kéo thả sẽ được bổ sung ở bước tiếp theo.
         </p>
       </header>
 

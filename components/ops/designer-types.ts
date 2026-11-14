@@ -27,6 +27,8 @@ export interface DesignerCanvasContent {
   width: number;
   height: number;
   background: string;
+  /** Ảnh nền có sẵn (cover template) — designer vẽ đè lên khi tạo mẫu mới. */
+  backgroundUrl?: string;
   elements: DesignerElement[];
 }
 
