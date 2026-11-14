@@ -15,11 +15,17 @@ export async function getOpsAdminUser(req: Request): Promise<AuthUser | null> {
   if (!user || !user.email) return null;
 
   const adminEmails = getAdminEmails();
-  if (adminEmails.length > 0) {
-    if (!adminEmails.includes(user.email.toLowerCase())) {
-      return null;
+  if (adminEmails.length === 0) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[ops] ADMIN_EMAIL chưa được cấu hình. Truy cập quản trị bị từ chối.");
     }
+    return null;
   }
+
+  if (!adminEmails.includes(user.email.toLowerCase())) {
+    return null;
+  }
+
   return user;
 }
 

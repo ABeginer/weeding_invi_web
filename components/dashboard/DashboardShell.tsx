@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { ProfileMenu } from "@/components/theme/ProfileMenu";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
 import { SITE_LINKS, SITE_NAME } from "@/config/site";

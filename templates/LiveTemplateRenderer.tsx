@@ -28,11 +28,7 @@ export function LiveTemplateRenderer({
   initialPlusOnes = 0,
   initialDiet = null,
 }: LiveTemplateRendererProps) {
-  if (
-    templateId === "basic-2" ||
-    templateId === "basic-3" ||
-    templateId === "pro-1"
-  ) {
+  if (templateId !== "basic-1" && templateId !== "ritual-an-hoi") {
     return (
       <TemplatePreviewRenderer
         templateId={templateId}

@@ -31,6 +31,59 @@ const DynamicPro1 = dynamic(() => import("./pro-1"), {
   loading: () => <TemplateLoadingFallback />,
 });
 
+// 17 New Templates
+const DynamicAnhDaoHong = dynamic(() => import("./anh-dao-hong"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicBachSuDo = dynamic(() => import("./bach-su-do"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicBachSuNau = dynamic(() => import("./bach-su-nau"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicChibiRed = dynamic(() => import("./chibi-red"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicHoaMocNau = dynamic(() => import("./hoa-moc-nau"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicHoangKimDo = dynamic(() => import("./hoang-kim-do"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicLongPhungV2Do = dynamic(() => import("./long-phung-v2-do"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicMaiLanXanh = dynamic(() => import("./mai-lan-xanh"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicRenTheuTrang = dynamic(() => import("./ren-theu-trang"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicSongHyV2Do = dynamic(() => import("./song-hy-v2-do"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicSongPhungXanh = dynamic(() => import("./song-phung-xanh"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicToDuyenDoDam = dynamic(() => import("./to-duyen-do-dam"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicToDuyenHong = dynamic(() => import("./to-duyen-hong"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicVuonXuanDo = dynamic(() => import("./vuon-xuan-do"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicVuonXuanXanh = dynamic(() => import("./vuon-xuan-xanh"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicVuonkinhXanhNhat = dynamic(() => import("./vuonkinh-xanh-nhat"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicVuonkinhXanh = dynamic(() => import("./vuonkinh-xanh"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+
 export interface TemplatePreviewRendererProps extends WeddingTemplateProps {
   templateId: string;
 }
@@ -48,6 +101,40 @@ export function TemplatePreviewRenderer({
       return <DynamicBasic3 {...props} />;
     case "pro-1":
       return <DynamicPro1 {...props} />;
+    case "anh-dao-hong":
+      return <DynamicAnhDaoHong {...props} />;
+    case "bach-su-do":
+      return <DynamicBachSuDo {...props} />;
+    case "bach-su-nau":
+      return <DynamicBachSuNau {...props} />;
+    case "chibi-red":
+      return <DynamicChibiRed {...props} />;
+    case "hoa-moc-nau":
+      return <DynamicHoaMocNau {...props} />;
+    case "hoang-kim-do":
+      return <DynamicHoangKimDo {...props} />;
+    case "long-phung-v2-do":
+      return <DynamicLongPhungV2Do {...props} />;
+    case "mai-lan-xanh":
+      return <DynamicMaiLanXanh {...props} />;
+    case "ren-theu-trang":
+      return <DynamicRenTheuTrang {...props} />;
+    case "song-hy-v2-do":
+      return <DynamicSongHyV2Do {...props} />;
+    case "song-phung-xanh":
+      return <DynamicSongPhungXanh {...props} />;
+    case "to-duyen-do-dam":
+      return <DynamicToDuyenDoDam {...props} />;
+    case "to-duyen-hong":
+      return <DynamicToDuyenHong {...props} />;
+    case "vuon-xuan-do":
+      return <DynamicVuonXuanDo {...props} />;
+    case "vuon-xuan-xanh":
+      return <DynamicVuonXuanXanh {...props} />;
+    case "vuonkinh-xanh-nhat":
+      return <DynamicVuonkinhXanhNhat {...props} />;
+    case "vuonkinh-xanh":
+      return <DynamicVuonkinhXanh {...props} />;
     case "basic-1":
     case "ritual-an-hoi":
     default:

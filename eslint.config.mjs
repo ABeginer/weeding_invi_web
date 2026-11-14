@@ -19,6 +19,7 @@ const eslintConfig = [
       "build/**",
       "node_modules/**",
       "next-env.d.ts",
+      "scratch/**",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),

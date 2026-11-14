@@ -41,7 +41,6 @@ export function TemplateRsvpSection({
   initialPlusOnes = 0,
   initialDiet = "meat",
   initialSongRequest = "",
-  initialRideNeeded = false,
 }: TemplateRsvpSectionProps) {
   const isReadOnlyPreview = mode === "demo" || mode === "preview";
   const isPublicMode = !isReadOnlyPreview && invitationMode === "public";

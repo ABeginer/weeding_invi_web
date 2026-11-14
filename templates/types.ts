@@ -14,7 +14,24 @@ export type TemplateId =
   | "vip-1"
   | "ritual-an-hoi"
   | "ritual-gia-tien"
-  | "ritual-vu-quy";
+  | "ritual-vu-quy"
+  | "anh-dao-hong"
+  | "bach-su-do"
+  | "bach-su-nau"
+  | "chibi-red"
+  | "hoa-moc-nau"
+  | "hoang-kim-do"
+  | "long-phung-v2-do"
+  | "mai-lan-xanh"
+  | "ren-theu-trang"
+  | "song-hy-v2-do"
+  | "song-phung-xanh"
+  | "to-duyen-do-dam"
+  | "to-duyen-hong"
+  | "vuon-xuan-do"
+  | "vuon-xuan-xanh"
+  | "vuonkinh-xanh-nhat"
+  | "vuonkinh-xanh";
 
 export type TemplateRenderMode = TemplateMode;
 

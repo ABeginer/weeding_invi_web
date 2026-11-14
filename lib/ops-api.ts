@@ -25,6 +25,7 @@ export interface OpsUser {
   email: string;
   createdAt: string;
   weddingCount: number;
+  identityCount: number;
 }
 
 export interface OpsUserWeddingItem {
@@ -35,11 +36,30 @@ export interface OpsUserWeddingItem {
   createdAt: string;
 }
 
+export interface OpsUserIdentity {
+  provider: "auth0" | "google" | "other" | string;
+  linkedAt: string;
+}
+
+export interface OpsUserMergedFrom {
+  email: string;
+  mergedAt: string;
+}
+
 export interface OpsUserDetail {
   id: string;
   email: string;
   createdAt: string;
   weddings: OpsUserWeddingItem[];
+  identities: OpsUserIdentity[];
+  mergedFrom: OpsUserMergedFrom | null;
+}
+
+export function getProviderLabel(provider: string): string {
+  const p = (provider || "").toLowerCase().trim();
+  if (p === "auth0") return "Email và mật khẩu";
+  if (p === "google") return "Google";
+  return "Khác";
 }
 
 export interface OpsWedding {
@@ -156,6 +176,10 @@ function initializeMockData(): OpsMockStore {
       id: "usr-01",
       email: "nam.nguyen@gmail.com",
       createdAt: "2026-10-15T08:30:00Z",
+      identities: [
+        { provider: "google", linkedAt: "2026-10-15T08:30:00Z" },
+      ],
+      mergedFrom: null,
       weddings: [
         {
           id: "wed-01",
@@ -170,6 +194,10 @@ function initializeMockData(): OpsMockStore {
       id: "usr-02",
       email: "mai.tran@outlook.com",
       createdAt: "2026-10-18T10:15:00Z",
+      identities: [
+        { provider: "auth0", linkedAt: "2026-10-18T10:15:00Z" },
+      ],
+      mergedFrom: null,
       weddings: [
         {
           id: "wed-02",
@@ -184,6 +212,11 @@ function initializeMockData(): OpsMockStore {
       id: "usr-03",
       email: "quoc.bao@techcorp.vn",
       createdAt: "2026-10-22T14:45:00Z",
+      identities: [
+        { provider: "auth0", linkedAt: "2026-10-22T14:45:00Z" },
+        { provider: "google", linkedAt: "2026-10-25T09:00:00Z" },
+      ],
+      mergedFrom: null,
       weddings: [
         {
           id: "wed-03",
@@ -198,6 +231,13 @@ function initializeMockData(): OpsMockStore {
       id: "usr-04",
       email: "thuy.duong@weddingstudio.vn",
       createdAt: "2026-11-01T08:00:00Z",
+      identities: [
+        { provider: "google", linkedAt: "2026-11-01T08:00:00Z" },
+      ],
+      mergedFrom: {
+        email: "duong.cuoi@gmail.com",
+        mergedAt: "2026-11-03T11:20:00Z",
+      },
       weddings: [
         {
           id: "wed-04",
@@ -219,6 +259,10 @@ function initializeMockData(): OpsMockStore {
       id: "usr-05",
       email: "phuong.thao@gmail.com",
       createdAt: "2026-11-05T16:20:00Z",
+      identities: [
+        { provider: "auth0", linkedAt: "2026-11-05T16:20:00Z" },
+      ],
+      mergedFrom: null,
       weddings: [
         {
           id: "wed-06",
@@ -451,6 +495,13 @@ function getStore(): OpsMockStore {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.users) && Array.isArray(parsed.weddings)) {
+        parsed.users = parsed.users.map((u: OpsUserDetail) => ({
+          ...u,
+          identities: Array.isArray(u.identities)
+            ? u.identities
+            : [{ provider: "auth0", linkedAt: u.createdAt }],
+          mergedFrom: u.mergedFrom || null,
+        }));
         return parsed as OpsMockStore;
       }
     }
@@ -596,6 +647,7 @@ export async function getOpsUsers(params?: {
         email: u.email,
         createdAt: u.createdAt,
         weddingCount: u.weddings.length,
+        identityCount: u.identities ? u.identities.length : 1,
       }));
 
       return {
@@ -617,6 +669,135 @@ export async function getOpsUser(id: string): Promise<OpsUserDetail | null> {
     if (!user) return null;
     return user;
   });
+}
+
+export interface MergeOpsUserResult {
+  ok: boolean;
+  movedWeddings: number;
+  movedIdentities: number;
+  targetUserId: string;
+}
+
+export class OpsApiError extends Error {
+  code?: "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "VALIDATION" | string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "OpsApiError";
+    this.code = code;
+  }
+}
+
+/**
+ * POST /api/ops/users/:id/merge
+ * body: { targetUserId: string, reason: string }
+ */
+export async function mergeOpsUser(
+  sourceUserId: string,
+  targetUserId: string,
+  reason: string,
+): Promise<MergeOpsUserResult> {
+  const trimmedReason = reason.trim();
+  if (trimmedReason.length < 5) {
+    throw new OpsApiError("Lý do phải có ít nhất 5 ký tự.", "VALIDATION");
+  }
+  if (trimmedReason.length > 300) {
+    throw new OpsApiError("Lý do tối đa 300 ký tự.", "VALIDATION");
+  }
+  if (sourceUserId === targetUserId) {
+    throw new OpsApiError("Không thể gộp một tài khoản với chính nó.", "VALIDATION");
+  }
+
+  try {
+    let token = "";
+    try {
+      token = await getBearerToken();
+    } catch {}
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`/api/ops/users/${encodeURIComponent(sourceUserId)}/merge`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ targetUserId, reason: trimmedReason }),
+    });
+
+    if (res.ok) {
+      return (await res.json()) as MergeOpsUserResult;
+    }
+
+    if (res.status === 400 || res.status === 401 || res.status === 403 || res.status === 404) {
+      try {
+        const data = await res.json();
+        if (data && (data.code || data.error)) {
+          throw new OpsApiError(data.error || "Lỗi thao tác gộp tài khoản.", data.code);
+        }
+      } catch (e) {
+        if (e instanceof OpsApiError) throw e;
+      }
+    }
+  } catch (err) {
+    if (err instanceof OpsApiError) throw err;
+  }
+
+  // Fallback to local mock store
+  const store = getStore();
+  const sourceIndex = store.users.findIndex((u) => u.id === sourceUserId);
+  const targetIndex = store.users.findIndex((u) => u.id === targetUserId);
+
+  if (sourceIndex === -1 || targetIndex === -1) {
+    throw new OpsApiError("Không tìm thấy tài khoản.", "NOT_FOUND");
+  }
+
+  const sourceUser = store.users[sourceIndex];
+  const targetUser = store.users[targetIndex];
+
+  const movedWeddings = sourceUser.weddings.length;
+  const movedIdentities = (sourceUser.identities || []).length;
+
+  // Move weddings to target
+  targetUser.weddings = [...targetUser.weddings, ...sourceUser.weddings];
+  for (const w of store.weddings) {
+    if (w.ownerEmail === sourceUser.email) {
+      w.ownerEmail = targetUser.email;
+    }
+  }
+
+  // Move identities to target
+  targetUser.identities = [
+    ...(targetUser.identities || []),
+    ...(sourceUser.identities || []),
+  ];
+
+  // Set mergedFrom on target
+  targetUser.mergedFrom = {
+    email: sourceUser.email,
+    mergedAt: new Date().toISOString(),
+  };
+
+  store.auditLogs.unshift({
+    id: `aud-${Date.now()}`,
+    adminEmail: store.adminEmail,
+    action: "MERGE_USER",
+    targetType: "user",
+    targetId: targetUser.id,
+    reason: `Gộp từ ${sourceUser.email}: ${trimmedReason}`,
+    createdAt: new Date().toISOString(),
+  });
+
+  store.users.splice(sourceIndex, 1);
+  saveStore(store);
+
+  return {
+    ok: true,
+    movedWeddings,
+    movedIdentities,
+    targetUserId,
+  };
 }
 
 /**

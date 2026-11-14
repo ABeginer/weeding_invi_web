@@ -62,6 +62,12 @@ export default function OpsUsersPage() {
       ),
     },
     {
+      header: "Đăng nhập",
+      cell: (user: OpsUser) => (
+        <span className="text-text-muted">{user.identityCount ?? 1} cách</span>
+      ),
+    },
+    {
       header: "Số thiệp",
       cell: (user: OpsUser) => (
         <span className="font-semibold text-text">{user.weddingCount}</span>

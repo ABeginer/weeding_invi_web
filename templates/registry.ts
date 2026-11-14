@@ -143,6 +143,295 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     ritualLabel: ritualVuQuy?.ritualLabel ?? "Vu quy",
     styleTags: ritualVuQuy?.styleTags ?? ["Nhà gái", "Thanh lịch"],
   },
+  {
+    id: "anh-dao-hong",
+    name: "Anh Đào Hồng",
+    subtitle: "Lãng mạn · Hoa anh đào",
+    description:
+      "Sắc hồng pastel ngọt ngào của hoa anh đào Nhật Bản, khung ảnh nghệ thuật và phông chữ bay bổng nhẹ nhàng.",
+    plan: "free",
+    coverImage: "/templates/anh-dao-hong/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Anh Đào",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#F5C4C8",
+    tone: "bright",
+    styleTags: ["Hoa anh đào", "Lãng mạn", "Nhật Bản"],
+  },
+  {
+    id: "bach-su-do",
+    name: "Bạch Sứ Đỏ",
+    subtitle: "Cổ điển · Gốm sứ đỏ",
+    description:
+      "Hoa văn gốm sứ đỏ truyền thống trên nền ngà thanh khiết, kết hợp viền ánh vàng tinh tế và trang trọng.",
+    plan: "free",
+    coverImage: "/templates/bach-su-do/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Khúc nhạc Bạch Sứ",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#B03235",
+    tone: "bright",
+    styleTags: ["Gốm sứ", "Cổ điển", "Truyền thống"],
+  },
+  {
+    id: "bach-su-nau",
+    name: "Bạch Sứ Nâu",
+    subtitle: "Thanh nhã · Nâu hổ phách",
+    description:
+      "Hoa văn gốm sứ tông nâu hổ phách cổ điển, mang hơi thở hoài niệm, ấm cúng và tao nhã.",
+    plan: "free",
+    coverImage: "/templates/bach-su-nau/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Hòa tấu Bạch Sứ Nâu",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#8D6F32",
+    tone: "bright",
+    styleTags: ["Hổ phách", "Hoài niệm", "Thanh nhã"],
+  },
+  {
+    id: "chibi-red",
+    name: "Chibi Đỏ",
+    subtitle: "Trẻ trung · Dễ thương",
+    description:
+      "Phong cách minh họa tươi vui, tông đỏ ấm áp kết hợp vàng nghệ năng động, mang lại nụ cười rạng rỡ cho ngày vui.",
+    plan: "free",
+    coverImage: "/templates/chibi-red/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Vui tươi Ngày Cưới",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#C4272F",
+    tone: "bright",
+    styleTags: ["Chibi", "Minh họa", "Dễ thương"],
+  },
+  {
+    id: "hoa-moc-nau",
+    name: "Hoa Mộc Nâu",
+    subtitle: "Mộc mạc · Rustic",
+    description:
+      "Phong cách Rustic tự nhiên với gam nâu cà phê và hoa khô mộc mạc, mang lại cảm giác thân mật và ấm áp.",
+    plan: "free",
+    coverImage: "/templates/hoa-moc-nau/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Khúc tình ca Mộc",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#C7A17A",
+    tone: "neutral",
+    styleTags: ["Rustic", "Mộc mạc", "Cà phê"],
+  },
+  {
+    id: "hoang-kim-do",
+    name: "Hoàng Kim Đỏ",
+    subtitle: "Hoàng gia · Ánh kim",
+    description:
+      "Sắc đỏ thẫm quý phái phủ vàng kim lấp lánh, phong cách cung đình lộng lẫy và uy nghiêm.",
+    plan: "free",
+    coverImage: "/templates/hoang-kim-do/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Dạ tiệc Hoàng Kim",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#E1BC7C",
+    tone: "dark",
+    styleTags: ["Hoàng gia", "Ánh kim", "Sang trọng"],
+  },
+  {
+    id: "long-phung-v2-do",
+    name: "Long Phụng Đỏ",
+    subtitle: "Truyền thống · Long Phụng",
+    description:
+      "Biểu tượng Long Phụng sum vầy trên nền đỏ son truyền thống, sắc vàng đồng tôn vinh hôn nhân viên mãn.",
+    plan: "free",
+    coverImage: "/templates/long-phung-v2-do/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Long Phụng Hòa Minh",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#FFE3B1",
+    tone: "dark",
+    styleTags: ["Long Phụng", "Truyền thống", "Sum vầy"],
+  },
+  {
+    id: "mai-lan-xanh",
+    name: "Mai Lan Xanh",
+    subtitle: "Thanh tao · Mai Lan",
+    description:
+      "Họa tiết Mai Lan tao nhã trên nền xanh ngọc lam đậm, kết hợp vàng đồng sang trọng mang nét đẹp đài các.",
+    plan: "free",
+    coverImage: "/templates/mai-lan-xanh/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Mai Lan",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#A9874E",
+    tone: "dark",
+    styleTags: ["Mai Lan", "Thanh tao", "Đài các"],
+  },
+  {
+    id: "ren-theu-trang",
+    name: "Ren Thêu Trắng",
+    subtitle: "Tinh khôi · Ren thêu",
+    description:
+      "Dải ren thêu thủ công tinh xảo trên nền giấy linen ấm, tối giản nhưng đậm chất thơ và thuần khiết.",
+    plan: "free",
+    coverImage: "/templates/ren-theu-trang/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Khúc Ren Tinh Khôi",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#C5A059",
+    tone: "bright",
+    styleTags: ["Ren thêu", "Tinh khôi", "Thuần khiết"],
+  },
+  {
+    id: "song-hy-v2-do",
+    name: "Song Hỷ Đỏ",
+    subtitle: "May mắn · Song Hỷ",
+    description:
+      "Chữ Song Hỷ đỏ son truyền thống phối sắc vàng kim rạng ngời, cầu chúc trăm năm tình nghĩa mặn nồng.",
+    plan: "free",
+    coverImage: "/templates/song-hy-v2-do/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Khúc Ca Song Hỷ",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#FFE8A4",
+    tone: "dark",
+    styleTags: ["Song Hỷ", "May mắn", "Đỏ son"],
+  },
+  {
+    id: "song-phung-xanh",
+    name: "Song Phụng Xanh",
+    subtitle: "Quý phái · Song Phụng",
+    description:
+      "Đôi chim phụng hoàng sải cánh trong khu vườn ngọc bích, biểu trưng cho tình yêu trường tồn và gắn kết.",
+    plan: "free",
+    coverImage: "/templates/song-phung-xanh/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Vũ Điệu Phụng Hoàng",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#D4AF37",
+    tone: "dark",
+    styleTags: ["Song Phụng", "Quý phái", "Ngọc bích"],
+  },
+  {
+    id: "to-duyen-do-dam",
+    name: "Tơ Duyên Đỏ Đậm",
+    subtitle: "Nồng nàn · Dải lụa đỏ",
+    description:
+      "Dải lụa hoa phong quỳ đỏ rượu vang quyến rũ, kết nối duyên nợ ngàn năm trong không gian trang trọng.",
+    plan: "free",
+    coverImage: "/templates/to-duyen-do-dam/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Tơ Duyên Nồng Nàn",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#F3DFC3",
+    tone: "dark",
+    styleTags: ["Tơ duyên", "Rượu vang", "Lụa đỏ"],
+  },
+  {
+    id: "to-duyen-hong",
+    name: "Tơ Duyên Hồng",
+    subtitle: "Thơ mộng · Sen hồng",
+    description:
+      "Hoa sen hồng dải lụa mềm mại tối giản, mang nét duyên dáng thuần Việt và thanh tân của đôi lứa.",
+    plan: "free",
+    coverImage: "/templates/to-duyen-hong/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Hương Sen Chung Đôi",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#FCE8EC",
+    tone: "bright",
+    styleTags: ["Hoa sen", "Sen hồng", "Thanh tân"],
+  },
+  {
+    id: "vuon-xuan-do",
+    name: "Vườn Xuân Đỏ",
+    subtitle: "Ấm áp · Vườn xuân",
+    description:
+      "Hoa cỏ mùa xuân nở rộ trong sắc đỏ san hô tươi sáng, lan tỏa niềm hân hoan rạng rỡ của ngày trọng đại.",
+    plan: "free",
+    coverImage: "/templates/vuon-xuan-do/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Khúc Ca Mùa Xuân",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#F5C4C8",
+    tone: "bright",
+    styleTags: ["Vườn xuân", "San hô", "Hoa cỏ"],
+  },
+  {
+    id: "vuon-xuan-xanh",
+    name: "Vườn Xuân Xanh",
+    subtitle: "Tươi mát · Cỏ cây",
+    description:
+      "Sắc xanh thảo mộc mát lành kết hợp hoa cỏ tinh khôi, gợi cảm giác bình yên và khởi đầu mới đong đầy hy vọng.",
+    plan: "free",
+    coverImage: "/templates/vuon-xuan-xanh/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai Điệu Thảo Mộc",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#BDCDC1",
+    tone: "neutral",
+    styleTags: ["Thảo mộc", "Tươi mát", "Bình yên"],
+  },
+  {
+    id: "vuonkinh-xanh-nhat",
+    name: "Vườn Kính Xanh Nhạt",
+    subtitle: "Châu Âu · Nhà kính",
+    description:
+      "Phong cách nhà kính Châu Âu với tông xanh ô liu pastel dịu nhẹ, ánh nắng xuyên qua khung kính lãng mạn.",
+    plan: "free",
+    coverImage: "/templates/vuonkinh-xanh-nhat/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Nắng Sớm Nhà Kính",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#E9EDD3",
+    tone: "neutral",
+    styleTags: ["Nhà kính", "Châu Âu", "Xanh pastel"],
+  },
+  {
+    id: "vuonkinh-xanh",
+    name: "Vườn Kính Xanh",
+    subtitle: "Lãng mạn · Dạ yến nhà kính",
+    description:
+      "Không gian dạ tiệc nhà kính ngập tràn cây lá nhiệt đới, sắc xanh rêu đậm sâu lắng và huyền ảo.",
+    plan: "free",
+    coverImage: "/templates/vuonkinh-xanh/cover.svg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Dạ Khúc Vườn Kính",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#A9C5A0",
+    tone: "dark",
+    styleTags: ["Vườn kính", "Dạ tiệc", "Huyền ảo"],
+  },
 ];
 
 export const HERO_PREVIEW_TEMPLATES: WeddingTemplateMeta[] = TEMPLATE_REGISTRY.filter(
@@ -164,7 +453,24 @@ export function isImplementedTemplateId(templateId: string): templateId is Exclu
     templateId === "pro-1" ||
     templateId === "ritual-an-hoi" ||
     templateId === "ritual-gia-tien" ||
-    templateId === "ritual-vu-quy"
+    templateId === "ritual-vu-quy" ||
+    templateId === "anh-dao-hong" ||
+    templateId === "bach-su-do" ||
+    templateId === "bach-su-nau" ||
+    templateId === "chibi-red" ||
+    templateId === "hoa-moc-nau" ||
+    templateId === "hoang-kim-do" ||
+    templateId === "long-phung-v2-do" ||
+    templateId === "mai-lan-xanh" ||
+    templateId === "ren-theu-trang" ||
+    templateId === "song-hy-v2-do" ||
+    templateId === "song-phung-xanh" ||
+    templateId === "to-duyen-do-dam" ||
+    templateId === "to-duyen-hong" ||
+    templateId === "vuon-xuan-do" ||
+    templateId === "vuon-xuan-xanh" ||
+    templateId === "vuonkinh-xanh-nhat" ||
+    templateId === "vuonkinh-xanh"
   );
 }
 

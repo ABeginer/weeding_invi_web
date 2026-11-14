@@ -45,7 +45,7 @@ export function DemoToolbar({
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-bg/95 text-text sm:bg-bg/85 sm:backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2 sm:px-6">
           {/* Trái: Quay lại & Tên mẫu */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
             <Link
@@ -70,26 +70,28 @@ export function DemoToolbar({
             </div>
           </div>
 
-          {/* Giữa: Segmented View Switcher */}
-          <div className="order-3 flex w-full items-center justify-between gap-2 pt-1 md:order-2 md:w-auto md:pt-0">
+          {/* Giữa: Segmented View Switcher (chỉ hiển thị trên tablet/desktop) */}
+          <div className="hidden md:flex items-center justify-center">
             <ViewSwitcher value={viewport} onChange={onViewportChange} />
-            <div className="flex items-center gap-2 md:hidden">
-              <MusicToggle
-                src={template.defaultMusic.src}
-                title={template.defaultMusic.title}
-                resetKey={template.id}
-                compact
-              />
-              {isAuthenticated ? (
-                <ProfileMenu email={userEmail} />
-              ) : (
-                <ThemeToggle />
-              )}
-            </div>
           </div>
 
-          {/* Phải: Nhạc + Theme/Profile + CTA (Desktop) */}
-          <div className="order-2 hidden items-center gap-2.5 md:order-3 md:flex">
+          {/* Phải (Mobile): Nhạc + Theme/Profile */}
+          <div className="flex items-center gap-2 md:hidden">
+            <MusicToggle
+              src={template.defaultMusic.src}
+              title={template.defaultMusic.title}
+              resetKey={template.id}
+              compact
+            />
+            {isAuthenticated ? (
+              <ProfileMenu email={userEmail} />
+            ) : (
+              <ThemeToggle />
+            )}
+          </div>
+
+          {/* Phải (Desktop): Nhạc + Theme/Profile + CTA */}
+          <div className="hidden items-center gap-2.5 md:flex">
             <MusicToggle
               src={template.defaultMusic.src}
               title={template.defaultMusic.title}

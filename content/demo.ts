@@ -200,12 +200,163 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
   },
 };
 
+const NEW_TEMPLATE_DEMO_COUPLES: Record<
+  string,
+  { groomName: string; brideName: string; groomFullName: string; brideFullName: string }
+> = {
+  "anh-dao-hong": {
+    groomName: "Minh Khang",
+    brideName: "Nhã Phương",
+    groomFullName: "Vũ Minh Khang",
+    brideFullName: "Trần Nhã Phương",
+  },
+  "bach-su-do": {
+    groomName: "Văn Hùng",
+    brideName: "Khánh Chi",
+    groomFullName: "Nguyễn Văn Hùng",
+    brideFullName: "Lê Khánh Chi",
+  },
+  "bach-su-nau": {
+    groomName: "Trọng Hiếu",
+    brideName: "Thục Quyên",
+    groomFullName: "Đặng Trọng Hiếu",
+    brideFullName: "Hoàng Thục Quyên",
+  },
+  "chibi-red": {
+    groomName: "Huy Tuấn",
+    brideName: "Trúc Ly",
+    groomFullName: "Trần Huy Tuấn",
+    brideFullName: "Phạm Trúc Ly",
+  },
+  "hoa-moc-nau": {
+    groomName: "Quang Minh",
+    brideName: "Yến Nhi",
+    groomFullName: "Lý Quang Minh",
+    brideFullName: "Đỗ Yến Nhi",
+  },
+  "hoang-kim-do": {
+    groomName: "Hoàng Nam",
+    brideName: "Kim Oanh",
+    groomFullName: "Vũ Hoàng Nam",
+    brideFullName: "Nguyễn Kim Oanh",
+  },
+  "long-phung-v2-do": {
+    groomName: "Trung Hiếu",
+    brideName: "Minh Nguyệt",
+    groomFullName: "Trần Trung Hiếu",
+    brideFullName: "Lê Minh Nguyệt",
+  },
+  "mai-lan-xanh": {
+    groomName: "Quốc Bảo",
+    brideName: "Tuệ Anh",
+    groomFullName: "Phạm Quốc Bảo",
+    brideFullName: "Võ Tuệ Anh",
+  },
+  "ren-theu-trang": {
+    groomName: "Anh Tuấn",
+    brideName: "Thu Hà",
+    groomFullName: "Đinh Anh Tuấn",
+    brideFullName: "Bùi Thu Hà",
+  },
+  "song-hy-v2-do": {
+    groomName: "Đức Trí",
+    brideName: "Mai Phương",
+    groomFullName: "Trịnh Đức Trí",
+    brideFullName: "Lâm Mai Phương",
+  },
+  "song-phung-xanh": {
+    groomName: "Bảo Long",
+    brideName: "Phượng Uyên",
+    groomFullName: "Phan Bảo Long",
+    brideFullName: "Ngô Phượng Uyên",
+  },
+  "to-duyen-do-dam": {
+    groomName: "Minh Hoàng",
+    brideName: "Mỹ Ngọc",
+    groomFullName: "Phạm Minh Hoàng",
+    brideFullName: "Hồ Mỹ Ngọc",
+  },
+  "to-duyen-hong": {
+    groomName: "Hồng Phúc",
+    brideName: "Kim Ngân",
+    groomFullName: "Dương Hồng Phúc",
+    brideFullName: "Tạ Kim Ngân",
+  },
+  "vuon-xuan-do": {
+    groomName: "Đức Anh",
+    brideName: "Ngọc Linh",
+    groomFullName: "Lê Đức Anh",
+    brideFullName: "Trần Ngọc Linh",
+  },
+  "vuon-xuan-xanh": {
+    groomName: "Thanh Tùng",
+    brideName: "Mai Chi",
+    groomFullName: "Nguyễn Thanh Tùng",
+    brideFullName: "Vũ Mai Chi",
+  },
+  "vuonkinh-xanh-nhat": {
+    groomName: "Minh Tuấn",
+    brideName: "Lan Anh",
+    groomFullName: "Đào Minh Tuấn",
+    brideFullName: "Hoàng Lan Anh",
+  },
+  "vuonkinh-xanh": {
+    groomName: "Quang Huy",
+    brideName: "Thảo Vy",
+    groomFullName: "Trần Quang Huy",
+    brideFullName: "Lê Thảo Vy",
+  },
+};
+
 export function getDemoTemplateData(
   templateId?: TemplateId | string,
 ): TemplateData {
-  const key = templateId && DEMO_PRESETS[templateId] ? templateId : "basic-1";
-  const preset = DEMO_PRESETS[key];
-  const meta = getTemplateMeta(key);
+  const meta = templateId ? getTemplateMeta(templateId) : undefined;
+  const newCouple = templateId ? NEW_TEMPLATE_DEMO_COUPLES[templateId] : undefined;
+
+  let preset: DemoPreset;
+  let resolvedKey = "basic-1";
+
+  if (templateId && DEMO_PRESETS[templateId]) {
+    resolvedKey = templateId;
+    preset = DEMO_PRESETS[templateId];
+  } else if (newCouple && meta) {
+    resolvedKey = meta.id;
+    preset = {
+      plan: "free",
+      heroUrl: "/photos/hero2.webp",
+      eyebrow: meta.subtitle,
+      heroSubtitle: meta.description,
+      defaultGuestName: "Quý Khách Quý Mến",
+      thankYouBody: `Cảm ơn sự yêu thương, hiện diện và chúc phúc của bạn dành cho ${newCouple.groomName} & ${newCouple.brideName}.`,
+      content: {
+        couple: {
+          groomName: newCouple.groomName,
+          brideName: newCouple.brideName,
+          groomFullName: newCouple.groomFullName,
+          brideFullName: newCouple.brideFullName,
+          groomParents: "Ông Nguyễn Văn A & Bà Trần Thị B",
+          brideParents: "Ông Lê Văn C & Bà Phạm Thị D",
+        },
+        date: "2027-03-20T10:00:00+07:00",
+        quote:
+          "Giữa muôn ngàn ngã rẽ của cuộc đời, điều bình yên nhất là hai ta chọn đi cùng nhau tới suốt chặng đường sau.",
+        heroPhotoId: "demo-hero",
+        groomPhotoId: "demo-groom",
+        bridePhotoId: "demo-bride",
+        gift: {
+          groomBankName: "",
+          groomAccountName: "",
+          groomAccountNumber: "",
+          brideBankName: "",
+          brideAccountName: "",
+          brideAccountNumber: "",
+        },
+      },
+    };
+  } else {
+    preset = DEMO_PRESETS["basic-1"];
+  }
 
   const uniqueGalleryPhotos = DEMO_GALLERY_PHOTOS.filter(
     (p) => p.url !== preset.heroUrl,
@@ -214,11 +365,12 @@ export function getDemoTemplateData(
   const photos: WeddingPhoto[] = [
     { id: "demo-hero", kind: "banner", url: preset.heroUrl, position: 0 },
     ...DEMO_PORTRAITS,
+    ...DEMO_GIFT_QR_PHOTOS,
     ...uniqueGalleryPhotos,
   ];
 
   return toTemplateData({
-    templateId: key,
+    templateId: resolvedKey,
     plan: preset.plan,
     content: preset.content,
     events: DEMO_EVENTS,

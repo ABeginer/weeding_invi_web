@@ -1,5 +1,29 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+import fs from "node:fs";
+import path from "node:path";
+
+// Ensure .env.local takes precedence over stale OS/process environment variables in development
+if (process.env.NODE_ENV !== "production") {
+  try {
+    const envLocalPath = path.resolve(process.cwd(), ".env.local");
+    if (fs.existsSync(envLocalPath)) {
+      const lines = fs.readFileSync(envLocalPath, "utf-8").split(/\r?\n/);
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith("#")) continue;
+        const eqIdx = line.indexOf("=");
+        if (eqIdx !== -1) {
+          const key = line.slice(0, eqIdx).trim();
+          const val = line.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, "");
+          process.env[key] = val;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Could not load .env.local overrides:", err);
+  }
+}
 
 initOpenNextCloudflareForDev();
 
@@ -19,7 +43,28 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(templates|photos|images)/:path*",
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+        ],
+      },
+      {
+        source: "/(templates|photos|images|media)/:path*",
         headers: [
           {
             key: "Cache-Control",

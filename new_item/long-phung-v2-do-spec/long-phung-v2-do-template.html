@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Reference Link: https://chungdoi.com/vi/mau-thiep/long-phung-v2-do/demo -->
+  <title>Trần Trung Hiếu &amp; Lê Minh Nguyệt — Thiệp Cưới Long Phụng v2 Đỏ</title>
+
+  <!-- Google Fonts: The Nautigal, Pattaya, EB Garamond, Lora, Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500;600&family=Pattaya&family=The+Nautigal:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            royalRed: {
+              DEFAULT: '#680E0E',
+              dark: '#450505',
+              deep: '#300202',
+              bright: '#8D1616'
+            },
+            imperialGold: {
+              DEFAULT: '#FFE3B1',
+              light: '#FFF0D4',
+              soft: '#E8C58E',
+              dark: '#C89D52'
+            }
+          },
+          fontFamily: {
+            calligraphy: ['"The Nautigal"', 'cursive'],
+            royalTitle: ['"Pattaya"', 'serif'],
+            serif: ['"EB Garamond"', '"Lora"', 'serif'],
+            sans: ['"Montserrat"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #300202; }
+    ::-webkit-scrollbar-thumb { background: #FFE3B1; border-radius: 9999px; }
+
+    .bg-long-phung {
+      background-color: #680E0E;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(255, 227, 177, 0.15), transparent 40%),
+        radial-gradient(circle at 100% 100%, #300202, transparent 50%),
+        radial-gradient(circle at 0% 100%, #300202, transparent 50%);
+    }
+
+    @keyframes spinMusic { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spin-music { animation: spinMusic 5s linear infinite; }
+    .spin-paused { animation-play-state: paused; }
+  </style>
+</head>
+<body class="bg-long-phung text-imperialGold-light font-serif antialiased overflow-x-hidden selection:bg-imperialGold selection:text-royalRed-deep">
+
+  <!-- COVER SCREEN (BÌ THƯ LONG PHỤNG VƯƠNG GIẢ) -->
+  <div id="coverOverlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#680E0E] transition-all duration-700 p-4 text-center">
+    <div class="max-w-sm w-full border-2 border-imperialGold/40 p-8 rounded-3xl bg-royalRed-deep/90 backdrop-blur-md shadow-2xl relative overflow-hidden flex flex-col items-center">
+      
+      <!-- Họa tiết Rồng Phượng sum vầy mạ vàng -->
+      <div class="w-16 h-16 mb-2 flex items-center justify-center text-imperialGold">
+        <svg class="w-14 h-14" viewBox="0 0 100 100" fill="currentColor">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M30 40 Q50 20 70 40 Q50 60 30 40 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+          <text x="50" y="58" font-size="24" text-anchor="middle" font-family="serif" font-weight="bold" fill="currentColor">囍</text>
+        </svg>
+      </div>
+
+      <p class="font-sans text-[11px] uppercase tracking-[0.3em] text-imperialGold font-medium mb-1">Long Phụng Hòa Minh</p>
+      
+      <h1 class="font-calligraphy text-5xl sm:text-6xl text-imperialGold leading-none my-2 font-bold">
+        Trung Hiếu &amp; Minh Nguyệt
+      </h1>
+
+      <div class="w-16 h-px bg-imperialGold/40 my-3"></div>
+
+      <p class="font-serif text-sm text-imperialGold/90">Chủ Nhật, 18 . 10 . 2026</p>
+
+      <div class="my-4 py-1.5 px-6 rounded-full bg-imperialGold/10 border border-imperialGold/30 text-xs text-imperialGold-light">
+        Kính Mời: Quý Khách
+      </div>
+
+      <button id="openInvitationBtn" class="mt-4 w-full py-3.5 rounded-full bg-imperialGold text-royalRed-deep font-sans font-bold text-xs uppercase tracking-widest hover:bg-white hover:scale-105 transition-all shadow-lg">
+        MỞ THIỆP
+      </button>
+      <p class="text-[10px] text-imperialGold/60 mt-3 italic">*Chạm để khám phá hôn lễ hoàng gia</p>
+    </div>
+  </div>
+
+  <!-- FLOATING MUSIC -->
+  <div class="fixed bottom-6 right-5 z-40">
+    <button id="musicToggleBtn" class="w-12 h-12 rounded-full bg-royalRed-deep/90 border-2 border-imperialGold shadow-xl flex items-center justify-center text-imperialGold transition-transform hover:scale-110 active:scale-95">
+      <div id="musicDisc" class="w-7 h-7 rounded-full border border-imperialGold/80 flex items-center justify-center spin-music spin-paused">
+        <svg class="w-3.5 h-3.5 text-imperialGold" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+      </div>
+    </button>
+    <audio id="weddingBgm" loop preload="auto">
+      <source src="https://cdn.freesound.org/previews/573/573381_11861866-lq.mp3" type="audio/mp3">
+    </audio>
+  </div>
+
+  <!-- MAIN 480PX CONTAINER -->
+  <main class="max-w-[480px] mx-auto min-h-screen bg-[#680E0E] border-x border-imperialGold/20 shadow-2xl relative pb-20">
+
+    <!-- HERO SECTION -->
+    <header class="pt-12 pb-14 px-6 text-center flex flex-col items-center">
+      <span class="text-imperialGold text-2xl tracking-widest font-royalTitle mb-1">囍 LONG PHỤNG SUM VẦY 囍</span>
+      <p class="text-[11px] uppercase tracking-[0.25em] text-imperialGold/80 font-sans font-medium mb-6">Thư Mời Thành Hôn</p>
+
+      <div class="w-64 h-92 rounded-[32px] p-2 border-2 border-imperialGold shadow-2xl bg-royalRed-deep relative overflow-hidden mb-6">
+        <img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80" alt="Trung Hiếu & Minh Nguyệt" class="w-full h-full object-cover rounded-[26px]">
+      </div>
+
+      <h2 class="font-calligraphy text-5xl sm:text-6xl text-imperialGold leading-none mb-2 font-bold">
+        Trung Hiếu &amp; Minh Nguyệt
+      </h2>
+      <p class="font-serif italic text-sm text-imperialGold-soft mt-1">"Long phụng tương phùng, bách niên hảo hợp"</p>
+
+      <!-- COUNTDOWN -->
+      <div class="w-full mt-8 pt-6 border-t border-imperialGold/20">
+        <div class="grid grid-cols-4 gap-2 text-center max-w-xs mx-auto">
+          <div class="bg-royalRed-deep/70 border border-imperialGold/30 rounded-xl p-2.5">
+            <span id="days" class="block font-serif text-2xl text-imperialGold font-bold">00</span>
+            <span class="text-[9px] uppercase tracking-wider text-imperialGold/70 font-sans">Ngày</span>
+          </div>
+          <div class="bg-royalRed-deep/70 border border-imperialGold/30 rounded-xl p-2.5">
+            <span id="hours" class="block font-serif text-2xl text-imperialGold font-bold">00</span>
+            <span class="text-[9px] uppercase tracking-wider text-imperialGold/70 font-sans">Giờ</span>
+          </div>
+          <div class="bg-royalRed-deep/70 border border-imperialGold/30 rounded-xl p-2.5">
+            <span id="minutes" class="block font-serif text-2xl text-imperialGold font-bold">00</span>
+            <span class="text-[9px] uppercase tracking-wider text-imperialGold/70 font-sans">Phút</span>
+          </div>
+          <div class="bg-royalRed-deep/70 border border-imperialGold/30 rounded-xl p-2.5">
+            <span id="seconds" class="block font-serif text-2xl text-imperialGold font-bold">00</span>
+            <span class="text-[9px] uppercase tracking-wider text-imperialGold/70 font-sans">Giây</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- THÔNG TIN GIA ĐÌNH -->
+    <section class="py-10 px-5 text-center bg-royalRed-deep/40 border-y border-imperialGold/20">
+      <h3 class="font-royalTitle text-2xl text-imperialGold mb-8">CHÚ RỂ &amp; CÔ DÂU</h3>
+
+      <div class="space-y-6">
+        <div class="bg-royalRed-deep/60 border border-imperialGold/30 p-6 rounded-2xl">
+          <p class="font-sans text-[11px] uppercase tracking-widest text-imperialGold font-semibold">Chú Rể</p>
+          <h4 class="font-calligraphy text-4xl text-imperialGold mt-1">Trần Trung Hiếu</h4>
+          <p class="text-xs text-imperialGold/80 mt-1">Trưởng nam của Ông: Trần Văn Thành &amp; Bà: Nguyễn Thị Huệ</p>
+        </div>
+
+        <div class="text-imperialGold text-xl">❧ 囍 ❧</div>
+
+        <div class="bg-royalRed-deep/60 border border-imperialGold/30 p-6 rounded-2xl">
+          <p class="font-sans text-[11px] uppercase tracking-widest text-imperialGold font-semibold">Cô Dâu</p>
+          <h4 class="font-calligraphy text-4xl text-imperialGold mt-1">Lê Minh Nguyệt</h4>
+          <p class="text-xs text-imperialGold/80 mt-1">Ái nữ của Ông: Lê Quang Vinh &amp; Bà: Vũ Thị Ngọc</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- THÔNG TIN TIỆC CƯỚI -->
+    <section class="py-12 px-5 text-center">
+      <div class="bg-royalRed-deep/80 border-2 border-imperialGold rounded-2xl p-6 shadow-xl">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-imperialGold text-royalRed-deep text-[11px] uppercase tracking-wider font-bold mb-2">
+          TIỆC CƯỚI HOÀNG GIA
+        </span>
+        <h4 class="font-serif text-2xl text-imperialGold font-bold">TRUNG TÂM TIỆC CƯỚI CUNG ĐÌNH</h4>
+        <p class="text-xs text-imperialGold/80 mt-1">Sảnh Hoàng Yến, Trung tâm Hà Nội</p>
+        
+        <div class="bg-royalRed/60 p-3 rounded-xl border border-imperialGold/20 my-4 text-xs">
+          <p>Đón khách: <span class="font-bold text-imperialGold">17:30</span> | Khai tiệc: <span class="font-bold text-imperialGold">18:30</span></p>
+          <p class="mt-1">Chủ Nhật, ngày 18 tháng 10 năm 2026</p>
+        </div>
+
+        <div class="flex justify-center gap-2">
+          <a href="https://maps.google.com" target="_blank" class="px-4 py-2 rounded-full bg-imperialGold text-royalRed-deep text-xs font-bold shadow">
+            Xem Bản Đồ
+          </a>
+          <button onclick="addToCalendar()" class="px-4 py-2 rounded-full bg-white/20 border border-imperialGold text-imperialGold text-xs font-bold shadow">
+            Thêm Vào Lịch
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HỘP QUÀ MỪNG VIETQR -->
+    <section class="py-12 px-5 text-center bg-royalRed-deep/40 border-t border-imperialGold/20">
+      <h3 class="font-royalTitle text-2xl text-imperialGold mb-2">HỘP QUÀ MỪNG</h3>
+      <p class="text-xs text-imperialGold/75 max-w-xs mx-auto mb-6">Mừng phúc tân hôn cho đôi bạn trẻ</p>
+
+      <div class="bg-royalRed-deep/80 border border-imperialGold/30 rounded-2xl p-6 max-w-sm mx-auto">
+        <div class="w-36 h-36 mx-auto bg-white p-2 rounded-xl mb-3">
+          <img src="https://img.vietqr.io/image/vcb-0011009876543-compact2.jpg?accountName=TRAN%20TRUNG%20HIEU&addInfo=Mung%20cuoi%20Trung%20Hieu" alt="VietQR" class="w-full h-full object-contain">
+        </div>
+        <p class="text-xs text-imperialGold font-semibold">Vietcombank — 0011009876543</p>
+        <p class="text-[11px] text-imperialGold/70 mt-0.5">Trần Trung Hiếu</p>
+        <button onclick="copySTK('0011009876543')" class="mt-3 px-4 py-1.5 rounded-full bg-imperialGold text-royalRed-deep text-xs font-bold">
+          Sao Chép Số Tài Khoản
+        </button>
+      </div>
+    </section>
+
+    <!-- SỔ LƯU BÚT -->
+    <section class="py-12 px-5 text-center">
+      <h3 class="font-royalTitle text-2xl text-imperialGold mb-4">SỔ LƯU BÚT</h3>
+      <form id="wishesForm" class="space-y-3 max-w-sm mx-auto mb-6">
+        <input type="text" id="wishAuthor" required placeholder="Tên quan khách" class="w-full px-4 py-2.5 rounded-xl bg-royalRed-deep border border-imperialGold/30 text-xs text-imperialGold focus:outline-none">
+        <textarea id="wishMessage" required rows="3" placeholder="Lời chúc phúc trăm năm..." class="w-full px-4 py-2.5 rounded-xl bg-royalRed-deep border border-imperialGold/30 text-xs text-imperialGold focus:outline-none"></textarea>
+        <button type="submit" class="w-full py-2.5 rounded-full bg-imperialGold text-royalRed-deep text-xs font-bold uppercase tracking-wider">
+          GỬI LỜI CHÚC
+        </button>
+      </form>
+      <div id="wishesList" class="space-y-2 max-w-sm mx-auto text-left">
+        <div class="p-3 bg-white/10 rounded-xl border border-imperialGold/20 text-xs">
+          <span class="font-bold text-imperialGold">Bác Cả:</span> Chúc hai cháu loan phụng hòa minh, gia đình hạnh phúc bền lâu!
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER WITH REFERENCE LINK -->
+    <footer class="pt-8 pb-8 text-center px-6 border-t border-imperialGold/20 text-xs text-imperialGold/60">
+      <p class="font-calligraphy text-4xl text-imperialGold">Trung Hiếu &amp; Minh Nguyệt</p>
+      <p class="mt-2 text-[10px]">Reference Link: <a href="https://chungdoi.com/vi/mau-thiep/long-phung-v2-do/demo" target="_blank" class="text-imperialGold underline">chungdoi.com/vi/mau-thiep/long-phung-v2-do/demo</a></p>
+    </footer>
+
+  </main>
+
+  <script>
+    const coverOverlay = document.getElementById('coverOverlay');
+    const openBtn = document.getElementById('openInvitationBtn');
+    const bgm = document.getElementById('weddingBgm');
+    const musicToggleBtn = document.getElementById('musicToggleBtn');
+    const musicDisc = document.getElementById('musicDisc');
+
+    openBtn.addEventListener('click', () => {
+      coverOverlay.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => coverOverlay.style.display = 'none', 700);
+      bgm.play().then(() => musicDisc.classList.remove('spin-paused')).catch(e => console.log(e));
+    });
+
+    musicToggleBtn.addEventListener('click', () => {
+      if (bgm.paused) { bgm.play(); musicDisc.classList.remove('spin-paused'); }
+      else { bgm.pause(); musicDisc.classList.add('spin-paused'); }
+    });
+
+    // Countdown 18/10/2026
+    const targetDate = new Date('2026-10-18T17:30:00').getTime();
+    setInterval(() => {
+      const diff = targetDate - new Date().getTime();
+      if (diff > 0) {
+        document.getElementById('days').innerText = String(Math.floor(diff / (1000 * 60 * 60 * 24))).padStart(2, '0');
+        document.getElementById('hours').innerText = String(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+        document.getElementById('minutes').innerText = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+        document.getElementById('seconds').innerText = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+      }
+    }, 1000);
+
+    function copySTK(stk) {
+      navigator.clipboard.writeText(stk).then(() => alert('Đã sao chép số tài khoản: ' + stk));
+    }
+
+    function addToCalendar() {
+      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Ti%E1%BB%87c%20C%C6%B0%E1%BB%9Bi%20Trung%20Hi%E1%BA%BFu%20%26%20Minh%20Nguy%E1%BB%87t&dates=20261018T103000Z/20261018T150000Z&location=Trung%20Tam%20Tiec%20Cuoi%20Cung%20Dinh`;
+      window.open(url, '_blank');
+    }
+
+    document.getElementById('wishesForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const a = document.getElementById('wishAuthor').value;
+      const m = document.getElementById('wishMessage').value;
+      const div = document.createElement('div');
+      div.className = 'p-3 bg-white/10 rounded-xl border border-imperialGold/20 text-xs';
+      div.innerHTML = `<span class="font-bold text-imperialGold">${a}:</span> ${m}`;
+      document.getElementById('wishesList').prepend(div);
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>
+

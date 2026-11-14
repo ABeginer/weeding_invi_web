@@ -3,9 +3,25 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Ban, CheckCircle2, Heart, Mail } from "lucide-react";
-import { formatDateTime, getOpsUser, type OpsUserDetail } from "@/lib/ops-api";
+import {
+  ArrowLeft,
+  Ban,
+  CheckCircle2,
+  GitMerge,
+  Heart,
+  KeyRound,
+  Mail,
+  X,
+} from "lucide-react";
+import {
+  formatDateTime,
+  getOpsUser,
+  getProviderLabel,
+  type OpsUserDetail,
+  type OpsUserIdentity,
+} from "@/lib/ops-api";
 import { OpsTable } from "@/components/ops/OpsTable";
+import { MergeAccountDialog } from "@/components/ops/MergeAccountDialog";
 
 export default function OpsUserDetailPage() {
   const params = useParams();
@@ -14,6 +30,28 @@ export default function OpsUserDetailPage() {
 
   const [user, setUser] = React.useState<OpsUserDetail | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isMergeOpen, setIsMergeOpen] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 4500);
+  };
+
+  // Check for flash toast saved during navigation from merge
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const flash = window.sessionStorage.getItem("ops_toast");
+        if (flash) {
+          showToast(flash);
+          window.sessionStorage.removeItem("ops_toast");
+        }
+      } catch {}
+    }
+  }, [id]);
 
   React.useEffect(() => {
     if (!id) return;
@@ -97,6 +135,21 @@ export default function OpsUserDetailPage() {
     },
   ];
 
+  const identityColumns = [
+    {
+      header: "Phương thức",
+      cell: (item: OpsUserIdentity) => (
+        <span className="font-semibold text-text">{getProviderLabel(item.provider)}</span>
+      ),
+    },
+    {
+      header: "Ngày liên kết",
+      cell: (item: OpsUserIdentity) => (
+        <span className="text-text-muted">{formatDateTime(item.linkedAt)}</span>
+      ),
+    },
+  ];
+
   if (isLoading) {
     return (
       <div className="space-y-4 py-8">
@@ -122,8 +175,50 @@ export default function OpsUserDetailPage() {
     );
   }
 
+  // Visible only when user has at least one wedding or identity
+  const canMerge =
+    (user.weddings && user.weddings.length > 0) ||
+    (user.identities && user.identities.length > 0);
+
+  const handleMergeSuccess = (
+    movedWeddings: number,
+    movedIdentities: number,
+    targetUserId: string,
+  ) => {
+    setIsMergeOpen(false);
+    const successMsg = `Đã gộp ${movedWeddings} thiệp và ${movedIdentities} cách đăng nhập.`;
+    try {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("ops_toast", successMsg);
+      }
+    } catch {}
+    router.push(`/ops/users/${encodeURIComponent(targetUserId)}`);
+  };
+
+  const handleMergeNotFound = () => {
+    showToast("Không tìm thấy tài khoản.");
+  };
+
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="flex items-center justify-between rounded-xl border border-success-border bg-success-bg p-3.5 text-xs font-semibold text-success-fg shadow-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span>{toastMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="cursor-pointer text-success-fg hover:opacity-75"
+            aria-label="Đóng thông báo"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Back button */}
       <div>
         <Link
@@ -152,11 +247,61 @@ export default function OpsUserDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-surface-alt px-3.5 py-2 text-xs">
-            <span className="text-text-muted">Tổng số thiệp: </span>
-            <strong className="font-bold text-text">{user.weddings.length}</strong>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="rounded-lg border border-border bg-surface-alt px-3.5 py-2 text-xs">
+              <span className="text-text-muted">Tổng số thiệp: </span>
+              <strong className="font-bold text-text">{user.weddings.length}</strong>
+            </div>
+
+            {/* B1. Button Gộp vào tài khoản khác */}
+            {canMerge && (
+              <button
+                type="button"
+                onClick={() => setIsMergeOpen(true)}
+                className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-lg border border-soon-border bg-soon-bg px-3.5 py-2 text-xs font-semibold text-soon-fg transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                <GitMerge className="h-4 w-4" aria-hidden="true" />
+                <span>Gộp vào tài khoản khác</span>
+              </button>
+            )}
           </div>
         </div>
+
+        {/* C1. Audit visibility: mergedFrom note */}
+        {user.mergedFrom && (
+          <div className="mt-4 flex items-center gap-2 rounded-lg border border-border bg-surface-alt p-3 text-xs text-text-muted">
+            <GitMerge className="h-4 w-4 shrink-0 text-soon-fg" aria-hidden="true" />
+            <span>
+              Đã gộp từ <strong className="font-semibold text-text">{user.mergedFrom.email}</strong> lúc {formatDateTime(user.mergedFrom.mergedAt)}.
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* A1. Section Phương thức đăng nhập */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-accent-text" />
+            <h2 className="text-sm font-semibold tracking-wide text-text uppercase">
+              Phương thức đăng nhập
+            </h2>
+          </div>
+        </div>
+
+        {/* A3. Small note if user has more than one identity */}
+        {user.identities && user.identities.length > 1 && (
+          <p className="text-xs text-text-muted">
+            Tài khoản này có nhiều cách đăng nhập. Thiệp của mọi cách đăng nhập đều hiển thị ở đây.
+          </p>
+        )}
+
+        <OpsTable
+          columns={identityColumns}
+          data={user.identities || []}
+          keyExtractor={(item, idx) => `${item.provider}-${idx}`}
+          emptyText="Chưa có thông tin phương thức đăng nhập."
+        />
       </div>
 
       {/* Weddings of user */}
@@ -175,7 +320,15 @@ export default function OpsUserDetailPage() {
           emptyText="Người dùng này chưa tạo thiệp nào."
         />
       </div>
+
+      {/* B2. Merge Dialog */}
+      <MergeAccountDialog
+        isOpen={isMergeOpen}
+        sourceUser={user}
+        onClose={() => setIsMergeOpen(false)}
+        onSuccess={handleMergeSuccess}
+        onNotFound={handleMergeNotFound}
+      />
     </div>
   );
 }
-

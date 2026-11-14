@@ -39,7 +39,6 @@ export function RsvpWishBlock({
   initialPlusOnes = 0,
   initialDiet = "meat",
   initialSongRequest = "",
-  initialRideNeeded = false,
 }: RsvpWishBlockProps) {
   const data = useWeddingContent();
   const isContained = useInvitationContained();

@@ -87,9 +87,10 @@ export default async function RootLayout({
         <style
           id="brand-theme-css"
           dangerouslySetInnerHTML={{ __html: brandThemeCss }}
+          suppressHydrationWarning
         />
       </head>
-      <body className="min-h-screen-dvh bg-bg text-text antialiased">
+      <body className="min-h-screen-dvh bg-bg text-text antialiased" suppressHydrationWarning>
         <ToastProvider>
           <ThemeProvider initialTheme={initialTheme}>{children}</ThemeProvider>
         </ToastProvider>
