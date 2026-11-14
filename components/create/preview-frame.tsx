@@ -14,6 +14,15 @@ interface PreviewFrameProps {
 export function PreviewFrame({ templateId, data, initialOpened }: PreviewFrameProps) {
   const [opened, setOpened] = React.useState(initialOpened);
 
+  // Ẩn scrollbar của chính document iframe (không ảnh hưởng app ngoài).
+  React.useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent =
+      "html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}";
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
   return (
     <TemplatePreviewRenderer
       templateId={templateId}

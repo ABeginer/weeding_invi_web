@@ -477,6 +477,19 @@ body:has(.template-pro-obsidian) {
   display: none;
 }
 
+/* Ẩn luôn scrollbar của các vùng cuộn lồng bên trong khung điện thoại. */
+.lnd-phone-scroll,
+.lnd-phone-scroll * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lnd-phone-scroll *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 /* ===== Social proof marquee ===== */
 @keyframes marquee-scroll {
   from { transform: translateX(0); }
