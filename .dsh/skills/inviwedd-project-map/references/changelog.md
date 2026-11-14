@@ -2,6 +2,13 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.2 · owner confirmations + env diagnosis
+- Owner confirmed all committed migrations are applied; `db-schema.md` now records APPLIED for v2, v3, v4, v5, v10 and notes that no v6–v9 files exist.
+- Owner confirmed Auth0 SDK config lives in the local env (`AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`), the bank webhook is sent by a Google Apps Script project outside the repo, `ADMIN_EMAIL` is configured, and the 30-day free-plan retention commitment stays.
+- Diagnosed the local DB failure: `SUPABASE_URL` is the correct project (`xklihgeirdxyormuxcoh.supabase.co`) with no old URL and no OS-level override; `SUPABASE_SECRET_KEY` is a well-formed `sb_secret_` key but the project answers `401 Unregistered API key`, so the URL/key pair is mismatched. Key replacement is owner-blocked.
+- Added `ADMIN_EMAIL` to `.env.local` (value not recorded here). No other env value was read aloud or stored.
+- Files: `references/{db-schema,env-and-deploy,decisions,open-items,changelog}.md`, `SKILL.md`; `\.env.local` (gitignored).
+
 ## 2026-11-14 · v1.0.1 · batch 1 unblock fixes (code `0c3c7e5`)
 - Fixed the eight blockers recorded at v1.0.0:
   - Sổ mừng: nav entry removed; page renders a "đang hoàn thiện" notice (no route/table existed).

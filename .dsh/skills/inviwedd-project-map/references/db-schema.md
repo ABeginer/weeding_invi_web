@@ -4,15 +4,18 @@ Source of truth is `supabase/*.sql` as committed at git `868ac95`. Nothing here 
 
 ## Migration files (run by hand in Supabase SQL Editor)
 
+Owner confirmation (2026-11-14): **all migration files in this repository have been applied** to the live project. Status is recorded as APPLIED on that statement only; no migration was executed by the agent.
+
 | File | What it changes | Applied? |
 |---|---|---|
-| `supabase/migration_v2.sql` | Drops and recreates `wishes` + `guests`; creates `users`, `weddings`, `guests`, `wishes`, `photos`; adds `responded_at` trigger `guests_set_responded_at`; enables RLS and revokes all from `anon`/`authenticated` | UNKNOWN |
-| `supabase/migration_v3.sql` | Creates `events` and `guest_events`; enables RLS + revokes | UNKNOWN |
-| `supabase/migration_v4.sql` | Adds `guests.plus_ones` (0–10) and `guests.diet` ('meat'/'veg'); widens `photos.kind` check to `banner, couple, gallery, og, gift` | UNKNOWN |
-| `supabase/migration_v5.sql` | Adds `users.theme` ('light'/'dark', default 'light') | UNKNOWN |
-| `supabase/migration_v10_ops.sql` | Adds `weddings.suspended`; creates `audit_logs`; RLS + revoke | UNKNOWN |
+| `supabase/migration_v2.sql` | Drops and recreates `wishes` + `guests`; creates `users`, `weddings`, `guests`, `wishes`, `photos`; adds `responded_at` trigger `guests_set_responded_at`; enables RLS and revokes all from `anon`/`authenticated` | APPLIED (owner) |
+| `supabase/migration_v3.sql` | Creates `events` and `guest_events`; enables RLS + revokes | APPLIED (owner) |
+| `supabase/migration_v4.sql` | Adds `guests.plus_ones` (0–10) and `guests.diet` ('meat'/'veg'); widens `photos.kind` check to `banner, couple, gallery, og, gift` | APPLIED (owner) |
+| `supabase/migration_v5.sql` | Adds `users.theme` ('light'/'dark', default 'light') | APPLIED (owner) |
+| `supabase/migration_v10_ops.sql` | Adds `weddings.suspended`; creates `audit_logs`; RLS + revoke | APPLIED (owner) |
 
-Missing from the repository: **v6, v7, v8, v9**. They may exist only in the live project — status and content UNVERIFIED. Do not assume the live schema matches the five files above.
+The repository contains no v6–v9 files; the owner states the files present are the complete set that was run. Because v10 is applied, `weddings.suspended` exists — the `content.suspended` fallback in `lib/server/weddings.ts` stays as harmless defensive code.
+
 
 ## Tables
 
@@ -46,6 +49,8 @@ Visibility rule implemented in `lib/server/weddings.ts`: a guest with no rows se
 `id uuid PK`, `admin_email text`, `action text`, `target_type text`, `target_id text`, `reason text check length ≥ 5`, `created_at`. Index `audit_logs_created_idx (created_at desc)`. Writes are best-effort: `recordAuditLog()` swallows insert errors.
 
 ## Tables used by code but absent from every committed migration
+The owner confirmed that every committed migration was applied, and none of them creates these three tables. Their live existence therefore still needs confirmation — they may have been created manually in the dashboard.
+
 - `orders` — read/written by `app/api/orders/*`, `app/api/webhooks/bank`, `app/api/ops/orders/*`. Columns inferred from code: `id`, `code`, `user_id`, `wedding_id`, `plan`, `amount_vnd`, `status`, `created_at`, `paid_at`. Schema, constraints and indexes: **UNVERIFIED**.
 - `bank_transactions` — written by the webhook and read by ops. Columns inferred: `id`, `ref`, `amount_vnd`, `description`, `received_at`, `matched_order_id`. Schema: **UNVERIFIED**.
 - `gifts` — required by `GiftBookView` / `lib/api.ts`, no route and no table anywhere in the repo. **UNVERIFIED / likely missing entirely.**

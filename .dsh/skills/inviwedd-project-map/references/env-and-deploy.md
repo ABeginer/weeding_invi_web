@@ -11,6 +11,9 @@ Names only — never values. Do not read `.env*`; this list was derived from `en
 | `SUPABASE_PUBLISHABLE_KEY` | `lib/server/supabase.ts` (`authClient()`, unused) | Dead code path; no caller exists | not needed today |
 | `AUTH0_DOMAIN` | `lib/server/auth.ts`, `lib/auth0.ts` | JWT issuer + JWKS URL for `jose`; Auth0 SDK domain | secret |
 | `AUTH0_AUDIENCE` | `lib/server/auth.ts`, `lib/auth0.ts` | Expected JWT audience; passed as `authorizationParameters.audience` | secret |
+| `AUTH0_CLIENT_ID` | Auth0 SDK (`@auth0/nextjs-auth0` SSR routes) | OAuth client id; not referenced by repository code | secret |
+| `AUTH0_CLIENT_SECRET` | Auth0 SDK | OAuth client secret; not referenced by repository code | secret |
+| `AUTH0_SECRET` | Auth0 SDK | Session cookie encryption secret; not referenced by repository code | secret |
 | `APP_BASE_URL` | `config/site.ts`, Auth0 SDK | Base URL for canonical/OG/sitemap URL building | var/secret |
 | `SITE_URL` | `config/site.ts` | Fallback base URL (after `APP_BASE_URL`) | var |
 | `NEXT_PUBLIC_SITE_URL` | `config/site.ts` | Third fallback base URL, client-visible | build-time var |
@@ -29,9 +32,16 @@ Names only — never values. Do not read `.env*`; this list was derived from `en
 
 Notes:
 - `config/site.ts` falls back to `http://localhost:3000` when none of `APP_BASE_URL`, `SITE_URL`, `NEXT_PUBLIC_SITE_URL` is set. In production that silently corrupts sitemap, canonical and OG URLs.
-- If `ADMIN_EMAIL`/`ADMIN_EMAILS` is empty, `opsRoute()` denies everyone (403) while `/api/ops/me` still reports `isAdmin: true`; combined with the client-side mock fallback this renders a fake ops console.
-- The Auth0 SDK also needs its own client credentials. Exact variable names are **UNVERIFIED** (not referenced by repository code; do not inspect `.env*`).
+- `ADMIN_EMAIL` is configured in the local environment with the owner's admin address (value deliberately not stored here). `opsRoute()` denies everyone when it is unset, and `/api/ops/me` reports `isAdmin: false` in that case.
+- The Auth0 SDK configuration lives in the local environment too. Owner-confirmed 2026-11-14; the names the SDK consumes are `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET` and `AUTH0_SECRET`. Values are never stored in this skill.
 - `NEXT_PUBLIC_*` values are inlined at build time by Next.js; they must be present when `opennextjs-cloudflare build` runs, not only at runtime.
+
+## Local environment state (owner-confirmed 2026-11-14)
+- `SUPABASE_URL` points at the current project (`xklihgeirdxyormuxcoh.supabase.co`); no old project URL exists in any env file and no OS-level override is set.
+- `SUPABASE_SECRET_KEY` is a well-formed new-style secret key (`sb_secret_` + 31 chars) but the project rejects it: `401 {"message":"Unregistered API key"}`. The URL/key pair is mismatched — the key is not registered for this project (rotated, revoked, or from the previous project). Only the owner can paste the current secret key from Supabase Dashboard → Project Settings → API Keys. Until then every DB-backed route returns 500 locally.
+- `APP_BASE_URL` is still `http://localhost:3000`; production must set the real domain or canonical/OG/sitemap URLs will point at localhost.
+- `BANK_*` variables are not present locally, so `/api/orders` cannot build a VietQR payload in this environment.
+
 
 ## Deploy
 
@@ -53,4 +63,4 @@ Secrets are set by the owner, never pasted in chat: `npx wrangler secret put NAM
 7. Turnstile widget renders on the invitation and the RSVP submit succeeds.
 8. Share `/w/<slug>` in Zalo/Facebook: preview shows the couple, never the guest name, with a 1200×630-friendly image.
 9. `node scripts/check-contrast.mjs` still passes.
-10. `POST /api/webhooks/bank` with a valid `x-webhook-secret` creates a transaction; the Apps Script path is **UNVERIFIED** (source not in repo).
+10. `POST /api/webhooks/bank` with a valid `x-webhook-secret` creates a transaction. The sender is a Google Apps Script project (owner-confirmed 2026-11-14); its source is not in this repository, so changes to the webhook contract must be coordinated with the owner.

@@ -1,7 +1,7 @@
 ---
 name: inviwedd-project-map
 description: "Use at the start of any task on the Inviwedd wedding invitation project and after any major change to it"
-version: 1.0.1
+version: 1.0.2
 metadata:
   hermes:
     tags: [project, architecture, memory]
@@ -70,4 +70,4 @@ Steps: edit only the affected file with a small patch; prepend one dated line to
 At session start: read `references/open-items.md`, compare **Last verified** with `git log`, and patch this skill before starting the task if newer commits exist.
 
 ## Last verified
-2026-11-14 · code git `0c3c7e5` (batch 1 fixes) · verified by the lead agent: read-only review plus `tsc --noEmit`, `eslint .`, `next build` and a `next start` smoke test. Local DB calls currently fail with a rejected Supabase credential (owner action), not a code fault.
+2026-11-14 · code git `0c3c7e5` (batch 1 fixes) · owner confirmed the migration, Auth0, Apps Script, admin-email and retention facts recorded here. Verified by the lead agent with `tsc --noEmit`, `eslint .`, `next build` and a `next start` smoke test. Local DB calls still fail because the Supabase secret key is not registered for this project (owner must replace it).

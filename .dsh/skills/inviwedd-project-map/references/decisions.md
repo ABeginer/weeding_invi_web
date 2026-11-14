@@ -7,7 +7,7 @@ Each entry: decision → reason → where it lives in code. "Owner" means the re
 - **Prices are 199,000 đ (pro) and 399,000 đ (vip)** — defined once in `lib/server/payments.ts` (`PLAN_PRICES`); display copy in `config/pricing.ts` must match. Code, owner confirmed prices live in `payments.ts`.
 - **Free plan limits: 1 wedding, 20 guests, 2 events, 5 gallery photos, 0 gift QR** — the free tier exists to convert to Pro. Code: `config/plans.ts`.
 - **Pro: unlimited weddings/guests, 10 events, 30 gallery, 30 album, 2 gift QR. VIP: 20 events, 30 gallery, 300 album, 2 gift QR.** Code: `config/plans.ts`.
-- **Free-plan data retention is 30 days** — owner decision, kept because it drives Pro upgrades; do not change it without asking. Implementation status: **not implemented anywhere** (no scheduler, cron or cleanup job in the repo). Advertising copy: `config/pricing.ts` ("30 ngày" / "1 năm" / "Vĩnh viễn").
+- **Free-plan data retention is 30 days** — owner decision, re-confirmed on 2026-11-14: the 30-day commitment stays and must not be removed from the pricing copy. It drives Pro upgrades. Implementation status: **still not implemented anywhere** (no scheduler, cron or cleanup job in the repo), so building it is pending work rather than a copy change.
 - **A wedding is created on the free plan** — pro/vip are reached only through a paid order, so creation always gates templates against `free`. Code: `app/api/weddings/route.ts`.
 - **Plan gates are enforced server-side per feature** — guests, events, photos per kind, templates. Code: `config/plans.ts` consumed by the API routes; the client mirrors the messages but is not authoritative.
 
