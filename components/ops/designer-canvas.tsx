@@ -70,6 +70,7 @@ export function DesignerCanvas({
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [exporting, setExporting] = React.useState(false);
+  const [publishing, setPublishing] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const boardRef = React.useRef<HTMLDivElement | null>(null);
@@ -254,6 +255,22 @@ export function DesignerCanvas({
     }
   };
 
+  const publish = async () => {
+    setPublishing(true);
+    setError(null);
+    try {
+      const result = await opsRequest<{ version?: number }>(
+        `/api/ops/designer/templates/${templateId}/publish`,
+        { method: "POST" },
+      );
+      setMessage(`Đã xuất bản phiên bản v${result.version ?? "?"}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Xuất bản thất bại.");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -313,6 +330,21 @@ export function DesignerCanvas({
           >
             {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
             Xuất nền webp
+          </button>
+          <Link
+            href={`/ops/designer/${templateId}/preview`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+          >
+            Xem trước
+          </Link>
+          <button
+            type="button"
+            onClick={publish}
+            disabled={publishing || content.elements.length === 0}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-accent/50 bg-accent-soft px-3 text-xs font-semibold text-accent-text disabled:opacity-60"
+          >
+            {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            Xuất bản
           </button>
         </div>
       </div>

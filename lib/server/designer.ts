@@ -72,7 +72,7 @@ export async function createDesignerTemplate(
 
 export async function updateDesignerTemplate(
   id: string,
-  patch: Partial<Pick<DesignerTemplate, "name" | "plan" | "ritual" | "status" | "canvas_json" | "background_key" | "snapshot_key">>,
+  patch: Partial<Pick<DesignerTemplate, "name" | "plan" | "ritual" | "status" | "version" | "canvas_json" | "background_key" | "snapshot_key">>,
 ): Promise<DesignerTemplate | null> {
   const { data, error } = await db()
     .from("designer_templates")
