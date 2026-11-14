@@ -23,13 +23,13 @@ const SAMPLE_VALUES = {
 
 type PageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ v?: string }>;
+  searchParams: Promise<{ v?: string; p?: string }>;
 };
 
 /** Xem công khai một version đã publish (dùng cho QA/nghiệm thu trước khi gắn vào thiệp). */
 export default async function PublishedDesignerPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { v } = await searchParams;
+  const { v, p } = await searchParams;
   const template = await getDesignerTemplate(id);
   if (!template) notFound();
 
@@ -39,6 +39,13 @@ export default async function PublishedDesignerPage({ params, searchParams }: Pa
     Number.isFinite(versionNumber) ? versionNumber : null,
   );
   if (!version) notFound();
+
+  const canvas = version.canvas_json as unknown as DesignerCanvasContent;
+  const pages = canvas.pages ?? [];
+  const requested = Number.parseInt(p ?? "0", 10);
+  const pageIndex = Number.isFinite(requested)
+    ? Math.min(Math.max(requested, 0), Math.max(pages.length - 1, 0))
+    : 0;
 
   return (
     <main className="mx-auto max-w-4xl space-y-4 p-4 sm:p-6">
@@ -54,10 +61,29 @@ export default async function PublishedDesignerPage({ params, searchParams }: Pa
 
       <div className="rounded-2xl border border-border bg-surface-alt p-4 sm:p-6">
         <DesignerTemplateRenderer
-          canvas={version.canvas_json as unknown as DesignerCanvasContent}
+          canvas={canvas}
           values={SAMPLE_VALUES}
+          pageIndex={pageIndex}
         />
       </div>
+
+      {pages.length > 1 && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {pages.map((page, index) => (
+            <Link
+              key={page.id}
+              href={`/mau/designer/${id}?v=${version.version}&p=${index}`}
+              className={
+                index === pageIndex
+                  ? "rounded-full border border-accent bg-accent-soft px-3 py-1.5 text-xs font-semibold text-accent-text"
+                  : "rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-text-muted"
+              }
+            >
+              {page.name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <p className="text-center text-xs text-text-muted">
         Đây là bản ghim theo version. Thiệp đã tạo sẽ luôn render đúng version được gán,
