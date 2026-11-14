@@ -22,7 +22,6 @@ import { getPlanLabel, getPlanLimits } from "@/config/plans";
 import { buildInviteShareMessage } from "@/config/share-templates";
 import {
   ApiError,
-  assignGuestEvents,
   buildGuestLink,
   deleteGuest,
   listGuests,
@@ -195,7 +194,9 @@ export function GuestTable({
     setSavingBulkAssign(true);
     try {
       await Promise.all(
-        selectedGuestIds.map((guestId) => assignGuestEvents(guestId, bulkEventIds)),
+        selectedGuestIds.map((guestId) =>
+          setGuestEvents(weddingId, guestId, bulkEventIds),
+        ),
       );
       setGuests((prev) =>
         prev.map((g) =>

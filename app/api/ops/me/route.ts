@@ -9,7 +9,9 @@ export async function GET(req: Request) {
   }
 
   const adminEmails = getAdminEmails();
-  const isAdmin = adminEmails.length === 0 || adminEmails.includes(user.email.toLowerCase());
+  // Fail closed: when no allowlist is configured nobody is an admin, matching opsRoute().
+  const isAdmin =
+    adminEmails.length > 0 && adminEmails.includes(user.email.toLowerCase());
 
   return json({
     email: user.email,

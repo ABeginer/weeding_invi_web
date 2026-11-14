@@ -8,7 +8,17 @@ import type {
   WeddingPhoto,
   WeddingPlan,
 } from "../types";
-import { getGuestVisibleEvents, listWeddingEvents, listWeddingPhotos } from "./weddings";
+import { getGuestVisibleEvents, isMissingSuspendedColumn, isWeddingSuspendedRow, listWeddingEvents, listWeddingPhotos } from "./weddings";
+
+interface PublicWeddingRow {
+  id: string;
+  slug: string;
+  template_id: string;
+  plan: string | null;
+  content: unknown;
+  suspended?: boolean | null;
+}
+
 
 export interface PublicWeddingData {
   slug: string;
@@ -29,25 +39,42 @@ export async function getPublicWeddingBySlug(
   const slugCheck = validateWeddingSlug(slug);
   if (!slugCheck.valid) return null;
 
-  const { data, error } = await db()
+  const client = db();
+  let row: PublicWeddingRow | null = null;
+
+  const { data, error } = await client
     .from("weddings")
-    .select("id, slug, template_id, plan, content")
+    .select("id, slug, template_id, plan, content, suspended")
     .eq("slug", slugCheck.slug)
     .maybeSingle();
 
-  if (error) throw error;
-  if (!data) return null;
+  if (error) {
+    if (!isMissingSuspendedColumn(error)) throw error;
+    const fallback = await client
+      .from("weddings")
+      .select("id, slug, template_id, plan, content")
+      .eq("slug", slugCheck.slug)
+      .maybeSingle();
+    if (fallback.error) throw fallback.error;
+    row = (fallback.data as PublicWeddingRow | null) ?? null;
+  } else {
+    row = (data as PublicWeddingRow | null) ?? null;
+  }
+
+  if (!row) return null;
+  // Thiệp bị ops tạm khoá thì coi như không tồn tại với khách.
+  if (isWeddingSuspendedRow(row)) return null;
 
   const [events, photos] = await Promise.all([
-    listWeddingEvents(data.id),
-    listWeddingPhotos(data.id),
+    listWeddingEvents(row.id),
+    listWeddingPhotos(row.id),
   ]);
 
   return {
-    slug: data.slug,
-    templateId: data.template_id,
-    plan: (data.plan as WeddingPlan) ?? "free",
-    content: normalizeWeddingContent(data.content),
+    slug: row.slug,
+    templateId: row.template_id,
+    plan: (row.plan as WeddingPlan) ?? "free",
+    content: normalizeWeddingContent(row.content),
     events,
     photos,
   };
@@ -68,14 +95,29 @@ export async function getPublicWeddingByGuestSlug(
   if (guestError) throw guestError;
   if (!guest?.wedding_id) return null;
 
-  const { data: wedding, error: weddingError } = await client
+  let wedding: PublicWeddingRow | null = null;
+
+  const { data: weddingData, error: weddingError } = await client
     .from("weddings")
-    .select("id, slug, template_id, plan, content")
+    .select("id, slug, template_id, plan, content, suspended")
     .eq("id", guest.wedding_id)
     .maybeSingle();
 
-  if (weddingError) throw weddingError;
+  if (weddingError) {
+    if (!isMissingSuspendedColumn(weddingError)) throw weddingError;
+    const fallback = await client
+      .from("weddings")
+      .select("id, slug, template_id, plan, content")
+      .eq("id", guest.wedding_id)
+      .maybeSingle();
+    if (fallback.error) throw fallback.error;
+    wedding = (fallback.data as PublicWeddingRow | null) ?? null;
+  } else {
+    wedding = (weddingData as PublicWeddingRow | null) ?? null;
+  }
+
   if (!wedding) return null;
+  if (isWeddingSuspendedRow(wedding)) return null;
 
   const [events, photos] = await Promise.all([
     getGuestVisibleEvents(wedding.id, guest.id),

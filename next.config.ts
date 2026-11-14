@@ -25,7 +25,12 @@ if (process.env.NODE_ENV !== "production") {
   }
 }
 
-initOpenNextCloudflareForDev();
+// Chỉ khởi động Miniflare/workerd cho `next dev`: khi build production thì
+// binding do Cloudflare cung cấp lúc chạy, không cần (và workerd không khởi
+// động được trong môi trường build bị giới hạn quyền).
+if (process.env.NODE_ENV === "development") {
+  initOpenNextCloudflareForDev();
+}
 
 const nextConfig: NextConfig = {
   images: {

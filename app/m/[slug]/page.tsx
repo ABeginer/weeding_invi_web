@@ -103,6 +103,8 @@ export default async function PersonalInvitePage({ params }: PageProps) {
       initialData={initialData}
       rawContent={content}
       rawPhotos={wedding?.photos ?? []}
+      guestExists={Boolean(wedding)}
+      initialGuestName={wedding?.guestName ?? null}
     />
   );
 }

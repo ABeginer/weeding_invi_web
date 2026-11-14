@@ -1,6 +1,7 @@
 import { db } from "@/lib/server/supabase";
 import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
 import { verifyTurnstileToken } from "@/lib/server/turnstile";
+import { isWeddingSuspended } from "@/lib/server/weddings";
 import type { GuestDiet } from "@/lib/types";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
@@ -82,6 +83,18 @@ export const POST = route(async (req: Request) => {
   if (rawSlug) {
     if (!SLUG_RE.test(rawSlug)) return fail("Link không hợp lệ.", 404);
 
+    const { data: guestLookup, error: guestLookupError } = await client
+      .from("guests")
+      .select("id, wedding_id")
+      .eq("slug", rawSlug)
+      .maybeSingle();
+
+    if (guestLookupError) throw guestLookupError;
+    if (!guestLookup) return fail("Link không hợp lệ.", 404);
+    if (await isWeddingSuspended(guestLookup.wedding_id)) {
+      return fail("Thiệp cưới này đang tạm khoá.", 403);
+    }
+
     let { data, error } = await client
       .from("guests")
       .update({
@@ -137,6 +150,9 @@ export const POST = route(async (req: Request) => {
 
   if (weddingError) throw weddingError;
   if (!weddingRow) return fail("Không tìm thấy thiệp cưới.", 404);
+  if (await isWeddingSuspended(weddingRow.id)) {
+    return fail("Thiệp cưới này đang tạm khoá.", 403);
+  }
 
   const name = text(body?.name, 100);
   if (!name) return fail("Vui lòng nhập tên của bạn (tối đa 100 ký tự).");

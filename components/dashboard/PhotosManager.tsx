@@ -97,6 +97,11 @@ const SINGLE_SLOTS: SlotMeta[] = [
   },
 ];
 
+// Album cho khách chưa có backend: DB check constraint và MEDIA_KEY_RE chưa
+// chấp nhận kind 'album' (xem .dsh/skills/inviwedd-project-map). Bật lại sau
+// khi migration bổ sung kind này đã được chạy.
+const ALBUM_ENABLED = false;
+
 export function PhotosManager({
   weddingId,
   plan,
@@ -219,23 +224,8 @@ export function PhotosManager({
 
     setSlotStatus((prev) => ({ ...prev, [meta.slot]: "Đang nén ảnh…" }));
 
-    let workingPhotos = photos;
-    let workingContent = content;
-
     try {
       const compressRes = await compressImage(file, meta.kind);
-      const existingPhoto = getSlotPhoto(meta.slot);
-
-      if (existingPhoto) {
-        setSlotStatus((prev) => ({
-          ...prev,
-          [meta.slot]: "Đang thay ảnh cũ...",
-        }));
-        const delRes = await deletePhoto(weddingId, existingPhoto.id);
-        workingPhotos = workingPhotos.filter((p) => p.id !== existingPhoto.id);
-        workingContent = delRes.content;
-        onPhotosStateChange(workingPhotos, workingContent);
-      }
 
       setSlotStatus((prev) => ({ ...prev, [meta.slot]: "Đang tải lên..." }));
       const uploaded = await uploadPhoto(
@@ -246,7 +236,13 @@ export function PhotosManager({
         compressRes.contentType === "image/webp" ? "photo.webp" : "photo.jpg",
       );
 
-      let nextPhotos = [...workingPhotos, uploaded.photo];
+      // Máy chủ đã thay thế ảnh cũ của ô này (theo id trong content) sau khi
+      // insert thành công, nên chỉ cần loại ảnh cũ khỏi state.
+      const previousPhoto = getSlotPhoto(meta.slot);
+      let nextPhotos = [
+        ...photos.filter((item) => item.id !== previousPhoto?.id),
+        uploaded.photo,
+      ];
 
       if (meta.slot === "hero") {
         setSlotStatus((prev) => ({
@@ -934,6 +930,7 @@ export function PhotosManager({
             </div>
             <p className="mt-0.5 text-xs text-fg-muted">
               Album ảnh để khách mời quét mã QR và xem toàn bộ album ảnh cưới trên điện thoại.
+              {!ALBUM_ENABLED && " Tính năng đang hoàn thiện và sẽ mở lại sau."}
             </p>
           </div>
 
@@ -967,13 +964,17 @@ export function PhotosManager({
                     variant="primary"
                     size="sm"
                     onClick={() => albumInputRef.current?.click()}
-                    disabled={reachedAlbumLimit || Boolean(albumStatus)}
+                    disabled={
+                      !ALBUM_ENABLED || reachedAlbumLimit || Boolean(albumStatus)
+                    }
                     title={
-                      reachedAlbumLimit
-                        ? plan === "pro"
-                          ? "Nâng cấp VIP để thêm ảnh"
-                          : "Đã đạt giới hạn 300 ảnh"
-                        : undefined
+                      !ALBUM_ENABLED
+                        ? "Tính năng đang hoàn thiện"
+                        : reachedAlbumLimit
+                          ? plan === "pro"
+                            ? "Nâng cấp VIP để thêm ảnh"
+                            : "Đã đạt giới hạn 300 ảnh"
+                          : undefined
                     }
                   >
                     {albumStatus ? (
@@ -981,7 +982,10 @@ export function PhotosManager({
                     ) : (
                       <ImagePlus className="h-4 w-4" aria-hidden="true" />
                     )}
-                    <span>{albumStatus ?? "Tải ảnh vào album"}</span>
+                    <span>
+                      {albumStatus ??
+                        (ALBUM_ENABLED ? "Tải ảnh vào album" : "Đang hoàn thiện")}
+                    </span>
                   </Button>
                 </div>
                 <span className="text-[11px] text-fg-muted">

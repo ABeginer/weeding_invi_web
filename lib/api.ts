@@ -459,19 +459,6 @@ export function setGuestEvents(
   );
 }
 
-export function assignGuestEvents(
-  guestId: string,
-  eventIds: string[],
-): Promise<{ ok: boolean; eventIds: string[] }> {
-  return authRequest(
-    `/api/guests/${encodeURIComponent(guestId)}/events`,
-    {
-      method: "PUT",
-      body: JSON.stringify({ eventIds }),
-    },
-  );
-}
-
 export function listGifts(
   weddingId: string,
 ): Promise<{ items: Gift[]; totals: GiftTotals }> {

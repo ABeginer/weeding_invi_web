@@ -1,6 +1,6 @@
 import { db } from "@/lib/server/supabase";
 import { fail, json, route, SLUG_RE } from "@/lib/server/http";
-import { getGuestVisibleEvents } from "@/lib/server/weddings";
+import { getGuestVisibleEvents, isWeddingSuspended } from "@/lib/server/weddings";
 
 function isMissingV4GuestColumns(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
@@ -36,6 +36,9 @@ export const GET = route(
 
       if (fallback.error) throw fallback.error;
       if (!fallback.data) return fail("Link không hợp lệ.", 404);
+      if (await isWeddingSuspended(fallback.data.wedding_id)) {
+        return fail("Link không hợp lệ.", 404);
+      }
 
       const events = await getGuestVisibleEvents(
         fallback.data.wedding_id,
@@ -51,6 +54,9 @@ export const GET = route(
     }
 
     if (!data) return fail("Link không hợp lệ.", 404);
+    if (await isWeddingSuspended(data.wedding_id)) {
+      return fail("Link không hợp lệ.", 404);
+    }
 
     const events = await getGuestVisibleEvents(data.wedding_id, data.id);
     return json({

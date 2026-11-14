@@ -1,6 +1,7 @@
 import { db } from "@/lib/server/supabase";
 import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
 import { verifyTurnstileToken } from "@/lib/server/turnstile";
+import { isWeddingSuspended } from "@/lib/server/weddings";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 export const POST = route(async (req: Request) => {
@@ -36,6 +37,9 @@ export const POST = route(async (req: Request) => {
       .maybeSingle();
     if (error) throw error;
     if (!data) return fail("Link không hợp lệ.", 404);
+    if (await isWeddingSuspended(data.wedding_id)) {
+      return fail("Thiệp cưới này đang tạm khoá.", 403);
+    }
     guestId = data.id;
     weddingId = data.wedding_id;
     name = data.name;
@@ -51,6 +55,9 @@ export const POST = route(async (req: Request) => {
       .maybeSingle();
     if (weddingError) throw weddingError;
     if (!weddingRow) return fail("Không tìm thấy thiệp cưới.", 404);
+    if (await isWeddingSuspended(weddingRow.id)) {
+      return fail("Thiệp cưới này đang tạm khoá.", 403);
+    }
     weddingId = weddingRow.id;
   }
 

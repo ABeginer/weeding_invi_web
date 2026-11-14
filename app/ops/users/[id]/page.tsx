@@ -175,10 +175,9 @@ export default function OpsUserDetailPage() {
     );
   }
 
-  // Visible only when user has at least one wedding or identity
-  const canMerge =
-    (user.weddings && user.weddings.length > 0) ||
-    (user.identities && user.identities.length > 0);
+  // Máy chủ chưa có route POST /api/ops/users/[id]/merge nên ẩn nút gộp,
+  // tránh để người vận hành bấm vào một thao tác không tồn tại.
+  const canMerge = false;
 
   const handleMergeSuccess = (
     movedWeddings: number,

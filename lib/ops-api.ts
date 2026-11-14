@@ -530,51 +530,54 @@ async function fetchOrMock<T>(
   init: RequestInit | undefined,
   mockFallback: () => T | Promise<T>,
 ): Promise<T> {
+  // Không còn fallback về dữ liệu giả: lỗi API phải hiện ra cho người vận hành.
+  void mockFallback;
+
+  let token = "";
   try {
-    let token = "";
-    try {
-      token = await getBearerToken();
-    } catch {}
+    token = await getBearerToken();
+  } catch {
+    // Không có token thì để API trả 401 và báo lỗi cho người dùng.
+  }
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...(init?.headers as Record<string, string>),
-    };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string>),
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
-    const res = await fetch(apiPath, {
-      ...init,
-      headers,
-    });
-    if (res.ok) {
-      return (await res.json()) as T;
-    }
-  } catch {}
-  return mockFallback();
+  const res = await fetch(apiPath, {
+    ...init,
+    headers,
+  });
+  if (res.ok) {
+    return (await res.json()) as T;
+  }
+
+  let message = "Không thể tải dữ liệu quản trị.";
+  let code: string | undefined;
+  try {
+    const payload = await res.json();
+    if (payload && typeof payload.error === "string") message = payload.error;
+    if (payload && typeof payload.code === "string") code = payload.code;
+  } catch {
+    // Giữ thông báo mặc định khi body không phải JSON.
+  }
+  throw new OpsApiError(message, code);
 }
 
 /**
  * GET /api/ops/me
  */
 export async function getOpsMe(): Promise<OpsMe> {
-  // Check if non-admin mock is requested (for testing 404 behavior)
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("mock_non_admin") === "1") {
-      return { email: "guest@example.com", isAdmin: false };
-    }
-  }
-
-  return fetchOrMock("/api/ops/me", { method: "GET" }, () => {
-    const store = getStore();
-    return {
-      email: store.adminEmail,
-      isAdmin: true,
-    };
-  });
+  return fetchOrMock("/api/ops/me", { method: "GET" }, () => ({
+    email: "",
+    isAdmin: false,
+  }));
 }
+
 
 /**
  * GET /api/ops/stats
@@ -663,12 +666,16 @@ export async function getOpsUsers(params?: {
  * GET /api/ops/users/:id
  */
 export async function getOpsUser(id: string): Promise<OpsUserDetail | null> {
-  return fetchOrMock(`/api/ops/users/${encodeURIComponent(id)}`, { method: "GET" }, () => {
-    const store = getStore();
-    const user = store.users.find((u) => u.id === id);
-    if (!user) return null;
-    return user;
-  });
+  try {
+    return await fetchOrMock(
+      `/api/ops/users/${encodeURIComponent(id)}`,
+      { method: "GET" },
+      () => null,
+    );
+  } catch (err) {
+    if (err instanceof OpsApiError && err.code === "NOT_FOUND") return null;
+    throw err;
+  }
 }
 
 export interface MergeOpsUserResult {
@@ -744,60 +751,10 @@ export async function mergeOpsUser(
     if (err instanceof OpsApiError) throw err;
   }
 
-  // Fallback to local mock store
-  const store = getStore();
-  const sourceIndex = store.users.findIndex((u) => u.id === sourceUserId);
-  const targetIndex = store.users.findIndex((u) => u.id === targetUserId);
-
-  if (sourceIndex === -1 || targetIndex === -1) {
-    throw new OpsApiError("Không tìm thấy tài khoản.", "NOT_FOUND");
-  }
-
-  const sourceUser = store.users[sourceIndex];
-  const targetUser = store.users[targetIndex];
-
-  const movedWeddings = sourceUser.weddings.length;
-  const movedIdentities = (sourceUser.identities || []).length;
-
-  // Move weddings to target
-  targetUser.weddings = [...targetUser.weddings, ...sourceUser.weddings];
-  for (const w of store.weddings) {
-    if (w.ownerEmail === sourceUser.email) {
-      w.ownerEmail = targetUser.email;
-    }
-  }
-
-  // Move identities to target
-  targetUser.identities = [
-    ...(targetUser.identities || []),
-    ...(sourceUser.identities || []),
-  ];
-
-  // Set mergedFrom on target
-  targetUser.mergedFrom = {
-    email: sourceUser.email,
-    mergedAt: new Date().toISOString(),
-  };
-
-  store.auditLogs.unshift({
-    id: `aud-${Date.now()}`,
-    adminEmail: store.adminEmail,
-    action: "MERGE_USER",
-    targetType: "user",
-    targetId: targetUser.id,
-    reason: `Gộp từ ${sourceUser.email}: ${trimmedReason}`,
-    createdAt: new Date().toISOString(),
-  });
-
-  store.users.splice(sourceIndex, 1);
-  saveStore(store);
-
-  return {
-    ok: true,
-    movedWeddings,
-    movedIdentities,
-    targetUserId,
-  };
+  throw new OpsApiError(
+    "Gộp tài khoản chưa được hỗ trợ trên máy chủ.",
+    "NOT_SUPPORTED",
+  );
 }
 
 /**
@@ -869,10 +826,16 @@ export async function getOpsWeddings(params?: {
  * GET /api/ops/weddings/:id
  */
 export async function getOpsWedding(id: string): Promise<OpsWeddingDetail | null> {
-  return fetchOrMock(`/api/ops/weddings/${encodeURIComponent(id)}`, { method: "GET" }, () => {
-    const store = getStore();
-    return store.weddings.find((w) => w.id === id) || null;
-  });
+  try {
+    return await fetchOrMock(
+      `/api/ops/weddings/${encodeURIComponent(id)}`,
+      { method: "GET" },
+      () => null,
+    );
+  } catch (err) {
+    if (err instanceof OpsApiError && err.code === "NOT_FOUND") return null;
+    throw err;
+  }
 }
 
 /**

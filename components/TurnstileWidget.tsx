@@ -67,12 +67,26 @@ function loadTurnstileScript(): Promise<void> {
   return scriptLoadPromise;
 }
 
+/**
+ * Cho phép thử lại sau khi tải script thất bại: xoá promise đã reject và thẻ
+ * script lỗi, nếu không lần thử sau sẽ dùng lại promise cũ và treo mãi.
+ */
+function resetTurnstileScript(): void {
+  scriptLoadPromise = null;
+  if (typeof document === "undefined") return;
+  document
+    .querySelectorAll<HTMLScriptElement>(`script[src="${TURNSTILE_SCRIPT_SRC}"]`)
+    .forEach((element) => element.remove());
+}
+
 interface TurnstileWidgetProps {
   onTokenChange: (token: string | null) => void;
   resetSignal?: number;
   theme?: "light" | "dark" | "auto";
   className?: string;
 }
+
+type WidgetStatus = "loading" | "ready" | "error";
 
 export function TurnstileWidget({
   onTokenChange,
@@ -84,6 +98,11 @@ export function TurnstileWidget({
   const widgetIdRef = React.useRef<string | null>(null);
   const callbackRef = React.useRef(onTokenChange);
   callbackRef.current = onTokenChange;
+
+  const [status, setStatus] = React.useState<WidgetStatus>(
+    SITE_KEY ? "loading" : "ready",
+  );
+  const [retryKey, setRetryKey] = React.useState(0);
 
   React.useEffect(() => {
     if (!SITE_KEY) {
@@ -97,6 +116,7 @@ export function TurnstileWidget({
     }
 
     let cancelled = false;
+    setStatus("loading");
 
     loadTurnstileScript()
       .then(() => {
@@ -109,9 +129,14 @@ export function TurnstileWidget({
           "expired-callback": () => callbackRef.current(null),
           "error-callback": () => callbackRef.current(null),
         });
+        setStatus("ready");
       })
       .catch(() => {
+        if (cancelled) return;
+        // Cho phép lần thử sau tải lại script từ đầu.
+        scriptLoadPromise = null;
         callbackRef.current(null);
+        setStatus("error");
       });
 
     return () => {
@@ -125,7 +150,7 @@ export function TurnstileWidget({
         widgetIdRef.current = null;
       }
     };
-  }, [theme]);
+  }, [theme, retryKey]);
 
   React.useEffect(() => {
     if (!SITE_KEY || resetSignal === 0) return;
@@ -141,6 +166,31 @@ export function TurnstileWidget({
 
   if (!SITE_KEY) return null;
 
-  return <div ref={containerRef} className={className} />;
-}
+  const handleRetry = () => {
+    callbackRef.current(null);
+    resetTurnstileScript();
+    setStatus("loading");
+    setRetryKey((key) => key + 1);
+  };
 
+  return (
+    <div className={className}>
+      <div ref={containerRef} />
+      {status === "error" && (
+        <div role="alert" className="w-full text-center">
+          <p className="text-xs text-danger-fg">
+            Không tải được phần xác thực chống spam. Vui lòng kiểm tra kết nối
+            mạng rồi thử lại.
+          </p>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="mt-1.5 inline-flex h-9 cursor-pointer items-center justify-center rounded-full border border-border bg-surface px-4 text-xs font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
