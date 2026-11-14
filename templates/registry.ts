@@ -438,6 +438,25 @@ export const HERO_PREVIEW_TEMPLATES: WeddingTemplateMeta[] = TEMPLATE_REGISTRY.f
   (tpl) => !tpl.isPlaceholder
 );
 
+/** Mẫu đã đủ dữ liệu để hiển thị trong bộ sưu tập (kèm đường dẫn ảnh mặc định). */
+export interface TemplateCollectionItem extends WeddingTemplateMeta {
+  previewImage: string;
+  snapshotImage: string;
+  demoUrl?: string;
+}
+
+export function getTemplateCollection(): TemplateCollectionItem[] {
+  return TEMPLATE_REGISTRY.map((tpl) => ({
+    ...tpl,
+    previewImage: tpl.previewImage ?? `/templates/${tpl.id}/preview.webp`,
+    snapshotImage:
+      tpl.snapshotImage ?? `/templates/${tpl.id}/snapshot.webp`,
+    demoUrl: tpl.demoUrl ?? (tpl.isPlaceholder ? undefined : `/mau/${tpl.id}`),
+  })).sort(
+    (a, b) => Number(Boolean(a.isPlaceholder)) - Number(Boolean(b.isPlaceholder)),
+  );
+}
+
 export const SELECTABLE_DASHBOARD_TEMPLATES: WeddingTemplateMeta[] =
   TEMPLATE_REGISTRY.filter((tpl) => !tpl.isPlaceholder);
 

@@ -27,7 +27,11 @@ export function LandingFooter() {
           >
             {SITE_NAME}
           </Link>
-          <p className="mt-1 text-xs text-text-muted">{SITE_COPYRIGHT}</p>
+          <p className="mt-1 max-w-xs text-xs leading-relaxed text-text-muted">
+            Thiệp cưới online cá nhân hóa tên từng khách — tạo trong vài phút,
+            chia sẻ bằng một đường link.
+          </p>
+          <p className="mt-2 text-xs text-text-muted">{SITE_COPYRIGHT}</p>
           {(SITE_CONFIG.companyName ||
             SITE_CONFIG.companyAddress ||
             SITE_CONFIG.taxCode) && (
@@ -43,6 +47,12 @@ export function LandingFooter() {
           aria-label="Liên kết công cụ, pháp lý và liên hệ"
           className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm"
         >
+          <Link
+            href={SITE_LINKS.templates}
+            className="text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            Mẫu thiệp cưới
+          </Link>
           <Link
             href={SITE_LINKS.tools}
             className="text-text transition-colors hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"

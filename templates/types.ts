@@ -53,6 +53,14 @@ export interface WeddingTemplateMeta {
   ritualKey?: "an-hoi" | "gia-tien" | "vu-quy";
   ritualLabel?: string;
   styleTags?: string[];
+  /** Ảnh xem trước tỉ lệ 9:16 (tùy chọn, mặc định /templates/<id>/preview.webp). */
+  previewImage?: string;
+  /** Ảnh snapshot dài để cuộn trong popup (mặc định /templates/<id>/snapshot.webp). */
+  snapshotImage?: string;
+  /** Trang xem thử; mặc định /mau/<id> cho mẫu đã triển khai. */
+  demoUrl?: string;
+  /** Mã tính năng bổ sung, tra trong config/template-features.ts. */
+  extraFeatureIds?: string[];
 }
 
 export interface WeddingTemplateProps {

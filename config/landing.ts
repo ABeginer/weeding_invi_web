@@ -11,6 +11,7 @@ export const LANDING_COPY = {
     menuOpenLabel: "Mở menu điều hướng",
     menuCloseLabel: "Đóng menu điều hướng",
     links: [
+      { label: "Thiệp cưới", href: "/thiep-cuoi" },
       { label: "Mẫu thiệp", href: "/#mau-thiep" },
       { label: "Công cụ", href: "/cong-cu" },
       { label: "Cách hoạt động", href: "/#cach-hoat-dong" },
