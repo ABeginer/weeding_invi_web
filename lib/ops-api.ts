@@ -222,6 +222,11 @@ function post(body: unknown): RequestInit {
   return { method: "POST", body: JSON.stringify(body) };
 }
 
+/** Dùng cho các module ops mới (designer…) để tự gắn Bearer token như các hàm khác. */
+export function opsRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return request<T>(path, init);
+}
+
 export async function getOpsMe(): Promise<OpsMe> {
   return request<OpsMe>("/api/ops/me", { method: "GET" });
 }

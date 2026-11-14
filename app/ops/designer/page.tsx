@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { opsRequest } from "@/lib/ops-api";
 
 interface DesignerTemplate {
   id: string;
@@ -40,9 +41,9 @@ export default function DesignerTemplatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ops/designer/templates");
-      const body = (await res.json()) as { items?: DesignerTemplate[]; error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Không tải được danh sách mẫu.");
+      const body = await opsRequest<{ items?: DesignerTemplate[] }>(
+        "/api/ops/designer/templates",
+      );
       setItems(body.items ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không tải được danh sách mẫu.");
@@ -60,13 +61,10 @@ export default function DesignerTemplatesPage() {
     setError(null);
     setCreating(true);
     try {
-      const res = await fetch("/api/ops/designer/templates", {
+      await opsRequest("/api/ops/designer/templates", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), plan, ritual: ritual.trim() }),
       });
-      const body = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Không tạo được mẫu.");
       setName("");
       setRitual("");
       await load();

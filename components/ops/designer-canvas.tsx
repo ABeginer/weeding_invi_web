@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft, ImagePlus, Loader2, Save, Type, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { opsRequest } from "@/lib/ops-api";
 import {
   PLACEHOLDER_OPTIONS,
   type DesignerCanvasContent,
@@ -118,13 +119,11 @@ export function DesignerCanvas({
     setMessage("Đang tải ảnh…");
     try {
       const { dataUrl } = await fileToWebpDataUrl(file);
-      const res = await fetch("/api/ops/designer/assets", {
+      const body = await opsRequest<{ url?: string }>("/api/ops/designer/assets", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ kind: "png", dataUrl }),
       });
-      const body = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !body.url) throw new Error(body.error ?? "Tải ảnh thất bại.");
+      if (!body.url) throw new Error("Tải ảnh thất bại.");
       const id = crypto.randomUUID();
       setContent((previous) => ({
         ...previous,
@@ -146,13 +145,10 @@ export function DesignerCanvas({
     setError(null);
     setMessage(null);
     try {
-      const res = await fetch(`/api/ops/designer/templates/${templateId}`, {
+      await opsRequest(`/api/ops/designer/templates/${templateId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ canvas_json: content }),
       });
-      const body = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Lưu thất bại.");
       setMessage("Đã lưu layout.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Lưu thất bại.");
@@ -207,25 +203,24 @@ export function DesignerCanvas({
       );
       if (!blob) throw new Error("Không xuất được webp.");
 
-      const upload = await fetch("/api/ops/designer/assets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "background", dataUrl: await blobToDataUrl(blob) }),
-      });
-      const uploaded = (await upload.json()) as { key?: string; error?: string };
-      if (!upload.ok || !uploaded.key) {
-        throw new Error(uploaded.error ?? "Tải ảnh nền thất bại.");
+      const uploaded = await opsRequest<{ key?: string }>(
+        "/api/ops/designer/assets",
+        {
+          method: "POST",
+          body: JSON.stringify({ kind: "background", dataUrl: await blobToDataUrl(blob) }),
+        },
+      );
+      if (!uploaded.key) {
+        throw new Error("Tải ảnh nền thất bại.");
       }
 
-      const patch = await fetch(`/api/ops/designer/templates/${templateId}`, {
+      await opsRequest(`/api/ops/designer/templates/${templateId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           canvas_json: content,
           background_key: uploaded.key,
         }),
       });
-      if (!patch.ok) throw new Error("Không lưu được ảnh nền.");
       setMessage(`Đã xuất webp và lưu layout (${Math.round(blob.size / 1024)}KB).`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Xuất ảnh thất bại.");
