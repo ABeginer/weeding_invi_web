@@ -34,6 +34,7 @@ export default function DesignerTemplatesPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [creating, setCreating] = React.useState(false);
   const [importing, setImporting] = React.useState(false);
+  const [seeding, setSeeding] = React.useState(false);
   const [name, setName] = React.useState("");
   const [plan, setPlan] = React.useState<DesignerTemplate["plan"]>("free");
   const [ritual, setRitual] = React.useState("");
@@ -97,6 +98,27 @@ export default function DesignerTemplatesPage() {
     }
   };
 
+  const seedStyles = async () => {
+    setSeeding(true);
+    setError(null);
+    try {
+      const result = await opsRequest<{ imported?: number }>(
+        "/api/ops/designer/seed-styles",
+        { method: "POST" },
+      );
+      await load();
+      setError(
+        result.imported && result.imported > 0
+          ? null
+          : "Bộ mẫu gốc đã có sẵn trong danh sách.",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không tạo được bộ mẫu gốc.");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
       <header className="space-y-1">
@@ -112,6 +134,14 @@ export default function DesignerTemplatesPage() {
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text disabled:opacity-60"
           >
             {importing ? "Đang nhập…" : "Nhập mẫu có sẵn từ thư viện"}
+          </button>
+          <button
+            type="button"
+            onClick={seedStyles}
+            disabled={seeding}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-accent/50 bg-accent-soft px-3 text-xs font-semibold text-accent-text disabled:opacity-60"
+          >
+            {seeding ? "Đang tạo…" : "Tạo bộ mẫu gốc (kéo thả)"}
           </button>
         </div>
         <p className="text-sm text-text-muted">

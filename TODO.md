@@ -71,6 +71,20 @@ placeholder. Lưu dưới dạng **layout JSON + ảnh nền webp** (không flat
 - [ ] Validation trước publish: placeholder thiếu, chữ tràn safe-area, contrast < 4.5:1,
       asset quá lớn, block tương tác nằm ngoài vùng chạm 44px.
 
+## B4. Designer → thiệp thật (version ghim)
+
+- [x] Multi-page canvas (Bìa / Nội dung), mỗi trang nền + element riêng.
+- [x] Seed bộ mẫu gốc kéo thả: Đào Phấn, Lục Xuân, Kim Hỏa, Ren Trắng, Mộc Nâu, Chibi Hồng
+      (`POST /api/ops/designer/seed-styles`, nút "Tạo bộ mẫu gốc").
+- [x] Fallback upload ảnh khi R2/Miniflare dev lỗi: nhúng data URL tạm vào layout.
+- [ ] Preview chuyển trang `?p=` + tab trang trên `/mau/designer/[id]`.
+- [ ] Xuất webp **tất cả trang** (lưu mảng `backgrounds[]`) thay vì chỉ trang đang chọn.
+- [ ] Dashboard gán designer template cho thiệp: ghi `designer_template_id` +
+      `designer_template_version` (bản mới nhất), có nút "Cập nhật lên vN".
+- [ ] `/m/<slug>`: nếu thiệp có designer template → render `DesignerTemplateRenderer`
+      đúng version ghim với dữ liệu thật (tên khách, xưng hô, ngày, địa điểm).
+- [ ] Block tương tác (RSVP, map, nhạc) cho designer template — giai đoạn sau.
+
 ## C. Đã xong
 
 - [x] Đợt 1–4: 8 lỗi chặn, dữ liệu/bảo mật, dọn repo + docs + CI, Sổ mừng, Album,

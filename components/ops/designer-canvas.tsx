@@ -196,21 +196,33 @@ export function DesignerCanvas({
     setMessage("Đang tải ảnh…");
     try {
       const { dataUrl } = await fileToWebpDataUrl(file);
-      const body = await opsRequest<{ url?: string }>("/api/ops/designer/assets", {
-        method: "POST",
-        body: JSON.stringify({ kind: "png", dataUrl }),
-      });
-      if (!body.url) throw new Error("Tải ảnh thất bại.");
+      let url = dataUrl;
+      let embedded = false;
+      try {
+        const body = await opsRequest<{ url?: string }>("/api/ops/designer/assets", {
+          method: "POST",
+          body: JSON.stringify({ kind: "png", dataUrl }),
+        });
+        if (body.url) url = body.url;
+        else embedded = true;
+      } catch {
+        // Dev trên Windows: Miniflare/R2 không khởi động được → nhúng tạm data URL.
+        embedded = true;
+      }
       const id = crypto.randomUUID();
       setContent((previous) => ({
         ...previous,
         elements: [
           ...previous.elements,
-          { id, type: "image", xPct: 20, yPct: 20, wPct: 60, url: body.url as string },
+          { id, type: "image", xPct: 20, yPct: 20, wPct: 60, url },
         ],
       }));
       setSelectedId(id);
-      setMessage("Đã thêm ảnh.");
+      setMessage(
+        embedded
+          ? "R2 dev chưa chạy được — ảnh được nhúng tạm vào layout (chỉ dùng khi dev)."
+          : "Đã thêm ảnh.",
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Tải ảnh thất bại.");
       setMessage(null);
