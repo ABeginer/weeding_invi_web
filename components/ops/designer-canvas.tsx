@@ -11,6 +11,7 @@ import {
   MapPin,
   Music,
   QrCode,
+  RotateCw,
   Save,
   Star,
   Type,
@@ -175,6 +176,13 @@ export function DesignerCanvas({
     yPct: number;
     width: number;
     height: number;
+  } | null>(null);
+  const rotateRef = React.useRef<{
+    id: string;
+    centerX: number;
+    centerY: number;
+    startAngle: number;
+    startRotation: number;
   } | null>(null);
 
   const selected = content.elements.find((element) => element.id === selectedId) ?? null;
@@ -817,6 +825,47 @@ export function DesignerCanvas({
                       style={{ borderColor: element.color, color: element.color }}
                     >
                       {element.block}
+                    </span>
+                  )}
+                  {isSelected && (
+                    <span
+                      role="button"
+                      aria-label="Xoay phần tử"
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        const wrapper = event.currentTarget.parentElement;
+                        if (!wrapper) return;
+                        const rect = wrapper.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        rotateRef.current = {
+                          id: element.id,
+                          centerX,
+                          centerY,
+                          startAngle:
+                            (Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180) /
+                            Math.PI,
+                          startRotation: element.rotation ?? 0,
+                        };
+                      }}
+                      onPointerMove={(event) => {
+                        const rotate = rotateRef.current;
+                        if (!rotate || rotate.id !== element.id) return;
+                        const angle =
+                          (Math.atan2(event.clientY - rotate.centerY, event.clientX - rotate.centerX) *
+                            180) /
+                          Math.PI;
+                        let next = rotate.startRotation + (angle - rotate.startAngle);
+                        next = (((next + 180) % 360) + 360) % 360 - 180;
+                        updateElement(element.id, { rotation: Math.round(next) });
+                      }}
+                      onPointerUp={() => {
+                        rotateRef.current = null;
+                      }}
+                      className="absolute -top-7 left-1/2 z-30 flex h-6 w-6 -translate-x-1/2 cursor-grab items-center justify-center rounded-full border border-accent bg-surface text-accent-text shadow"
+                    >
+                      <RotateCw className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                   )}
                 </div>
