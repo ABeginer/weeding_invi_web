@@ -106,3 +106,15 @@ trên Zalo/Facebook, và `wrangler tail` xem log `[retention]` sau 03:00 UTC.
   `sharp`), nên `next.config.ts` đặt `images.unoptimized`.
 - `next dev` cần workerd/Miniflare; trong môi trường bị giới hạn quyền, hãy kiểm tra
   bằng `npm run build` + `npm start` thay vì `npm run dev`.
+
+### Lỗi Miniflare/workerd trên Windows
+
+Nếu `npm run dev` log `CreateDirectory: Access is denied; path = miniflare-*`:
+
+- Nguyên nhân: workerd không tạo được thư mục state khi project nằm trong
+  `Desktop`/`OneDrive` (Windows Defender Controlled Folder Access chặn ghi).
+- Code đã bắt lỗi này: dev server **vẫn chạy**, chỉ mất binding R2/KV/cache nên
+  `/media/[...key]` (ảnh trên thiệp) trả 404.
+- Cách khắc phục triệt để: chuyển repo ra ngoài Desktop (ví dụ `C:\dev\...`),
+  hoặc thêm `workerd.exe` vào Windows Security → Ransomware protection →
+  Allow an app, hoặc tắt hẳn bằng `CLOUDFLARE_DEV_BINDINGS=0`.

@@ -37,7 +37,8 @@ Notes:
 
 ## Local environment state (owner-confirmed 2026-11-14)
 - `SUPABASE_URL` points at the current project (`xklihgeirdxyormuxcoh.supabase.co`); `SUPABASE_SECRET_KEY` was replaced by the owner and now returns 200 on `/rest/v1/*`, so DB-backed pages work locally.
-- `APP_BASE_URL` is still `http://localhost:3000`; production must set the real domain or canonical/OG/sitemap URLs will point at localhost.
+- **Windows dev caveat:** `next dev` starts workerd through `initOpenNextCloudflareForDev()`. If the repository sits under `Desktop`/`OneDrive`, Windows Defender Controlled Folder Access blocks `CreateDirectory` and workerd dies with `ERR_RUNTIME_FAILURE`. `next.config.ts` therefore persists Miniflare state in `os.tmpdir()` and catches the failure, logging a warning and continuing without Cloudflare bindings — the dev server runs, but `/media/[...key]` returns 404 (R2 unavailable). Set `CLOUDFLARE_DEV_BINDINGS=0` to skip workerd entirely, or move the repo outside Desktop / allow `workerd.exe` in Defender for full dev parity.
+- `APP_BASE_URL` is still `http://localhost:3000` locally; production sets the real domain.
 - `BANK_*` variables are not present locally, so `/api/orders` cannot build a VietQR payload in this environment.
 - `supabase/migration_v11_guest_preferences.sql` (and v12/v13) are applied; RSVP preferences, Sổ mừng and Album now work against the live database.
 

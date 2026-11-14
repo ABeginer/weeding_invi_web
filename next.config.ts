@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 // Ensure .env.local takes precedence over stale OS/process environment variables in development
@@ -28,8 +29,25 @@ if (process.env.NODE_ENV !== "production") {
 // Chỉ khởi động Miniflare/workerd cho `next dev`: khi build production thì
 // binding do Cloudflare cung cấp lúc chạy, không cần (và workerd không khởi
 // động được trong môi trường build bị giới hạn quyền).
-if (process.env.NODE_ENV === "development") {
-  initOpenNextCloudflareForDev();
+//
+// Trên Windows, workerd không tạo được thư mục state trong project nếu project
+// nằm ở Desktop/OneDrive (Defender Controlled Folder Access) — lỗi
+// "CreateDirectory: Access is denied; path = miniflare-email-store". Vì vậy
+// state của Miniflare được đặt trong thư mục tạm của hệ điều hành.
+// Đặt CLOUDFLARE_DEV_BINDINGS=0 để tắt hẳn (khi đó /media sẽ không đọc được R2).
+if (process.env.NODE_ENV === "development" && process.env.CLOUDFLARE_DEV_BINDINGS !== "0") {
+  void initOpenNextCloudflareForDev({
+    persist: { path: path.join(os.tmpdir(), "inviwedd-miniflare") },
+  }).catch((error: unknown) => {
+    const reason = error instanceof Error ? error.message.split("\n")[0] : String(error);
+    console.warn(
+      `[cloudflare] Bỏ qua binding dev vì Miniflare/workerd không khởi động được: ${reason}\n` +
+        "  → /media/[...key] sẽ trả 404 trong dev (ảnh trên thiệp không hiển thị).\n" +
+        "  → Trên Windows: chuyển project ra khỏi Desktop/OneDrive, hoặc thêm workerd.exe vào\n" +
+        "    Windows Security → Ransomware protection → Allow an app.\n" +
+        "  → Hoặc đặt CLOUDFLARE_DEV_BINDINGS=0 để tắt hẳn và không hiện cảnh báo này.",
+    );
+  });
 }
 
 const nextConfig: NextConfig = {

@@ -15,6 +15,7 @@
 6. **Duplicate accounts** — same email under two Auth0 providers; no merge route (UI hidden).
 7. **`orders` / `bank_transactions` are not created by any committed migration** — they exist in the live project or were created manually.
 8. **Bulk import dedupe is page-scoped** — `BulkImportDialog` only sees the current page of guest names.
+9. **Windows dev loses R2 bindings** — workerd cannot create its state dirs when the repo is under `Desktop`/`OneDrive` (Defender ACL). The failure is caught and dev keeps running, but `/media/[...key]` is 404; move the repo or allow `workerd.exe` for full parity.
 
 ## Still blocked on the owner
 1. Deploy, then verify the cron and CSP.

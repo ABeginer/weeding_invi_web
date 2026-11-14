@@ -2,6 +2,12 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.1.1 · dev mode survives blocked workerd
+- `next dev` crashed on Windows when the repo sits under Desktop/OneDrive: workerd could not `CreateDirectory` its state dirs (Defender Controlled Folder Access), and the unhandled Miniflare rejection killed the process.
+- `next.config.ts` now persists Miniflare state under `os.tmpdir()` and catches the startup failure, logging one actionable warning; the dev server keeps running (R2/KV/cache bindings unavailable, `/media` 404).
+- Added `CLOUDFLARE_DEV_BINDINGS=0` to skip workerd entirely and documented the Defender exclusion / move-out-of-Desktop fixes in README.
+- Verified: `next dev` stays up, `/`, `/cong-cu`, `/w/<slug>`, `/m/<slug>` return 200, `/dashboard` 307.
+
 ## 2026-11-14 · v1.0.9 · fonts, static landing, ESLint 16, validation tests
 - Removed the Google Fonts `@import`; the six families used by the themed templates are now self-hosted through `next/font` and referenced as CSS variables in `theme-configs.ts` (78 woff2 files, no external font CSS).
 - `/` is static again: removed `force-dynamic`, read the session client-side with `useUser()`, and apply the theme cookie with a pre-paint inline script that `ThemeProvider` then mirrors into state.
