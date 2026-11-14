@@ -15,8 +15,8 @@ Cập nhật: 2026-11-14 · code `04192e7` + các thay đổi sau đó. Chi ti�
 ## B. Kỹ thuật
 
 ### Ưu tiên cao
-- [ ] Xoá dữ liệu mẫu chết trong `lib/ops-api.ts` (~350 dòng) — mock không còn được gọi
-      nhưng vẫn nằm trong bundle client. Cần viết lại file thành client mỏng.
+- [x] Xoá dữ liệu mẫu chết trong `lib/ops-api.ts` — viết lại thành client mỏng 368 dòng
+      (trước 1.101 dòng), merge tài khoản ném lỗi rõ ràng thay vì giả lập.
 - [ ] Test API có DB (RSVP limit, phân quyền, gifts): cần mock Supabase hoặc DB test riêng.
       Hiện đã có 22 unit test cho helper thuần (rate limit, phân trang, VietQR, mã đơn).
 

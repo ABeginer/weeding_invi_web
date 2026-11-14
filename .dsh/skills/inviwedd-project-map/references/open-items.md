@@ -20,8 +20,7 @@ See git history `0c3c7e5`, `db98d6c`, `b06ebad`, `c638848`, `7ebded2`, `c0eb3ed`
 ## Known issues (still open, verified)
 1. **Retention has never fired in production** — configured and bundle-validated only. Test with the dry-run endpoint, then watch the 03:00 UTC cron.
 2. **CSP is untested in a browser** — `curl` only proves the header exists. Check the console for violations on `/`, `/w/<slug>`, `/m/<slug>` and inside Zalo/Messenger.
-3. **`lib/ops-api.ts` still carries ~350 lines of dead mock data** (unreachable, but shipped to the client bundle). Rewrite it as a thin fetch client.
-4. **No DB-backed route tests** — RSVP limits, ownership checks and gifts are only covered by typechecking and manual smoke tests.
+3. **No DB-backed route tests** — RSVP limits, ownership checks and gifts are only covered by typechecking and manual smoke tests.
 5. **`eslint-config-next` is 15.x while `next` is 16.x** — `npm install` is blocked inside the sandbox (npm cache outside workspace); run outside the sandbox then lint.
 6. **Google Fonts `@import`** — six families are used by `templates/themed/theme-configs.ts`; replacing the import with `next/font` requires switching those `fontFamily` values to CSS variables.
 7. **Landing page is `force-dynamic`** only to read the Auth0 session.

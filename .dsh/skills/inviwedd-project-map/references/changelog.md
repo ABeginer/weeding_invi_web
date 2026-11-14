@@ -2,6 +2,13 @@
 
 Newest first. One entry per update: date · what changed · why · files involved · git commit.
 
+## 2026-11-14 · v1.0.8 · ops client rewritten (no mock)
+- `lib/ops-api.ts` reduced from 1,101 to 368 lines: all fabricated users/weddings/orders/transactions/audit data and the localStorage store are deleted; every function is now a thin fetch against `/api/ops/*`.
+- `mergeOpsUser` validates the reason and throws `NOT_SUPPORTED` (the server route does not exist; the UI button is already hidden).
+- `getOpsUser` maps the API response (no identities/mergedFrom yet) to the detail shape; 404 maps to `null`.
+- Verified: tsc/lint clean, 22/22 tests, build ok, `next start` smoke (`/ops` 200, `/api/ops/me` 200 `isAdmin:false`, `/api/ops/stats` 403).
+- Files: `lib/ops-api.ts`, `TODO.md`, `references/open-items.md`.
+
 ## 2026-11-14 · v1.0.7 · batch 5: headers, tests, dead code
 - Added HSTS and a CSP to `next.config.ts` (Turnstile, Cloudflare Analytics, Google Fonts, Google Maps; inline styles/scripts allowed until a nonce setup exists).
 - Added 22 unit tests for rate limiting, pagination and payment helpers (`tests/rate-limit.test.ts`, `pagination.test.ts`, `payments.test.ts`).
