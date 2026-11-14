@@ -19,6 +19,9 @@ import {
 import { cn } from "@/lib/utils";
 import { opsRequest } from "@/lib/ops-api";
 import {
+  DESIGNER_ACTIONS,
+  DESIGNER_BLOCKS,
+  DESIGNER_ICONS,
   PLACEHOLDER_OPTIONS,
   type DesignerCanvasContent,
   type DesignerElement,
@@ -836,6 +839,220 @@ export function DesignerCanvas({
                 className="inline-flex h-9 w-full items-center justify-center rounded-full border border-danger-border text-xs font-medium text-danger-fg"
               >
                 Xoá phần tử
+              </button>
+            </div>
+          ) : selected.type === "box" ? (
+            <div className="space-y-3">
+              <label className="block text-xs text-text">
+                Màu nền
+                <input
+                  type="color"
+                  value={selected.fill}
+                  onChange={(event) => updateElement(selected.id, { fill: event.target.value })}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-1"
+                />
+              </label>
+              <label className="block text-xs text-text">
+                Màu viền
+                <input
+                  type="color"
+                  value={selected.border === "none" ? "#E6E0D6" : selected.border}
+                  onChange={(event) => updateElement(selected.id, { border: event.target.value })}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-1"
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-xs text-text">
+                  Bo góc
+                  <input
+                    type="number"
+                    min={0}
+                    max={80}
+                    value={selected.radius}
+                    onChange={(event) => updateElement(selected.id, { radius: Number(event.target.value) || 0 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+                <label className="block text-xs text-text">
+                  Cao (%)
+                  <input
+                    type="number"
+                    min={4}
+                    max={100}
+                    value={selected.hPct}
+                    onChange={(event) => updateElement(selected.id, { hPct: Number(event.target.value) || 10 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setContent((previous) => ({
+                    ...previous,
+                    elements: previous.elements.filter((item) => item.id !== selected.id),
+                  }));
+                  setSelectedId(null);
+                }}
+                className="inline-flex h-9 w-full items-center justify-center rounded-full border border-danger-border text-xs font-medium text-danger-fg"
+              >
+                Xoá khung
+              </button>
+            </div>
+          ) : selected.type === "icon" ? (
+            <div className="space-y-3">
+              <label className="block text-xs text-text">
+                Icon
+                <select
+                  value={selected.icon}
+                  onChange={(event) => updateElement(selected.id, { icon: event.target.value as (typeof DESIGNER_ICONS)[number] })}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                >
+                  {DESIGNER_ICONS.map((icon) => (
+                    <option key={icon} value={icon}>{icon}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-xs text-text">
+                  Màu
+                  <input
+                    type="color"
+                    value={selected.color}
+                    onChange={(event) => updateElement(selected.id, { color: event.target.value })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-1"
+                  />
+                </label>
+                <label className="block text-xs text-text">
+                  Rộng (%)
+                  <input
+                    type="number"
+                    min={4}
+                    max={100}
+                    value={selected.wPct}
+                    onChange={(event) => updateElement(selected.id, { wPct: Number(event.target.value) || 10 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setContent((previous) => ({
+                    ...previous,
+                    elements: previous.elements.filter((item) => item.id !== selected.id),
+                  }));
+                  setSelectedId(null);
+                }}
+                className="inline-flex h-9 w-full items-center justify-center rounded-full border border-danger-border text-xs font-medium text-danger-fg"
+              >
+                Xoá icon
+              </button>
+            </div>
+          ) : selected.type === "button" ? (
+            <div className="space-y-3">
+              <label className="block text-xs text-text">
+                Nhãn nút
+                <input
+                  value={selected.label}
+                  onChange={(event) => updateElement(selected.id, { label: event.target.value })}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                />
+              </label>
+              <label className="block text-xs text-text">
+                Hành động
+                <select
+                  value={selected.action}
+                  onChange={(event) => updateElement(selected.id, { action: event.target.value as (typeof DESIGNER_ACTIONS)[number] })}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                >
+                  {DESIGNER_ACTIONS.map((action) => (
+                    <option key={action} value={action}>{action}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-xs text-text">
+                  Nền
+                  <input
+                    type="color"
+                    value={selected.fill}
+                    onChange={(event) => updateElement(selected.id, { fill: event.target.value })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-1"
+                  />
+                </label>
+                <label className="block text-xs text-text">
+                  Chữ
+                  <input
+                    type="color"
+                    value={selected.textColor}
+                    onChange={(event) => updateElement(selected.id, { textColor: event.target.value })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-1"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setContent((previous) => ({
+                    ...previous,
+                    elements: previous.elements.filter((item) => item.id !== selected.id),
+                  }));
+                  setSelectedId(null);
+                }}
+                className="inline-flex h-9 w-full items-center justify-center rounded-full border border-danger-border text-xs font-medium text-danger-fg"
+              >
+                Xoá nút
+              </button>
+            </div>
+          ) : selected.type === "block" ? (
+            <div className="space-y-3">
+              <label className="block text-xs text-text">
+                Loại khối
+                <select
+                  value={selected.block}
+                  onChange={(event) => updateElement(selected.id, { block: event.target.value as (typeof DESIGNER_BLOCKS)[number] })}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                >
+                  {DESIGNER_BLOCKS.map((block) => (
+                    <option key={block} value={block}>{block}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-xs text-text">
+                  Màu
+                  <input
+                    type="color"
+                    value={selected.color}
+                    onChange={(event) => updateElement(selected.id, { color: event.target.value })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-1"
+                  />
+                </label>
+                <label className="block text-xs text-text">
+                  Cao (%)
+                  <input
+                    type="number"
+                    min={6}
+                    max={60}
+                    value={selected.hPct}
+                    onChange={(event) => updateElement(selected.id, { hPct: Number(event.target.value) || 18 })}
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-bg px-2 text-xs"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setContent((previous) => ({
+                    ...previous,
+                    elements: previous.elements.filter((item) => item.id !== selected.id),
+                  }));
+                  setSelectedId(null);
+                }}
+                className="inline-flex h-9 w-full items-center justify-center rounded-full border border-danger-border text-xs font-medium text-danger-fg"
+              >
+                Xoá khối
               </button>
             </div>
           ) : (
