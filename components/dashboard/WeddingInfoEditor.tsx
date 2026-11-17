@@ -20,13 +20,15 @@ import {
   getPlanLabel,
   isTemplateAllowedForPlan,
 } from "@/config/plans";
-import { ApiError, deletePhoto, deleteWedding, uploadPhoto } from "@/lib/api";
+import { ApiError, assignDesignerTemplate, deletePhoto, deleteWedding, listDesignerTemplateOptions, uploadPhoto } from "@/lib/api";
 import { compressImage, formatSavedSize } from "@/lib/image/compress";
 import {
   GIFT_ACCOUNT_MAX_LENGTH,
   GIFT_TEXT_MAX_LENGTH,
   NAME_MAX_LENGTH,
   QUOTE_MAX_LENGTH,
+  type DesignerTemplateAssignmentResult,
+  type DesignerTemplateOption,
   type PhotoSlot,
   type WeddingContent,
   type WeddingDetail,
@@ -40,11 +42,18 @@ import { Card } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input, Textarea } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
+import {
+  collectDesignerTextFields,
+  collectDesignerImageFields,
+} from "@/lib/designer-fields";
+import { DesignerFieldsEditor } from "./DesignerFieldsEditor";
+import { MusicEditor } from "./MusicEditor";
 
 interface WeddingInfoEditorProps {
   wedding: WeddingDetail;
   draftContent: WeddingContent;
   draftTemplateId: string;
+  designerCanvas?: Record<string, unknown> | null;
   photos: WeddingPhoto[];
   isDirty: boolean;
   saving: boolean;
@@ -52,6 +61,7 @@ interface WeddingInfoEditorProps {
   fieldErrors: Record<string, string>;
   onDraftChange: (next: WeddingContent) => void;
   onTemplateChange: (nextTemplateId: string) => void;
+  onDesignerAssignment: (result: DesignerTemplateAssignmentResult) => void;
   onPhotosStateChange: (
     nextPhotos: WeddingPhoto[],
     serverContent?: WeddingContent,
@@ -80,10 +90,30 @@ const TEMPLATE_THEME_FILTERS = [
   "Truyền thống",
 ];
 
+interface PickerTemplate {
+  id: string;
+  name: string;
+  subtitle: string;
+  plan: "free" | "pro" | "vip";
+  kind: "code" | "designer";
+  isPlaceholder?: boolean;
+  styleTags?: string[];
+}
+
+function readBlobAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Không đọc được ảnh."));
+    reader.readAsDataURL(blob);
+  });
+}
+
 export function WeddingInfoEditor({
   wedding,
   draftContent,
   draftTemplateId,
+  designerCanvas,
   photos,
   isDirty,
   saving,
@@ -91,6 +121,7 @@ export function WeddingInfoEditor({
   fieldErrors,
   onDraftChange,
   onTemplateChange,
+  onDesignerAssignment,
   onPhotosStateChange,
   onSave,
   onResetDraft,
@@ -103,15 +134,122 @@ export function WeddingInfoEditor({
     null,
   );
   const [qrError, setQrError] = React.useState<string | null>(null);
+  const [nameConfirmOpen, setNameConfirmOpen] = React.useState(false);
 
   const [templatePickerOpen, setTemplatePickerOpen] = React.useState(false);
   const [templateQuery, setTemplateQuery] = React.useState("");
   const [templateTheme, setTemplateTheme] = React.useState("Tất cả");
+  const [designerOptions, setDesignerOptions] = React.useState<DesignerTemplateOption[]>([]);
+  const [designerLoading, setDesignerLoading] = React.useState(true);
+  const [designerError, setDesignerError] = React.useState<string | null>(null);
+  const [designerBusyId, setDesignerBusyId] = React.useState<string | null>(null);
 
-  const selectedTemplate = TEMPLATE_REGISTRY.find(
-    (tpl) => tpl.id === draftTemplateId,
+  React.useEffect(() => {
+    let cancelled = false;
+    listDesignerTemplateOptions()
+      .then((result) => {
+        if (!cancelled) setDesignerOptions(result.items ?? []);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setDesignerError(
+            error instanceof Error
+              ? error.message
+              : "Không tải được mẫu thiết kế Designer.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDesignerLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedDesigner = wedding.designerTemplate ?? null;
+  const selectedTemplate = selectedDesigner
+    ? null
+    : TEMPLATE_REGISTRY.find((tpl) => tpl.id === draftTemplateId);
+  const selectedDesignerOption = selectedDesigner
+    ? designerOptions.find((option) => option.id === selectedDesigner.id) ?? null
+    : null;
+  const selectedName = selectedDesigner
+    ? selectedDesignerOption?.displayTitle ??
+      selectedDesigner.displayTitle ??
+      selectedDesignerOption?.name ??
+      selectedDesigner.name
+    : selectedTemplate?.name;
+  const selectedSubtitle = selectedDesigner
+    ? selectedDesignerOption?.ritual ?? "Mẫu thiệp cưới"
+    : selectedTemplate?.subtitle;
+  const selectedPlan = selectedDesignerOption?.plan ?? selectedTemplate?.plan;
+  const designerImageFields = React.useMemo(
+    () => collectDesignerImageFields(designerCanvas),
+    [designerCanvas],
   );
-  const filteredTemplates = TEMPLATE_REGISTRY.filter((tpl) => {
+  const designerTextFields = React.useMemo(
+    () => collectDesignerTextFields(designerCanvas),
+    [designerCanvas],
+  );
+  const [designerFieldBusy, setDesignerFieldBusy] = React.useState<string | null>(
+    null,
+  );
+  const [designerFieldError, setDesignerFieldError] = React.useState<string | null>(
+    null,
+  );
+
+  const updateDesignerField = (key: string, value: string | null) => {
+    const next = { ...(draftContent.designerFields ?? {}) };
+    if (value) next[key] = value;
+    else delete next[key];
+    onDraftChange({ ...draftContent, designerFields: next });
+  };
+
+  const handleDesignerImage = async (key: string, file: File) => {
+    setDesignerFieldError(null);
+    setDesignerFieldBusy(key);
+    try {
+      const compressed = await compressImage(file, "gallery");
+      const dataUrl = await readBlobAsDataUrl(compressed.blob);
+      updateDesignerField(key, dataUrl);
+    } catch (error) {
+      setDesignerFieldError(
+        error instanceof Error ? error.message : "Không tải được ảnh.",
+      );
+    } finally {
+      setDesignerFieldBusy(null);
+    }
+  };
+
+  const pickerTemplates = React.useMemo<PickerTemplate[]>(() => {
+    const code: PickerTemplate[] = TEMPLATE_REGISTRY.map((tpl) => ({
+      id: tpl.id,
+      name: tpl.name,
+      subtitle: tpl.subtitle,
+      plan: tpl.plan,
+      kind: "code",
+      isPlaceholder: tpl.isPlaceholder,
+      styleTags: tpl.styleTags,
+    }));
+    const designer: PickerTemplate[] = designerOptions.map((tpl) => ({
+      id: tpl.id,
+      name: tpl.displayTitle ?? tpl.name,
+      subtitle: tpl.ritual ?? "Mẫu thiệp cưới",
+      plan: tpl.plan,
+      kind: "designer",
+      styleTags: tpl.ritual ? [tpl.ritual] : [],
+    }));
+    const seen = new Set<string>();
+    return [...designer, ...code].filter((tpl) => {
+      const key = tpl.name.trim().toLocaleLowerCase("vi");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [designerOptions]);
+
+  const filteredTemplates = pickerTemplates.filter((tpl) => {
     const searchable = [tpl.name, tpl.subtitle ?? "", ...(tpl.styleTags ?? [])]
       .join(" ")
       .toLowerCase();
@@ -146,6 +284,86 @@ export function WeddingInfoEditor({
     });
   };
 
+  const updateDressCode = (index: number, color: string) => {
+    const next = [
+      ...(draftContent.dressCode ?? ["#6B1E2B", "#B35A6B", "#F6B8C6"]),
+    ];
+    next[index] = color;
+    onDraftChange({ ...draftContent, dressCode: next.slice(0, 3) });
+  };
+
+  const toggleSection = (key: string) => {
+    const current = new Set(draftContent.hiddenSections ?? []);
+    if (current.has(key)) current.delete(key);
+    else current.add(key);
+    onDraftChange({
+      ...draftContent,
+      hiddenSections: Array.from(current),
+    });
+  };
+
+  const [draggingSection, setDraggingSection] = React.useState<string | null>(null);
+  const sectionLabels: Record<string, string> = {
+    family: "Gia đình",
+    calendar: "Lịch & đếm ngược",
+    map: "Sự kiện & bản đồ",
+    dresscode: "Dress code",
+    album: "Album ảnh",
+    albumQr: "QR album khách",
+    gift: "Hộp quà",
+    rsvp: "Xác nhận & lời chúc",
+  };
+  const defaultSectionOrder = ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+  const hiddenSet = new Set(draftContent.hiddenSections ?? []);
+  const storedOrder = (draftContent.sectionOrder ?? []).filter(
+    (key) => sectionLabels[key] && !hiddenSet.has(key),
+  );
+  const visibleOrder = [
+    ...storedOrder,
+    ...defaultSectionOrder.filter((key) => !storedOrder.includes(key)),
+  ].filter((key) => !hiddenSet.has(key));
+
+  const moveSection = (from: string, to: string) => {
+    if (from === to) return;
+    const next = [...visibleOrder];
+    const fromIndex = next.indexOf(from);
+    const toIndex = next.indexOf(to);
+    if (fromIndex < 0 || toIndex < 0) return;
+    next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, from);
+    onDraftChange({ ...draftContent, sectionOrder: next });
+  };
+
+  const timeline =
+    draftContent.timeline && draftContent.timeline.length > 0
+      ? draftContent.timeline
+      : [{ time: "17:00", label: "Đón khách" }];
+
+  const updateTimeline = (
+    index: number,
+    patch: { time?: string; label?: string },
+  ) => {
+    const next = timeline.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, ...patch } : item,
+    );
+    onDraftChange({ ...draftContent, timeline: next });
+  };
+
+  const addTimeline = () => {
+    if (timeline.length >= 6) return;
+    onDraftChange({
+      ...draftContent,
+      timeline: [...timeline, { time: "", label: "" }],
+    });
+  };
+
+  const removeTimeline = (index: number) => {
+    onDraftChange({
+      ...draftContent,
+      timeline: timeline.filter((_, itemIndex) => itemIndex !== index),
+    });
+  };
+
   const updateGift = (patch: Partial<WeddingContent["gift"]>) => {
     onDraftChange({
       ...draftContent,
@@ -155,6 +373,14 @@ export function WeddingInfoEditor({
       },
     });
   };
+
+  const showBrideGift =
+    draftContent.gift.brideAccountEnabled === true ||
+    Boolean(
+      draftContent.gift.brideBankName ||
+        draftContent.gift.brideAccountNumber ||
+        draftContent.gift.brideAccountName,
+    );
 
   const handleQrFileSelected = async (
     slot: Extract<PhotoSlot, "gift-groom" | "gift-bride">,
@@ -233,8 +459,69 @@ export function WeddingInfoEditor({
     }
   };
 
+  const handlePickerSelect = async (tpl: PickerTemplate) => {
+    if (tpl.kind === "designer") {
+      if (selectedDesigner?.id === tpl.id) {
+        setTemplatePickerOpen(false);
+        return;
+      }
+      setDesignerBusyId(tpl.id);
+      setDesignerError(null);
+      try {
+        const result = await assignDesignerTemplate(wedding.id, {
+          designerTemplateId: tpl.id,
+        });
+        onDesignerAssignment(result);
+        setTemplatePickerOpen(false);
+      } catch (error) {
+        setDesignerError(
+          error instanceof Error
+            ? error.message
+            : "Không gán được mẫu thiết kế Designer.",
+        );
+      } finally {
+        setDesignerBusyId(null);
+      }
+      return;
+    }
+
+    if (designerBusyId) return;
+    if (selectedDesigner) {
+      setDesignerBusyId(tpl.id);
+      setDesignerError(null);
+      try {
+        const result = await assignDesignerTemplate(wedding.id, {
+          designerTemplateId: null,
+        });
+        onDesignerAssignment(result);
+      } catch (error) {
+        setDesignerError(
+          error instanceof Error
+            ? error.message
+            : "Không bỏ được mẫu thiết kế Designer.",
+        );
+        setDesignerBusyId(null);
+        return;
+      }
+      setDesignerBusyId(null);
+    }
+    onTemplateChange(tpl.id);
+    setTemplatePickerOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const current = wedding.content.couple;
+    const next = draftContent.couple;
+    const namesChanged =
+      current.groomName !== next.groomName ||
+      current.brideName !== next.brideName ||
+      current.groomFullName !== next.groomFullName ||
+      current.brideFullName !== next.brideFullName;
+    if (namesChanged) {
+      setNameConfirmOpen(true);
+      return;
+    }
     await onSave();
   };
 
@@ -337,15 +624,15 @@ export function WeddingInfoEditor({
             >
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-fg">
-                  {selectedTemplate?.name ?? "Chọn mẫu thiệp"}
+                  {selectedName ?? "Chọn mẫu thiệp"}
                 </span>
                 <span className="block truncate text-xs text-fg-muted">
-                  {selectedTemplate?.subtitle ?? "Bấm để chọn mẫu"}
+                  {selectedSubtitle ?? "Bấm để chọn mẫu"}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-2">
                 <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-semibold text-fg-muted">
-                  {selectedTemplate ? getPlanLabel(selectedTemplate.plan) : ""}
+                  {selectedPlan ? getPlanLabel(selectedPlan) : ""}
                 </span>
                 <ChevronDown
                   className={cn("h-4 w-4 text-fg-muted transition-transform", templatePickerOpen && "rotate-180")}
@@ -388,37 +675,50 @@ export function WeddingInfoEditor({
 
                 <ul className="mt-2 max-h-[276px] divide-y divide-border overflow-y-auto rounded-lg border border-border">
                   {filteredTemplates.map((tpl) => {
-                    const isSelected = draftTemplateId === tpl.id;
+                    const isSelected =
+                      tpl.kind === "designer"
+                        ? selectedDesigner?.id === tpl.id
+                        : !selectedDesigner && draftTemplateId === tpl.id;
                     const allowed =
                       !tpl.isPlaceholder &&
                       (isTemplateAllowedForPlan(wedding.plan, tpl.plan) ||
-                        tpl.id === wedding.templateId);
+                        tpl.id === wedding.templateId ||
+                        (tpl.kind === "designer" && selectedDesigner?.id === tpl.id));
+                    const busy = designerBusyId === tpl.id;
                     return (
-                      <li key={tpl.id}>
+                      <li key={`${tpl.kind}-${tpl.id}`}>
                         <button
                           type="button"
-                          disabled={!allowed}
+                          disabled={!allowed || Boolean(designerBusyId)}
                           onClick={() => {
                             if (!allowed) return;
-                            onTemplateChange(tpl.id);
-                            setTemplatePickerOpen(false);
+                            void handlePickerSelect(tpl);
                           }}
                           className={cn(
                             "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-xs transition-colors",
                             isSelected ? "bg-accent-soft" : "bg-bg hover:bg-surface-alt",
-                            !allowed && "cursor-not-allowed opacity-60",
+                            (!allowed || designerBusyId) && "cursor-not-allowed opacity-60",
                           )}
                         >
                           <span className="min-w-0">
                             <span className="block truncate font-semibold text-fg">{tpl.name}</span>
                             <span className="block truncate text-[11px] text-fg-muted">{tpl.subtitle}</span>
                           </span>
-                          <span className="shrink-0 rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-fg-muted">
-                            {tpl.isPlaceholder
-                              ? "Sắp có"
-                              : allowed
-                                ? getPlanLabel(tpl.plan)
-                                : `Gói ${getPlanLabel(tpl.plan)}`}
+                          <span className="flex shrink-0 items-center gap-1.5">
+                            {busy && <Loader2 className="h-3 w-3 animate-spin text-accent-text" aria-hidden="true" />}
+                            {isSelected && tpl.kind === "designer" ? (
+                              <span className="rounded-full border border-accent/45 bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent-text">
+                                Đang gán
+                              </span>
+                            ) : (
+                              <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-fg-muted">
+                                {tpl.isPlaceholder
+                                  ? "Sắp có"
+                                  : allowed
+                                    ? getPlanLabel(tpl.plan)
+                                    : `Gói ${getPlanLabel(tpl.plan)}`}
+                              </span>
+                            )}
                           </span>
                         </button>
                       </li>
@@ -428,6 +728,18 @@ export function WeddingInfoEditor({
                     <li className="px-3 py-6 text-center text-xs text-fg-muted">Không tìm thấy mẫu phù hợp.</li>
                   )}
                 </ul>
+
+                {designerLoading && (
+                  <p className="mt-2 flex items-center gap-1.5 text-[11px] text-fg-muted">
+                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                    Đang tải mẫu Designer…
+                  </p>
+                )}
+                {designerError && (
+                  <p role="alert" className="mt-2 text-[11px] text-danger-fg">
+                    {designerError}
+                  </p>
+                )}
 
                 <p className="mt-2 text-[11px] text-fg-muted">
                   Hiển thị {Math.min(filteredTemplates.length, 6)} trong {filteredTemplates.length} mẫu · cuộn để xem thêm
@@ -448,13 +760,25 @@ export function WeddingInfoEditor({
             <h3 className="font-sans text-base font-semibold text-accent-text">
               Chú rể &amp; Nhà trai
             </h3>
+            <div className="rounded-xl border border-accent/25 bg-accent-soft/35 px-3 py-2.5 text-xs leading-relaxed text-fg-muted">
+              <strong className="text-fg">Tên gọi ngắn chỉnh trên thiệp:</strong>{" "}
+              bấm trực tiếp vào tên chú rể/cô dâu ở khung xem trước bên cạnh.
+            </div>
             <Input
-              label="Tên gọi ngắn chú rể *"
+              label="Danh xưng chú rể"
+              value={draftContent.couple.groomTitle ?? ""}
+              onChange={(e) => updateCouple({ groomTitle: e.target.value })}
+              maxLength={40}
+              placeholder="Ví dụ: Trưởng nam"
+              hint="Hiển thị trước tên trong phần gia đình."
+            />
+            <Input
+              label="Tên ngắn gọn"
               value={draftContent.couple.groomName}
               onChange={(e) => updateCouple({ groomName: e.target.value })}
               maxLength={NAME_MAX_LENGTH}
-              placeholder="Ví dụ: Minh"
-              error={fieldErrors["couple.groomName"]}
+              placeholder="Ví dụ: Long"
+              hint="Tên hiển thị trên bìa thiệp và phần tên ngắn."
             />
             <Input
               label="Họ và tên đầy đủ"
@@ -479,13 +803,25 @@ export function WeddingInfoEditor({
             <h3 className="font-sans text-base font-semibold text-accent-text">
               Cô dâu &amp; Nhà gái
             </h3>
+            <div className="rounded-xl border border-accent/25 bg-accent-soft/35 px-3 py-2.5 text-xs leading-relaxed text-fg-muted">
+              <strong className="text-fg">Tên gọi ngắn chỉnh trên thiệp:</strong>{" "}
+              bấm trực tiếp vào tên cô dâu/chú rể ở khung xem trước bên cạnh.
+            </div>
             <Input
-              label="Tên gọi ngắn cô dâu *"
+              label="Danh xưng cô dâu"
+              value={draftContent.couple.brideTitle ?? ""}
+              onChange={(e) => updateCouple({ brideTitle: e.target.value })}
+              maxLength={40}
+              placeholder="Ví dụ: Ái nữ"
+              hint="Hiển thị trước tên trong phần gia đình."
+            />
+            <Input
+              label="Tên ngắn gọn"
               value={draftContent.couple.brideName}
               onChange={(e) => updateCouple({ brideName: e.target.value })}
               maxLength={NAME_MAX_LENGTH}
-              placeholder="Ví dụ: Lan"
-              error={fieldErrors["couple.brideName"]}
+              placeholder="Ví dụ: Ngọc"
+              hint="Tên hiển thị trên bìa thiệp và phần tên ngắn."
             />
             <Input
               label="Họ và tên đầy đủ"
@@ -593,6 +929,241 @@ export function WeddingInfoEditor({
           )}
         </Card>
 
+        {/* Trường nội dung tùy chỉnh theo mẫu thiết kế (Designer Text Fields) */}
+        <DesignerFieldsEditor
+          fields={designerTextFields}
+          values={draftContent.designerFields ?? {}}
+          onChange={(key, value) => updateDesignerField(key, value || null)}
+          disabled={saving}
+        />
+
+        <Card className="space-y-4 p-4 sm:p-5">
+          <div>
+            <h3 className="font-sans text-base font-semibold text-fg">
+              Dress code &amp; hiện/ẩn từng phần
+            </h3>
+            <p className="mt-0.5 text-xs text-fg-muted">
+              Chọn 3 màu dress code và bật/tắt các phần xuất hiện trong thiệp.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium text-fg">3 màu dress code</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {["Đỏ rượu", "Hồng đào", "Hồng phấn"].map((label, index) => (
+                <label key={label} className="block text-[10px] text-fg-muted">
+                  {label}
+                  <input
+                    type="color"
+                    value={
+                      draftContent.dressCode?.[index] ??
+                      ["#6B1E2B", "#B35A6B", "#F6B8C6"][index]
+                    }
+                    onChange={(event) => updateDressCode(index, event.target.value)}
+                    className="mt-1 h-10 w-full rounded-lg border border-border bg-bg px-1"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium text-fg">Hiện / ẩn phần trên thiệp</p>
+            <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {[
+                ["album", "Album ảnh"],
+                ["albumQr", "QR album khách"],
+                ["gift", "Hộp quà mừng"],
+                ["calendar", "Lịch cưới & đếm ngược"],
+                ["map", "Sự kiện & bản đồ"],
+                ["family", "Thông tin gia đình"],
+                ["dresscode", "Dress code"],
+                ["rsvp", "Xác nhận & lời chúc"],
+                ["music", "Nhạc nền"],
+              ].map(([key, label]) => {
+                const hidden = (draftContent.hiddenSections ?? []).includes(key);
+                return (
+                  <label
+                    key={key}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-bg px-3 py-2 text-xs text-fg"
+                  >
+                    <span>{label}</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={!hidden}
+                      onClick={() => toggleSection(key)}
+                      className={cn(
+                        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                        hidden ? "bg-border" : "bg-accent",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+                          hidden ? "translate-x-0.5" : "translate-x-4",
+                        )}
+                      />
+                    </button>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-1 text-[10px] text-fg-muted">
+              Tắt = ẩn phần đó khỏi thiệp khách.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium text-fg">Thứ tự các phần đang hiện</p>
+            <p className="mt-0.5 text-[10px] text-fg-muted">
+              Kéo thả để đổi thứ tự. Phần đang ẩn không hiện trong danh sách.
+            </p>
+            <div className="mt-2 space-y-1.5">
+              {visibleOrder.map((key) => (
+                <div
+                  key={key}
+                  draggable
+                  onDragStart={() => setDraggingSection(key)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => {
+                    if (draggingSection) moveSection(draggingSection, key);
+                    setDraggingSection(null);
+                  }}
+                  onDragEnd={() => setDraggingSection(null)}
+                  className={cn(
+                    "flex cursor-grab items-center justify-between rounded-lg border border-border bg-bg px-3 py-2 text-xs text-fg",
+                    draggingSection === key && "opacity-50",
+                  )}
+                >
+                  <span>{sectionLabels[key]}</span>
+                  <span className="text-[10px] text-fg-muted">⋮⋮</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-border bg-bg p-3">
+            <label className="flex items-center justify-between gap-3 text-xs font-medium text-fg">
+              <span>Hiện ảnh cô dâu &amp; chú rể trong phần gia đình</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!draftContent.hideCouplePhotos}
+                onClick={() =>
+                  onDraftChange({
+                    ...draftContent,
+                    hideCouplePhotos: !draftContent.hideCouplePhotos,
+                  })
+                }
+                className={cn(
+                  "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                  draftContent.hideCouplePhotos ? "bg-border" : "bg-accent",
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+                    draftContent.hideCouplePhotos ? "translate-x-0.5" : "translate-x-4",
+                  )}
+                />
+              </button>
+            </label>
+            <p className="text-[10px] text-fg-muted">
+              Tắt ảnh: chỉ hiện tên cô dâu/chú rể, một trên một dưới.
+            </p>
+
+            <div>
+              <p className="text-xs font-medium text-fg">Nhà xuất hiện trước</p>
+              <p className="mt-0.5 text-[10px] text-fg-muted">
+                Dùng để chọn nhà trai/gái sẽ xuất hiện ở bên trái hay bên trên thiệp.
+              </p>
+              <div className="mt-2 flex gap-3">
+                {[
+                  ["groom", "Nhà trai"],
+                  ["bride", "Nhà gái"],
+                ].map(([value, label]) => (
+                  <label key={value} className="flex items-center gap-1.5 text-xs text-fg">
+                    <input
+                      type="radio"
+                      name="hostFirst"
+                      value={value}
+                      checked={(draftContent.hostFirst ?? "groom") === value}
+                      onChange={() =>
+                        onDraftChange({
+                          ...draftContent,
+                          hostFirst: value as "groom" | "bride",
+                        })
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Lịch trình ngày cưới */}
+        <Card className="space-y-4 p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h3 className="font-sans text-base font-semibold text-fg">
+                Lịch trình ngày cưới
+              </h3>
+              <p className="mt-0.5 text-xs text-fg-muted">
+                Tối đa 6 mốc. Mặc định có sẵn một mốc, có thể sửa giờ và nội dung.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addTimeline}
+              disabled={timeline.length >= 6}
+            >
+              + Thêm lịch trình
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {timeline.map((item, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-[92px_1fr_auto] items-center gap-2 rounded-xl border border-border bg-bg p-2"
+              >
+                <input
+                  type="time"
+                  value={item.time}
+                  onChange={(event) =>
+                    updateTimeline(index, { time: event.target.value })
+                  }
+                  className="h-9 rounded-lg border border-border bg-surface px-2 text-xs text-fg"
+                  aria-label={`Giờ mốc ${index + 1}`}
+                />
+                <Input
+                  value={item.label}
+                  onChange={(event) =>
+                    updateTimeline(index, { label: event.target.value })
+                  }
+                  maxLength={80}
+                  placeholder="Ví dụ: Đón khách"
+                  aria-label={`Nội dung mốc ${index + 1}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeTimeline(index)}
+                  disabled={timeline.length <= 1}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-fg-muted disabled:opacity-40"
+                  aria-label={`Xóa mốc ${index + 1}`}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
+
         {/* Quà mừng & chuyển khoản */}
         <Card className="space-y-4 p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -620,8 +1191,15 @@ export function WeddingInfoEditor({
             {/* Nhà trai */}
             <div className="space-y-3 rounded-xl border border-border bg-bg p-4">
               <p className="font-sans text-sm font-semibold text-accent-text">
-                Tài khoản Nhà trai
+                Tài khoản 1
               </p>
+              <Input
+                label="Tên hiển thị tài khoản"
+                value={draftContent.gift.groomAccountLabel ?? ""}
+                onChange={(e) => updateGift({ groomAccountLabel: e.target.value })}
+                maxLength={40}
+                placeholder="Tài khoản Nhà ..."
+              />
               <Input
                 label="Ngân hàng"
                 value={draftContent.gift.groomBankName}
@@ -725,10 +1303,22 @@ export function WeddingInfoEditor({
             </div>
 
             {/* Nhà gái */}
-            <div className="space-y-3 rounded-xl border border-border bg-bg p-4">
+            <div
+              className={cn(
+                "space-y-3 rounded-xl border border-border bg-bg p-4",
+                !showBrideGift && "hidden",
+              )}
+            >
               <p className="font-sans text-sm font-semibold text-accent-text">
-                Tài khoản Nhà gái
+                Tài khoản 2
               </p>
+              <Input
+                label="Tên hiển thị tài khoản"
+                value={draftContent.gift.brideAccountLabel ?? ""}
+                onChange={(e) => updateGift({ brideAccountLabel: e.target.value })}
+                maxLength={40}
+                placeholder="Tài khoản Nhà ..."
+              />
               <Input
                 label="Ngân hàng"
                 value={draftContent.gift.brideBankName}
@@ -831,7 +1421,24 @@ export function WeddingInfoEditor({
               </div>
             </div>
           </div>
+
+          {!showBrideGift && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => updateGift({ brideAccountEnabled: true })}
+            >
+              + Thêm tài khoản
+            </Button>
+          )}
         </Card>
+
+        <MusicEditor
+          weddingId={wedding.id}
+          plan={wedding.plan}
+          content={draftContent}
+          onChange={onDraftChange}
+        />
 
         <div className="flex justify-end">
           <Button type="submit" variant="primary" loading={saving}>
@@ -840,6 +1447,45 @@ export function WeddingInfoEditor({
           </Button>
         </div>
       </form>
+
+      <Dialog
+        open={nameConfirmOpen}
+        onClose={() => setNameConfirmOpen(false)}
+        title="Xác nhận tên cô dâu/chú rể"
+        description="Vui lòng kiểm tra kỹ họ tên. Sau khi đã có 3 link khách, mỗi người chỉ được thay đổi tên 1 lần."
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-accent/30 bg-accent-soft/40 p-3 text-sm leading-relaxed text-text">
+            <p>
+              Bạn đang thay đổi tên hiển thị hoặc họ tên đầy đủ của cô dâu/chú rể.
+            </p>
+            <p className="mt-1 font-semibold">
+              Lưu ý: kiểm tra kĩ họ tên vì bạn chỉ có thể thay đổi 1 lần.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setNameConfirmOpen(false)}
+              disabled={saving}
+            >
+              Quay lại kiểm tra
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              loading={saving}
+              onClick={async () => {
+                setNameConfirmOpen(false);
+                await onSave();
+              }}
+            >
+              Xác nhận lưu tên
+            </Button>
+          </div>
+        </div>
+      </Dialog>
 
       {/* Vùng nguy hiểm: xóa thiệp */}
       <Card className="border-danger-border p-4 sm:p-6">

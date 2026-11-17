@@ -4,9 +4,9 @@ import { HeartHandshake, ShieldCheck, Zap } from "lucide-react";
 import { SITE_CONFIG, SITE_COPYRIGHT, SITE_LINKS, SITE_NAME } from "@/config/site";
 
 const RITUAL_LINKS = [
-  { label: "Lễ Vu Quy", href: SITE_LINKS.templates },
-  { label: "Lễ Thành Hôn", href: SITE_LINKS.templates },
-  { label: "Lễ Báo Hỷ", href: SITE_LINKS.templates },
+  { label: "Lễ Vu Quy", href: `${SITE_LINKS.templates}?ceremony=vu-quy` },
+  { label: "Lễ Thành Hôn", href: `${SITE_LINKS.templates}?ceremony=thanh-hon` },
+  { label: "Lễ Báo Hỷ", href: `${SITE_LINKS.templates}?ceremony=bao-hy` },
   { label: "Tất cả mẫu thiệp", href: SITE_LINKS.templates },
 ];
 

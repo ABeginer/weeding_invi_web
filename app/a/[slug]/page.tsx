@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { GuestAlbumGallery } from "@/components/album/GuestAlbumGallery";
 import { getPublicWeddingBySlug } from "@/lib/server/public-wedding";
 
 export const dynamic = "force-dynamic";
@@ -51,27 +52,14 @@ export default async function GuestAlbumPage({ params }: PageProps) {
             Cô dâu chú rể sẽ sớm bổ sung ảnh cưới vào album này.
           </div>
         ) : (
-          <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-            {album.map((photo, index) => (
-              <li key={photo.id}>
-                <a
-                  href={photo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Mở ảnh album ${index + 1}`}
-                  className="block overflow-hidden rounded-xl border border-border bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                >
-                  <img
-                    src={photo.url}
-                    alt={`Ảnh cưới ${index + 1}`}
-                    loading="lazy"
-                    decoding="async"
-                    className="aspect-[4/5] w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
-                  />
-                </a>
-              </li>
-            ))}
-          </ul>
+          <GuestAlbumGallery
+            photos={album.map((photo, index) => ({
+              id: photo.id,
+              url: photo.url,
+              alt: `Ảnh cưới ${index + 1}`,
+              position: index,
+            }))}
+          />
         )}
 
         <div className="mt-10 text-center">

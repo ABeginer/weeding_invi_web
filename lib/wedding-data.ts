@@ -7,11 +7,13 @@ import {
   QUOTE_MAX_LENGTH,
   toIsoPlus07,
   type TemplateData,
+  type DesignerElementOverride,
   type WeddingContent,
   type WeddingEvent,
   type WeddingGiftInfo,
   type WeddingPhoto,
   type WeddingPlan,
+  type WeddingTimelineItem,
 } from "./wedding-types";
 
 const DEFAULT_ISO_DATE = "2027-01-01T10:00:00+07:00";
@@ -35,9 +37,26 @@ function nullableUuid(value: unknown): string | null {
     : null;
 }
 
-function normalizeGiftInfo(rawGift: unknown): WeddingGiftInfo {
-  if (!isRecord(rawGift)) return emptyGiftInfo();
+function normalizeTimeline(raw: unknown): WeddingTimelineItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((item): item is Record<string, unknown> => isRecord(item))
+    .map((item) => ({
+      id: typeof item.id === "string" ? item.id : undefined,
+      time: clampString(item.time, 5),
+      label: clampString(item.label, 80),
+    }))
+    .filter((item) => item.time || item.label)
+    .slice(0, 6);
+}
+
+function normalizeGiftInfo(rawGift: unknown): WeddingGiftInfo {  if (!isRecord(rawGift)) return emptyGiftInfo();
   return {
+    groomAccountLabel: clampString(rawGift.groomAccountLabel, 40),
+    brideAccountLabel: clampString(rawGift.brideAccountLabel, 40),
+    brideAccountEnabled:
+      rawGift.brideAccountEnabled === true ||
+      Boolean(rawGift.brideBankName || rawGift.brideAccountNumber),
     groomBankName: clampString(rawGift.groomBankName, GIFT_TEXT_MAX_LENGTH),
     groomAccountName: clampString(rawGift.groomAccountName, GIFT_TEXT_MAX_LENGTH),
     groomAccountNumber: clampString(
@@ -73,6 +92,42 @@ export function createDefaultWeddingContent(): WeddingContent {
   };
 }
 
+function normalizeDesignerFields(raw: unknown): Record<string, string> | undefined {
+  if (!isRecord(raw)) return undefined;
+  const entries = Object.entries(raw).filter(
+    (entry): entry is [string, string] => typeof entry[1] === "string",
+  );
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function normalizeDesignerOverrides(
+  raw: unknown,
+): Record<string, DesignerElementOverride> | undefined {  if (!isRecord(raw)) return undefined;
+  const entries: [string, DesignerElementOverride][] = [];
+  for (const [id, value] of Object.entries(raw)) {
+    if (!isRecord(value)) continue;
+    const next: DesignerElementOverride = {};
+    for (const key of ["xPct", "yPct", "wPct", "hPct", "imageScale", "imageX", "imageY", "fontSize", "radius"] as const) {
+      if (typeof value[key] === "number" && Number.isFinite(value[key])) {
+        next[key] = value[key];
+      }
+    }
+    for (const key of ["text", "imageUrl", "color"] as const) {
+      if (typeof value[key] === "string" && value[key].length > 0) {
+        next[key] = value[key];
+      }
+    }
+    if (Object.keys(next).length > 0) entries.push([id, next]);
+  }
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function normalizeStringArray(raw: unknown, max: number): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const values = raw.filter((value): value is string => typeof value === "string").slice(0, max);
+  return values.length > 0 ? values : undefined;
+}
+
 /**
  * Chuẩn hóa `weddings.content` từ dữ liệu v3/v4 hoặc định dạng cũ trước migration_v3.
  */
@@ -90,6 +145,8 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
         brideName: clampString(c.brideName, NAME_MAX_LENGTH) || defaults.couple.brideName,
         groomFullName: clampString(c.groomFullName, NAME_MAX_LENGTH),
         brideFullName: clampString(c.brideFullName, NAME_MAX_LENGTH),
+        groomTitle: clampString(c.groomTitle, 40),
+        brideTitle: clampString(c.brideTitle, 40),
         groomParents: clampString(c.groomParents, NAME_MAX_LENGTH),
         brideParents: clampString(c.brideParents, NAME_MAX_LENGTH),
       },
@@ -100,6 +157,18 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
       groomPhotoId: nullableUuid(raw.groomPhotoId),
       bridePhotoId: nullableUuid(raw.bridePhotoId),
       gift: normalizeGiftInfo(raw.gift),
+      designerFields: normalizeDesignerFields(raw.designerFields),
+      designerOverrides: normalizeDesignerOverrides(raw.designerOverrides),
+      dressCode: normalizeStringArray(raw.dressCode, 3),
+      hiddenSections: normalizeStringArray(raw.hiddenSections, 20),
+      sectionOrder: normalizeStringArray(raw.sectionOrder, 20),
+      hideCouplePhotos: raw.hideCouplePhotos === true,
+      hostFirst: raw.hostFirst === "bride" ? "bride" : "groom",
+      timeline: normalizeTimeline(raw.timeline),
+      musicPreset: raw.musicPreset === "calm" || raw.musicPreset === "beginning" || raw.musicPreset === "custom" ? raw.musicPreset : "default",
+      musicUrl: clampString(raw.musicUrl, 500),
+      musicTitle: clampString(raw.musicTitle, 120),
+      mealMode: raw.mealMode === "veg" || raw.mealMode === "both" ? raw.mealMode : "meat",
     };
   }
 
@@ -139,6 +208,14 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
     groomPhotoId: nullableUuid(raw.groomPhotoId),
     bridePhotoId: nullableUuid(raw.bridePhotoId),
     gift: normalizeGiftInfo(raw.gift),
+    designerFields: normalizeDesignerFields(raw.designerFields),
+    designerOverrides: normalizeDesignerOverrides(raw.designerOverrides),
+    dressCode: normalizeStringArray(raw.dressCode, 3),
+    hiddenSections: normalizeStringArray(raw.hiddenSections, 20),
+    sectionOrder: normalizeStringArray(raw.sectionOrder, 20),
+    hideCouplePhotos: raw.hideCouplePhotos === true,
+    hostFirst: raw.hostFirst === "bride" ? "bride" : "groom",
+    timeline: normalizeTimeline(raw.timeline),
   };
 }
 
@@ -227,6 +304,8 @@ export function toTemplateData({
     couple: {
       groomName,
       brideName,
+      groomTitle: content.couple.groomTitle?.trim() || "Trưởng nam",
+      brideTitle: content.couple.brideTitle?.trim() || "Ái nữ",
       groomFullName,
       brideFullName,
       groomParents: content.couple.groomParents.trim(),
@@ -248,9 +327,25 @@ export function toTemplateData({
       brideQrUrl: brideQrPhoto?.url ?? null,
     },
     events: sortedEvents,
+    dressCode: content.dressCode,
+    hiddenSections: content.hiddenSections,
+    sectionOrder: content.sectionOrder,
+    hideCouplePhotos: content.hideCouplePhotos === true,
+    hostFirst: content.hostFirst === "bride" ? "bride" : "groom",
+    timeline: content.timeline ?? [],
+    mealMode: content.mealMode === "veg" || content.mealMode === "both" ? content.mealMode : "meat",
     music: {
-      src: musicOverrides?.src ?? "/media/wedding.mp3",
-      title: musicOverrides?.title ?? "Giai điệu ngày cưới",
+      src:
+        content.musicPreset === "custom" && content.musicUrl
+          ? content.musicUrl
+          : musicOverrides?.src ?? "/media/wedding.mp3",
+      title:
+        content.musicTitle?.trim() ||
+        (content.musicPreset === "calm"
+          ? "Bình yên bên nhau"
+          : content.musicPreset === "beginning"
+            ? "Khởi đầu dịu dàng"
+            : musicOverrides?.title ?? "Giai điệu ngày cưới"),
     },
     ui: {
       eyebrow: uiOverrides?.eyebrow ?? "Save The Date",
@@ -282,9 +377,9 @@ export function toTemplateData({
         uiOverrides?.signature ??
         `${groomName} ♥ ${brideName}${dotDate ? ` · ${dotDate}` : ""}`,
       autoScroll: uiOverrides?.autoScroll ?? {
-        enabled: false,
-        speedPxPerSec: 80,
-        startDelayMs: 600,
+        enabled: templateId === "basic-1",
+        speedPxPerSec: 100,
+        startDelayMs: 1200,
       },
       seoTitle:
         uiOverrides?.seoTitle ??

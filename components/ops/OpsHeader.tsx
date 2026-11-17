@@ -4,13 +4,19 @@ import * as React from "react";
 import Link from "next/link";
 import { LogOut, Menu, Shield } from "lucide-react";
 import { SITE_LINKS } from "@/config/site";
+import { getOpsRoleLabel, type OpsRole } from "@/lib/ops-roles";
 
 interface OpsHeaderProps {
   adminEmail: string;
+  role: OpsRole;
   onOpenMobileMenu?: () => void;
 }
 
-export function OpsHeader({ adminEmail, onOpenMobileMenu }: OpsHeaderProps) {
+export function OpsHeader({
+  adminEmail,
+  role,
+  onOpenMobileMenu,
+}: OpsHeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between border-b border-border bg-surface px-4 sm:px-6">
       {/* Left side: Hamburger button on mobile */}
@@ -34,6 +40,9 @@ export function OpsHeader({ adminEmail, onOpenMobileMenu }: OpsHeaderProps) {
 
       {/* Right side: Admin email and logout button */}
       <div className="flex items-center gap-3">
+        <span className="hidden rounded-full border border-border bg-surface-alt px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-text-muted uppercase sm:inline">
+          {getOpsRoleLabel(role)}
+        </span>
         <span className="max-w-[220px] truncate text-xs font-medium text-text sm:text-sm">
           {adminEmail || "Admin"}
         </span>

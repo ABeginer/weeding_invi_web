@@ -20,6 +20,7 @@ export function PricingTable({
   onSelectPaidPlan,
 }: PricingTableProps) {
   const copy = LANDING_COPY.pricing;
+  const visibleTiers = PRICING_TIERS.filter((tier) => !tier.hidden);
 
   return (
     <section
@@ -40,8 +41,8 @@ export function PricingTable({
         </ScrollReveal>
 
         {/* 3 thẻ gói nằm ngang trên desktop, xếp dọc gọn gàng trên mobile */}
-        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3 md:items-stretch">
-          {PRICING_TIERS.map((tier) => (
+        <div className="mx-auto mt-8 grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-2 md:items-stretch">
+          {visibleTiers.map((tier) => (
             <ScrollReveal
               as="article"
               key={tier.id}
@@ -72,11 +73,21 @@ export function PricingTable({
                     <h3 className="font-display text-xl font-semibold text-text sm:text-2xl">
                       {tier.name}
                     </h3>
-                    <div className="mt-3 flex items-baseline gap-1">
+                    <div className="mt-3 flex flex-wrap items-baseline gap-2">
                       <span className="font-display text-3xl font-semibold tracking-tight tabular-nums text-text sm:text-4xl">
                         {tier.price}
                       </span>
+                      {tier.originalPrice && (
+                        <span className="text-sm font-medium text-text-muted line-through decoration-danger-fg/70">
+                          {tier.originalPrice}
+                        </span>
+                      )}
                     </div>
+                    {tier.promoNote && (
+                      <p className="mt-1 text-[11px] font-semibold text-accent-text">
+                        {tier.promoNote}
+                      </p>
+                    )}
                     <p className="mt-1.5 text-sm leading-relaxed text-text-muted line-clamp-1">
                       {tier.tagline}
                     </p>

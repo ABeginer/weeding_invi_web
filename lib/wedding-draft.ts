@@ -2,6 +2,8 @@ export const WEDDING_DRAFT_STORAGE_KEY = "inviwedd_wedding_draft_v1";
 
 export interface WeddingDraft {
   templateId: string;
+  /** Mẫu designer sẽ gán ngay sau khi tạo thiệp (nếu có). */
+  designerTemplateId?: string;
   groomName: string;
   brideName: string;
   date: string;
@@ -28,6 +30,10 @@ export function readWeddingDraft(): WeddingDraft | null {
     }
     return {
       templateId: obj.templateId,
+      designerTemplateId:
+        typeof obj.designerTemplateId === "string" && obj.designerTemplateId
+          ? obj.designerTemplateId
+          : undefined,
       groomName: obj.groomName,
       brideName: obj.brideName,
       date: obj.date,

@@ -71,6 +71,8 @@ export interface WeddingDetail extends Wedding {
   events: WeddingEvent[];
   photos: WeddingPhoto[];
   designerTemplate?: WeddingDesignerTemplateInfo | null;
+  /** Canvas mới nhất để dashboard biết field ảnh khách cần điền. */
+  designerCanvas?: Record<string, unknown> | null;
 }
 
 export type DesignerTemplateStatus = "draft" | "review" | "published" | "archived";
@@ -79,6 +81,8 @@ export type DesignerTemplateStatus = "draft" | "review" | "published" | "archive
 export interface DesignerTemplateOption {
   id: string;
   name: string;
+  /** Tên khách hàng thấy khi chọn mẫu; null thì dùng `name`. */
+  displayTitle: string | null;
   plan: WeddingPlan;
   ritual: string | null;
   version: number;
@@ -89,6 +93,7 @@ export interface DesignerTemplateOption {
 export interface WeddingDesignerTemplateInfo {
   id: string;
   name: string;
+  displayTitle: string | null;
   /** Version đang ghim; `null` khi dữ liệu cũ chưa có version. */
   pinnedVersion: number | null;
   latestVersion: number;

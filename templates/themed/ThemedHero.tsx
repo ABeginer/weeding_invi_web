@@ -48,12 +48,15 @@ export function ThemedHero({
           style={{
             fontFamily: theme.coupleFontFamily,
             color: theme.textColor,
+            fontStyle: theme.id === "hoa-anh-dao-v2" ? "italic" : "normal",
           }}
-          className="text-4xl font-bold tracking-wide sm:text-5xl md:text-6xl"
+          className="break-words text-2xl font-semibold leading-[1.08] tracking-wide sm:text-3xl md:text-4xl"
         >
-          <span>{couple.groomName}</span>
-          <span className="mx-2 text-sm sm:text-lg opacity-80">&</span>
-          <span>{couple.brideName}</span>
+          <span className="block">{couple.groomName}</span>
+          <span className="my-1 block text-base font-normal opacity-75 sm:text-lg">
+            &amp;
+          </span>
+          <span className="block">{couple.brideName}</span>
         </h2>
       </div>
 
@@ -259,8 +262,12 @@ export function ThemedHero({
           className="mx-auto mt-6 max-w-md rounded-2xl border p-4 text-center shadow-sm backdrop-blur-sm sm:p-5"
         >
           <p
-            style={{ color: theme.textColor }}
-            className="font-serif text-xs leading-relaxed italic sm:text-sm"
+            style={{
+              color: theme.textColor,
+              fontFamily: theme.coupleFontFamily,
+              fontStyle: "italic",
+            }}
+            className="font-inv-quote text-xs leading-relaxed sm:text-sm"
           >
             &ldquo;{quote}&rdquo;
           </p>

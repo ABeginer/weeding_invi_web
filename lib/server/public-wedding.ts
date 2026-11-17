@@ -4,6 +4,8 @@ import { db } from "./supabase";
 import { normalizeWeddingContent } from "../wedding-data";
 import { validateWeddingSlug } from "../wedding-slug";
 import type {
+  GuestDiet,
+  GuestStatus,
   WeddingContent,
   WeddingEvent,
   WeddingPhoto,
@@ -65,6 +67,8 @@ function isMissingOptionalColumn(error: unknown): boolean {
 const GUEST_BASE_COLUMNS = "id, wedding_id, name";
 const GUEST_SALUTATION_COLUMNS =
   `${GUEST_BASE_COLUMNS}, relationship_group, custom_pronoun_host, custom_pronoun_guest`;
+const GUEST_FULL_COLUMNS =
+  `${GUEST_SALUTATION_COLUMNS}, status, plus_ones, diet, song_request, ride_needed`;
 
 interface GuestLookupRow {
   id: string;
@@ -73,6 +77,11 @@ interface GuestLookupRow {
   relationship_group?: string | null;
   custom_pronoun_host?: string | null;
   custom_pronoun_guest?: string | null;
+  status?: GuestStatus | null;
+  plus_ones?: number | null;
+  diet?: GuestDiet | null;
+  song_request?: string | null;
+  ride_needed?: boolean | null;
 }
 
 const RELATIONSHIP_GROUPS = [
@@ -91,7 +100,11 @@ function toRelationshipGroup(value: unknown): RelationshipGroup | null {
 async function loadGuestRow(
   query: (columns: string) => PromiseLike<MaybeSingleResult>,
 ): Promise<GuestLookupRow | null> {
-  for (const columns of [GUEST_SALUTATION_COLUMNS, GUEST_BASE_COLUMNS]) {
+  for (const columns of [
+    GUEST_FULL_COLUMNS,
+    GUEST_SALUTATION_COLUMNS,
+    GUEST_BASE_COLUMNS,
+  ]) {
     const { data, error } = await query(columns);
     if (!error) return (data as GuestLookupRow | null) ?? null;
     if (columns === GUEST_BASE_COLUMNS || !isMissingOptionalColumn(error)) {
@@ -129,8 +142,14 @@ export interface PublicGuestSalutationData {
 }
 
 export interface PublicGuestWeddingData extends PublicWeddingData {
+  guestId: string;
   guestName: string;
   guestSalutation: PublicGuestSalutationData;
+  rsvpStatus: GuestStatus;
+  plusOnes: number;
+  diet: GuestDiet | null;
+  songRequest: string | null;
+  rideNeeded: boolean;
 }
 
 async function loadDesignerTemplate(
@@ -146,6 +165,7 @@ async function loadDesignerTemplate(
 
 export async function getPublicWeddingBySlug(
   slug: string,
+  options?: { includeDesignerTemplate?: boolean },
 ): Promise<PublicWeddingData | null> {
   const slugCheck = validateWeddingSlug(slug);
   if (!slugCheck.valid) return null;
@@ -163,10 +183,12 @@ export async function getPublicWeddingBySlug(
   // Thiệp bị ops tạm khoá thì coi như không tồn tại với khách.
   if (isWeddingSuspendedRow(row)) return null;
 
+  const includeDesigner = options?.includeDesignerTemplate !== false;
+
   const [events, photos, designerTemplate] = await Promise.all([
     listWeddingEvents(row.id),
     listWeddingPhotos(row.id),
-    loadDesignerTemplate(row),
+    includeDesigner ? loadDesignerTemplate(row) : Promise.resolve(null),
   ]);
 
   return {
@@ -221,11 +243,17 @@ export async function getPublicWeddingByGuestSlug(
     events,
     photos,
     designerTemplate,
+    guestId: guest.id,
     guestName: guest.name,
     guestSalutation: {
       relationshipGroup: toRelationshipGroup(guest.relationship_group),
       customPronounHost: guest.custom_pronoun_host ?? null,
       customPronounGuest: guest.custom_pronoun_guest ?? null,
     },
+    rsvpStatus: (guest.status as GuestStatus) ?? "pending",
+    plusOnes: typeof guest.plus_ones === "number" ? Math.max(0, guest.plus_ones) : 0,
+    diet: (guest.diet as GuestDiet) ?? null,
+    songRequest: guest.song_request ?? null,
+    rideNeeded: Boolean(guest.ride_needed),
   };
 }

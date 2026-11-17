@@ -388,6 +388,20 @@ export function listPhotos(weddingId: string): Promise<WeddingPhoto[]> {
   return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}/photos`);
 }
 
+export function uploadWeddingMusic(
+  weddingId: string,
+  file: File,
+  title: string,
+): Promise<{ wedding: Wedding; url: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("title", title);
+  return authFormRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/music`,
+    formData,
+  );
+}
+
 export function uploadPhoto(
   weddingId: string,
   file: File | Blob,
@@ -472,10 +486,14 @@ export function createGuest(weddingId: string, name: string): Promise<Guest> {
   );
 }
 
-export function createGuestsBulk(weddingId: string, names: string[]): Promise<Guest[]> {
+export function createGuestsBulk(
+  weddingId: string,
+  names: string[],
+  eventIds: string[] = [],
+): Promise<Guest[]> {
   return authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/bulk`,
-    post({ names }),
+    post({ names, eventIds }),
   );
 }
 

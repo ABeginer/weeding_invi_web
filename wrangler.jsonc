@@ -25,11 +25,6 @@
 			"service": "wedding-invitation"
 		}
 	],
-	"images": {
-		// Enable image optimization
-		// see https://opennext.js.org/cloudflare/howtos/image
-		"binding": "IMAGES"
-	},
 	"r2_buckets": [
 		{
 			"binding": "PHOTOS",

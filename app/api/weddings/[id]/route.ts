@@ -1,6 +1,6 @@
 import { getTemplateLockedMessage, isTemplateAllowedForPlan } from "@/config/plans";
 import { authRoute, fail, json, readBody, text } from "@/lib/server/http";
-import { getWeddingDesignerTemplateInfo } from "@/lib/server/designer";
+import { getWeddingDesignerTemplateInfo, getPinnedDesignerTemplate } from "@/lib/server/designer";
 import { toWedding, type WeddingRow } from "@/lib/server/mappers";
 import { deletePhotoObject } from "@/lib/server/storage";
 import { db } from "@/lib/server/supabase";
@@ -26,12 +26,17 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
     listWeddingPhotos(wedding.id),
     getWeddingDesignerTemplateInfo(wedding),
   ]);
+  const designer = await getPinnedDesignerTemplate({
+    designerTemplateId: wedding.designer_template_id,
+    designerTemplateVersion: wedding.designer_template_version,
+  });
 
   return json({
     ...toWedding(wedding),
     events,
     photos,
     designerTemplate,
+    designerCanvas: designer?.canvas ?? null,
   });
 });
 

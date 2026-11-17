@@ -3,6 +3,7 @@
 import * as React from "react";
 import dynamic from "next/dynamic";
 import type { WeddingTemplateProps } from "./types";
+import { THEME_CONFIGS } from "./themed/theme-configs";
 
 function TemplateLoadingFallback() {
   return (
@@ -83,6 +84,24 @@ const DynamicVuonkinhXanhNhat = dynamic(() => import("./vuonkinh-xanh-nhat"), {
 const DynamicVuonkinhXanh = dynamic(() => import("./vuonkinh-xanh"), {
   loading: () => <TemplateLoadingFallback />,
 });
+const DynamicVariant = dynamic(() => import("./themed/VariantTemplate").then((mod) => mod.VariantTemplate), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicHoaAnhDaoV2 = dynamic(() => import("./hoa-anh-dao-v2"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicDoMayMan = dynamic(() => import("./do-may-man"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicXanhTuDo = dynamic(() => import("./xanh-tu-do"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicDoMixXanh = dynamic(() => import("./do-mix-xanh"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicNauToiGian = dynamic(() => import("./nau-toi-gian"), {
+  loading: () => <TemplateLoadingFallback />,
+});
 
 export interface TemplatePreviewRendererProps extends WeddingTemplateProps {
   templateId: string;
@@ -92,7 +111,30 @@ export function TemplatePreviewRenderer({
   templateId,
   ...props
 }: TemplatePreviewRendererProps) {
+  const variantMatch = templateId.match(/^(.+)-(v[234])$/);
+  if (variantMatch && THEME_CONFIGS[variantMatch[1]]) {
+    const baseId = variantMatch[1];
+    const variantIndex = Number(variantMatch[2].slice(1)) - 2;
+    return (
+      <DynamicVariant
+        baseId={baseId}
+        variantIndex={variantIndex}
+        {...props}
+      />
+    );
+  }
+
   switch (templateId) {
+    case "nau-toi-gian":
+      return <DynamicNauToiGian {...props} />;
+    case "do-mix-xanh":
+      return <DynamicDoMixXanh {...props} />;
+    case "xanh-tu-do":
+      return <DynamicXanhTuDo {...props} />;
+    case "do-may-man":
+      return <DynamicDoMayMan {...props} />;
+    case "hoa-anh-dao-v2":
+      return <DynamicHoaAnhDaoV2 {...props} />;
     case "basic-2":
     case "ritual-gia-tien":
       return <DynamicBasic2 {...props} />;

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Envelope } from "./Envelope";
 import { MusicPlayer } from "./MusicPlayer";
 import {
+  InvitationOpenedContext,
   useInvitationContained,
   useInvitationDesktopLayout,
   useWeddingContent,
@@ -82,7 +83,6 @@ export function InvitationShell({
   const playAudio = React.useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !audioAvailable || !data.music?.src) return;
-
     try {
       audio.volume = 0.04;
       const playPromise = audio.play();
@@ -388,8 +388,12 @@ export function InvitationShell({
             )
         }
       >
-        {children}
+        <InvitationOpenedContext.Provider value={envelopeDismissed}>
+          {children}
+        </InvitationOpenedContext.Provider>
       </div>
+
+
 
       {!externalMusicControl && (
         <MusicPlayer

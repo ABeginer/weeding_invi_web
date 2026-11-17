@@ -5,6 +5,10 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PLAN_LABELS } from "@/config/template-features";
 import { cn } from "@/lib/utils";
+import {
+  frameOffsetMax,
+  setFrameOffset,
+} from "@/lib/frame-scroll";
 import { TemplatePreviewDialog } from "./template-preview-dialog";
 import type { CollectionTemplate } from "./types";
 
@@ -34,6 +38,10 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
   const [position, setPosition] = React.useState(total);
   const [instant, setInstant] = React.useState(false);
   const [openAt, setOpenAt] = React.useState<number | null>(null);
+  const [hoveredCopy, setHoveredCopy] = React.useState<number | null>(null);
+  const [liveReady, setLiveReady] = React.useState(false);
+  const [canHover, setCanHover] = React.useState(false);
+  const liveFrameRef = React.useRef<HTMLIFrameElement | null>(null);
   const [failedImages, setFailedImages] = React.useState<Set<string>>(
     () => new Set(),
   );
@@ -53,8 +61,25 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
     [templates, total],
   );
 
+  React.useEffect(() => {
+    const query = window.matchMedia("(hover: hover) and (pointer: fine)");
+    setCanHover(query.matches);
+    const onChange = () => setCanHover(query.matches);
+    query.addEventListener?.("change", onChange);
+    return () => query.removeEventListener?.("change", onChange);
+  }, []);
+
   const activeLogical = total > 0 ? logicalIndex(position, total) : 0;
   const current = templates[activeLogical];
+
+  // Mẫu designer đang ở giữa tự chạy preview trên desktop; mẫu code chỉ chạy khi hover.
+  const liveCopy =
+    hoveredCopy ??
+    (canHover && current?.kind === "designer" ? position : null);
+
+  React.useEffect(() => {
+    setLiveReady(false);
+  }, [liveCopy]);
 
   // Khi chạm mép bản sao, nhảy im lặng về bản giữa để cuộn vô tận không thấy điểm nối.
   React.useEffect(() => {
@@ -73,6 +98,32 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
 
     return () => window.clearTimeout(timer);
   }, [position, total]);
+
+  React.useEffect(() => {
+    if (liveCopy === null || !liveReady) return;
+    const frame = liveFrameRef.current;
+    if (!frame) return;
+    let raf = 0;
+    let started = 0;
+    const tick = (now: number) => {
+      try {
+        const max = frameOffsetMax(frame);
+        if (!max) return;
+        if (!started) started = now;
+        const duration = Math.min(24_000, Math.max(7_000, max * 7));
+        const progress = Math.min(1, (now - started) / duration);
+        setFrameOffset(frame, max * progress);
+        if (progress < 1) raf = window.requestAnimationFrame(tick);
+      } catch {
+        raf = window.requestAnimationFrame(tick);
+      }
+    };
+    raf = window.requestAnimationFrame(tick);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      setFrameOffset(frame, 0);
+    };
+  }, [liveCopy, liveReady]);
 
   const go = React.useCallback((delta: number) => {
     setPosition((currentPosition) => currentPosition + delta);
@@ -177,8 +228,28 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
                     openPreview(index);
                   }
                 }}
-                onPointerEnter={() => prefetch(template.snapshotImage)}
-                onFocus={() => prefetch(template.snapshotImage)}
+                onPointerEnter={() => {
+                  prefetch(template.snapshotImage);
+                  if (template.demoUrl && !template.isPlaceholder) {
+                    setHoveredCopy(copyIndex);
+                  }
+                }}
+                onPointerLeave={() => {
+                  setHoveredCopy((current) =>
+                    current === copyIndex ? null : current,
+                  );
+                }}
+                onFocus={() => {
+                  prefetch(template.snapshotImage);
+                  if (template.demoUrl && !template.isPlaceholder) {
+                    setHoveredCopy(copyIndex);
+                  }
+                }}
+                onBlur={() => {
+                  setHoveredCopy((current) =>
+                    current === copyIndex ? null : current,
+                  );
+                }}
                 aria-label={`Mẫu thiệp ${template.name}`}
                 aria-current={isSelected ? "true" : undefined}
                 tabIndex={isSelected ? 0 : -1}
@@ -215,7 +286,12 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
                             return next;
                           })
                         }
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className={cn(
+                          "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
+                          liveCopy === copyIndex &&
+                            liveReady &&
+                            "opacity-0",
+                        )}
                       />
                     ) : (
                       <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-surface-alt px-4 text-center">
@@ -233,6 +309,26 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
                         </span>
                       </span>
                     )}
+
+                    {template.demoUrl &&
+                      !template.isPlaceholder &&
+                      liveCopy === copyIndex && (
+                        <iframe
+                          ref={liveFrameRef}
+                          src={
+                            template.embedUrl ??
+                            (template.demoUrl ? `${template.demoUrl}?embed=1` : "")
+                          }
+                          title={`Xem trước ${template.name}`}
+                          tabIndex={-1}
+                          loading="lazy"
+                          onLoad={() => setLiveReady(true)}
+                          className={cn(
+                            "pointer-events-none absolute inset-0 h-full w-full border-0 transition-opacity duration-300",
+                            liveReady ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+                      )}
                   </span>
 
                   <span className="mt-2 flex items-center justify-between gap-2 px-0.5">

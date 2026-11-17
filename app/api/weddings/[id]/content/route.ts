@@ -3,6 +3,7 @@ import { authRoute, fail, json, readBody } from "@/lib/server/http";
 import { toWedding, type WeddingRow } from "@/lib/server/mappers";
 import { db } from "@/lib/server/supabase";
 import { getOwnedWedding } from "@/lib/server/weddings";
+import { normalizeWeddingContent } from "@/lib/wedding-data";
 import { weddingContentPatchSchema } from "@/lib/wedding-types";
 import { getTemplateMeta } from "@/templates/registry";
 
@@ -29,9 +30,60 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   }
 
   const { templateId, content } = parsed.data;
+  const previousContent = normalizeWeddingContent(wedding.content);
+  const previous = previousContent.couple;
+  const next = content.couple;
+  const groomChanged =
+    previous.groomName.trim() !== next.groomName.trim() ||
+    previous.groomFullName.trim() !== next.groomFullName.trim();
+  const brideChanged =
+    previous.brideName.trim() !== next.brideName.trim() ||
+    previous.brideFullName.trim() !== next.brideFullName.trim();
+
+  const lockSupported =
+    typeof (wedding as WeddingRow & { groom_name_changes?: unknown })
+      .groom_name_changes === "number";
+  let groomNameChanges = 0;
+  let brideNameChanges = 0;
+  if (lockSupported && (groomChanged || brideChanged)) {
+    const client = db();
+    const { count: guestCount, error: guestCountError } = await client
+      .from("guests")
+      .select("id", { count: "exact", head: true })
+      .eq("wedding_id", wedding.id);
+    if (guestCountError) throw guestCountError;
+    if ((guestCount ?? 0) >= 3) {
+      const current = wedding as WeddingRow & {
+        groom_name_changes?: number | null;
+        bride_name_changes?: number | null;
+      };
+      groomNameChanges = current.groom_name_changes ?? 0;
+      brideNameChanges = current.bride_name_changes ?? 0;
+      if (groomChanged && groomNameChanges >= 1) {
+        return fail(
+          "Tên chú rể chỉ được thay đổi 1 lần sau khi đã có 3 link khách. Vui lòng liên hệ hỗ trợ.",
+          409,
+        );
+      }
+      if (brideChanged && brideNameChanges >= 1) {
+        return fail(
+          "Tên cô dâu chỉ được thay đổi 1 lần sau khi đã có 3 link khách. Vui lòng liên hệ hỗ trợ.",
+          409,
+        );
+      }
+    }
+  }
+
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
+  if (lockSupported && (groomChanged || brideChanged)) {
+    patch.groom_name_changes =
+      groomNameChanges + (groomChanged ? 1 : 0);
+    patch.bride_name_changes =
+      brideNameChanges + (brideChanged ? 1 : 0);
+    patch.names_locked_at = new Date().toISOString();
+  }
 
   if (templateId !== undefined) {
     const meta = getTemplateMeta(templateId);

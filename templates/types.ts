@@ -6,7 +6,7 @@ import type {
   WeddingPlan,
 } from "@/lib/types";
 
-export type TemplateId =
+export type BaseTemplateId =
   | "basic-1"
   | "basic-2"
   | "basic-3"
@@ -31,7 +31,18 @@ export type TemplateId =
   | "vuon-xuan-do"
   | "vuon-xuan-xanh"
   | "vuonkinh-xanh-nhat"
-  | "vuonkinh-xanh";
+  | "vuonkinh-xanh"
+  | "hoa-anh-dao-v2"
+  | "do-may-man"
+  | "xanh-tu-do"
+  | "do-mix-xanh"
+  | "nau-toi-gian";
+
+export type TemplateId =
+  | BaseTemplateId
+  | `${BaseTemplateId}-v2`
+  | `${BaseTemplateId}-v3`
+  | `${BaseTemplateId}-v4`;
 
 export type TemplateRenderMode = TemplateMode;
 

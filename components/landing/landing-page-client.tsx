@@ -13,6 +13,7 @@ import { InteractiveFeatureBento } from "./interactive-feature-bento";
 import { LandingNavbar } from "./navbar";
 import { PaymentTransferModal } from "./pricing-modals";
 import { PricingTable } from "./pricing-table";
+import { VIP_SALES_ENABLED } from "@/config/pricing";
 import { SocialProofMarquee } from "./social-proof-marquee";
 import { TemplateShowcase } from "./template-showcase";
 import { ToolsPreviewSection } from "./tools-preview";
@@ -46,7 +47,7 @@ export function LandingPageClient({
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const pay = params.get("pay");
-    if (pay === "pro" || pay === "vip") {
+    if (pay === "pro" || (pay === "vip" && VIP_SALES_ENABLED)) {
       setPaymentPlan(pay);
       params.delete("pay");
       const nextQuery = params.toString();

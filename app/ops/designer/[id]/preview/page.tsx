@@ -1,17 +1,16 @@
-import type { Metadata } from "next";
+"use client";
+
+import * as React from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { DesignerTemplateRenderer } from "@/components/designer/designer-template-renderer";
 import type { DesignerCanvasContent } from "@/components/ops/designer-types";
-import { getDesignerTemplate } from "@/lib/server/designer";
-
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Preview mẫu thiết kế",
-  robots: { index: false, follow: false },
-};
+import {
+  getOpsDesignerTemplate,
+  OpsApiError,
+  type OpsDesignerTemplateDetail,
+} from "@/lib/ops-api";
 
 const SAMPLE_VALUES = {
   groom: "Minh Khôi",
@@ -22,23 +21,79 @@ const SAMPLE_VALUES = {
   salutation: "Trân trọng kính mời",
 };
 
-type PageProps = {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ p?: string }>;
-};
+export default function DesignerPreviewPage() {
+  const params = useParams<{ id: string }>();
+  const id = typeof params?.id === "string" ? params.id : "";
+  const [template, setTemplate] =
+    React.useState<OpsDesignerTemplateDetail | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [pageIndex, setPageIndex] = React.useState(0);
 
-export default async function DesignerPreviewPage({ params, searchParams }: PageProps) {
-  const { id } = await params;
-  const { p } = await searchParams;
-  const template = await getDesignerTemplate(id);
-  if (!template) notFound();
+  React.useEffect(() => {
+    let cancelled = false;
+    setTemplate(null);
+    setError(null);
+    if (!id) {
+      setError("Không tìm thấy mẫu.");
+      return;
+    }
+    getOpsDesignerTemplate(id)
+      .then((data) => {
+        if (!cancelled) setTemplate(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(
+            err instanceof OpsApiError
+              ? err.message
+              : "Không tải được mẫu thiết kế.",
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-  const canvas = template.canvas_json as unknown as DesignerCanvasContent;
+  React.useEffect(() => {
+    const requested = Number.parseInt(
+      new URLSearchParams(window.location.search).get("p") ?? "0",
+      10,
+    );
+    setPageIndex(Number.isFinite(requested) ? Math.max(0, requested) : 0);
+  }, [id]);
+
+  if (error) {
+    return (
+      <main className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
+        <p className="text-sm font-semibold text-text">{error}</p>
+        <Link
+          href="/ops/designer"
+          className="inline-flex h-9 items-center rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
+        >
+          Quay lại danh sách mẫu
+        </Link>
+      </main>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-text-muted">
+          <Loader2 className="h-7 w-7 animate-spin text-accent-text" />
+          <span className="text-xs">Đang tải bản xem trước...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const canvas =
+    template.canvas_json && typeof template.canvas_json === "object"
+      ? (template.canvas_json as unknown as DesignerCanvasContent)
+      : ({ width: 390, height: 844, background: "#FAF8F5", elements: [] } as DesignerCanvasContent);
   const pages = canvas.pages ?? [];
-  const requested = Number.parseInt(p ?? "0", 10);
-  const pageIndex = Number.isFinite(requested)
-    ? Math.min(Math.max(requested, 0), Math.max(pages.length - 1, 0))
-    : 0;
+  const safeIndex = Math.min(pageIndex, Math.max(pages.length - 1, 0));
 
   return (
     <main className="mx-auto max-w-4xl space-y-4 p-4 sm:p-6">
@@ -70,24 +125,24 @@ export default async function DesignerPreviewPage({ params, searchParams }: Page
         <DesignerTemplateRenderer
           canvas={canvas}
           values={SAMPLE_VALUES}
-          pageIndex={pageIndex}
+          pageIndex={safeIndex}
         />
       </div>
 
       {pages.length > 1 && (
         <div className="flex flex-wrap justify-center gap-2">
           {pages.map((page, index) => (
-            <Link
+            <a
               key={page.id}
               href={`/ops/designer/${template.id}/preview?p=${index}`}
               className={
-                index === pageIndex
+                index === safeIndex
                   ? "rounded-full border border-accent bg-accent-soft px-3 py-1.5 text-xs font-semibold text-accent-text"
                   : "rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-text-muted"
               }
             >
               {page.name}
-            </Link>
+            </a>
           ))}
         </div>
       )}

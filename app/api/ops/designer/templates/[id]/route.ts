@@ -1,10 +1,10 @@
 import { fail, json, readBody, UUID_RE } from "@/lib/server/http";
-import { opsRoute } from "@/lib/server/ops";
+import { opsDesignerRoute } from "@/lib/server/ops";
 import { getDesignerTemplate, updateDesignerTemplate } from "@/lib/server/designer";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export const GET = opsRoute<Ctx>(async (_req, _admin, { params }) => {
+export const GET = opsDesignerRoute<Ctx>(async (_req, _user, { params }) => {
   const { id } = await params;
   if (!UUID_RE.test(id)) return fail("Không tìm thấy mẫu.", 404);
   const template = await getDesignerTemplate(id);
@@ -12,7 +12,7 @@ export const GET = opsRoute<Ctx>(async (_req, _admin, { params }) => {
   return json(template);
 });
 
-export const PATCH = opsRoute<Ctx>(async (req, _admin, { params }) => {
+export const PATCH = opsDesignerRoute<Ctx>(async (req, _user, { params }) => {
   const { id } = await params;
   if (!UUID_RE.test(id)) return fail("Không tìm thấy mẫu.", 404);
 

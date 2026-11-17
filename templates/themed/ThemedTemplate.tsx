@@ -9,11 +9,12 @@ import {
   MapPin,
   Sparkles,
 } from "lucide-react";
-import { GiftModal } from "@/components/invitation/GiftModal";
+import { DesignerGiftBox } from "@/components/designer/designer-gift-box";
+import { DesignerAlbum } from "@/components/designer/designer-album";
+import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
+import { SakuraPetals } from "@/components/designer/sakura-petals";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
-import { TemplateGiftSection } from "../shared/TemplateGiftSection";
-import { TemplateLightboxModal } from "../shared/TemplateOverlays";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import type { WeddingTemplateProps } from "../types";
 import { ThemeMotif } from "./ThemeMotif";
@@ -65,8 +66,6 @@ export function ThemedTemplate({
   const prefersReducedMotion = useReducedMotion();
   const [opened, setOpened] = React.useState(isOpenedProp);
   const [coverDismissed, setCoverDismissed] = React.useState(isOpenedProp);
-  const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
-  const [giftOpen, setGiftOpen] = React.useState(false);
 
   React.useEffect(() => {
     setOpened(isOpenedProp);
@@ -88,7 +87,16 @@ export function ThemedTemplate({
       : data.ui.defaultGuestName;
 
   const isDesktopLayout = viewport === "desktop" && !contained;
-  const photos = data.photos.gallery;
+  const galleryLimit = data.plan === "free" ? 5 : 30;
+  const photos = data.photos.gallery.slice(0, galleryLimit);
+  const hiddenSections = new Set(data.hiddenSections ?? []);
+  const sectionOrder = data.sectionOrder?.length
+    ? data.sectionOrder
+    : ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+  const orderOf = (key: string) => {
+    const index = sectionOrder.indexOf(key);
+    return index < 0 ? 99 : index;
+  };
 
   const handleOpen = () => {
     setOpened(true);
@@ -97,12 +105,13 @@ export function ThemedTemplate({
 
   return (
     <div
+      data-template-id={theme.id}
       style={{
         background: theme.bgGradient,
         color: theme.textColor,
       }}
       className={cn(
-        "relative w-full font-sans antialiased overflow-x-hidden selection:bg-white/20 selection:text-white transition-colors",
+        "themed-invitation relative w-full min-w-0 font-sans antialiased overflow-x-hidden selection:bg-white/20 selection:text-white transition-colors",
         contained ? "min-h-full" : "min-h-screen-dvh",
         !coverDismissed &&
           (contained
@@ -143,7 +152,7 @@ export function ThemedTemplate({
             )}
           >
             {/* Ambient Floating Falling Particles */}
-            {!prefersReducedMotion && (
+            {!prefersReducedMotion && theme.id !== "hoa-anh-dao-v2" && (
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 {AMBIENT_PARTICLES.map((p, idx) => (
                   <span
@@ -183,7 +192,7 @@ export function ThemedTemplate({
                     theme.waxSealShadow ||
                     "0 6px 20px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.5), inset 0 -3px 6px rgba(0,0,0,0.45)",
                 }}
-                className="animate-seal-pulse-center mb-3 flex h-14 w-14 items-center justify-center rounded-full"
+                className="invite-seal animate-seal-pulse-center mb-3 flex h-14 w-14 items-center justify-center rounded-full"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -225,9 +234,9 @@ export function ThemedTemplate({
                 }}
                 className="my-2 text-3xl font-bold tracking-wide sm:text-4xl"
               >
-                <span>{data.couple.groomName}</span>
-                <span className="mx-2 text-base sm:text-xl opacity-80">&</span>
-                <span>{data.couple.brideName}</span>
+                <span className="block">{data.couple.groomName}</span>
+                <span className="my-1 block text-base opacity-80 sm:text-xl">&</span>
+                <span className="block">{data.couple.brideName}</span>
               </h1>
 
               {/* Decorative divider with flourish */}
@@ -293,6 +302,8 @@ export function ThemedTemplate({
         )}
       </AnimatePresence>
 
+      {theme.id === "hoa-anh-dao-v2" && <SakuraPetals fixed={!contained} />}
+
       {/* ==================== MAIN INVITATION CONTENT ==================== */}
       <div
         className={cn(
@@ -301,7 +312,7 @@ export function ThemedTemplate({
         )}
       >
         {/* Floating Music Button */}
-        {!externalMusicControl && data.music && (
+        {!externalMusicControl && data.music && !hiddenSections.has("music") && (
           <div className="fixed bottom-5 right-5 z-40">
             <LiveMusicFloatingButton
               src={data.music.src}
@@ -322,21 +333,31 @@ export function ThemedTemplate({
         />
 
         {/* 2. THÔNG TIN LỄ CƯỚI & HAI BÊN GIA ĐÌNH */}
-        <ThemedFamily
-          theme={theme}
-          couple={data.couple}
-          photos={data.photos}
-        />
+        {!hiddenSections.has("family") && (
+          <div style={{ order: orderOf("family") }}>
+            <ThemedFamily
+              theme={theme}
+              couple={data.couple}
+              photos={data.photos}
+              hidePhotos={data.hideCouplePhotos === true}
+              hostFirst={data.hostFirst === "bride" ? "bride" : "groom"}
+            />
+          </div>
+        )}
 
         {/* 3. LỊCH CƯỚI & ĐẾM NGƯỢC (Visual Month Calendar & Countdown) */}
-        <ThemedCalendar
-          theme={theme}
-          targetDate={targetWeddingDate}
-        />
+        {!hiddenSections.has("calendar") && (
+          <div style={{ order: orderOf("calendar") }}>
+            <ThemedCalendar
+              theme={theme}
+              targetDate={targetWeddingDate}
+            />
+          </div>
+        )}
 
         {/* 4. SỰ KIỆN CƯỚI (EVENTS TIMELINE) */}
-        {data.events.length > 0 && (
-          <section className="py-2">
+        {!hiddenSections.has("map") && data.events.length > 0 && (
+          <section className="py-2" style={{ order: orderOf("map") }}>
             <div className="mb-4 text-center">
               <MapPin
                 className="mx-auto mb-1.5 h-6 w-6"
@@ -349,7 +370,7 @@ export function ThemedTemplate({
                 }}
                 className="font-serif text-xl font-bold tracking-wide uppercase sm:text-2xl"
               >
-                Sự Kiện Cưới
+                Sự Kiện
               </h3>
             </div>
 
@@ -363,10 +384,10 @@ export function ThemedTemplate({
                       backgroundColor: theme.cardBg,
                       borderColor: theme.borderColor,
                     }}
-                    className="flex flex-col rounded-2xl border p-5 shadow-lg backdrop-blur-md"
+                    className="flex min-w-0 flex-col rounded-2xl border p-5 text-center shadow-lg backdrop-blur-md"
                   >
                     <div
-                      className="flex items-center justify-between border-b pb-3"
+                      className="flex flex-col items-center justify-center gap-1.5 border-b pb-3"
                       style={{ borderColor: theme.borderColor }}
                     >
                       <span
@@ -412,7 +433,7 @@ export function ThemedTemplate({
                           backgroundColor: theme.buttonBg,
                           color: theme.buttonTextColor,
                         }}
-                        className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl py-2 px-4 text-xs font-semibold shadow transition-transform hover:scale-[1.02]"
+                        className="mt-4 inline-flex w-auto items-center justify-center gap-1.5 rounded-full px-4 py-1.5 text-[11px] font-semibold shadow transition-transform hover:scale-[1.02]"
                       >
                         <Compass className="h-3.5 w-3.5" />
                         <span>Chỉ đường trên Google Maps</span>
@@ -426,94 +447,67 @@ export function ThemedTemplate({
         )}
 
         {/* 5. QUY ĐỊNH TRANG PHỤC (DRESS CODE) */}
-        <ThemedDressCode theme={theme} />
+        {!hiddenSections.has("dresscode") && (
+          <div style={{ order: orderOf("dresscode") }}>
+            <ThemedDressCode theme={theme} />
+          </div>
+        )}
 
         {/* 6. KHOẢNH KHẮC KỶ NIỆM (GALLERY) */}
-        {photos.length > 0 && (
-          <section className="py-2">
-            <div className="mb-4 text-center">
-              <Heart
-                className="mx-auto mb-1.5 h-6 w-6"
-                style={{ color: theme.accentTextColor }}
-              />
-              <h3
-                style={{
-                  color: theme.accentTextColor,
-                  fontFamily: theme.headingFontFamily,
-                }}
-                className="font-serif text-xl font-bold tracking-wide uppercase sm:text-2xl"
-              >
-                Khoảnh Khắc Kỷ Niệm
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-              {photos.map((item, idx) => (
-                <button
-                  type="button"
-                  key={item.id || idx}
-                  onClick={() => setLightboxIndex(idx)}
-                  className="group relative aspect-[3/4] w-full overflow-hidden rounded-xl border border-white/20 shadow-md focus:outline-none"
-                >
-                  <img
-                    src={item.url}
-                    alt={item.alt || `Kỷ niệm ${idx + 1}`}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
-                </button>
-              ))}
-            </div>
-
-            {/* Lightbox modal */}
-            <TemplateLightboxModal
+        {!hiddenSections.has("album") && photos.length > 0 && (
+          <div style={{ order: orderOf("album") }}>
+            <DesignerAlbum
               photos={photos}
-              activeIndex={lightboxIndex}
-              onClose={() => setLightboxIndex(null)}
-              onChangeIndex={(idx) => setLightboxIndex(idx)}
+              limit={galleryLimit}
+              accentColor={theme.buttonBg}
             />
-          </section>
+          </div>
+        )}
+
+        {!hiddenSections.has("albumQr") && data.weddingSlug && (
+          <div style={{ order: orderOf("albumQr") }}>
+            <GuestAlbumQr
+              slug={data.weddingSlug}
+              accentColor={theme.buttonBg}
+              textColor={theme.textColor}
+              mutedColor={theme.subtextColor}
+            />
+          </div>
         )}
 
         {/* 7. HỘP MỪNG CƯỚI (GIFT / VIETQR) */}
-        <section className="py-2">
-          <TemplateGiftSection
-            tone={theme.templateTone}
-            contained={contained}
-            onOpenGift={() => setGiftOpen(true)}
-          />
-
-          <GiftModal
-            open={giftOpen}
-            onClose={() => setGiftOpen(false)}
-            gift={data.gift}
-            plan={data.plan}
-            coupleName={`${data.couple.groomName} & ${data.couple.brideName}`}
-            guestName={guestName}
-            tone={theme.giftTone}
-            wishAnchorId="rsvp-wishes"
-          />
-        </section>
+        {!hiddenSections.has("gift") && (
+          <div style={{ order: orderOf("gift") }}>
+            <DesignerGiftBox
+              gift={data.gift}
+              accentColor={theme.buttonBg}
+              textColor={theme.textColor}
+              mutedColor={theme.subtextColor}
+              fontFamily={theme.coupleFontFamily}
+            />
+          </div>
+        )}
 
         {/* 8. XÁC NHẬN THAM DỰ & SỔ LƯU BÚT (RSVP & WISHES) */}
-        <section id="rsvp-wishes" className="py-2">
-          <TemplateRsvpSection
-            data={data}
-            mode={mode}
-            tone={theme.templateTone}
-            contained={contained}
-            inviteSlug={inviteSlug}
-            weddingSlug={weddingSlug ?? data.weddingSlug}
-            invitationMode={invitationMode}
-            guestName={displayGuest}
-            initialStatus={initialStatus}
-            initialPlusOnes={initialPlusOnes}
-            initialDiet={initialDiet}
-            initialSongRequest={initialSongRequest}
-            initialRideNeeded={initialRideNeeded}
-          />
-        </section>
+        {!hiddenSections.has("rsvp") && (
+          <section id="rsvp-wishes" className="py-2" style={{ order: orderOf("rsvp") }}>
+            <TemplateRsvpSection
+              data={data}
+              mode={mode}
+              tone={theme.templateTone}
+              contained={contained}
+              inviteSlug={inviteSlug}
+              weddingSlug={weddingSlug ?? data.weddingSlug}
+              invitationMode={invitationMode}
+              guestName={displayGuest}
+              initialStatus={initialStatus}
+              initialPlusOnes={initialPlusOnes}
+              initialDiet={initialDiet}
+              initialSongRequest={initialSongRequest}
+              initialRideNeeded={initialRideNeeded}
+            />
+          </section>
+        )}
 
         {/* 9. FOOTER */}
         <footer className="pt-8 pb-6 text-center">

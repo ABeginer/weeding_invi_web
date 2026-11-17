@@ -1,5 +1,5 @@
 import { fail, json, readBody } from "@/lib/server/http";
-import { opsRoute } from "@/lib/server/ops";
+import { opsDesignerRoute } from "@/lib/server/ops";
 import { db } from "@/lib/server/supabase";
 import {
   buildDesignerAssetKey,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/server/storage";
 
 const MAX_BYTES = 4 * 1024 * 1024;
-const KINDS = ["photo", "png", "svg", "background", "snapshot"] as const;
+const KINDS = ["photo", "png", "svg", "background", "snapshot", "cover"] as const;
 
 function decodeDataUrl(dataUrl: string): Uint8Array | null {
   const match = /^data:image\/(webp|png|jpeg);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
@@ -22,7 +22,7 @@ function decodeDataUrl(dataUrl: string): Uint8Array | null {
   return bytes;
 }
 
-export const POST = opsRoute(async (req: Request, admin) => {
+export const POST = opsDesignerRoute(async (req: Request, user) => {
   const body = await readBody(req);
   const dataUrl = typeof body?.dataUrl === "string" ? body.dataUrl : "";
   const kind = typeof body?.kind === "string" ? body.kind : "";
@@ -45,14 +45,14 @@ export const POST = opsRoute(async (req: Request, admin) => {
   const { error } = await db().from("designer_assets").insert({
     kind,
     r2_key: key,
-    uploaded_by: admin.email ?? "ops",
+    uploaded_by: user.email ?? "ops",
   });
   if (error) throw error;
 
   return json({ key, url: `/media/${key}` }, 201);
 });
 
-export const GET = opsRoute(async () => {
+export const GET = opsDesignerRoute(async () => {
   const { data, error } = await db()
     .from("designer_assets")
     .select("id, kind, r2_key, width, height, created_at")

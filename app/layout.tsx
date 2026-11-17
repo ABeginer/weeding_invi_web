@@ -35,6 +35,7 @@ const cormorantGaramond = Cormorant_Garamond({
   style: ["normal", "italic"],
   variable: "--font-cormorant",
   display: "swap",
+  preload: false,
 });
 
 const lora = Lora({
@@ -43,6 +44,7 @@ const lora = Lora({
   style: ["normal", "italic"],
   variable: "--font-lora",
   display: "swap",
+  preload: false,
 });
 
 // Các font trang trí trước đây tải qua @import (render-blocking); nay tự host
@@ -61,6 +63,7 @@ const ebGaramond = EB_Garamond({
   style: ["normal", "italic"],
   variable: "--font-eb-garamond",
   display: "swap",
+  preload: false,
 });
 
 const viaodaLibre = Viaoda_Libre({
@@ -68,6 +71,7 @@ const viaodaLibre = Viaoda_Libre({
   weight: ["400"],
   variable: "--font-viaoda",
   display: "swap",
+  preload: false,
 });
 
 const pinyonScript = Pinyon_Script({
@@ -75,6 +79,7 @@ const pinyonScript = Pinyon_Script({
   weight: ["400"],
   variable: "--font-pinyon",
   display: "swap",
+  preload: false,
 });
 
 const theNautigal = The_Nautigal({
@@ -82,6 +87,7 @@ const theNautigal = The_Nautigal({
   weight: ["400", "700"],
   variable: "--font-nautigal",
   display: "swap",
+  preload: false,
 });
 
 const carattere = Carattere({
@@ -89,6 +95,7 @@ const carattere = Carattere({
   weight: ["400"],
   variable: "--font-carattere",
   display: "swap",
+  preload: false,
 });
 
 function resolveMetadataBase(): URL | undefined {

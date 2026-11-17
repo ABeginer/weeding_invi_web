@@ -6,7 +6,6 @@ import {
   ExternalLink,
   Loader2,
   Palette,
-  RefreshCw,
 } from "lucide-react";
 import { getPlanLabel, isTemplateAllowedForPlan } from "@/config/plans";
 import {
@@ -14,7 +13,6 @@ import {
   assignDesignerTemplate,
   listDesignerTemplateOptions,
 } from "@/lib/api";
-import { getDesignerUpdateVersion } from "@/lib/designer-invite";
 import type {
   DesignerTemplateAssignmentResult,
   DesignerTemplateOption,
@@ -32,8 +30,8 @@ interface DesignerTemplateCardProps {
 }
 
 /**
- * Gán mẫu designer cho thiệp và ghim version tại thời điểm gán.
- * Designer publish bản mới sẽ không tự đổi thiệp của khách.
+ * Gán mẫu designer cho thiệp. Thiệp tự động dùng bản mới nhất khi designer
+ * xuất bản, không cần thao tác "Cập nhật lên vN".
  */
 export function DesignerTemplateCard({
   wedding,
@@ -100,13 +98,7 @@ export function DesignerTemplateCard({
     }
   };
 
-  const updateTarget =
-    current && current.status === "published"
-      ? getDesignerUpdateVersion(current.pinnedVersion, current.latestVersion)
-      : null;
-
-  return (
-    <Card className="space-y-4 p-4 sm:p-6">
+  return (    <Card className="space-y-4 p-4 sm:p-6">
       <div>
         <h3 className="flex items-center gap-2 font-sans text-base font-semibold text-fg">
           <Palette className="h-4 w-4 text-accent-text" aria-hidden="true" />
@@ -114,10 +106,8 @@ export function DesignerTemplateCard({
         </h3>
         <p className="mt-0.5 text-xs text-fg-muted">
           Thiệp mời khách tại <code className="rounded bg-surface-alt px-1 py-0.5">/m/&lt;slug&gt;</code>{" "}
-          sẽ hiển thị đúng phiên bản đã ghim. Khi designer xuất bản bản mới, thiệp
-          của bạn không tự đổi — bạn chủ động bấm cập nhật. Khung xem trước bên
-          phải vẫn hiển thị mẫu giao diện; dùng nút “Xem trước” để xem mẫu
-          designer.
+          tự động dùng bản mới nhất khi designer xuất bản. Không cần bấm cập nhật
+          thủ công; khung xem trước bên phải vẫn hiển thị mẫu giao diện.
         </p>
       </div>
 
@@ -125,39 +115,18 @@ export function DesignerTemplateCard({
         <div className="rounded-xl border border-accent/40 bg-accent-soft/40 p-3.5">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-fg">{current.name}</p>
+              <p className="truncate text-sm font-semibold text-fg">
+                {current.displayTitle ?? current.name}
+              </p>
               <p className="mt-0.5 text-xs text-fg-muted">
-                {current.pinnedVersion
-                  ? `Đang ghim v${current.pinnedVersion}`
-                  : "Chưa ghim phiên bản"}{" "}
-                · bản mới nhất v{current.latestVersion}
+                {current.displayTitle ? `Thiết kế: ${current.name} · ` : ""}
+                Tự động dùng bản mới nhất v{current.latestVersion}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              {updateTarget && (
-                <Button
-                  size="sm"
-                  variant="primary"
-                  loading={busyKey === "update"}
-                  disabled={Boolean(busyKey)}
-                  onClick={() =>
-                    runAssignment(
-                      "update",
-                      {
-                        designerTemplateId: current.id,
-                        version: updateTarget,
-                      },
-                      `Đã cập nhật thiệp lên v${updateTarget}`,
-                    )
-                  }
-                >
-                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Cập nhật lên v{updateTarget}</span>
-                </Button>
-              )}
-              {current.pinnedVersion && (
+              {current.latestVersion && (
                 <a
-                  href={`/mau/designer/${current.id}?v=${current.pinnedVersion}`}
+                  href={`/mau/designer/${current.id}?v=${current.latestVersion}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent-text"
@@ -185,14 +154,8 @@ export function DesignerTemplateCard({
           </div>
           {current.status !== "published" && (
             <p className="mt-2 text-[11px] text-fg-muted">
-              Mẫu này không còn ở trạng thái xuất bản. Bản đã ghim vẫn hiển thị
-              cho khách; bỏ gán nếu muốn quay lại mẫu giao diện.
-            </p>
-          )}
-          {current.pinnedVersion === null && (
-            <p className="mt-2 text-[11px] text-danger-fg">
-              Thiệp chưa ghim phiên bản nào nên đang dùng mẫu giao diện. Chọn
-              lại mẫu này bên dưới để ghim bản mới nhất.
+              Mẫu này không còn ở trạng thái xuất bản. Bỏ gán nếu muốn quay lại
+              mẫu giao diện.
             </p>
           )}
         </div>
@@ -271,14 +234,15 @@ export function DesignerTemplateCard({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-semibold text-fg">
-                      {option.name}
+                      {option.displayTitle ?? option.name}
                     </span>
                     <span className="block truncate text-[11px] text-fg-muted">
-                      v{option.version} · Gói {getPlanLabel(option.plan)}
+                      {option.displayTitle ? `${option.name} · ` : ""}v{option.version} · Gói{" "}
+                      {getPlanLabel(option.plan)}
                       {option.ritual ? ` · ${option.ritual}` : ""}
                     </span>
                   </span>
-                  {assigned && current?.pinnedVersion ? (
+                  {assigned ? (
                     <span className="shrink-0 rounded-full border border-accent/45 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-text">
                       Đang gán
                     </span>

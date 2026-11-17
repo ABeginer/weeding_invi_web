@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { TemplateCarousel } from "@/components/templates/template-carousel";
+import { LiveTemplateCollection } from "@/components/templates/live-template-collection";
 import type { CollectionTemplate } from "@/components/templates/types";
 import { SITE_LINKS } from "@/config/site";
 import { getTemplateCollection } from "@/templates/registry";
@@ -40,7 +40,10 @@ export function TemplateShowcase() {
         </header>
 
         <div className="mt-6 sm:mt-8">
-          <TemplateCarousel templates={templates} infinite />
+          <LiveTemplateCollection
+            initialTemplates={templates}
+            variant="carousel"
+          />
         </div>
 
         <div className="mt-6 text-center">

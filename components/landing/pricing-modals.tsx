@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { LANDING_COPY } from "@/config/landing";
+import { VIP_SALES_ENABLED } from "@/config/pricing";
 import { SITE_LINKS } from "@/config/site";
 import { ApiError, createOrder, getOrder, listWeddings } from "@/lib/api";
 import type { CreatedOrder, Wedding, WeddingPlan } from "@/lib/types";
@@ -641,7 +642,8 @@ export function PlanUpgradeModal({
 
   if (!template) return null;
 
-  const targetPlan = template.plan === "vip" ? "vip" : "pro";
+  const targetPlan: Exclude<WeddingPlan, "free"> =
+    template.plan === "vip" && VIP_SALES_ENABLED ? "vip" : "pro";
   const planName = LANDING_COPY.templates.planBadges[targetPlan];
   const copy = LANDING_COPY.planUpgradeModal;
 

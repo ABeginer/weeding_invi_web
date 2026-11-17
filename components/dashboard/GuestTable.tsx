@@ -51,6 +51,8 @@ interface GuestTableProps {
   weddingId: string;
   plan: WeddingPlan;
   events: WeddingEvent[];
+  mealMode?: "meat" | "veg" | "both";
+  onMealModeChange?: (mode: "meat" | "veg" | "both") => void;
   onGuestsChanged?: () => void;
 }
 
@@ -65,6 +67,8 @@ export function GuestTable({
   weddingId,
   plan,
   events,
+  mealMode = "meat",
+  onMealModeChange,
   onGuestsChanged,
 }: GuestTableProps) {
   const { showToast } = useToast();
@@ -550,6 +554,36 @@ export function GuestTable({
         </div>
       </div>
 
+      <div className="rounded-xl border border-border bg-surface p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-fg">Loại hình bữa ăn</p>
+            <p className="mt-0.5 text-xs text-fg-muted">
+              Khóa lựa chọn của khách trong form xác nhận tham dự.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {[
+              ["meat", "Mặn"],
+              ["veg", "Chay"],
+              ["both", "Chay và mặn"],
+            ].map(([value, label]) => (
+              <label key={value} className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-fg">
+                <input
+                  type="radio"
+                  name="mealMode"
+                  value={value}
+                  checked={mealMode === value}
+                  onChange={() => onMealModeChange?.(value as "meat" | "veg" | "both")}
+                  className="h-3.5 w-3.5 accent-[var(--accent)]"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {reachedGuestLimit && guestLimit !== null && (
         <div className="rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-xs text-text sm:text-sm">
           Gói {getPlanLabel(plan)} giới hạn tối đa{" "}
@@ -998,6 +1032,7 @@ export function GuestTable({
         plan={plan}
         currentGuestCount={total}
         existingGuestNames={guests.map((g) => g.name)}
+        events={events}
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
         onCreated={(created) => {

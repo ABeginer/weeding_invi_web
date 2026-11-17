@@ -22,6 +22,10 @@ export interface WeddingRow {
   template_id: string;
   plan: WeddingPlan;
   content: unknown;
+  /** Có từ migration_v17; DB cũ hơn sẽ không trả về. */
+  groom_name_changes?: number | null;
+  bride_name_changes?: number | null;
+  names_locked_at?: string | null;
   /** Có từ migration_v15; DB cũ hơn sẽ không trả về hai cột này. */
   designer_template_id?: string | null;
   designer_template_version?: number | null;

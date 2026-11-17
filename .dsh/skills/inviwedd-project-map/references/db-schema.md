@@ -4,7 +4,7 @@ Source of truth is `supabase/*.sql` in the working tree. Nothing here was execut
 
 ## Migration files (run by hand in Supabase SQL Editor)
 
-Owner confirmation (2026-11-14): **all migration files in this repository have been applied** to the live project. Status is recorded as APPLIED on that statement only; no migration was executed by the agent.
+Owner confirmation (2026-11-14): **all committed migrations through v15 have been applied** to the live project; **v16 is still pending**. Status is recorded as APPLIED only on the owner's statement; no migration was executed by the agent.
 
 | File | What it changes | Applied? |
 |---|---|---|
@@ -18,12 +18,15 @@ Owner confirmation (2026-11-14): **all migration files in this repository have b
 | `supabase/migration_v13_album_kind.sql` | Recreates `photos_kind_check` to include `album` | APPLIED (owner + verified) |
 | `supabase/migration_v14_designer.sql` | Creates `designer_templates`, `designer_template_versions`, `designer_assets`; RLS + revoke | APPLIED (owner-confirmed 2026-11-14, verified read-only) |
 | `supabase/migration_v15_designer_versions.sql` | Adds `weddings.designer_template_id` (FK → `designer_templates`, `on delete set null`) + `weddings.designer_template_version`, index | APPLIED (owner-confirmed 2026-11-14, verified read-only) |
+| `supabase/migration_v16_ops_roles_template_meta.sql` | Creates `ops_members` (email → role admin/designer); adds `designer_templates.display_title` (customer-facing title) | UNVERIFIED — owner must run it; code degrades until then |
 
 The repository contains no v6–v9 files; the owner states the files present are the complete set that was run. Because v10 is applied, `weddings.suspended` exists — the `content.suspended` fallback in `lib/server/weddings.ts` stays as harmless defensive code.
 
 Migrations v11–v13 were run by the owner on 2026-11-14. Verified through the REST API with the service key: `guests.song_request`/`ride_needed` are selectable (200), `gifts` is selectable/insertable (200/201), and a `photos` row with `kind = 'album'` inserted successfully (201). The temporary verification rows were deleted afterwards (wedding cascade + user).
 
 Migrations v14–v15 were run by the owner on 2026-11-14. Verified read-only with the service key through `lib/server/supabase.ts` (no secrets printed): `designer_templates` (37 rows — 1 published **Đào Phấn** v2, 36 draft), `designer_template_versions` (2 rows: v1, v2), `designer_assets` (0 rows) and `weddings.designer_template_id` / `designer_template_version` (4 weddings, 1 pinned: slug `aaaaa` → Đào Phấn v2) are all selectable.
+
+Migration v16 was added with the ops-roles batch and **has not been run** at the time of writing: `ops_members` and `designer_templates.display_title` do not exist yet, so `/ops/roles` and the customer title field show a migration hint, while the rest of the ops Template page still works (rename/cover).
 
 
 ## Tables
@@ -61,7 +64,10 @@ Visibility rule implemented in `lib/server/weddings.ts`: a guest with no rows se
 `id uuid PK`, `admin_email text`, `action text`, `target_type text`, `target_id text`, `reason text check length ≥ 5`, `created_at`. Index `audit_logs_created_idx (created_at desc)`. Writes are best-effort: `recordAuditLog()` swallows insert errors.
 
 ### `designer_templates` (v14)
-`id uuid PK`, `name 2..80`, `plan check (free|pro|vip)`, `ritual ≤40`, `status check (draft|review|published|archived)`, `version integer default 1` (latest published), `canvas_json jsonb` (multi-page: `{ width, height, pages[] }`), `background_key text`, `snapshot_key text`, `created_by text`, timestamps. Index `(status, updated_at desc)`. RLS + revoke; server-only through `lib/server/designer.ts`.
+`id uuid PK`, `name 2..80` (internal design name), `display_title text` (v16, customer-facing title; fallback to `name`), `plan check (free|pro|vip)`, `ritual ≤40`, `status check (draft|review|published|archived)`, `version integer default 1` (latest published), `canvas_json jsonb` (multi-page: `{ width, height, pages[] }`), `background_key text`, `snapshot_key text` (used as the cover image by the ops Template page), `created_by text`, timestamps. Index `(status, updated_at desc)`. RLS + revoke; server-only through `lib/server/designer.ts`.
+
+### `ops_members` (v16)
+`email text PK check (email = lower(email), 3..254)`, `role text check (admin|designer)`, `created_by text`, `created_at`, `updated_at`. RLS + revoke; backend only. `ADMIN_EMAIL`/`ADMIN_EMAILS` remain super-admins and cannot be demoted from the UI. Role resolution lives in `lib/server/ops.ts` (`resolveOpsRole`); `opsRoute` = admin only, `opsDesignerRoute` = admin or designer. When the table is missing, only env admins are recognised and the roles page shows a migration hint.
 
 ### `designer_template_versions` (v14)
 `id uuid PK`, `template_id → designer_templates cascade`, `version integer`, `canvas_json jsonb`, `background_key`, `snapshot_key`, `published_at`, unique `(template_id, version)`. Immutable snapshot written by `POST /api/ops/designer/templates/[id]/publish`; weddings render a pinned row, so publishing a new version never changes an existing invitation.

@@ -204,6 +204,30 @@ const NEW_TEMPLATE_DEMO_COUPLES: Record<
   string,
   { groomName: string; brideName: string; groomFullName: string; brideFullName: string }
 > = {
+  "do-may-man": {
+    groomName: "Hoàng Long",
+    brideName: "Bảo Ngọc",
+    groomFullName: "Đặng Hoàng Long",
+    brideFullName: "Vũ Bảo Ngọc",
+  },
+  "xanh-tu-do": {
+    groomName: "Minh Quân",
+    brideName: "Thanh Hà",
+    groomFullName: "Nguyễn Minh Quân",
+    brideFullName: "Lê Thanh Hà",
+  },
+  "do-mix-xanh": {
+    groomName: "Đức Anh",
+    brideName: "Mai Linh",
+    groomFullName: "Trần Đức Anh",
+    brideFullName: "Phạm Mai Linh",
+  },
+  "nau-toi-gian": {
+    groomName: "Hoàng Nam",
+    brideName: "Thảo Vy",
+    groomFullName: "Nguyễn Hoàng Nam",
+    brideFullName: "Trần Thảo Vy",
+  },
   "anh-dao-hong": {
     groomName: "Minh Khang",
     brideName: "Nhã Phương",

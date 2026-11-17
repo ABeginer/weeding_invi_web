@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ templateId: string }>;
+  searchParams: Promise<{ embed?: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -29,8 +30,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function TemplateDemoPage({ params }: PageProps) {
+export default async function TemplateDemoPage({ params, searchParams }: PageProps) {
   const { templateId } = await params;
+  const { embed } = await searchParams;
   const tpl = getTemplateMeta(templateId);
 
   if (!tpl) {
@@ -59,6 +61,7 @@ export default async function TemplateDemoPage({ params }: PageProps) {
       template={tpl}
       isAuthenticated={isAuthenticated}
       userEmail={userEmail}
+      embed={embed === "1"}
     />
   );
 }

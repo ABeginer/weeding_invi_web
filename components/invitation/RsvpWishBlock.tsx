@@ -43,6 +43,17 @@ export function RsvpWishBlock({
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const isReadOnlyPreview = useInvitationReadOnly();
+  const isOliveGarden = data.templateId === "basic-1";
+  const mealMode = data.mealMode ?? "meat";
+  const dietOptions =
+    mealMode === "both"
+      ? [
+          { value: "meat" as const, label: "Mặn" },
+          { value: "veg" as const, label: "Chay" },
+        ]
+      : mealMode === "veg"
+        ? [{ value: "veg" as const, label: "Chay" }]
+        : [{ value: "meat" as const, label: "Mặn" }];
   const isPublicMode = !isReadOnlyPreview && mode === "public";
   const isNameLocked = !isPublicMode && !isReadOnlyPreview && Boolean(guestName && guestName.trim().length > 0);
   const effectiveWeddingSlug = weddingSlug ?? data.weddingSlug;
@@ -52,7 +63,9 @@ export function RsvpWishBlock({
     "accepted" | "declined" | null
   >(initialStatus !== "pending" ? initialStatus : null);
   const [plusOnes, setPlusOnes] = React.useState<number>(initialPlusOnes);
-  const [diet, setDiet] = React.useState<GuestDiet | null>(initialDiet ?? "meat");
+  const [diet, setDiet] = React.useState<GuestDiet | null>(
+    initialDiet ?? (data.mealMode === "veg" ? "veg" : "meat"),
+  );
   const [songRequest, setSongRequest] = React.useState<string>(initialSongRequest ?? "");
 
   const [isEditingRsvp, setIsEditingRsvp] = React.useState(
@@ -148,7 +161,12 @@ export function RsvpWishBlock({
     }
 
     const nextPlusOnes = selectedChoice === "accepted" ? plusOnes : 0;
-    const nextDiet = selectedChoice === "accepted" ? (diet ?? "meat") : null;
+    const nextDiet =
+      selectedChoice === "accepted"
+        ? mealMode === "both"
+          ? (diet ?? "meat")
+          : mealMode
+        : null;
     const nextSongRequest =
       selectedChoice === "accepted" && songRequest.trim() ? songRequest.trim() : null;
     const nextRideNeeded = false;
@@ -474,7 +492,7 @@ export function RsvpWishBlock({
                 : "text-[clamp(32px,8.8vw,46px)]",
             )}
           >
-            Xác Nhận Tham Dự
+            {isOliveGarden ? "Xác nhận Tham Dự" : "Xác Nhận Tham Dự"}
           </h2>
           <p
             className={cn(
@@ -482,7 +500,9 @@ export function RsvpWishBlock({
               isContained ? "text-[13px]" : "text-[14px] sm:text-[15px]",
             )}
           >
-            Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới.
+            {isOliveGarden
+              ? "Sự có mặt của quý khách là niềm vui lớn của gia đình chúng tôi. Xin dành chút thời gian xác nhận để chúng tôi chuẩn bị đón tiếp thật chu đáo. Trân trọng!"
+              : "Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới."}
           </p>
         </div>
 
@@ -648,7 +668,7 @@ export function RsvpWishBlock({
                       : "border-inv-olive/50 bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
                   )}
                 >
-                  Tiếc quá, mình bận mất rồi
+                  {isOliveGarden ? "Tiếc quá, tôi bận mất rồi" : "Tiếc quá, mình bận mất rồi"}
                 </button>
               </div>
             </div>
@@ -683,19 +703,16 @@ export function RsvpWishBlock({
                   <span className="block font-inv-serif text-xs font-semibold text-inv-ink">
                     Ăn chay / Ăn mặn
                   </span>
-                  <div className="mt-1.5 grid grid-cols-2 gap-2">
-                    {[
-                      { value: "meat" as const, label: "Mặn" },
-                      { value: "veg" as const, label: "Chay" },
-                    ].map((opt) => {
+                  <div className={cn("mt-1.5 grid gap-2", dietOptions.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+                    {dietOptions.map((opt) => {
                       const active = (diet ?? "meat") === opt.value;
                       return (
                         <button
                           key={opt.value}
                           type="button"
-                          disabled={submitting !== null}
+                          disabled={submitting !== null || dietOptions.length === 1}
                           aria-pressed={active}
-                          onClick={() => setDiet(opt.value)}
+                          onClick={() => dietOptions.length > 1 && setDiet(opt.value)}
                           className={cn(
                             "flex h-9 cursor-pointer items-center justify-center rounded-xl border font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                             active

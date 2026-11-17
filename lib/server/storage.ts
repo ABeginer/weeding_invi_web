@@ -28,6 +28,10 @@ export const MEDIA_KEY_RE =
 /** Ảnh nền/asset của designer (ops), lưu cùng bucket PHOTOS. */
 export const DESIGNER_MEDIA_KEY_RE = /^designer\/[0-9a-f-]{36}\.webp$/i;
 
+/** Nhạc nền tự tải lên (Pro). */
+export const MUSIC_MEDIA_KEY_RE =
+  /^weddings\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/music\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.mp3$/i;
+
 export function buildDesignerAssetKey(): string {
   return `designer/${crypto.randomUUID()}.webp`;
 }
@@ -36,12 +40,20 @@ export function buildPhotoStorageKey(weddingId: string, kind: PhotoKind): string
   return `weddings/${weddingId}/${kind}/${crypto.randomUUID()}.webp`;
 }
 
+export function buildMusicStorageKey(weddingId: string): string {
+  return `weddings/${weddingId}/music/${crypto.randomUUID()}.mp3`;
+}
+
 export function buildMediaUrl(storageKey: string): string {
   return `/media/${storageKey}`;
 }
 
 export function isValidMediaStorageKey(key: string): boolean {
-  return MEDIA_KEY_RE.test(key) || DESIGNER_MEDIA_KEY_RE.test(key);
+  return (
+    MEDIA_KEY_RE.test(key) ||
+    DESIGNER_MEDIA_KEY_RE.test(key) ||
+    MUSIC_MEDIA_KEY_RE.test(key)
+  );
 }
 
 export function detectImageMimeFromBytes(
@@ -92,6 +104,15 @@ async function getPhotosBucket(): Promise<R2BucketLike> {
     throw new Error("R2 bucket binding PHOTOS chưa được cấu hình.");
   }
   return bucket;
+}
+
+export async function putMusicObject(
+  storageKey: string,
+  bytes: Uint8Array,
+  contentType: "audio/mpeg",
+): Promise<void> {
+  const bucket = await getPhotosBucket();
+  await bucket.put(storageKey, bytes, { httpMetadata: { contentType } });
 }
 
 export async function putPhotoObject(

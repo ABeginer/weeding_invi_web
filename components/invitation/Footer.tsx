@@ -6,6 +6,7 @@ import { useInvitationContained, useWeddingContent } from "./WeddingContentProvi
 export function Footer() {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
+  const isOliveGarden = data.templateId === "basic-1";
   const resolvedBannerImage =
     data.photos.gallery[1]?.url ?? data.photos.heroUrl ?? null;
   const FooterTag = isContained ? "div" : "footer";
@@ -58,11 +59,13 @@ export function Footer() {
               : "text-[clamp(50px,13.5vw,66px)]",
           )}
         >
-          {data.ui.thankYouHeading}
+          {isOliveGarden ? "Thank You" : data.ui.thankYouHeading}
         </p>
 
         <p className="mx-auto mt-3 max-w-[360px] font-inv-serif text-[14.5px] leading-[1.65] text-white/95">
-          {data.ui.thankYouBody}
+          {isOliveGarden
+            ? "Cám ơn sự yêu thương, hiện diện và lời chúc phúc của Quý Vị dành cho chúng tôi!"
+            : data.ui.thankYouBody}
         </p>
 
         <p className="mt-4 font-inv-serif text-[11px] font-medium uppercase tracking-[0.22em] text-inv-cream-soft/90">

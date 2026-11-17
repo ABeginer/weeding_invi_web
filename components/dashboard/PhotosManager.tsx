@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
+  Crop,
   ExternalLink,
   GripVertical,
   ImageOff,
@@ -26,6 +27,7 @@ import {
   ApiError,
   deletePhoto,
   reorderPhotos,
+  updateContent,
   uploadPhoto,
 } from "@/lib/api";
 import {
@@ -35,6 +37,7 @@ import {
   isRawImageFile,
 } from "@/lib/image/compress";
 import { createOgCoverImage } from "@/lib/image-compress";
+import type { DesignerImageField } from "@/lib/designer-fields";
 import type {
   PhotoKind,
   PhotoSlot,
@@ -49,6 +52,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/Toast";
+import { ImageCropDialog } from "./ImageCropDialog";
 
 interface PhotosManagerProps {
   weddingId: string;
@@ -56,6 +60,7 @@ interface PhotosManagerProps {
   plan: WeddingPlan;
   content: WeddingContent;
   photos: WeddingPhoto[];
+  designerImageFields?: DesignerImageField[];
   onPhotosStateChange: (
     nextPhotos: WeddingPhoto[],
     nextContent?: WeddingContent,
@@ -108,6 +113,7 @@ export function PhotosManager({
   plan,
   content,
   photos,
+  designerImageFields = [],
   onPhotosStateChange,
 }: PhotosManagerProps) {
   const { showToast } = useToast();
@@ -117,6 +123,12 @@ export function PhotosManager({
     Partial<Record<MainPhotoSlot, string>>
   >({});
   const [slotError, setSlotError] = React.useState<string | null>(null);
+  const [cropRequest, setCropRequest] = React.useState<{
+    file: File;
+    aspect: number;
+    title: string;
+    onConfirm: (file: File) => void;
+  } | null>(null);
 
   const [galleryStatus, setGalleryStatus] = React.useState<string | null>(null);
   const [galleryError, setGalleryError] = React.useState<string | null>(null);
@@ -124,8 +136,54 @@ export function PhotosManager({
   const [draggingId, setDraggingId] = React.useState<string | null>(null);
 
   const [albumStatus, setAlbumStatus] = React.useState<string | null>(null);
+  const [albumQr, setAlbumQr] = React.useState<string | null>(null);
+  const [qrPreviewOpen, setQrPreviewOpen] = React.useState(false);
   const [failedAlbumUploads, setFailedAlbumUploads] = React.useState<FailedUploadItem[]>([]);
   const albumInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [designerFieldBusy, setDesignerFieldBusy] = React.useState<string | null>(null);
+  const [designerFieldError, setDesignerFieldError] = React.useState<string | null>(null);
+
+  const updateDesignerImage = async (key: string, value: string | null) => {
+    const next = { ...(content.designerFields ?? {}) };
+    if (value) next[key] = value;
+    else delete next[key];
+    const nextContent = { ...content, designerFields: next };
+    setDesignerFieldError(null);
+    try {
+      const saved = await updateContent(weddingId, { content: nextContent });
+      onPhotosStateChange(photos, saved.content);
+      showToast(value ? "Đã lưu ảnh cho mẫu thiết kế" : "Đã bỏ ảnh", "success");
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        window.location.assign("/auth/login");
+        return;
+      }
+      setDesignerFieldError(
+        error instanceof Error ? error.message : "Không lưu được ảnh.",
+      );
+    }
+  };
+
+  const handleDesignerImage = async (key: string, file: File) => {
+    setDesignerFieldError(null);
+    setDesignerFieldBusy(key);
+    try {
+      const compressed = await compressImage(file, "gallery");
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Không đọc được ảnh."));
+        reader.readAsDataURL(compressed.blob);
+      });
+      await updateDesignerImage(key, dataUrl);
+    } catch (error) {
+      setDesignerFieldError(
+        error instanceof Error ? error.message : "Không tải được ảnh.",
+      );
+    } finally {
+      setDesignerFieldBusy(null);
+    }
+  };
 
   const [deletingTarget, setDeletingTarget] = React.useState<{
     photo: WeddingPhoto;
@@ -200,14 +258,74 @@ export function PhotosManager({
   const albumLimit = limits.photos.album;
   const reachedAlbumLimit = albumPhotos.length >= albumLimit;
 
-  const handleSlotFileSelected = async (
+  React.useEffect(() => {
+    if (!ALBUM_ENABLED || plan === "free" || !weddingSlug) {
+      setAlbumQr(null);
+      return;
+    }
+    let cancelled = false;
+    const url = `${window.location.origin}/a/${weddingSlug}`;
+    import("qrcode")
+      .then((module) =>
+        module.default.toDataURL(url, {
+          width: 220,
+          margin: 1,
+          color: { dark: "#4D1217", light: "#F8F1EA" },
+        }),
+      )
+      .then((dataUrl) => {
+        if (!cancelled) setAlbumQr(dataUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setAlbumQr(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [plan, weddingSlug]);
+
+  const openRecrop = async (meta: SlotMeta, photo: WeddingPhoto) => {
+    try {
+      const response = await fetch(photo.url);
+      if (!response.ok) throw new Error("Không tải được ảnh.");
+      const blob = await response.blob();
+      const file = new File([blob], `${meta.slot}.jpg`, {
+        type: blob.type || "image/jpeg",
+      });
+      setCropRequest({
+        file,
+        aspect: 3 / 4,
+        title: `Căn lại ${meta.title}`,
+        onConfirm: (cropped) => {
+          setCropRequest(null);
+          void uploadSlotFile(meta, cropped);
+        },
+      });
+    } catch (err) {
+      setSlotError(err instanceof Error ? err.message : "Không tải được ảnh.");
+    }
+  };
+
+  const handleSlotFileSelected = (
     meta: SlotMeta,
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    setSlotError(null);
+    setCropRequest({
+      file,
+      aspect: 3 / 4,
+      title: `Căn ảnh ${meta.title}`,
+      onConfirm: (cropped) => {
+        setCropRequest(null);
+        void uploadSlotFile(meta, cropped);
+      },
+    });
+  };
 
+  const uploadSlotFile = async (meta: SlotMeta, file: File) => {
     setSlotError(null);
 
     if (isRawImageFile(file)) {
@@ -639,6 +757,85 @@ export function PhotosManager({
         </p>
       </div>
 
+      {designerImageFields.length > 0 && (
+        <Card className="space-y-4 p-4 sm:p-6">
+          <div>
+            <h3 className="font-sans text-base font-semibold text-fg">
+              Ảnh theo mẫu thiết kế
+            </h3>
+            <p className="mt-0.5 text-xs text-fg-muted">
+              Designer đã đặt sẵn các ô ảnh này. Tải ảnh của bạn lên đúng nhãn;
+              ảnh sẽ được dùng trên thiệp khách.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {designerImageFields.map((field) => {
+              const value = content.designerFields?.[field.key] ?? "";
+              const busy = designerFieldBusy === field.key;
+              return (
+                <div
+                  key={field.key}
+                  className="flex flex-col justify-between rounded-xl border border-border bg-bg p-3"
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-fg">{field.label}</p>
+                    <div className="mt-2 overflow-hidden rounded-lg border border-border bg-surface-alt">
+                      {value ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={value}
+                          alt={field.label}
+                          className="aspect-[4/3] w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex aspect-[4/3] items-center justify-center text-[11px] text-fg-muted">
+                          Chưa có ảnh
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[11px] font-medium text-fg hover:border-accent/60">
+                      {busy ? (
+                        <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Upload className="h-3 w-3" aria-hidden="true" />
+                      )}
+                      {value ? "Đổi ảnh" : "Tải ảnh"}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        disabled={busy}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) void handleDesignerImage(field.key, file);
+                          event.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {value && (
+                      <button
+                        type="button"
+                        onClick={() => updateDesignerImage(field.key, null)}
+                        className="text-[11px] text-fg-muted underline hover:text-danger-fg"
+                      >
+                        Bỏ ảnh
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {designerFieldError && (
+            <p role="alert" className="text-xs text-danger-fg">
+              {designerFieldError}
+            </p>
+          )}
+        </Card>
+      )}
+
       {/* 3 ảnh chính: Ảnh bìa, Chú rể, Cô dâu */}
       <Card className="space-y-4 p-4 sm:p-6">
         <div>
@@ -714,7 +911,7 @@ export function PhotosManager({
                   className="hidden"
                 />
 
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <Button
                     variant={currentPhoto ? "outline" : "primary"}
                     size="sm"
@@ -725,6 +922,18 @@ export function PhotosManager({
                     <Upload className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>{currentPhoto ? "Đổi ảnh" : "Tải ảnh"}</span>
                   </Button>
+                  {currentPhoto && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={Boolean(busyText)}
+                      onClick={() => void openRecrop(meta, currentPhoto)}
+                      aria-label={`Căn lại ${meta.title}`}
+                    >
+                      <Crop className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Căn lại</span>
+                    </Button>
+                  )}
                   {currentPhoto && (
                     <Button
                       variant="ghost"
@@ -1008,6 +1217,48 @@ export function PhotosManager({
           )}
         </div>
 
+        {plan !== "free" && albumQr && (
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-bg p-4 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={() => setQrPreviewOpen(true)}
+              className="shrink-0 cursor-zoom-in rounded-lg border border-border bg-surface p-1.5 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              aria-label="Phóng to QR album"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={albumQr}
+                alt="Mã QR album ảnh cho khách"
+                className="h-24 w-24 object-contain"
+              />
+            </button>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-fg">QR album cho khách</p>
+              <p className="mt-0.5 max-w-xl text-xs leading-relaxed text-fg-muted">
+                Khách quét mã này để mở album ảnh cưới. Bấm vào QR để phóng to.
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <a
+                  href={`/a/${weddingSlug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-accent-text underline-offset-2 hover:underline"
+                >
+                  Mở album khách
+                  <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setQrPreviewOpen(true)}
+                  className="text-xs font-semibold text-fg-muted underline-offset-2 hover:underline"
+                >
+                  Phóng to QR
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {plan === "free" ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-bg p-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent-text">
@@ -1172,6 +1423,41 @@ export function PhotosManager({
           </Button>
         </div>
       </Dialog>
+
+      <Dialog
+        open={qrPreviewOpen && Boolean(albumQr)}
+        onClose={() => setQrPreviewOpen(false)}
+        title="QR album cho khách"
+        description="Khách quét mã để mở album ảnh cưới."
+        className="max-w-sm"
+      >
+        <div className="space-y-4 text-center">
+          {albumQr && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={albumQr}
+              alt="Mã QR album phóng to"
+              className="mx-auto w-full max-w-[280px] rounded-xl border border-border bg-surface object-contain p-2"
+            />
+          )}
+          <a
+            href={`/a/${weddingSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-10 items-center justify-center rounded-full border border-border bg-surface px-5 text-xs font-semibold text-text"
+          >
+            Mở album khách
+          </a>
+        </div>
+      </Dialog>
+
+      <ImageCropDialog
+        file={cropRequest?.file ?? null}
+        aspect={cropRequest?.aspect ?? 3 / 4}
+        title={cropRequest?.title}
+        onCancel={() => setCropRequest(null)}
+        onConfirm={(cropped) => cropRequest?.onConfirm(cropped)}
+      />
     </div>
   );
 }

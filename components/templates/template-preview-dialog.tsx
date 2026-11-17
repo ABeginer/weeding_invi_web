@@ -2,10 +2,14 @@
 
 import * as React from "react";
 import { useUser } from "@auth0/nextjs-auth0";
-import { Check, Pause, Play, X } from "lucide-react";
+import { Check, Music2, Pause, Play, X } from "lucide-react";
 import { PLAN_LABELS, getTemplateFeatures, type TemplateFeature } from "@/config/template-features";
 import { SITE_LINKS } from "@/config/site";
 import { cn } from "@/lib/utils";
+import {
+  frameOffsetMax,
+  setFrameOffset,
+} from "@/lib/frame-scroll";
 import type { CollectionTemplate } from "./types";
 
 interface TemplatePreviewDialogProps {
@@ -76,6 +80,8 @@ export function TemplatePreviewDialog({
   const closeRef = React.useRef<HTMLButtonElement | null>(null);
   const frameRef = React.useRef<HTMLDivElement | null>(null);
   const imgRef = React.useRef<HTMLImageElement | null>(null);
+  const liveFrameRef = React.useRef<HTMLIFrameElement | null>(null);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const openerRef = React.useRef<Element | null>(null);
   const closingRef = React.useRef(false);
   const titleId = React.useId();
@@ -83,6 +89,8 @@ export function TemplatePreviewDialog({
   const { user } = useUser();
   const [closing, setClosing] = React.useState(false);
   const [paused, setPaused] = React.useState(false);
+  const [liveReady, setLiveReady] = React.useState(false);
+  const [musicOn, setMusicOn] = React.useState(true);
   const [snapshotState, setSnapshotState] = React.useState<
     "loading" | "ready" | "error"
   >("loading");
@@ -110,6 +118,57 @@ export function TemplatePreviewDialog({
       if (opener instanceof HTMLElement) opener.focus();
     };
   }, []);
+
+  React.useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = 0.45;
+    audio.play().catch(() => setMusicOn(false));
+    return () => {
+      audio.pause();
+    };
+  }, []);
+
+  const liveUrl =
+    template.embedUrl ??
+    (template.demoUrl ? `${template.demoUrl}?embed=1` : null);
+
+  React.useEffect(() => {
+    if (!liveUrl || !liveReady || paused) return;
+    const frame = liveFrameRef.current;
+    if (!frame) return;
+    let raf = 0;
+    let started = 0;
+    const tick = (now: number) => {
+      try {
+        const max = frameOffsetMax(frame);
+        if (!max) return;
+        if (!started) started = now;
+        const duration = Math.min(30_000, Math.max(12_000, max * 9));
+        const progress = Math.min(1, (now - started) / duration);
+        setFrameOffset(frame, max * progress);
+        if (progress < 1) raf = window.requestAnimationFrame(tick);
+      } catch {
+        raf = window.requestAnimationFrame(tick);
+      }
+    };
+    raf = window.requestAnimationFrame(tick);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      setFrameOffset(frame, 0);
+    };
+  }, [liveReady, liveUrl, paused]);
+
+  const toggleMusic = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play().then(() => setMusicOn(true)).catch(() => setMusicOn(false));
+    } else {
+      audio.pause();
+      setMusicOn(false);
+    }
+  };
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -153,7 +212,10 @@ export function TemplatePreviewDialog({
   const durationSec = Math.min(60, Math.max(12, Math.round(distance / 45)));
   const state = closing ? "closing" : "open";
 
-  const createPath = `${SITE_LINKS.createWedding}?template=${encodeURIComponent(template.id)}`;
+  const createPath =
+    template.kind === "designer"
+      ? `${SITE_LINKS.createWedding}?designerTemplate=${encodeURIComponent(template.id)}`
+      : `${SITE_LINKS.createWedding}?template=${encodeURIComponent(template.id)}`;
   const useHref = user
     ? createPath
     : `/auth/login?returnTo=${encodeURIComponent(createPath)}`;
@@ -208,9 +270,17 @@ export function TemplatePreviewDialog({
           <div className="order-1 border-b border-border p-4 md:order-2 md:border-b-0 md:border-l">
             <div
               ref={frameRef}
-              className="snapshot-frame relative mx-auto h-[45vh] w-full max-w-[320px] overflow-y-auto overflow-x-hidden rounded-[2rem] border-8 border-text/80 bg-surface-alt md:h-[62vh]"
+              className="snapshot-frame no-scrollbar relative mx-auto h-[45vh] w-full max-w-[320px] overflow-y-auto overflow-x-hidden rounded-[2rem] border-8 border-text/80 bg-surface-alt md:h-[62vh]"
             >
-              {snapshotState !== "error" ? (
+              {liveUrl ? (
+                <iframe
+                  ref={liveFrameRef}
+                  src={liveUrl}
+                  title={`Xem trước mẫu ${template.name}`}
+                  onLoad={() => setLiveReady(true)}
+                  className="h-full w-full border-0"
+                />
+              ) : snapshotState !== "error" ? (
                 <img
                   ref={imgRef}
                   src={template.snapshotImage}
@@ -232,7 +302,7 @@ export function TemplatePreviewDialog({
               )}
             </div>
 
-            <div className="mt-3 flex justify-center">
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
               <button
                 type="button"
                 onClick={() => setPaused((current) => !current)}
@@ -245,6 +315,14 @@ export function TemplatePreviewDialog({
                   <Pause className="h-4 w-4" aria-hidden="true" />
                 )}
                 <span>{paused ? "Phát xem trước" : "Tạm dừng xem trước"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleMusic}
+                className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                <Music2 className="h-4 w-4" aria-hidden="true" />
+                <span>{musicOn ? "Tắt nhạc" : "Bật nhạc"}</span>
               </button>
             </div>
           </div>
@@ -286,6 +364,7 @@ export function TemplatePreviewDialog({
             </div>
           </div>
         </div>
+        <audio ref={audioRef} src="/media/wedding.mp3" loop preload="auto" />
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useInvitationContained } from "./WeddingContentProvider";
+import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
 
 interface RevealSectionProps {
   children: React.ReactNode;
@@ -20,6 +20,9 @@ export function RevealSection({
 }: RevealSectionProps) {
   const prefersReducedMotion = useReducedMotion();
   const contained = useInvitationContained();
+  const data = useWeddingContent();
+  const isOlive = data.templateId === "basic-1";
+  const animateInContained = contained && isOlive;
   const [mounted, setMounted] = React.useState(false);
   const ref = React.useRef<HTMLElement | null>(null);
   const [visible, setVisible] = React.useState(false);
@@ -37,8 +40,10 @@ export function RevealSection({
 
     const checkPosition = () => {
       const rect = node.getBoundingClientRect();
-      // Reveal when section enters viewport OR is already above the viewport (e.g. fast fling / deep jump)
-      if (rect.top <= window.innerHeight * 0.96) {
+      // Chỉ reveal khi ít nhất 1/2 chiều cao viewport của section đã vào màn hình.
+      const visiblePx =
+        Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+      if (visiblePx >= window.innerHeight / 2) {
         setVisible(true);
         return true;
       }
@@ -54,7 +59,7 @@ export function RevealSection({
           observer.disconnect();
         }
       },
-      { threshold: 0.02 }
+      { threshold: 0.5 }
     );
 
     observer.observe(node);
@@ -70,7 +75,7 @@ export function RevealSection({
       observer.disconnect();
       window.removeEventListener("scroll", onScroll);
     };
-  }, [prefersReducedMotion, contained]);
+  }, [prefersReducedMotion, contained, animateInContained]);
 
   const reducedMotion = mounted && Boolean(prefersReducedMotion);
 
@@ -87,9 +92,14 @@ export function RevealSection({
       transition={
         reducedMotion
           ? { duration: 0.01 }
-          : { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }
+          : { duration: 1.5, delay, ease: [0.22, 1, 0.36, 1] }
       }
-      className={cn("w-full", className)}
+      className={cn(
+        "w-full",
+        isOlive && "olive-reveal",
+        isOlive && visible && "is-revealed",
+        className,
+      )}
     >
       {children}
     </motion.section>

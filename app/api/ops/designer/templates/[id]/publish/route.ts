@@ -1,12 +1,12 @@
 import { fail, json } from "@/lib/server/http";
-import { opsRoute } from "@/lib/server/ops";
+import { opsDesignerRoute } from "@/lib/server/ops";
 import { db } from "@/lib/server/supabase";
 import { getDesignerTemplate, updateDesignerTemplate } from "@/lib/server/designer";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** Publish: chụp layout hiện tại thành một version bất biến, rồi đánh dấu published. */
-export const POST = opsRoute<Ctx>(async (_req, _admin, { params }) => {
+export const POST = opsDesignerRoute<Ctx>(async (_req, _user, { params }) => {
   const { id } = await params;
   const template = await getDesignerTemplate(id);
   if (!template) return fail("Không tìm thấy mẫu.", 404);

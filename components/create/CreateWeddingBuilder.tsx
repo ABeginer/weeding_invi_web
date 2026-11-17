@@ -29,6 +29,7 @@ import {
 import { SITE_LINKS } from "@/config/site";
 import {
   ApiError,
+  assignDesignerTemplate,
   checkWeddingSlugAvailability,
   createWedding,
   listWeddings,
@@ -58,6 +59,7 @@ interface CreateWeddingBuilderProps {
   isAuthenticated: boolean;
   userEmail: string | null;
   initialTemplateId?: string;
+  initialDesignerTemplateId?: string;
 }
 
 const DEFAULT_WEDDING_DATE_ISO = "2027-03-20T10:00:00+07:00";
@@ -111,13 +113,18 @@ export function CreateWeddingBuilder({
   isAuthenticated,
   userEmail,
   initialTemplateId,
+  initialDesignerTemplateId,
 }: CreateWeddingBuilderProps) {
   const router = useRouter();
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
 
   const [templateId, setTemplateId] = React.useState(() =>
     resolveFreeTemplateId(initialTemplateId),
-  );
+  );  const [designerTemplateId, setDesignerTemplateId] = React.useState<
+    string | undefined
+  >(initialDesignerTemplateId);
+  const [designerName, setDesignerName] = React.useState<string | null>(null);
+  const [designerPlan, setDesignerPlan] = React.useState<"free" | "pro" | "vip" | null>(null);
   const [groomName, setGroomName] = React.useState("");
   const [brideName, setBrideName] = React.useState("");
   const [date, setDate] = React.useState(DEFAULT_WEDDING_DATE_ISO);
@@ -267,20 +274,59 @@ export function CreateWeddingBuilder({
     return () => window.clearTimeout(timer);
   }, [slug]);
 
+  React.useEffect(() => {
+    if (!designerTemplateId) return;
+    let cancelled = false;
+    fetch("/api/public/designer-templates")
+      .then((response) => (response.ok ? response.json() : { items: [] }))
+      .then((data: { items?: Array<{ id: string; name: string; displayTitle: string | null; plan: "free" | "pro" | "vip" }> }) => {
+        if (cancelled) return;
+        const match = (data.items ?? []).find((item) => item.id === designerTemplateId);
+        if (match) {
+          setDesignerName(match.displayTitle ?? match.name);
+          setDesignerPlan(match.plan);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [designerTemplateId]);
+
   const dateValue = toDatetimeLocalVn(date);
   const datePreview = formatWeddingDateParts(date);
 
   const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
-  const [iframeSrc] = React.useState(() =>
-    buildPreviewUrl({
-      templateId,
-      groom: groomName.trim(),
-      bride: brideName.trim(),
-      date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
-      quote: quote.trim(),
-      opened: previewOpened,
-    }),
+  const [iframeSrc, setIframeSrc] = React.useState(() =>
+    designerTemplateId
+      ? `/mau/designer/${designerTemplateId}/embed`
+      : buildPreviewUrl({
+          templateId,
+          groom: groomName.trim(),
+          bride: brideName.trim(),
+          date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
+          quote: quote.trim(),
+          opened: previewOpened,
+        }),
   );
+  const previewKey = designerTemplateId ?? templateId;
+
+  React.useEffect(() => {
+    // Chỉ reload iframe khi đổi mẫu; tên/ngày đi qua postMessage.
+    setIframeSrc(
+      designerTemplateId
+        ? `/mau/designer/${designerTemplateId}/embed`
+        : buildPreviewUrl({
+            templateId,
+            groom: groomName.trim(),
+            bride: brideName.trim(),
+            date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
+            quote: quote.trim(),
+            opened: previewOpened,
+          }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewKey]);
 
   const sendPreview = React.useCallback(() => {
     iframeRef.current?.contentWindow?.postMessage(
@@ -315,6 +361,15 @@ export function CreateWeddingBuilder({
   }, [sendPreview]);
 
   const selectedTemplate = HERO_PREVIEW_TEMPLATES.find((tpl) => tpl.id === templateId);
+  const displayName = designerTemplateId
+    ? designerName ?? "Mẫu thiệp Designer"
+    : selectedTemplate?.name ?? "Chọn mẫu thiệp";
+  const displaySubtitle = designerTemplateId
+    ? "Mẫu thiệp cưới"
+    : selectedTemplate?.subtitle ?? "Bấm để chọn mẫu";
+  const displayPlan = designerTemplateId
+    ? designerPlan
+    : selectedTemplate?.plan;
   const filteredTemplates = React.useMemo(() => {
     const needle = templateQuery.trim().toLowerCase();
     return HERO_PREVIEW_TEMPLATES.filter((tpl) => {
@@ -362,6 +417,7 @@ export function CreateWeddingBuilder({
     const cleanQuote = quote.trim();
     const draft = {
       templateId,
+      designerTemplateId,
       groomName: cleanGroom,
       brideName: cleanBride,
       date: isoDate,
@@ -398,6 +454,17 @@ export function CreateWeddingBuilder({
           gift: emptyGiftInfo(),
         },
       });
+      if (designerTemplateId) {
+        try {
+          await assignDesignerTemplate(created.id, { designerTemplateId });
+        } catch (assignError) {
+          setSubmitError(
+            assignError instanceof Error
+              ? `Đã tạo thiệp nhưng chưa gán được mẫu designer: ${assignError.message}`
+              : "Đã tạo thiệp nhưng chưa gán được mẫu designer.",
+          );
+        }
+      }
       clearWeddingDraft();
       router.push(`${SITE_LINKS.dashboard}/weddings/${created.id}`);
     } catch (err) {
@@ -491,15 +558,15 @@ export function CreateWeddingBuilder({
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-text">
-                        {selectedTemplate?.name ?? "Chọn mẫu thiệp"}
+                        {displayName}
                       </span>
                       <span className="block truncate text-xs text-text-muted">
-                        {selectedTemplate?.subtitle ?? "Bấm để chọn mẫu"}
+                        {displaySubtitle}
                       </span>
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-semibold text-text-muted">
-                        {selectedTemplate ? getPlanLabel(selectedTemplate.plan) : ""}
+                        {displayPlan ? getPlanLabel(displayPlan) : ""}
                       </span>
                       <ChevronDown
                         className={cn(
@@ -561,6 +628,7 @@ export function CreateWeddingBuilder({
                                 onClick={() => {
                                   if (!allowed) return;
                                   setTemplateId(tpl.id);
+                                  setDesignerTemplateId(undefined);
                                   setPreviewOpened(false);
                                   setPickerOpen(false);
                                   phoneScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });

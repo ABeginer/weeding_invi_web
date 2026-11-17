@@ -116,6 +116,7 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   return applyDesignerPatch(wedding, user.id, patch, {
     id: template.id,
     name: template.name,
+    displayTitle: template.display_title ?? null,
     pinnedVersion: version,
     latestVersion: template.version,
     status: template.status,

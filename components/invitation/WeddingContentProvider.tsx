@@ -4,6 +4,7 @@ import * as React from "react";
 import type { TemplateData, TemplateMode } from "@/lib/types";
 import { createDefaultWeddingContent, toTemplateData } from "@/lib/wedding-data";
 
+const InvitationOpenedContext = React.createContext(true);
 const WeddingContentContext = React.createContext<TemplateData | null>(null);
 const InvitationRuntimeContext = React.createContext<{
   contained: boolean;
@@ -70,3 +71,9 @@ export function useInvitationReadOnly(): boolean {
   const mode = React.useContext(InvitationRuntimeContext).mode;
   return mode === "demo" || mode === "preview";
 }
+
+export function useInvitationOpened(): boolean {
+  return React.useContext(InvitationOpenedContext);
+}
+
+export { InvitationOpenedContext };

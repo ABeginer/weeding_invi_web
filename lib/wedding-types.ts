@@ -16,6 +16,9 @@ export const EVENT_ADDRESS_MAX_LENGTH = 300;
 export const EVENT_URL_MAX_LENGTH = 2000;
 
 export type WeddingGiftInfo = {
+  groomAccountLabel?: string;
+  brideAccountLabel?: string;
+  brideAccountEnabled?: boolean;
   groomBankName: string;
   groomAccountName: string;
   groomAccountNumber: string;
@@ -24,10 +27,33 @@ export type WeddingGiftInfo = {
   brideAccountNumber: string;
 };
 
+export type DesignerElementOverride = {
+  xPct?: number;
+  yPct?: number;
+  wPct?: number;
+  hPct?: number;
+  text?: string;
+  color?: string;
+  fontSize?: number;
+  radius?: number;
+  imageUrl?: string;
+  imageScale?: number;
+  imageX?: number;
+  imageY?: number;
+};
+
+export type WeddingTimelineItem = {
+  id?: string;
+  time: string;
+  label: string;
+};
+
 export type WeddingContent = {
   couple: {
     groomName: string;
     brideName: string;
+    groomTitle?: string;
+    brideTitle?: string;
     groomFullName: string;
     brideFullName: string;
     groomParents: string;
@@ -40,6 +66,20 @@ export type WeddingContent = {
   groomPhotoId: string | null;
   bridePhotoId: string | null;
   gift: WeddingGiftInfo;
+  /** Ảnh/giá trị khách điền cho các field designer đánh dấu (key = element id). */
+  designerFields?: Record<string, string>;
+  /** Ghi đè theo từng thiệp: vị trí khung, chữ, ảnh, zoom/pan ảnh. */
+  designerOverrides?: Record<string, DesignerElementOverride>;
+  dressCode?: string[];
+  hiddenSections?: string[];
+  sectionOrder?: string[];
+  hideCouplePhotos?: boolean;
+  hostFirst?: "groom" | "bride";
+  timeline?: WeddingTimelineItem[];
+  musicPreset?: "default" | "calm" | "beginning" | "custom";
+  musicUrl?: string;
+  musicTitle?: string;
+  mealMode?: "meat" | "veg" | "both";
 };
 
 export type WeddingEvent = {
@@ -75,6 +115,8 @@ export type TemplateData = {
   couple: {
     groomName: string;
     brideName: string;
+    groomTitle: string;
+    brideTitle: string;
     groomFullName: string;
     brideFullName: string;
     groomParents: string;
@@ -95,6 +137,13 @@ export type TemplateData = {
     brideQrUrl: string | null;
   };
   events: WeddingEvent[];
+  dressCode?: string[];
+  hiddenSections?: string[];
+  sectionOrder?: string[];
+  hideCouplePhotos?: boolean;
+  hostFirst?: "groom" | "bride";
+  timeline: WeddingTimelineItem[];
+  mealMode: "meat" | "veg" | "both";
   music: {
     src: string;
     title: string;
@@ -215,6 +264,9 @@ const giftTextFieldSchema = (label: string, maxLength = GIFT_TEXT_MAX_LENGTH) =>
     );
 
 export const weddingGiftInputSchema = z.object({
+  groomAccountLabel: z.string().trim().max(40).optional(),
+  brideAccountLabel: z.string().trim().max(40).optional(),
+  brideAccountEnabled: z.boolean().optional(),
   groomBankName: giftTextFieldSchema("Ngân hàng nhà trai"),
   groomAccountName: giftTextFieldSchema("Tên tài khoản nhà trai"),
   groomAccountNumber: giftTextFieldSchema(
@@ -230,12 +282,30 @@ export const weddingGiftInputSchema = z.object({
 });
 
 export const emptyGiftInfo = (): WeddingGiftInfo => ({
+  groomAccountLabel: "",
+  brideAccountLabel: "",
+  brideAccountEnabled: false,
   groomBankName: "",
   groomAccountName: "",
   groomAccountNumber: "",
   brideBankName: "",
   brideAccountName: "",
   brideAccountNumber: "",
+});
+
+const designerOverrideSchema = z.object({
+  xPct: z.number().min(0).max(100).optional(),
+  yPct: z.number().min(0).max(100).optional(),
+  wPct: z.number().min(1).max(100).optional(),
+  hPct: z.number().min(1).max(100).optional(),
+  text: z.string().max(2000).optional(),
+  color: z.string().max(40).optional(),
+  fontSize: z.number().min(8).max(120).optional(),
+  radius: z.number().min(0).max(100).optional(),
+  imageUrl: z.string().max(5_000_000).optional(),
+  imageScale: z.number().min(0.5).max(4).optional(),
+  imageX: z.number().min(-100).max(100).optional(),
+  imageY: z.number().min(-100).max(100).optional(),
 });
 
 export const weddingContentInputSchema = z.object({
@@ -258,6 +328,8 @@ export const weddingContentInputSchema = z.object({
       .string()
       .trim()
       .max(NAME_MAX_LENGTH, `Họ tên đầy đủ cô dâu tối đa ${NAME_MAX_LENGTH} ký tự.`),
+    groomTitle: z.string().trim().max(40).optional(),
+    brideTitle: z.string().trim().max(40).optional(),
     groomParents: z
       .string()
       .trim()
@@ -284,6 +356,26 @@ export const weddingContentInputSchema = z.object({
   groomPhotoId: uuidOrNullSchema,
   bridePhotoId: uuidOrNullSchema,
   gift: weddingGiftInputSchema.optional().transform((val) => val ?? emptyGiftInfo()),
+  designerFields: z.record(z.string(), z.string()).optional(),
+  designerOverrides: z.record(z.string(), designerOverrideSchema).optional(),
+  dressCode: z.array(z.string().max(40)).max(3).optional(),
+  hiddenSections: z.array(z.string().max(40)).max(20).optional(),
+  sectionOrder: z.array(z.string().max(40)).max(20).optional(),
+  hideCouplePhotos: z.boolean().optional(),
+  hostFirst: z.enum(["groom", "bride"]).optional(),
+  musicPreset: z.enum(["default", "calm", "beginning", "custom"]).optional(),
+  musicUrl: z.string().trim().max(500).optional(),
+  musicTitle: z.string().trim().max(120).optional(),
+  mealMode: z.enum(["meat", "veg", "both"]).optional(),
+  timeline: z
+    .array(
+      z.object({
+        time: z.string().trim().max(5),
+        label: z.string().trim().max(80),
+      }),
+    )
+    .max(6)
+    .optional(),
 });
 
 export const weddingContentPatchSchema = z.object({

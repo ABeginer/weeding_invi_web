@@ -10,7 +10,8 @@ import {
   BULK_IMPORT_MAX_COUNT,
   parseBulkGuestInput,
 } from "@/lib/guest-import";
-import type { Guest, WeddingPlan } from "@/lib/types";
+import type { Guest, WeddingEvent, WeddingPlan } from "@/lib/types";
+import { formatWeddingDateParts } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Textarea } from "@/components/ui/Input";
@@ -21,6 +22,7 @@ interface BulkImportDialogProps {
   plan: WeddingPlan;
   currentGuestCount: number;
   existingGuestNames: string[];
+  events: WeddingEvent[];
   open: boolean;
   onClose: () => void;
   onCreated: (guests: Guest[]) => void;
@@ -46,6 +48,7 @@ export function BulkImportDialog({
   plan,
   currentGuestCount,
   existingGuestNames,
+  events,
   open,
   onClose,
   onCreated,
@@ -57,6 +60,7 @@ export function BulkImportDialog({
   const [error, setError] = React.useState<string | null>(null);
   const [createdGuests, setCreatedGuests] = React.useState<Guest[]>([]);
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
+  const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     if (open) {
@@ -65,6 +69,7 @@ export function BulkImportDialog({
       setError(null);
       setCreatedGuests([]);
       setCopiedKey(null);
+      setSelectedEventIds([]);
     }
   }, [open]);
 
@@ -108,7 +113,11 @@ export function BulkImportDialog({
     setError(null);
     setSubmitting(true);
     try {
-      const created = await createGuestsBulk(weddingId, parsed.validNames);
+      const created = await createGuestsBulk(
+        weddingId,
+        parsed.validNames,
+        selectedEventIds,
+      );
       showToast(`Đã tạo ${created.length} link mời cá nhân`, "success");
       onCreated(created);
       setCreatedGuests(created);
@@ -175,6 +184,49 @@ export function BulkImportDialog({
     >
       {step === "input" && (
         <div className="space-y-4">
+          {events.length > 0 && (
+            <div className="rounded-xl border border-border bg-bg p-3">
+              <p className="text-xs font-semibold text-fg">
+                Bước 1 · Chọn buổi lễ được mời
+              </p>
+              <p className="mt-0.5 text-[10px] text-fg-muted">
+                Danh sách này sẽ được gán vào các lễ đã chọn. Bỏ trống = khách thấy tất cả lễ.
+              </p>
+              <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                {events.map((evt) => {
+                  const checked = selectedEventIds.includes(evt.id);
+                  const parts = formatWeddingDateParts(evt.startsAt);
+                  return (
+                    <label
+                      key={evt.id}
+                      className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-surface px-2.5 py-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() =>
+                          setSelectedEventIds((prev) =>
+                            checked
+                              ? prev.filter((id) => id !== evt.id)
+                              : [...prev, evt.id],
+                          )
+                        }
+                        className="mt-0.5 h-3.5 w-3.5 rounded border-border accent-accent"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-xs font-medium text-fg">{evt.title}</span>
+                        <span className="block text-[10px] text-fg-muted">
+                          {parts.weekday} · {parts.dotDate}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+
           <Textarea
             label="Danh sách tên khách mời"
             placeholder={"Nguyễn Minh Anh\nAnh Tuấn & Chị Mai\nGia đình Cô Ba"}

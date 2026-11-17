@@ -1,9 +1,55 @@
 import type { WeddingPlan } from "./types";
+import type { OpsRole } from "./ops-roles";
 import { getBearerToken } from "./api";
 
 export interface OpsMe {
   email: string;
   isAdmin: boolean;
+  role: OpsRole | null;
+}
+
+export interface OpsTemplateItem {
+  id: string;
+  name: string;
+  displayTitle: string | null;
+  plan: WeddingPlan;
+  ritual: string | null;
+  version: number;
+  coverUrl: string | null;
+  usageCount: number;
+  updatedAt: string;
+}
+
+export interface OpsTemplatesResult {
+  items: OpsTemplateItem[];
+  needsMigration: boolean;
+}
+
+export interface OpsDesignerTemplateDetail {
+  id: string;
+  name: string;
+  plan: "free" | "pro" | "vip";
+  ritual: string | null;
+  status: "draft" | "review" | "published" | "archived";
+  version: number;
+  canvas_json: unknown;
+  background_key: string | null;
+  updated_at: string;
+}
+
+export interface OpsRoleMember {
+  email: string;
+  role: OpsRole;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isEnvAdmin: boolean;
+}
+
+export interface OpsRolesResult {
+  items: OpsRoleMember[];
+  needsMigration: boolean;
+  envAdminCount: number;
 }
 
 export interface OpsStats {
@@ -179,6 +225,20 @@ function notifyOpsError(message: string): void {
   );
 }
 
+async function parseOpsError(res: Response): Promise<never> {
+  let message = "Không thể tải dữ liệu quản trị.";
+  let code: string | undefined;
+  try {
+    const payload = await res.json();
+    if (payload && typeof payload.error === "string") message = payload.error;
+    if (payload && typeof payload.code === "string") code = payload.code;
+  } catch {
+    // Giữ thông báo mặc định khi body không phải JSON.
+  }
+  notifyOpsError(message);
+  throw new OpsApiError(message, code);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let token = "";
   try {
@@ -205,17 +265,33 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     return (await res.json()) as T;
   }
 
-  let message = "Không thể tải dữ liệu quản trị.";
-  let code: string | undefined;
+  return parseOpsError(res);
+}
+
+/** Upload multipart (ảnh bìa mẫu); không set Content-Type để browser tự thêm boundary. */
+async function formRequest<T>(path: string, formData: FormData): Promise<T> {
+  let token = "";
   try {
-    const payload = await res.json();
-    if (payload && typeof payload.error === "string") message = payload.error;
-    if (payload && typeof payload.code === "string") code = payload.code;
+    token = await getBearerToken();
   } catch {
-    // Giữ thông báo mặc định khi body không phải JSON.
+    // API sẽ trả 401 nếu thiếu token.
   }
-  notifyOpsError(message);
-  throw new OpsApiError(message, code);
+
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(path, {
+    method: "POST",
+    body: formData,
+    headers,
+    cache: "no-store",
+  });
+
+  if (res.ok) {
+    return (await res.json()) as T;
+  }
+
+  return parseOpsError(res);
 }
 
 function post(body: unknown): RequestInit {
@@ -423,4 +499,64 @@ export async function getOpsAudit(params?: {
     `/api/ops/audit?page=${page}`,
     { method: "GET" },
   );
+}
+
+export function getOpsTemplates(): Promise<OpsTemplatesResult> {
+  return request<OpsTemplatesResult>("/api/ops/templates", { method: "GET" });
+}
+
+export function getOpsDesignerTemplate(
+  id: string,
+): Promise<OpsDesignerTemplateDetail> {
+  return request<OpsDesignerTemplateDetail>(
+    `/api/ops/designer/templates/${encodeURIComponent(id)}`,
+    { method: "GET" },
+  );
+}
+
+export function updateOpsTemplate(
+  id: string,
+  input: { name?: string; displayTitle?: string | null },
+): Promise<{
+  ok: boolean;
+  item: { id: string; name: string; displayTitle: string | null };
+}> {
+  return request(`/api/ops/templates/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function uploadOpsTemplateCover(
+  id: string,
+  file: Blob,
+  dimensions?: { width: number; height: number },
+): Promise<{ url: string; key: string }> {
+  const formData = new FormData();
+  formData.append("file", file, "cover.webp");
+  if (dimensions) {
+    formData.append("width", String(dimensions.width));
+    formData.append("height", String(dimensions.height));
+  }
+  return formRequest(
+    `/api/ops/templates/${encodeURIComponent(id)}/cover`,
+    formData,
+  );
+}
+
+export function getOpsRoles(): Promise<OpsRolesResult> {
+  return request<OpsRolesResult>("/api/ops/roles", { method: "GET" });
+}
+
+export function upsertOpsRole(
+  email: string,
+  role: OpsRole,
+): Promise<{ ok: boolean; email: string; role: OpsRole }> {
+  return request("/api/ops/roles", post({ email, role }));
+}
+
+export function deleteOpsRole(email: string): Promise<{ ok: boolean }> {
+  return request(`/api/ops/roles?email=${encodeURIComponent(email)}`, {
+    method: "DELETE",
+  });
 }

@@ -1,6 +1,7 @@
 import type { PhotoKind, WeddingPlan } from "@/lib/wedding-types";
 
-export const UPLOAD_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
+export const MUSIC_MAX_BYTES = 8 * 1024 * 1024; // 5 MB
 
 export const UPLOAD_ALLOWED_MIME_TYPES = [
   "image/jpeg",

@@ -27,7 +27,12 @@ import type {
   WeddingEvent,
   WeddingPhoto,
 } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatWeddingDateParts } from "@/lib/utils";
+import { buildDesignerInviteValues } from "@/lib/designer-invite";
+import { collectDesignerImageFields } from "@/lib/designer-fields";
+import { DesignerInvitation } from "@/components/designer/designer-invitation";
+import type { DesignerCanvasContent, DesignerElement } from "@/components/ops/designer-types";
+import { DesignerPreviewEditor } from "./DesignerPreviewEditor";
 import { normalizeWeddingContent, toTemplateData } from "@/lib/wedding-data";
 import { weddingContentPatchSchema } from "@/lib/wedding-types";
 import { TemplatePreviewRenderer } from "@/templates/TemplatePreviewRenderer";
@@ -38,7 +43,6 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { EventsManager } from "./EventsManager";
-import { DesignerTemplateCard } from "./DesignerTemplateCard";
 import { GuestTable } from "./GuestTable";
 import { PhotosManager } from "./PhotosManager";
 import { StatCards } from "./StatCards";
@@ -87,6 +91,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   const [pendingTab, setPendingTab] = React.useState<DetailTab | null>(null);
   const [previewOpened, setPreviewOpened] = React.useState(false);
   const [statsRefreshSignal, setStatsRefreshSignal] = React.useState(0);
+  const [editingElement, setEditingElement] = React.useState<DesignerElement | null>(null);
   const phoneScrollRef = React.useRef<HTMLDivElement | null>(null);
 
   const loadWedding = React.useCallback(async () => {
@@ -135,14 +140,15 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
 
-  const handleSaveInfo = React.useCallback(async (): Promise<boolean> => {
-    if (!wedding || !draftContent) return false;
+  const handleSaveInfo = React.useCallback(async (contentOverride?: WeddingContent): Promise<boolean> => {
+    const targetContent = contentOverride ?? draftContent;
+    if (!wedding || !targetContent) return false;
     setFieldErrors({});
     setSaveError(null);
 
     const parsed = weddingContentPatchSchema.safeParse({
       templateId: draftTemplateId,
-      content: draftContent,
+      content: targetContent,
     });
 
     if (!parsed.success) {
@@ -221,6 +227,10 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             }
           : prev,
       );
+      // Tải lại canvas mới nhất để preview + field ảnh cập nhật ngay.
+      void getWedding(result.wedding.id)
+        .then((next) => setWedding(next))
+        .catch(() => {});
     },
     [],
   );
@@ -257,6 +267,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                 heroPhotoId: normalizedServer.heroPhotoId,
                 groomPhotoId: normalizedServer.groomPhotoId,
                 bridePhotoId: normalizedServer.bridePhotoId,
+                designerFields: normalizedServer.designerFields,
               },
             }
           : null,
@@ -269,6 +280,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               heroPhotoId: normalizedServer.heroPhotoId,
               groomPhotoId: normalizedServer.groomPhotoId,
               bridePhotoId: normalizedServer.bridePhotoId,
+              designerFields: normalizedServer.designerFields,
             }
           : normalizedServer,
       );
@@ -308,6 +320,28 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       photos,
     });
   }, [draftContent, draftTemplateId, events, photos, wedding]);
+
+  const designerValues = React.useMemo(() => {
+    if (!draftContent) return {};
+    return buildDesignerInviteValues({
+      groomName: draftContent.couple.groomName,
+      brideName: draftContent.couple.brideName,
+      dateLabel: formatWeddingDateParts(draftContent.date).dotDate,
+      dateIso: draftContent.date,
+      events,
+      guestName: null,
+      salutation: "Trân trọng kính mời",
+      designerFields: draftContent.designerFields,
+    });
+  }, [draftContent, events]);
+
+  const designerCanvas = wedding?.designerCanvas
+    ? (wedding.designerCanvas as unknown as DesignerCanvasContent)
+    : null;
+  const designerImageFields = React.useMemo(
+    () => collectDesignerImageFields(wedding?.designerCanvas),
+    [wedding?.designerCanvas],
+  );
 
   const showLivePhoneAside =
     activeTab === "info" || activeTab === "events" || activeTab === "photos";
@@ -362,7 +396,18 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             </span>
           )}
         </div>
-        <button
+        <div className="flex items-center gap-1.5">
+          {isDirty && (
+            <button
+              type="button"
+              onClick={() => void handleSaveInfo()}
+              disabled={savingInfo}
+              className="inline-flex h-8 items-center justify-center rounded-lg border border-accent bg-accent px-2.5 text-[11px] font-semibold text-accent-fg disabled:opacity-60"
+            >
+              {savingInfo ? "Đang lưu…" : "Lưu"}
+            </button>
+          )}
+          <button
           type="button"
           onClick={() => {
             setPreviewOpened((prev) => !prev);
@@ -373,27 +418,115 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
           <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
           <span>{previewOpened ? "Đóng bì thư" : "Mở xem nội dung"}</span>
         </button>
+        </div>
       </div>
 
       <div className="mx-auto w-full">
+        <p className="mb-2 rounded-lg border border-accent/25 bg-accent-soft/40 px-3 py-2 text-center text-[11px] text-fg-muted">
+          Chạm vào tên hoặc ảnh trên thiệp để chỉnh nhanh.
+        </p>
+        <details className="mb-2 rounded-xl border border-border bg-surface px-3 py-2">
+          <summary className="cursor-pointer text-[11px] font-semibold text-fg">
+            Hiện / ẩn phần trên thiệp
+          </summary>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {[
+              ["album", "Album"],
+              ["albumQr", "QR album"],
+              ["gift", "Hộp quà"],
+              ["calendar", "Lịch"],
+              ["map", "Bản đồ"],
+              ["family", "Gia đình"],
+              ["dresscode", "Dress code"],
+              ["rsvp", "Xác nhận"],
+              ["music", "Nhạc"],
+            ].map(([key, label]) => {
+              const hidden = (draftContent.hiddenSections ?? []).includes(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() =>
+                    setDraftContent((previous) => {
+                      if (!previous) return previous;
+                      const current = new Set(previous.hiddenSections ?? []);
+                      if (current.has(key)) current.delete(key);
+                      else current.add(key);
+                      return { ...previous, hiddenSections: Array.from(current) };
+                    })
+                  }
+                  className={cn(
+                    "rounded-full border px-2 py-1 text-[10px] font-medium",
+                    hidden
+                      ? "border-border bg-bg text-fg-muted line-through"
+                      : "border-accent/40 bg-accent-soft text-accent-text",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </details>
         <PhoneFrame
           scrollRef={phoneScrollRef}
           enableFloat={false}
-          lockedScroll={!previewOpened}
+          lockedScroll={wedding.designerTemplate ? false : !previewOpened}
           desktopOffsetPx={164}
           className="lg:w-full lg:max-w-[356px]"
         >
-          <TemplatePreviewRenderer
-            key={draftTemplateId}
-            templateId={draftTemplateId}
-            data={previewData}
-            mode="preview"
-            contained
-            viewport="phone"
-            isOpened={previewOpened}
-            onOpenedChange={setPreviewOpened}
-            externalMusicControl
-          />
+          {wedding.designerTemplate ? (
+            designerCanvas ? (
+              <DesignerInvitation
+                canvas={designerCanvas}
+                values={designerValues}
+                coupleLabel={`${draftContent.couple.groomName} & ${draftContent.couple.brideName}`}
+                showCover={false}
+                data={previewData ?? undefined}
+                weddingSlug={wedding.slug}
+                readOnly
+                plan={wedding.plan}
+                overrides={draftContent.designerOverrides}
+                editable
+                onElementClick={setEditingElement}
+                onElementMove={(id, patch) => {
+                  setDraftContent((previous) =>
+                    previous
+                      ? {
+                          ...previous,
+                          designerOverrides: {
+                            ...(previous.designerOverrides ?? {}),
+                            [id]: {
+                              ...(previous.designerOverrides?.[id] ?? {}),
+                              ...patch,
+                            },
+                          },
+                        }
+                      : previous,
+                  );
+                }}
+              />
+            ) : (
+              <iframe
+                key={`${wedding.designerTemplate.id}-${wedding.designerTemplate.latestVersion}`}
+                src={`/mau/designer/${wedding.designerTemplate.id}/embed`}
+                title="Xem trước mẫu thiết kế Designer"
+                className="h-full w-full border-0 bg-bg"
+              />
+            )
+          ) : (
+            <TemplatePreviewRenderer
+              key={draftTemplateId}
+              templateId={draftTemplateId}
+              data={previewData}
+              mode="preview"
+              contained
+              viewport="phone"
+              isOpened={previewOpened}
+              onOpenedChange={setPreviewOpened}
+              externalMusicControl
+            />
+          )}
         </PhoneFrame>
       </div>
     </div>
@@ -442,23 +575,31 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopyPublic}>
-            {copiedPublic ? (
-              <Check className="h-3.5 w-3.5 text-success-fg" aria-hidden="true" />
-            ) : (
-              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-            <span>{copiedPublic ? "Đã chép link chung" : "Sao chép link chung"}</span>
-          </Button>
-          <a
-            href={`/w/${wedding.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent-text"
-          >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Mở trang thiệp</span>
-          </a>
+          {wedding.plan === "free" ? (
+            <span className="inline-flex h-9 items-center rounded-lg border border-border bg-surface px-3 text-xs text-fg-muted">
+              Link chung chỉ có ở gói Pro
+            </span>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={handleCopyPublic}>
+                {copiedPublic ? (
+                  <Check className="h-3.5 w-3.5 text-success-fg" aria-hidden="true" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                <span>{copiedPublic ? "Đã chép link chung" : "Sao chép link chung"}</span>
+              </Button>
+              <a
+                href={`/w/${wedding.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent-text"
+              >
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Mở trang thiệp</span>
+              </a>
+            </>
+          )}
         </div>
       </div>
 
@@ -554,6 +695,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                 wedding={wedding}
                 draftContent={draftContent}
                 draftTemplateId={draftTemplateId}
+                designerCanvas={wedding.designerCanvas}
                 photos={photos}
                 isDirty={isDirty}
                 saving={savingInfo}
@@ -564,15 +706,11 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                   setDraftTemplateId(tplId);
                   setPreviewOpened(false);
                 }}
+                onDesignerAssignment={handleDesignerAssignment}
                 onPhotosStateChange={handlePhotosStateChange}
                 onSave={handleSaveInfo}
                 onResetDraft={handleResetDraft}
                 onDeleted={() => router.replace("/dashboard")}
-              />
-              <DesignerTemplateCard
-                wedding={wedding}
-                current={wedding.designerTemplate ?? null}
-                onChanged={handleDesignerAssignment}
               />
             </div>
           )}
@@ -594,6 +732,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               plan={wedding.plan}
               content={draftContent}
               photos={photos}
+              designerImageFields={designerImageFields}
               onPhotosStateChange={handlePhotosStateChange}
             />
           )}
@@ -603,6 +742,12 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               weddingId={wedding.id}
               plan={wedding.plan}
               events={events}
+              mealMode={draftContent.mealMode ?? "meat"}
+              onMealModeChange={(mode) => {
+                const next = { ...draftContent, mealMode: mode };
+                setDraftContent(next);
+                void handleSaveInfo(next);
+              }}
               onGuestsChanged={() => setStatsRefreshSignal((n) => n + 1)}
             />
           )}
@@ -668,6 +813,18 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
           </Button>
         </div>
       </Dialog>
+
+      <DesignerPreviewEditor
+        element={editingElement}
+        content={draftContent}
+        events={events}
+        onClose={() => setEditingElement(null)}
+        onApply={async (next) => {
+          const ok = await handleSaveInfo(next);
+          if (ok) setEditingElement(null);
+          return ok;
+        }}
+      />
     </div>
   );
 }

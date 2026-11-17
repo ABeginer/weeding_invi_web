@@ -122,7 +122,16 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/(templates|photos|images|media)/:path*",
+        source: "/media/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, s-maxage=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/(templates|photos|images)/:path*",
         headers: [
           {
             key: "Cache-Control",

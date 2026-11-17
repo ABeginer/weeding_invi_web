@@ -13,6 +13,7 @@ import { getWeddingLimitMessage } from "@/config/plans";
 import { SITE_LINKS } from "@/config/site";
 import {
   ApiError,
+  assignDesignerTemplate,
   checkWeddingSlugAvailability,
   createWedding,
   syncMe,
@@ -71,6 +72,15 @@ export function SaveDraftPageClient({ userEmail }: SaveDraftPageClientProps) {
             gift: emptyGiftInfo(),
           },
         });
+        if (targetDraft.designerTemplateId) {
+          try {
+            await assignDesignerTemplate(created.id, {
+              designerTemplateId: targetDraft.designerTemplateId,
+            });
+          } catch {
+            // Thiệp vẫn được tạo; dashboard cho phép gán lại mẫu designer.
+          }
+        }
         clearWeddingDraft();
         router.replace(`${SITE_LINKS.dashboard}/weddings/${created.id}`);
       } catch (err) {

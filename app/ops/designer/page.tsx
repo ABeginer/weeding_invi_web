@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { opsRequest } from "@/lib/ops-api";
+import { useOpsMe } from "@/components/ops/OpsRoleContext";
 
 interface DesignerTemplate {
   id: string;
@@ -29,6 +30,8 @@ const STATUS_LABELS: Record<DesignerTemplate["status"], string> = {
 };
 
 export default function DesignerTemplatesPage() {
+  const { role } = useOpsMe();
+  const isAdmin = role === "admin";
   const [items, setItems] = React.useState<DesignerTemplate[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -127,26 +130,31 @@ export default function DesignerTemplatesPage() {
         </p>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="font-display text-2xl font-semibold text-text">Mẫu thiệp thiết kế</h1>
-          <button
-            type="button"
-            onClick={importExisting}
-            disabled={importing}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text disabled:opacity-60"
-          >
-            {importing ? "Đang nhập…" : "Nhập mẫu có sẵn từ thư viện"}
-          </button>
-          <button
-            type="button"
-            onClick={seedStyles}
-            disabled={seeding}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-accent/50 bg-accent-soft px-3 text-xs font-semibold text-accent-text disabled:opacity-60"
-          >
-            {seeding ? "Đang tạo…" : "Tạo bộ mẫu gốc (kéo thả)"}
-          </button>
+          {isAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={importExisting}
+                disabled={importing}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text disabled:opacity-60"
+              >
+                {importing ? "Đang nhập…" : "Nhập mẫu có sẵn từ thư viện"}
+              </button>
+              <button
+                type="button"
+                onClick={seedStyles}
+                disabled={seeding}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-accent/50 bg-accent-soft px-3 text-xs font-semibold text-accent-text disabled:opacity-60"
+              >
+                {seeding ? "Đang tạo…" : "Tạo bộ mẫu gốc (kéo thả)"}
+              </button>
+            </>
+          )}
         </div>
         <p className="text-sm text-text-muted">
-          Tạo mẫu mới hoặc nhập 21 mẫu code sẵn có làm nền draft để chỉnh trong canvas.
-          Canvas kéo thả sẽ được bổ sung ở bước tiếp theo.
+          {isAdmin
+            ? "Tạo mẫu mới hoặc nhập các mẫu code sẵn có làm nền draft để chỉnh trong canvas."
+            : "Tạo mẫu mới, chỉnh layout trong canvas và xuất bản."}
         </p>
       </header>
 

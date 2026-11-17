@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let cachedLocalEnv: Record<string, string> | null = null;
 let lastEnvReadTime = 0;
@@ -50,6 +50,18 @@ export function env(name: string): string {
 
 const options = { auth: { persistSession: false, autoRefreshToken: false } };
 
+let cachedClient: SupabaseClient | null = null;
+let cachedClientUrl = "";
+
+/**
+ * Một client/isolate là đủ: client chỉ giữ URL + service key, không giữ session.
+ * Trước đây mỗi query tạo client mới, tốn allocation trên mỗi request Worker.
+ */
 export function db() {
-  return createClient(env("SUPABASE_URL"), env("SUPABASE_SECRET_KEY"), options);
+  const url = env("SUPABASE_URL");
+  if (!cachedClient || cachedClientUrl !== url) {
+    cachedClient = createClient(url, env("SUPABASE_SECRET_KEY"), options);
+    cachedClientUrl = url;
+  }
+  return cachedClient;
 }

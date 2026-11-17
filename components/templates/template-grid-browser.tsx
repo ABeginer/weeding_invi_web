@@ -9,11 +9,12 @@ import type { CollectionTemplate } from "./types";
 
 interface TemplateGridBrowserProps {
   templates: CollectionTemplate[];
+  initialStyle?: string;
 }
 
-export function TemplateGridBrowser({ templates }: TemplateGridBrowserProps) {
+export function TemplateGridBrowser({ templates, initialStyle }: TemplateGridBrowserProps) {
   const [query, setQuery] = React.useState("");
-  const [style, setStyle] = React.useState("all");
+  const [style, setStyle] = React.useState(initialStyle ?? "all");
   const [plan, setPlan] = React.useState<"all" | "free" | "pro" | "vip">("all");
   const [openId, setOpenId] = React.useState<string | null>(null);
   const [failed, setFailed] = React.useState<Set<string>>(() => new Set());
@@ -26,9 +27,11 @@ export function TemplateGridBrowser({ templates }: TemplateGridBrowserProps) {
         if (value) tags.add(value);
       }
       for (const tag of template.styleTags ?? []) tags.add(tag);
+      if (template.ritualLabel) tags.add(template.ritualLabel);
     }
+    if (initialStyle && initialStyle !== "all") tags.add(initialStyle);
     return Array.from(tags).sort((a, b) => a.localeCompare(b, "vi"));
-  }, [templates]);
+  }, [initialStyle, templates]);
 
   const filtered = React.useMemo(() => {
     const needle = query.trim().toLowerCase();

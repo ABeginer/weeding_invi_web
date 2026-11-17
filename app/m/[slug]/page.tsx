@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
+import { cache } from "react";
+import { cookies, headers } from "next/headers";
 import { toAbsoluteSiteUrl } from "@/config/site";
 import { DesignerInvitation } from "@/components/designer/designer-invitation";
 import type { DesignerCanvasContent } from "@/components/ops/designer-types";
+import { FreeInviteLimit } from "@/components/invitation/FreeInviteLimit";
 import { InvitePageClient } from "@/components/invitation/InvitePageClient";
 import { buildDesignerInviteValues } from "@/lib/designer-invite";
+import {
+  FREE_INVITE_VIEW_LIMIT,
+  INVITE_VIEW_COOKIE,
+  isLikelyCrawler,
+  trackGuestView,
+} from "@/lib/server/invite-limits";
 import { getPublicWeddingByGuestSlug } from "@/lib/server/public-wedding";
 import { buildSalutation } from "@/lib/salutation-engine";
 import { formatWeddingDateParts } from "@/lib/utils";
@@ -12,13 +21,16 @@ import { getTemplateMeta } from "@/templates/registry";
 
 export const dynamic = "force-dynamic";
 
+// metadata + page dùng chung một lần đọc DB trong cùng request.
+const getWeddingByGuestSlug = cache(getPublicWeddingByGuestSlug);
+
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const wedding = await getPublicWeddingByGuestSlug(slug).catch(() => null);
+  const wedding = await getWeddingByGuestSlug(slug).catch(() => null);
   const content = wedding?.content ?? createDefaultWeddingContent();
   const templateId = wedding?.templateId ?? "basic-1";
   const templateData = toTemplateData({
@@ -98,8 +110,44 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PersonalInvitePage({ params }: PageProps) {
   const { slug } = await params;
-  const wedding = await getPublicWeddingByGuestSlug(slug).catch(() => null);
+  const wedding = await getWeddingByGuestSlug(slug).catch(() => null);
   const content = wedding?.content ?? createDefaultWeddingContent();
+
+  if (wedding && wedding.plan === "free") {
+    const cookieStore = await cookies();
+    const requestHeaders = await headers();
+    const viewKey = cookieStore.get(INVITE_VIEW_COOKIE)?.value;
+    const userAgent = requestHeaders.get("user-agent");
+    if (viewKey && !isLikelyCrawler(userAgent)) {
+      const viewCount = await trackGuestView(wedding.guestId, viewKey);
+      if (
+        viewCount !== null &&
+        viewCount > FREE_INVITE_VIEW_LIMIT
+      ) {
+        const limitedData = toTemplateData({
+          templateId: wedding.templateId,
+          plan: wedding.plan,
+          weddingSlug: wedding.slug,
+          content,
+          events: wedding.events,
+          photos: wedding.photos,
+        });
+        return (
+          <FreeInviteLimit
+            data={limitedData}
+            inviteSlug={slug}
+            weddingSlug={wedding.slug}
+            guestName={wedding.guestName}
+            initialStatus={wedding.rsvpStatus}
+            initialPlusOnes={wedding.plusOnes}
+            initialDiet={wedding.diet}
+            initialSongRequest={wedding.songRequest}
+            initialRideNeeded={wedding.rideNeeded}
+          />
+        );
+      }
+    }
+  }
 
   // Thiệp đã ghim mẫu designer: render đúng layout của version đó với dữ liệu thật.
   if (wedding?.designerTemplate) {
@@ -113,9 +161,28 @@ export default async function PersonalInvitePage({ params }: PageProps) {
       groomName: content.couple.groomName,
       brideName: content.couple.brideName,
       dateLabel: formatWeddingDateParts(content.date).dotDate,
+      dateIso: content.date,
       events: wedding.events,
       guestName: wedding.guestName,
       salutation: salutation.invitePrefix,
+      designerFields: content.designerFields,
+      hasGifts: Boolean(
+        content.gift?.groomAccountNumber ||
+        content.gift?.brideAccountNumber,
+      ),
+      hasPhotos: Boolean(wedding.photos?.length),
+      photoCount: wedding.photos?.length ?? 0,
+      hasMusic: true,
+      musicTitle: "Nhạc nền",
+      musicUrl: "/media/wedding.mp3",
+    });
+    const designerData = toTemplateData({
+      templateId: wedding.templateId,
+      plan: wedding.plan,
+      weddingSlug: wedding.slug,
+      content,
+      events: wedding.events,
+      photos: wedding.photos,
     });
 
     return (
@@ -125,6 +192,17 @@ export default async function PersonalInvitePage({ params }: PageProps) {
         }
         values={values}
         coupleLabel={`${content.couple.groomName} & ${content.couple.brideName}`}
+        data={designerData}
+        weddingSlug={wedding.slug}
+        guestName={wedding.guestName}
+        invitationMode="personal"
+        plan={wedding.plan}
+        overrides={content.designerOverrides}
+        initialStatus={wedding.rsvpStatus}
+        initialPlusOnes={wedding.plusOnes}
+        initialDiet={wedding.diet}
+        initialSongRequest={wedding.songRequest}
+        initialRideNeeded={wedding.rideNeeded}
       />
     );
   }

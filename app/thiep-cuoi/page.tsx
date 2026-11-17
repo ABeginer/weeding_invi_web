@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TemplateGridBrowser } from "@/components/templates/template-grid-browser";
+import { LiveTemplateCollection } from "@/components/templates/live-template-collection";
 import type { CollectionTemplate } from "@/components/templates/types";
 import { SITE_LINKS, SITE_NAME, toAbsoluteSiteUrl } from "@/config/site";
 import { getTemplateCollection } from "@/templates/registry";
@@ -21,7 +21,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TemplateCollectionPage() {
+const CEREMONY_FILTERS: Record<string, string> = {
+  "vu-quy": "Lễ Vu Quy",
+  "thanh-hon": "Lễ Thành Hôn",
+  "bao-hy": "Lễ Báo Hỷ",
+};
+
+interface TemplateCollectionPageProps {
+  searchParams: Promise<{ ceremony?: string }>;
+}
+
+export default async function TemplateCollectionPage({
+  searchParams,
+}: TemplateCollectionPageProps) {
+  const { ceremony } = await searchParams;
+  const initialStyle = ceremony ? CEREMONY_FILTERS[ceremony] : undefined;
   const templates: CollectionTemplate[] = getTemplateCollection().map(
     (template) => ({
       id: template.id,
@@ -54,7 +68,7 @@ export default function TemplateCollectionPage() {
       </header>
 
       <div className="mt-8 sm:mt-10">
-        <TemplateGridBrowser templates={templates} />
+        <LiveTemplateCollection initialTemplates={templates} variant="grid" initialStyle={initialStyle} />
       </div>
 
       <p className="mx-auto mt-10 max-w-xl text-center text-xs leading-relaxed text-text-muted">

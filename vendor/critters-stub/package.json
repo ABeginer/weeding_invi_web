@@ -1,0 +1,14 @@
+{
+  "name": "critters",
+  "version": "0.0.25",
+  "private": true,
+  "description": "Stub for Next.js's optional critters dependency. OpenNext bundles Next's middleware runtime which statically references critters, but this app does not enable experimental.optimizeCss, so the code path is never executed. The real package is intentionally not installed (Worker bundle size + audit surface). If optimizeCss is ever enabled, this stub throws with instructions instead of silently doing nothing.",
+  "main": "index.js",
+  "module": "index.mjs",
+  "exports": {
+    "import": "./index.mjs",
+    "require": "./index.js",
+    "default": "./index.js"
+  },
+  "license": "UNLICENSED"
+}

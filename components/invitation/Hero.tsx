@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
 import { CoupleDisplayName } from "./CoupleDisplayName";
+import { OliveGardenHero } from "./OliveGardenHero";
 import {
   useInvitationContained,
   useInvitationDesktopLayout,
@@ -32,6 +33,10 @@ export function Hero({ guestName }: HeroProps) {
   }, []);
 
   const reducedMotion = mounted && Boolean(prefersReducedMotion);
+
+  if (data.templateId === "basic-1") {
+    return <OliveGardenHero guestName={guestName} />;
+  }
 
   return (
     <section
@@ -129,7 +134,7 @@ export function Hero({ guestName }: HeroProps) {
               decoding="async"
               fetchPriority="high"
               className={cn(
-                "hero-photo-scale block h-auto w-full object-cover",
+                "hero-photo-scale block aspect-[3/4] w-full object-cover",
                 isDesktopLayout && "md:aspect-[3/4] md:object-[center_20%]",
               )}
             />

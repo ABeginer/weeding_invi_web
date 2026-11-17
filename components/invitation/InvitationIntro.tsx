@@ -12,6 +12,7 @@ export function InvitationIntro({ guestName }: InvitationIntroProps) {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const isDesktopLayout = useInvitationDesktopLayout();
+  const isOliveGarden = data.templateId === "basic-1";
   const displayName =
     guestName && guestName.trim().length > 0
       ? guestName.trim()
@@ -43,7 +44,9 @@ export function InvitationIntro({ guestName }: InvitationIntroProps) {
           isDesktopLayout && "md:max-w-[540px]",
         )}
       >
-        {data.ui.invitationNote}
+        {isOliveGarden
+          ? "Trân trọng kính mời Quý Khách đến tham dự buổi tiệc chung vui cùng chúng tôi"
+          : data.ui.invitationNote}
       </p>
     </RevealSection>
   );

@@ -23,6 +23,8 @@ interface TemplateDemoViewerProps {
   template: WeddingTemplateMeta;
   isAuthenticated: boolean;
   userEmail?: string | null;
+  /** Chế độ nhúng cho card/popup trang chủ: chỉ render nội dung thiệp, không toolbar. */
+  embed?: boolean;
 }
 
 function getDemoPlanBadgeClasses(plan: WeddingPlan): string {
@@ -39,6 +41,7 @@ export function TemplateDemoViewer({
   template,
   isAuthenticated,
   userEmail = null,
+  embed = false,
 }: TemplateDemoViewerProps) {
   const router = useRouter();
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
@@ -176,6 +179,25 @@ export function TemplateDemoViewer({
     const destination = `${SITE_LINKS.createWedding}?template=${encodeURIComponent(template.id)}`;
     router.push(destination);
   };
+
+  if (embed) {
+    return (
+      <div className="landing-theme min-h-screen-dvh w-full bg-bg text-text">
+        <style>{`html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}`}</style>
+        <TemplatePreviewRenderer
+          key={`${template.id}-embed`}
+          templateId={template.id}
+          data={demoData}
+          mode="demo"
+          contained
+          viewport="phone"
+          isOpened
+          onOpenedChange={() => undefined}
+          externalMusicControl
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="landing-theme min-h-screen-dvh bg-bg pb-20 text-text md:pb-10">

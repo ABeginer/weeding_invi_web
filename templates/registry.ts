@@ -3,11 +3,94 @@ import { RITUAL_TEMPLATES_CONFIG } from "@/config/templates-ritual";
 import type { WeddingPlan } from "@/lib/types";
 import type { WeddingTemplateMeta } from "./types";
 
-const ritualAnHoi = RITUAL_TEMPLATES_CONFIG.find((r) => r.ritualKey === "an-hoi");
-const ritualGiaTien = RITUAL_TEMPLATES_CONFIG.find((r) => r.ritualKey === "gia-tien");
 const ritualVuQuy = RITUAL_TEMPLATES_CONFIG.find((r) => r.ritualKey === "vu-quy");
 
 export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
+  {
+    id: "nau-toi-gian",
+    name: "Nâu tối giản",
+    subtitle: "Tối giản · Nâu ấm",
+    description:
+      "Thiệp cưới nâu tối giản với cành hoa khô, con dấu sáp, album ảnh và lịch trình ngày cưới.",
+    plan: "free",
+    coverImage: "/templates/nau-toi-gian/cover.jpg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Nâu tối giản",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#7C6A60",
+    tone: "neutral",
+    styleTags: ["Nâu", "Tối giản", "Hoa khô"],
+  },
+  {
+    id: "do-mix-xanh",
+    name: "Đỏ mix xanh",
+    subtitle: "Đỏ rượu · Xanh rêu",
+    description:
+      "Phiên bản phối màu của Đỏ may mắn: trang SAVE THE DATE xanh rêu, các phần còn lại giữ nguyên đỏ rượu.",
+    plan: "free",
+    coverImage: "/templates/do-may-man/cover.jpg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Đỏ mix xanh",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#586D40",
+    tone: "dark",
+    styleTags: ["Đỏ rượu", "Xanh rêu", "Mẫu đơn"],
+  },
+  {
+    id: "xanh-tu-do",
+    name: "Xanh tự do",
+    subtitle: "Cổ điển · Xanh rêu",
+    description:
+      "Phiên bản xanh rêu của Đỏ may mắn, giữ nguyên bố cục, cành mẫu đơn, phong bao và lịch trình.",
+    plan: "free",
+    coverImage: "/templates/xanh-tu-do/cover.jpg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Xanh tự do",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#586D40",
+    tone: "dark",
+    styleTags: ["Xanh rêu", "Cổ điển", "Mẫu đơn"],
+  },
+  {
+    id: "do-may-man",
+    name: "Đỏ may mắn",
+    subtitle: "Cổ điển · Đỏ rượu",
+    description:
+      "Thiệp cưới đỏ rượu với cành mẫu đơn, phong bao lì xì, album ảnh và lịch trình ngày cưới.",
+    plan: "free",
+    coverImage: "/templates/do-may-man/cover.jpg",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Đỏ may mắn",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#4D1217",
+    tone: "dark",
+    styleTags: ["Đỏ rượu", "Cổ điển", "Mẫu đơn"],
+  },
+  {
+    id: "hoa-anh-dao-v2",
+    name: "Hoa Anh Đào V2",
+    subtitle: "Lãng mạn · Hoa anh đào",
+    description:
+      "Thiệp cưới thuần React với cành hoa anh đào, hiệu ứng mở thiệp, album, hộp quà và xác nhận tham dự.",
+    plan: "free",
+    coverImage: "/templates/hoa-anh-dao-v2/cover.png",
+    defaultMusic: {
+      src: "/media/wedding.mp3",
+      title: "Giai điệu Hoa Anh Đào",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#C45B72",
+    tone: "bright",
+    styleTags: ["Hoa anh đào", "Lãng mạn", "Hiện đại"],
+  },
   {
     id: "basic-1",
     name: "Vườn Ô Liu",
@@ -71,59 +154,6 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     hasAdvancedEffects: true,
     accentSwatch: "#D4AF37",
     tone: "dark",
-  },
-  {
-    id: "vip-1",
-    name: "Ngọc Lục Bảo Độc Quyền",
-    subtitle: "Độc quyền · Sắp ra mắt",
-    description:
-      "Mẫu VIP với hiệu ứng chiều sâu sân khấu và chữ lồng chuyển động nâng cao (đang hoàn thiện).",
-    plan: "vip",
-    coverImage: "/templates/vip-1/cover.webp",
-    defaultMusic: {
-      src: "/media/wedding.mp3",
-      title: "Hòa âm Độc Quyền",
-    },
-    hasAdvancedEffects: true,
-    isPlaceholder: true,
-    accentSwatch: "#D4AF37",
-    tone: "neutral",
-  },
-  {
-    id: "ritual-an-hoi",
-    name: ritualAnHoi?.name ?? "Lễ ăn hỏi",
-    subtitle: ritualAnHoi?.ritualLabel ?? "Ăn hỏi",
-    description: ritualAnHoi?.description ?? "",
-    plan: "free",
-    coverImage: "/templates/basic-1/cover.webp",
-    defaultMusic: {
-      src: "/media/wedding.mp3",
-      title: "Giai điệu Lễ Ăn Hỏi",
-    },
-    hasAdvancedEffects: false,
-    accentSwatch: "#A63D40",
-    tone: "bright",
-    ritualKey: "an-hoi",
-    ritualLabel: ritualAnHoi?.ritualLabel ?? "Ăn hỏi",
-    styleTags: ritualAnHoi?.styleTags ?? ["Nghi lễ truyền thống", "Trang trọng"],
-  },
-  {
-    id: "ritual-gia-tien",
-    name: ritualGiaTien?.name ?? "Lễ gia tiên",
-    subtitle: ritualGiaTien?.ritualLabel ?? "Gia tiên",
-    description: ritualGiaTien?.description ?? "",
-    plan: "free",
-    coverImage: "/templates/basic-2/cover.webp",
-    defaultMusic: {
-      src: "/media/wedding.mp3",
-      title: "Giai điệu Lễ Gia Tiên",
-    },
-    hasAdvancedEffects: false,
-    accentSwatch: "#C6A962",
-    tone: "bright",
-    ritualKey: "gia-tien",
-    ritualLabel: ritualGiaTien?.ritualLabel ?? "Gia tiên",
-    styleTags: ritualGiaTien?.styleTags ?? ["Gia đình", "Ấm cúng"],
   },
   {
     id: "ritual-vu-quy",
@@ -448,9 +478,14 @@ export interface TemplateCollectionItem extends WeddingTemplateMeta {
 export function getTemplateCollection(): TemplateCollectionItem[] {
   return TEMPLATE_REGISTRY.map((tpl) => ({
     ...tpl,
-    previewImage: tpl.previewImage ?? `/templates/${tpl.id}/preview.webp`,
+    previewImage:
+      tpl.previewImage ??
+      tpl.coverImage ??
+      `/templates/${tpl.id}/preview.webp`,
     snapshotImage:
-      tpl.snapshotImage ?? `/templates/${tpl.id}/snapshot.webp`,
+      tpl.snapshotImage ??
+      tpl.coverImage ??
+      `/templates/${tpl.id}/snapshot.webp`,
     demoUrl: tpl.demoUrl ?? (tpl.isPlaceholder ? undefined : `/mau/${tpl.id}`),
   })).sort(
     (a, b) => Number(Boolean(a.isPlaceholder)) - Number(Boolean(b.isPlaceholder)),

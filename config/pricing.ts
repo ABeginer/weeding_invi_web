@@ -1,13 +1,26 @@
 import type { WeddingPlan } from "@/lib/types";
+import { getTemplateCollection } from "@/templates/registry";
+
+const AVAILABLE_TEMPLATES = getTemplateCollection().filter(
+  (template) => !template.isPlaceholder,
+);
+const FREE_TEMPLATE_COUNT = AVAILABLE_TEMPLATES.filter(
+  (template) => template.plan === "free",
+).length;
+const TOTAL_TEMPLATE_COUNT = AVAILABLE_TEMPLATES.length;
 
 export interface PricingTier {
   id: WeddingPlan;
   name: string;
   price: string;
+  originalPrice?: string;
+  promoNote?: string;
   tagline: string;
   badge?: string;
   ctaLabel: string;
   highlighted?: boolean;
+  /** Ẩn khỏi bảng giá/CTA nhưng vẫn giữ dữ liệu cho khách VIP cũ. */
+  hidden?: boolean;
 }
 
 export interface PricingCell {
@@ -32,9 +45,9 @@ export const PRICING_TIERS: PricingTier[] = [
   {
     id: "pro",
     name: "Gói Tiêu chuẩn (Pro)",
-    price: "199.000đ",
+    price: "499.000đ",
     tagline: "Đầy đủ tính năng cho ngày trọng đại.",
-    badge: "Phổ biến nhất",
+    badge: "Giá tạm thời",
     ctaLabel: "Chọn gói Pro",
     highlighted: true,
   },
@@ -42,10 +55,13 @@ export const PRICING_TIERS: PricingTier[] = [
     id: "vip",
     name: "Gói Cao cấp (VIP)",
     price: "399.000đ",
-    tagline: "Trọn bộ đặc quyền và mẫu độc quyền.",
+    tagline: "Trọn bộ đặc quyền và trải nghiệm cao cấp.",
     ctaLabel: "Chọn gói VIP",
+    hidden: true,
   },
 ];
+
+export const VIP_SALES_ENABLED = false;
 
 export const PRICING_ROWS: PricingRow[] = [
   {
@@ -61,9 +77,9 @@ export const PRICING_ROWS: PricingRow[] = [
     id: "templates",
     feature: "Mẫu thiệp",
     values: {
-      free: { text: "22 mẫu miễn phí" },
-      pro: { text: "Toàn bộ 23 mẫu hiện có" },
-      vip: { text: "Toàn bộ 23 mẫu + mẫu độc quyền", comingSoon: true },
+      free: { text: `${FREE_TEMPLATE_COUNT} mẫu miễn phí` },
+      pro: { text: `Toàn bộ ${TOTAL_TEMPLATE_COUNT} mẫu hiện có` },
+      vip: { text: `Toàn bộ ${TOTAL_TEMPLATE_COUNT} mẫu hiện có` },
     },
   },
   {
@@ -71,8 +87,8 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Nhạc nền",
     values: {
       free: { text: "Nhạc nền có sẵn theo mẫu" },
-      pro: { text: "Tải nhạc MP3 lên", comingSoon: true },
-      vip: { text: "Tải nhạc MP3 lên", comingSoon: true },
+      pro: { text: "Nhạc nền có sẵn theo mẫu" },
+      vip: { text: "Nhạc nền có sẵn theo mẫu" },
     },
   },
   {

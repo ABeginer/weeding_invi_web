@@ -1,32 +1,32 @@
 # Việc còn lại
 
-Cập nhật: 2026-11-14. Toàn bộ việc kỹ thuật trong danh sách trước đã xong; dưới đây là
-những gì còn lại và lý do.
+Cập nhật: 2026-11-15 (Verified & Reconciled). Dưới đây là danh sách việc còn lại sau các đợt hoàn thiện launch hardening và designer engine:
 
-## A. Chủ dự án cần làm
+## A. Chủ dự án cần làm (Owner-only)
 
+- [x] Chạy `supabase/migration_v16_ops_roles_template_meta.sql` (bảng `ops_members` +
+      cột `designer_templates.display_title`) — **Đã áp dụng trên production (Verified 2026-11-15)**.
+- [ ] Xác nhận email admin trong `ops_members` (hiện fallback `ADMIN_EMAILS`).
+- [ ] Trước `npm run deploy`: `npx wrangler login` (hoặc đặt `CLOUDFLARE_API_TOKEN`).
+- [ ] Workers Free chỉ có 10 ms CPU nên cần **Workers Paid** (~$5/tháng) cho SSR/cron.
 - [ ] Sau deploy: xác nhận cron dọn dữ liệu chạy (`wrangler tail` lúc 03:00 UTC, log `[retention]`);
       chạy thử `POST /api/ops/retention/run` với `{ "dryRun": true, "reason": "..." }` trước.
 - [ ] Kiểm tra CSP trên trình duyệt thật: Turnstile, nhạc nền, Google Maps, preview Zalo.
-      Console báo vi phạm thì gửi directive để nới đúng chỗ trong `next.config.ts`.
 - [ ] Xác nhận bộ tính năng bán ra (bảng giá khớp code nhưng vẫn là bản nháp).
 
-## B. Kỹ thuật (chưa làm được trong môi trường hiện tại)
+## B. Kỹ thuật (Trạng thái thực tế)
 
-- [ ] **Ảnh cho bộ sưu tập mẫu thiệp**: `/thiep-cuoi` đang dùng placeholder vì chưa có
-      `public/templates/<id>/preview.webp` (700×1240) và `snapshot.webp` (750×≤6000)
-      cho 24 mẫu. Cần bổ sung ảnh thật; code đã tự fallback placeholder.
-
-- [ ] **Test API có DB** (RSVP limit, phân quyền, gifts): route handler import alias `@/`
-      và `next/server`, nên `node:test` không import trực tiếp được; cần thêm Vitest/tsx
-      hoặc Supabase test project. Hiện đã tách logic thuần và test 29 case.
-- [ ] **98 cảnh báo `react-hooks/set-state-in-effect`** từ eslint-plugin-react-hooks v6
-      (React Compiler). Đang để mức `warn` để không chặn CI; muốn sạch phải refactor
-      pattern đồng bộ prop→state trong các template.
-- [ ] **5 lỗ hổng audit production** đều nằm trong `@opennextjs/cloudflare →
-      @opennextjs/aws → @node-minify/core → glob/minimatch` (công cụ build, không vào
-      runtime worker). `npm audit fix --force` sẽ hạ adapter về 0.3.0 — không làm.
-      Chờ bản `@opennextjs/cloudflare` mới.
+- [x] **Trang thiết kế thiệp cho designer trong /ops**: Đã hoàn thành (Multi-page canvas, seed styles, published/draft versions, role designer, interactive blocks, public renderer).
+- [x] **Ghim version và render thiệp thật**: `/w/<slug>` và `/m/<guest>` render Designer template đúng version, kèm RSVP / map / calendar block.
+- [x] **Phase 5 Animation & Replay**: Đã có multi-select trên canvas (Shift/Cmd-click), nút "Phát tất cả" và "Phát thử" trực tiếp trong artboard bằng `ElementAnimator`, badge animated trên Layers panel.
+- [x] **Hiệu ứng chữ (Text Effects)**: Đã hỗ trợ `shadow`, `stroke`, `glow`, `goldGradient` trong canvas properties và `DesignerTemplateRenderer`.
+- [ ] **Dynamic fields mở rộng**: Đang triển khai hỗ trợ text/textarea bên cạnh ảnh cho guest fields.
+- [ ] **Hoàn thiện khối tương tác (Blocks)**: Map (hỗ trợ nhiều sự kiện và chỉ đường), Gift (nút/QR chuẩn), Gallery/Music kết nối dữ liệu thật.
+- [ ] **RSVP Preload**: Tải trước dữ liệu khách (status, diet, plusOnes) cho thiệp `/m`.
+- [ ] **Editor UX**: Undo/redo, autosave debounce, dirty guard.
+- [ ] **Xoay ảnh/chữ khi export**: Exporter hỗ trợ góc xoay khi vẽ canvas background.
+- [ ] **98–124 cảnh báo `react-hooks/set-state-in-effect`** từ eslint-plugin-react-hooks v6 (React Compiler) — giữ mức warn, không chặn build.
+- [ ] **11 lỗ hổng audit build tooling** — không ảnh hưởng runtime worker.
 
 ## B2. Live QR Photo Wall (đã có UI demo, chưa có backend)
 
@@ -87,6 +87,46 @@ placeholder. Lưu dưới dạng **layout JSON + ảnh nền webp** (không flat
       publish v1 → v2, gán thiệp test `aaaaa` và kiểm tra `/m/<guest>`.
 - [ ] Block tương tác (RSVP, map, nhạc) cho designer template — giai đoạn sau.
 
+## B5. Editor animations & fonts (theo prompt `DEEPSEEK_ANIMATIONS_FONTS.md`)
+
+- [x] Phase 1: data model `animation.in`, 10 preset "Vào", easing, wrapper trong
+      `ElementAnimator`, IntersectionObserver dùng chung, stagger màn hình đầu,
+      reduced-motion, no-JS/observer-failure fallback, panel "Hiệu ứng" tab Vào.
+- [x] Phase 3: loop/emphasis (`float/pulse/heartbeat/breathe/sway/spin/twinkle/
+      shimmer/kenBurns`), parallax một listener chung, tab "Lặp", 12 loop gần tâm,
+      `typewriter` / `wordsIn` / `flipIn`, tắt theo reduced-motion/no-JS.
+  - Còn thiếu: shimmer chưa mask theo alpha ảnh PNG; "Phát thử" mới mở trang preview,
+    chưa replay đúng element/"Phát tất cả"; badge animated trên layers chưa có.
+- [~] Phase 4: hiệu ứng rơi **bản built-in + nguồn tùy chỉnh** — 9 preset (tuyết/sakura/hồng/lá/tim/sao/
+      kim tuyến/bong bóng/đom đóm), tối đa 4 nguồn (preset/icon/ảnh upload 256px,
+      ≤512KB), panel đầy đủ tham số, trong khung/cả trang, static sample +
+      "Xem hiệu ứng khi chỉnh", max 2, area/hardware scale, DPR≤2, pause
+      off-screen/tab, reduced-motion tắt.
+  - Còn thiếu: icon color picker theo từng nguồn; "Phát thử" đúng element/"Phát tất cả".
+- [~] Phase 5: exit effects (`fadeOut/slideOut/zoomOutExit`, observer theo dõi
+      vào/ra, replay entrance khi "Chạy lại" bật), shimmer mask theo alpha ảnh,
+      "Tự động áp dụng" fadeIn so le 120ms, badge "Hiệu ứng" trên element chọn.
+  - Còn thiếu: multi-select thật (Shift/Cmd-click) + áp dụng preset cho nhiều element;
+    "Phát thử" đúng element / "Phát tất cả" trong editor (hiện mở trang preview).
+- [ ] Phase 2 (phần còn lại): các family mới (Great Vibes, Allura, Montserrat,
+      Quicksand, Noto Serif…), "Bộ chữ", hiệu ứng chữ (bóng/viền/glow/ánh kim).
+      Hiện mới có nhóm font self-host sẵn + 6 "Kiểu chữ có sẵn".
+- [ ] Export theo lớp: element có animation phải tách thành layer transparent 2x
+      thay vì bake vào một ảnh nền. Cần cột/bảng lưu layer + endpoint upload mới
+      (chưa làm vì prompt cấm đổi backend/storage).
+
+## B6. Tối ưu production (sau đợt audit)
+
+- [ ] Bật Workers Paid trước production ($5/tháng): CPU free 10 ms không đủ cho
+      SSR và cron (Error 1102), dù bundle 16,7 MiB < 64 MiB.
+- [ ] Tạo Cloudflare Cache Rule cho `/media/*` (Edge TTL dài) để ảnh không chạy Worker.
+- [ ] Cache HTML `/w` (30–60 s) và `/m` (15–30 s) + cơ chế purge khi sửa nội dung/suspend.
+- [ ] Tách font designer khỏi root layout (chỉ tải ở `/m`, `/mau`, `/ops/designer`).
+- [ ] Backup Supabase hằng tuần (`pg_dump` → R2) vì free plan không có backup.
+- [ ] Giảm ảnh 1600 → 1280 px nếu R2 gần 8–9 GB; dọn `designer_template_versions`
+      không còn wedding ghim nếu DB gần 400 MB.
+- [ ] Ops: chuyển lọc/phân trang weddings/users xuống SQL khi dữ liệu lớn.
+
 ## C. Đã xong
 
 - [x] Đợt 1–4: 8 lỗi chặn, dữ liệu/bảo mật, dọn repo + docs + CI, Sổ mừng, Album,
@@ -102,4 +142,34 @@ placeholder. Lưu dưới dạng **layout JSON + ảnh nền webp** (không flat
   - Ảnh gallery hạ 2048px → 1600px.
   - Gộp logic validate RSVP/gift thành `lib/rsvp-input.ts`, `lib/gift-input.ts` + 7 test mới (tổng 29).
   - Xoá `FORBIDDEN_WEDDING_SLUGS` trùng, `isImplementedTemplateId` hardcode,
-    page redirect trùng `/cong-cu/du-tru-chi-phi`, ảnh `qr.jpg` không dùng, dependency `critters`.
+    page redirect trùng `/cong-cu/du-tru-chi-phi`, ảnh `qr.jpg` không dùng, dependency `critters`
+    (sau đó thêm stub `vendor/critters-stub` để OpenNext build được — xem Đợt 8).
+- [x] Đợt 8 — Ops:
+  - Tab **Template** dạng grid + search cho các mẫu designer đã publish: đổi tên thiết kế,
+    title khách hàng thấy, upload ảnh bìa (R2), hiện số thiệp đang dùng.
+  - Phân quyền ops theo email (`ops_members`, migration v16): admin thấy toàn bộ + trang
+    Phân quyền; designer chỉ thấy Template + Thiết kế mẫu; chặn ở cả sidebar, layout và API.
+  - Title khách hàng thấy được dùng trong danh sách chọn mẫu ở dashboard.
+- [x] Đợt 9 — Editor animations (Phase 1) + kiểu chữ:
+  - `animation.in` cho mọi element, 10 preset vào, easing, duration/delay/direction/distance,
+    once/threshold; engine client `ElementAnimator` chỉ animate wrapper nội dung.
+  - Public `/m` + preview dùng chung engine; observer dùng chung, stagger màn hình đầu,
+    no-JS fallback, 3s safety, reduced-motion.
+  - Panel "Hiệu ứng" trong canvas; nhóm font self-host + 6 kiểu chữ có sẵn.
+- [x] Đợt 11 — Public designer catalog:
+  - Trang chủ mục "Mẫu thiết kế mới" + `/mau-thiep`; API `/api/public/designer-templates`
+    chỉ trả published, cache 60s.
+  - Hover desktop chạy iframe thiệp thật từ trên xuống; mobile hiện trang đầu;
+    popup có thông tin, nhạc, tự cuộn, CTA dashboard.
+  - Embed `/mau/designer/<id>/embed`; bỏ preload 7 font trang trí (chỉ preload
+    Be Vietnam + Playfair) để giảm tải trang.
+  - Card code template dùng `coverImage` (hết ảnh trắng); hover/carousel và popup
+    render iframe `/mau/<id>?embed=1`, tự cuộn, có nhạc.
+  - Gộp mẫu designer đã publish vào chính carousel "Chọn mẫu thiệp của bạn" và
+    `/thiep-cuoi` cùng 25 mẫu code; bỏ mục riêng trên trang chủ.
+  - Nút "Xuất bản" lưu canvas hiện tại trước khi tạo version (tránh mất animation).
+- [x] Đợt 10 — Tối ưu production:
+  - Supabase client singleton theo isolate; React `cache()` cho `/m` và `/w`.
+  - Cache API cho `/media` (R2 key bất biến) và designer version JSON.
+  - Bỏ binding `IMAGES` không dùng; thêm `PRODUCTION_CAPACITY.md` với số liệu 100 DAU,
+    giới hạn free và ngưỡng migration.

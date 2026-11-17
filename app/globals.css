@@ -107,8 +107,16 @@
   height: 100dvh;
 }
 
-.invitation-theme {
+.invitation-theme,
+.themed-invitation {
+  /* Các font script cũ không có đủ glyph tiếng Việt; luôn fallback sang Playfair. */
+  --font-nautigal: var(--font-playfair);
+  --font-pinyon: var(--font-playfair);
+  --font-carattere: var(--font-playfair);
   font-family: var(--font-inv-serif);
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 0;
   color-scheme: light;
   --brand-bg: var(--inv-bg);
   --brand-surface: var(--inv-bg);
@@ -126,6 +134,131 @@
 
   --shadow-soft: 0 14px 36px -12px color-mix(in srgb, var(--inv-olive-deep) 16%, transparent);
   --shadow-card: 0 6px 20px -6px color-mix(in srgb, var(--inv-olive-deep) 12%, transparent);
+}
+
+[data-template-id="hoa-anh-dao-v2"] svg.lucide,
+[data-template-id="hoa-anh-dao-v2"] .theme-motif,
+[data-template-id="hoa-anh-dao-v2"] .invite-seal {
+  display: none !important;
+}
+
+
+/* Vườn Ô Liu: text slides in, images fade in — per element, not whole block. */
+.olive-reveal:not(.is-revealed) :is(h1, h2, h3, h4, p, label),
+.olive-reveal:not(.is-revealed) img {
+  opacity: 0;
+}
+/* Vườn Ô Liu: text slides in, images fade in. */
+.olive-reveal.is-revealed :is(h1, h2, h3, h4, p, label) {
+  animation: olive-text-slide 1.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.olive-reveal.is-revealed img {
+  animation: olive-image-fade 1.5s ease-out both;
+}
+
+@keyframes olive-text-slide {
+  from { opacity: 0; transform: translate3d(0, 22px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes olive-image-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sakura-petal {
+  position: absolute;
+  top: -8%;
+  border-radius: 72% 28% 60% 40%;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), transparent 48%),
+    linear-gradient(145deg, #ffd8e2, #e98fa8 65%, #c85d7b);
+  box-shadow: 0 0 7px rgba(226, 132, 158, 0.35);
+  animation-name: sakura-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+@keyframes sakura-fall {
+  0% {
+    transform: translate3d(0, -8vh, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(var(--petal-drift, 20px), 52vh, 0)
+      rotate(calc(var(--petal-rotate, 180deg) / 2));
+  }
+  100% {
+    transform: translate3d(calc(var(--petal-drift, 20px) * -0.5), 110vh, 0)
+      rotate(var(--petal-rotate, 180deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sakura-petal {
+    animation: none;
+    display: none;
+  }
+}
+
+.invitation-theme img,
+.themed-invitation img {
+  display: block;
+  max-width: 100%;
+}
+
+@keyframes album-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.album-track {
+  animation: album-marquee 34s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-track {
+    animation: none;
+  }
+}
+
+/* RSVP chuẩn dùng trên thiệp Designer: luôn có palette sáng ổn định,
+   không phụ thuộc theme của template code phía trước. */
+.designer-rsvp-theme {
+  --inv-bg: #faf7f2;
+  --inv-paper: #ffffff;
+  --inv-cream: #f3eee6;
+  --inv-input-bg: #ffffff;
+  --inv-title: #3f2b2b;
+  --inv-ink: #3f2b2b;
+  --inv-text-small: #5b4a43;
+  --inv-muted: #7a6a62;
+  --inv-olive: #a58b6f;
+  --inv-olive-mid: #8f7258;
+  --inv-olive-deep: #5f4636;
+  --inv-olive-btn: #5f4636;
+  --inv-olive-hover: #4a3328;
+  --inv-tint: #f3e9df;
+  --inv-cream-text: #ffffff;
+  --inv-cream-soft: #f7efe8;
+  --inv-tap-hint: #8f7258;
+  --color-inv-bg: #faf7f2;
+  --color-inv-paper: #ffffff;
+  --color-inv-cream: #f3eee6;
+  --color-inv-input: #ffffff;
+  --color-inv-title: #3f2b2b;
+  --color-inv-ink: #3f2b2b;
+  --color-inv-text: #5b4a43;
+  --color-inv-muted: #7a6a62;
+  --color-inv-olive: #a58b6f;
+  --color-inv-olive-mid: #8f7258;
+  --color-inv-olive-deep: #5f4636;
+  --color-inv-olive-btn: #5f4636;
+  --color-inv-olive-hover: #4a3328;
+  --color-inv-tint: #f3e9df;
+  --color-inv-cream-text: #ffffff;
+  --color-inv-cream-soft: #f7efe8;
+  --color-inv-tap-hint: #8f7258;
+  color: var(--inv-ink);
 }
 
 html:has(.invitation-theme),
@@ -415,6 +548,15 @@ body:has(.template-pro-obsidian) {
   animation-play-state: paused;
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes template-dialog-in {
   from { opacity: 0; transform: translateY(12px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -507,5 +649,314 @@ body:has(.template-pro-obsidian) {
 @media (prefers-reduced-motion: reduce) {
   .marquee-track {
     animation: none;
+  }
+}
+
+/* ===== Designer element entrance animations (Phase 1) =====
+   Chỉ animate transform/opacity/clip-path/filter. Wrapper vị trí + rotation
+   của element không nằm trong các class này. */
+
+@keyframes anim-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes anim-slideIn {
+  from { opacity: 0; transform: translate(var(--anim-from-x, -40px), var(--anim-from-y, 0px)); }
+  to { opacity: 1; transform: translate(0, 0); }
+}
+
+@keyframes anim-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes anim-zoomIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes anim-zoomOut {
+  from { opacity: 0; transform: scale(1.2); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes anim-pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes anim-bounceIn {
+  0% { opacity: 0; transform: translateY(-40px); }
+  60% { opacity: 1; transform: translateY(10px); }
+  80% { transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes anim-blurIn {
+  from { opacity: 0; filter: blur(12px); }
+  to { opacity: 1; filter: blur(0px); }
+}
+
+@keyframes anim-rotateIn {
+  from { opacity: 0; transform: rotate(-12deg) scale(0.9); }
+  to { opacity: 1; transform: rotate(0deg) scale(1); }
+}
+
+@keyframes anim-flipIn {
+  from { opacity: 0; transform: perspective(800px) rotateY(90deg); }
+  to { opacity: 1; transform: perspective(800px) rotateY(0deg); }
+}
+
+@keyframes anim-fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes anim-slideOut {
+  from { opacity: 1; transform: translate(0, 0); }
+  to { opacity: 0; transform: translate(var(--out-x, -40px), var(--out-y, 0px)); }
+}
+
+@keyframes anim-zoomOutExit {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.8); }
+}
+
+[data-anim-out][data-anim-out-play="true"] {
+  animation-name: var(--out-name);
+  animation-duration: var(--out-duration, 600ms);
+  animation-delay: var(--out-delay, 0ms);
+  animation-timing-function: var(--out-ease, ease-in);
+  animation-fill-mode: both;
+}
+
+@keyframes anim-wipe {
+  from { clip-path: var(--anim-from-clip, inset(0 100% 0 0)); opacity: 0; }
+  to { clip-path: inset(0); opacity: 1; }
+}
+
+/* Phase 3: chữ gõ từng ký tự / hiện từng từ. */
+@keyframes anim-charIn {
+  to { opacity: 1; }
+}
+
+@keyframes anim-wordIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anim-char {
+  opacity: 0;
+}
+
+[data-text-play="false"] {
+  opacity: 0;
+}
+
+[data-text-play="true"] .anim-char {
+  animation: anim-charIn 1ms linear both;
+  animation-delay: var(--char-delay, 0ms);
+}
+
+.anim-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+[data-text-play="true"] .anim-word {
+  animation: anim-wordIn 600ms var(--anim-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: var(--word-delay, 0ms);
+}
+
+/* ===== Phase 3: loop / emphasis =====
+   Wrapper "Lặp" chỉ chạy sau khi "Vào" xong; tạm dừng khi off-screen hoặc tab ẩn. */
+@keyframes loop-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(calc(-10px * var(--loop-amount, 1))); }
+}
+
+@keyframes loop-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(calc(1 + 0.06 * var(--loop-amount, 1))); }
+}
+
+@keyframes loop-heartbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(calc(1 + 0.15 * var(--loop-amount, 1))); }
+  28% { transform: scale(1); }
+  42% { transform: scale(calc(1 + 0.12 * var(--loop-amount, 1))); }
+  56% { transform: scale(1); }
+}
+
+@keyframes loop-breathe {
+  0% { transform: scale(1); opacity: 0.85; }
+  100% { transform: scale(calc(1 + 0.03 * var(--loop-amount, 1))); opacity: 1; }
+}
+
+@keyframes loop-sway {
+  0%, 100% { transform: rotate(calc(-4deg * var(--loop-amount, 1))); }
+  50% { transform: rotate(calc(4deg * var(--loop-amount, 1))); }
+}
+
+@keyframes loop-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loop-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(calc(1 - 0.06 * var(--loop-amount, 1))); }
+}
+
+@keyframes loop-kenBurns {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(calc(1 + 0.12 * var(--loop-amount, 1))) translate(calc(2% * var(--loop-amount, 1)), calc(-1.5% * var(--loop-amount, 1))); }
+}
+
+[data-loop] {
+  animation-play-state: paused;
+}
+
+[data-loop][data-loop-play="true"] {
+  animation-name: var(--loop-name);
+  animation-duration: var(--loop-duration, 3000ms);
+  animation-delay: var(--loop-delay, 0ms);
+  animation-timing-function: var(--loop-ease, ease-in-out);
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-play-state: running;
+}
+
+[data-loop="breathe"] {
+  animation-direction: alternate;
+}
+
+[data-loop="kenBurns"] {
+  animation-direction: alternate;
+  overflow: hidden;
+}
+
+[data-loop="sway"] {
+  transform-origin: top center;
+}
+
+/* Shimmer: vệt sáng chạy qua; chưa mask theo alpha của ảnh PNG (TODO Phase 3b). */
+[data-loop="shimmer"] {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-loop="shimmer"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    color-mix(in srgb, currentColor 55%, transparent) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: loop-shimmer 3000ms linear infinite;
+  animation-play-state: inherit;
+  opacity: 0.7;
+}
+
+[data-loop="shimmer"][data-shimmer-mask="true"]::after {
+  -webkit-mask-image: var(--shimmer-mask);
+  mask-image: var(--shimmer-mask);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+@keyframes loop-shimmer {
+  to { transform: translateX(120%); }
+}
+
+[data-anim-in="flipIn"] {
+  transform: perspective(800px) rotateY(90deg);
+}
+
+[data-anim-in] {
+  opacity: 0;
+}
+
+[data-anim-in="slideIn"] {
+  transform: translate(var(--anim-from-x, -40px), var(--anim-from-y, 0px));
+}
+
+[data-anim-in="rise"] {
+  transform: translateY(24px);
+}
+
+[data-anim-in="zoomIn"] {
+  transform: scale(0.8);
+}
+
+[data-anim-in="zoomOut"] {
+  transform: scale(1.2);
+}
+
+[data-anim-in="pop"] {
+  transform: scale(0.6);
+}
+
+[data-anim-in="bounceIn"] {
+  transform: translateY(-40px);
+}
+
+[data-anim-in="blurIn"] {
+  filter: blur(12px);
+}
+
+[data-anim-in="rotateIn"] {
+  transform: rotate(-12deg) scale(0.9);
+}
+
+/* Không đặt clip-path ở trạng thái ẩn của wipe: IntersectionObserver coi
+   phần tử bị clip kín là không giao với viewport nên animation không bao giờ
+   chạy. Ẩn bằng opacity, clip-path chỉ dùng trong keyframes. */
+
+[data-anim-in][data-anim-play="true"] {
+  animation-name: var(--anim-name);
+  animation-duration: var(--anim-duration, 800ms);
+  animation-delay: var(--anim-delay, 0ms);
+  animation-timing-function: var(--anim-ease, ease-out);
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-anim-in] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
+  }
+  [data-text-play] .anim-char,
+  [data-text-play] .anim-word {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  [data-loop],
+  [data-loop]::after {
+    animation: none !important;
+  }
+  [data-loop]::after {
+    opacity: 0 !important;
+  }
+  [data-anim-out] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
