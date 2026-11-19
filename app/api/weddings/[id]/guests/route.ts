@@ -116,12 +116,66 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
     return fail(getGuestLimitMessage(wedding.plan), 403);
   }
 
+  const insertData: Record<string, unknown> = {
+    wedding_id: wedding.id,
+    name,
+  };
+
+  if (body?.relationshipGroup !== undefined) {
+    const value = body.relationshipGroup;
+    if (
+      value !== null &&
+      value !== "elder" &&
+      value !== "peer_formal" &&
+      value !== "close_friend" &&
+      value !== "family"
+    ) {
+      return fail("Nhóm vai vế không hợp lệ.");
+    }
+    insertData.relationship_group = value;
+  }
+
+  if (body?.customPronounHost !== undefined) {
+    insertData.custom_pronoun_host = text(body.customPronounHost, 60);
+  }
+  if (body?.customPronounGuest !== undefined) {
+    insertData.custom_pronoun_guest = text(body.customPronounGuest, 60);
+  }
+  if (body?.tableNumber !== undefined) {
+    insertData.table_number = text(body.tableNumber, 40);
+  }
+  if (body?.dietaryPreference !== undefined) {
+    const value = body.dietaryPreference;
+    if (value !== null && value !== "standard" && value !== "vegetarian") {
+      return fail("Chế độ ăn không hợp lệ.");
+    }
+    insertData.dietary_preference = value;
+    insertData.diet = value === "vegetarian" ? "veg" : value === "standard" ? "meat" : null;
+  }
+
   const { data, error } = await client
     .from("guests")
-    .insert({ wedding_id: wedding.id, name })
+    .insert(insertData)
     .select("*")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    const code = (error as { code?: string }).code ?? "";
+    if (code === "42703" || code === "PGRST204") {
+      const fallbackInsert: Record<string, unknown> = {
+        wedding_id: wedding.id,
+        name,
+      };
+      if (insertData.diet !== undefined) fallbackInsert.diet = insertData.diet;
+      const { data: fallbackData, error: fallbackError } = await client
+        .from("guests")
+        .insert(fallbackInsert)
+        .select("*")
+        .single();
+      if (fallbackError) throw fallbackError;
+      return json(toGuest(fallbackData as GuestRow, []), 201);
+    }
+    throw error;
+  }
   return json(toGuest(data as GuestRow, []), 201);
 });

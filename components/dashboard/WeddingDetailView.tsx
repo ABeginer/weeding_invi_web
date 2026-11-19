@@ -17,6 +17,7 @@ import {
   MessageSquareHeart,
   Smartphone,
   Sparkles,
+  ShieldCheck,
   Tv,
   Users,
 } from "lucide-react";
@@ -52,8 +53,18 @@ import { StatCards } from "./StatCards";
 import { WeddingInfoEditor } from "./WeddingInfoEditor";
 import { WishList } from "./WishList";
 import { PhotoModerator } from "./PhotoModerator";
+import { AssistantPinManager } from "./AssistantPinManager";
 
-type DetailTab = "info" | "events" | "photos" | "moderation" | "guests" | "wishes" | "stats" | "preview";
+type DetailTab =
+  | "info"
+  | "events"
+  | "photos"
+  | "moderation"
+  | "assistant"
+  | "guests"
+  | "wishes"
+  | "stats"
+  | "preview";
 
 interface WeddingDetailViewProps {
   weddingId: string;
@@ -63,11 +74,13 @@ const SIDEBAR_TABS: {
   id: Exclude<DetailTab, "preview">;
   label: string;
   Icon: typeof Users;
+  badge?: string;
 }[] = [
   { id: "info", label: "Thông tin cưới", Icon: FileEdit },
   { id: "events", label: "Lễ & địa điểm", Icon: CalendarHeart },
   { id: "photos", label: "Ảnh cưới", Icon: ImageIcon },
   { id: "moderation", label: "Duyệt ảnh LED", Icon: Sparkles },
+  { id: "assistant", label: "Trợ lý & Check-in", Icon: ShieldCheck, badge: "VIP" },
   { id: "guests", label: "Khách mời", Icon: Users },
   { id: "wishes", label: "Lời chúc", Icon: MessageSquareHeart },
   { id: "stats", label: "Thống kê", Icon: BarChart3 },
@@ -628,34 +641,40 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
         className="-mx-4 overflow-x-auto border-b border-border px-4 lg:hidden"
       >
         <div className="flex min-w-max gap-1">
-          {[...SIDEBAR_TABS, { id: "preview" as const, label: "Xem trước", Icon: Smartphone }].map(
-            ({ id, label, Icon }) => {
-              const active = activeTab === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => handleSelectTab(id)}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "inline-flex cursor-pointer items-center gap-2 border-b-2 px-3.5 py-3 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm",
-                    active
-                      ? "border-accent text-accent-text"
-                      : "border-transparent text-fg-muted hover:border-border hover:text-fg",
-                  )}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  <span>{label}</span>
-                  {id === "info" && isDirty && (
-                    <span
-                      className="h-2 w-2 rounded-full bg-accent"
-                      aria-label="Có thay đổi chưa lưu"
-                    />
-                  )}
-                </button>
-              );
-            },
-          )}
+          {[
+            ...SIDEBAR_TABS,
+            { id: "preview" as const, label: "Xem trước", Icon: Smartphone, badge: undefined },
+          ].map(({ id, label, Icon, badge }) => {
+            const active = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleSelectTab(id)}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "inline-flex cursor-pointer items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm",
+                  active
+                    ? "border-accent text-accent-text"
+                    : "border-transparent text-fg-muted hover:border-border hover:text-fg",
+                )}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span>{label}</span>
+                {badge && (
+                  <span className="rounded bg-[#B89B72]/20 px-1.5 py-0.2 text-[9px] font-bold text-[#8A6D3B]">
+                    {badge}
+                  </span>
+                )}
+                {id === "info" && isDirty && (
+                  <span
+                    className="h-2 w-2 rounded-full bg-accent"
+                    aria-label="Có thay đổi chưa lưu"
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
 
@@ -673,7 +692,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             aria-label="Mục quản lý thiệp"
             className="sticky top-16 space-y-1.5 rounded-2xl border border-border bg-surface p-2"
           >
-            {SIDEBAR_TABS.map(({ id, label, Icon }) => {
+            {SIDEBAR_TABS.map(({ id, label, Icon, badge }) => {
               const active = activeTab === id;
               return (
                 <button
@@ -692,15 +711,29 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{label}</span>
                   </span>
-                  {id === "info" && isDirty && (
-                    <span
-                      className={cn(
-                        "h-2 w-2 shrink-0 rounded-full",
-                        active ? "bg-accent-fg" : "bg-accent",
-                      )}
-                      aria-label="Chưa lưu"
-                    />
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {badge && (
+                      <span
+                        className={cn(
+                          "rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide",
+                          active
+                            ? "bg-white/20 text-white"
+                            : "bg-[#B89B72]/20 text-[#8A6D3B]",
+                        )}
+                      >
+                        {badge}
+                      </span>
+                    )}
+                    {id === "info" && isDirty && (
+                      <span
+                        className={cn(
+                          "h-2 w-2 shrink-0 rounded-full",
+                          active ? "bg-accent-fg" : "bg-accent",
+                        )}
+                        aria-label="Chưa lưu"
+                      />
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -762,6 +795,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             <PhotoModerator
               weddingSlug={wedding.slug}
               weddingId={wedding.id}
+              plan={wedding.plan}
               coupleTitle={
                 [draftContent.couple?.groomName, draftContent.couple?.brideName]
                   .filter(Boolean)
@@ -781,6 +815,19 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               }}
               onPhotoDeleted={(photoId) => {
                 setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+              }}
+            />
+          )}
+
+          {activeTab === "assistant" && (
+            <AssistantPinManager
+              weddingId={wedding.id}
+              weddingSlug={wedding.slug}
+              plan={wedding.plan}
+              content={draftContent}
+              onContentChange={(nextContent) => {
+                setDraftContent(nextContent);
+                setWedding((prev) => (prev ? { ...prev, content: nextContent } : prev));
               }}
             />
           )}

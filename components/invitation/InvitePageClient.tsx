@@ -150,21 +150,6 @@ export function InvitePageClient({
       hasMusic={Boolean(displayData.music?.src)}
       musicTitle={displayData.music?.title}
     >
-      {invite && (
-        <GuestBoardingPass
-          guestName={guestLabel ?? invite.name}
-          slug={slug}
-          tableNumber={invite.tableNumber}
-          plusOnes={invite.plusOnes ?? 0}
-          diet={invite.diet}
-          weddingDate={eventDate}
-          coupleTitle={coupleTitle}
-          venueName={primaryEvent?.venueName}
-          venueTime={eventTime}
-          gift={displayData.gift}
-          plan={plan}
-        />
-      )}
       <LiveTemplateRenderer
         templateId={templateId}
         data={displayData}
@@ -178,6 +163,23 @@ export function InvitePageClient({
         initialSongRequest={invite?.songRequest ?? null}
         initialRideNeeded={invite?.rideNeeded ?? false}
       />
+      {invite && invite.status !== "declined" && (
+        <div id="the-moi-boarding-pass" className="w-full max-w-xl mx-auto px-4 sm:px-6 pt-6 pb-14">
+          <GuestBoardingPass
+            guestName={guestLabel ?? invite.name}
+            slug={slug}
+            tableNumber={invite.tableNumber}
+            plusOnes={invite.plusOnes ?? 0}
+            diet={invite.diet}
+            weddingDate={eventDate}
+            coupleTitle={coupleTitle}
+            venueName={primaryEvent?.venueName}
+            venueTime={eventTime}
+            gift={displayData.gift}
+            plan={plan}
+          />
+        </div>
+      )}
     </InvitationDesktopStage>
   );
 }

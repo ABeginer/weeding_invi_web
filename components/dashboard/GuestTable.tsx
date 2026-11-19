@@ -767,7 +767,7 @@ export function GuestTable({
         );
       }
       if (filterTab === "unassigned") {
-        return !g.tableNumber || !g.tableNumber.trim();
+        return g.status !== "declined" && (!g.tableNumber || !g.tableNumber.trim());
       }
       if (filterTab === "checkedIn") {
         return Boolean(g.checkedInAt);
@@ -785,7 +785,10 @@ export function GuestTable({
   const sentCount = Math.min(sentGuestIds.size, totalCount);
   const unsentCount = Math.max(0, totalCount - sentCount);
   const unassignedCount = React.useMemo(
-    () => guests.filter((g) => !g.tableNumber || !g.tableNumber.trim()).length,
+    () =>
+      guests.filter(
+        (g) => g.status !== "declined" && (!g.tableNumber || !g.tableNumber.trim()),
+      ).length,
     [guests],
   );
   const checkedInCount = React.useMemo(
@@ -853,7 +856,7 @@ export function GuestTable({
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-[#7A1C24] px-5 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#5E141B] disabled:opacity-50"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            <span>+ Thêm khách</span>
+            <span>Thêm khách</span>
           </button>
         </div>
       </div>
@@ -947,18 +950,31 @@ export function GuestTable({
           </div>
           <div className="flex items-center justify-between text-[11px] text-[#6B655E]">
             <span>Khẩu phần cỗ</span>
-            <span className="font-medium text-[#1F1D1A]">
-              {mealMode === "both" ? "Mặn & Chay" : mealMode === "veg" ? "Chỉ ăn chay" : "Ăn mặn"}
-            </span>
+            {onMealModeChange ? (
+              <select
+                value={mealMode}
+                onChange={(e) => onMealModeChange(e.target.value as "meat" | "veg" | "both")}
+                className="cursor-pointer rounded-lg border border-[#E8E2D9] bg-[#FAF8F5] px-2 py-0.5 text-xs font-semibold text-[#1F1D1A] outline-none transition-colors hover:border-[#7A1C24] focus:border-[#7A1C24]"
+                title="Thay đổi thực đơn tiệc cưới"
+              >
+                <option value="both">Mặn &amp; Chay</option>
+                <option value="meat">Chỉ ăn mặn</option>
+                <option value="veg">Chỉ ăn chay</option>
+              </select>
+            ) : (
+              <span className="font-medium text-[#1F1D1A]">
+                {mealMode === "both" ? "Mặn & Chay" : mealMode === "veg" ? "Chỉ ăn chay" : "Ăn mặn"}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* B. Sticky Quick Filter & Search Bar */}
-      <div className="sticky top-14 z-20 rounded-2xl border border-[#E8E2D9] bg-white p-3 sm:p-4 shadow-xs backdrop-blur-md">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="sticky top-14 z-20 rounded-2xl border border-[#E8E2D9] bg-white p-3 sm:p-4 shadow-xs backdrop-blur-md space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Search input */}
-          <div className="relative min-w-[240px] flex-1">
+          <div className="relative w-full sm:w-80">
             <Search
               className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6B655E]"
               aria-hidden="true"
@@ -981,8 +997,13 @@ export function GuestTable({
             )}
           </div>
 
-          {/* Quick Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar sm:pb-0">
+          <div className="text-xs text-[#6B655E] hidden sm:block">
+            Hiển thị <strong className="text-[#1F1D1A]">{filteredGuests.length}</strong> / {totalCount} khách
+          </div>
+        </div>
+
+        {/* Quick Filter Pills (Wrapping layout - 100% visible on Desktop without scrolling) */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => setFilterTab("all")}
@@ -1130,7 +1151,6 @@ export function GuestTable({
             </button>
           </div>
         </div>
-      </div>
 
       {/* Bulk Action Bar (When selected) */}
       {selectedGuestIds.length > 0 && (
@@ -1416,7 +1436,7 @@ export function GuestTable({
                               >
                                 <span className="tabular-nums">📍 {guest.tableNumber}</span>
                               </button>
-                            ) : (
+                            ) : guest.status === "declined" ? null : (
                               <button
                                 type="button"
                                 onClick={() => handleStartEditTable(guest)}
@@ -1631,7 +1651,7 @@ export function GuestTable({
                             <span>📍 {guest.tableNumber}</span>
                             <span className="text-[10px] text-[#6B655E]">(đổi)</span>
                           </button>
-                        ) : (
+                        ) : guest.status === "declined" ? null : (
                           <button
                             type="button"
                             onClick={() => handleStartEditTable(guest)}

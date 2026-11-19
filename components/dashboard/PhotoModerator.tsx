@@ -24,7 +24,7 @@ import {
   type ExportPhotoWallZipProgress,
   type PhotoWallZipItem,
 } from "@/lib/export-photo-wall-zip";
-import type { WeddingPhoto } from "@/lib/types";
+import type { WeddingPhoto, WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -47,6 +47,7 @@ interface PhotoModeratorProps {
   ) => void;
   onPhotoDeleted?: (photoId: string) => void;
   className?: string;
+  plan?: WeddingPlan;
 }
 
 export function PhotoModerator({
@@ -60,6 +61,7 @@ export function PhotoModerator({
   onModerationChange,
   onPhotoDeleted,
   className,
+  plan,
 }: PhotoModeratorProps) {
   const { showToast } = useToast();
 
@@ -70,6 +72,7 @@ export function PhotoModerator({
     Record<string, ModerationStatus>
   >(initialModeration);
   const [modeBusy, setModeBusy] = React.useState(false);
+  const [vipUpgradeOpen, setVipUpgradeOpen] = React.useState(false);
   const [activeFilter, setActiveFilter] = React.useState<
     "all" | "pending" | "approved" | "hidden"
   >("pending");
@@ -181,6 +184,10 @@ export function PhotoModerator({
 
   // Chuyển đổi chế độ duyệt (Duyệt thủ công vs Tự động duyệt)
   const handleToggleMode = async (nextMode: "manual" | "auto") => {
+    if (nextMode === "auto" && plan && plan !== "vip") {
+      setVipUpgradeOpen(true);
+      return;
+    }
     if (modeBusy || nextMode === approvalMode) return;
     const previous = approvalMode;
     setApprovalMode(nextMode);
@@ -743,6 +750,44 @@ export function PhotoModerator({
         coupleTitle={coupleTitle || "Tiệc Cưới"}
         weddingDate={weddingDate}
       />
+
+      {/* Modal nâng cấp VIP cho tính năng tự động duyệt ảnh */}
+      <Dialog
+        open={vipUpgradeOpen}
+        onClose={() => setVipUpgradeOpen(false)}
+        title="Tính năng sảnh tiệc Gói VIP"
+        description="Chế độ 'Tự động duyệt ảnh LED' chỉ khả dụng trên thiệp cưới gói VIP của Inviwedd."
+        className="max-w-md"
+      >
+        <div className="space-y-4 py-2">
+          <div className="rounded-xl border border-[#B89B72]/30 bg-[#FAF8F5] p-3.5 text-xs text-[#1F1D1A] space-y-2">
+            <p className="font-semibold text-[#7A1C24]">
+              Đặc quyền Gói VIP (399.000đ):
+            </p>
+            <ul className="list-disc pl-4 space-y-1 text-[#6B655E]">
+              <li>Tự động duyệt ảnh khách gửi lên màn hình LED sảnh tiệc.</li>
+              <li>Tải trọn bộ ảnh gốc chất lượng cao (.ZIP).</li>
+              <li>In bảng mã QR để bàn A5/A6 trang trọng.</li>
+              <li>Cổng trợ lý bảo mật mã PIN 4 số cho người nhà duyệt ảnh và check-in khách.</li>
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setVipUpgradeOpen(false)}>
+              Để sau
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setVipUpgradeOpen(false);
+                window.location.hash = "#bang-gia";
+              }}
+              className="bg-[#7A1C24] hover:bg-[#5E141B] text-white"
+            >
+              Nâng cấp VIP ngay →
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }

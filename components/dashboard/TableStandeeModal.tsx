@@ -229,12 +229,12 @@ export function TableStandeeModal({
               {isDownloading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Đang xử lý ảnh in 300 DPI...</span>
+                  <span>Đang xử lý ảnh in...</span>
                 </>
               ) : (
                 <>
                   <Printer className="h-4 w-4 text-[#B89B72]" />
-                  <span>Tải file ảnh chất lượng in (300 DPI PNG)</span>
+                  <span>Tải ảnh bảng QR sẵn sàng mang đi in</span>
                 </>
               )}
             </button>

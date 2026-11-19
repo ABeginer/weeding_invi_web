@@ -222,7 +222,7 @@ export function PricingTable({
           {/* Card 3 — Gói VIP (Editorial Dark Ink) */}
           <ScrollReveal as="article" className="relative flex h-full flex-col">
             {/* Top Badge */}
-            <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#B89B72]/40 bg-[#B89B72]/20 px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#B89B72] uppercase shadow-sm whitespace-nowrap backdrop-blur-xs">
+            <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-[#B89B72] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#1F1D1A] uppercase shadow-sm whitespace-nowrap">
               TRẢI NGHIỆM SẢNH TIỆC
             </span>
 

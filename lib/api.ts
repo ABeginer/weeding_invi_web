@@ -128,6 +128,39 @@ async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+async function optionalAuthRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  let token: string | null = null;
+  try {
+    token = await getBearerToken();
+  } catch {
+    token = null;
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string>),
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(path, {
+    ...init,
+    cache: "no-store",
+    headers,
+  });
+
+  if (res.status === 401 && token) {
+    clearAccessTokenCache();
+  }
+
+  if (!res.ok) {
+    await parseErrorResponse(res);
+  }
+
+  return (await res.json()) as T;
+}
+
 async function authFormRequest<T>(path: string, formData: FormData): Promise<T> {
   const token = await getBearerToken();
   const res = await fetch(path, {
@@ -285,14 +318,14 @@ export function moderatePhoto(
   photoId: string,
   status: "approved" | "hidden" | "pending",
 ): Promise<{ ok: boolean; photoModeration: Record<string, "pending" | "approved" | "hidden"> }> {
-  return request("/api/share/moderate-photo", post({ slug, photoId, status }));
+  return optionalAuthRequest("/api/share/moderate-photo", post({ slug, photoId, status }));
 }
 
 export function setPhotoApprovalMode(
   slug: string,
   mode: "manual" | "auto",
 ): Promise<{ ok: boolean; photoApprovalMode: "manual" | "auto" }> {
-  return request("/api/share/set-mode", post({ slug, mode }));
+  return optionalAuthRequest("/api/share/set-mode", post({ slug, mode }));
 }
 
 export type PublicWish = { id: string; name: string; message: string };
@@ -568,10 +601,21 @@ export function listGuestsPage(
   );
 }
 
-export function createGuest(weddingId: string, name: string): Promise<Guest> {
+export interface CreateGuestPayload {
+  name: string;
+  relationshipGroup?: Guest["relationshipGroup"] | null;
+  tableNumber?: string | null;
+  dietaryPreference?: Guest["dietaryPreference"] | null;
+}
+
+export function createGuest(
+  weddingId: string,
+  input: string | CreateGuestPayload,
+): Promise<Guest> {
+  const body = typeof input === "string" ? { name: input } : input;
   return authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests`,
-    post({ name }),
+    post(body),
   );
 }
 

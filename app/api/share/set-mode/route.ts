@@ -1,6 +1,7 @@
 import { getUser } from "@/lib/server/auth";
 import { fail, json, readBody, route } from "@/lib/server/http";
 import { db } from "@/lib/server/supabase";
+import { canUseFeature } from "@/lib/plans";
 import { verifyShareCookieValue } from "@/lib/share-pin";
 import { normalizeWeddingContent } from "@/lib/wedding-data";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
@@ -24,7 +25,7 @@ export const POST = route(async (req: Request) => {
   const client = db();
   const { data: wedding, error } = await client
     .from("weddings")
-    .select("id, slug, owner_id, content")
+    .select("id, slug, owner_id, plan, content")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -51,6 +52,10 @@ export const POST = route(async (req: Request) => {
 
   if (!isAuthorized) {
     return fail("Bạn không có quyền thực hiện thao tác này.", 401);
+  }
+
+  if (mode === "auto" && !canUseFeature(wedding.plan, "livePhotoWall")) {
+    return fail("Tính năng tự động duyệt ảnh chỉ khả dụng cho thiệp cưới gói VIP.", 403);
   }
 
   const content = normalizeWeddingContent(wedding.content);

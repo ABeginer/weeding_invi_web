@@ -5,12 +5,11 @@ import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
 import { getWishes, submitRsvp, submitWish } from "@/lib/api";
 import { getWishAuthorKey } from "@/lib/wish-author";
 import type { GuestDiet, GuestStatus } from "@/lib/types";
-import { cn, formatWeddingDateParts } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
-import { GuestBoardingPass } from "./GuestBoardingPass";
 import { WishMarquee } from "./WishMarquee";
 import { WishOverlay } from "./WishOverlay";
 import {
@@ -52,9 +51,9 @@ export function RsvpWishBlock({
   const dietOptions =
     mealMode === "both"
       ? [
-          { value: "meat" as const, label: "Mặn" },
-          { value: "veg" as const, label: "Chay" },
-        ]
+        { value: "meat" as const, label: "Mặn" },
+        { value: "veg" as const, label: "Chay" },
+      ]
       : mealMode === "veg"
         ? [{ value: "veg" as const, label: "Chay" }]
         : [{ value: "meat" as const, label: "Mặn" }];
@@ -612,24 +611,14 @@ export function RsvpWishBlock({
               )}
             </div>
 
-            {activeChoice === "accepted" && (slug || walkInGuest?.slug) && (
-              <div className="pt-2 text-left">
-                <GuestBoardingPass
-                  guestName={name || guestName || "Quý khách"}
-                  slug={slug || walkInGuest?.slug || ""}
-                  plusOnes={summaryPlusOnes}
-                  diet={summaryDiet}
-                  weddingDate={data.events?.[0]?.startsAt ?? data.date}
-                  coupleTitle={`${data.couple.groomName} & ${data.couple.brideName}`}
-                  venueName={data.events?.[0]?.venueName}
-                  venueTime={
-                    (data.events?.[0]?.startsAt ?? data.date)
-                      ? formatWeddingDateParts(data.events?.[0]?.startsAt ?? data.date).time
-                      : undefined
-                  }
-                  gift={data.gift}
-                  plan={data.plan}
-                />
+            {activeChoice === "accepted" && (
+              <div className="flex justify-center pt-1">
+                <a
+                  href="#the-moi-boarding-pass"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-inv-olive/45 bg-inv-bg px-4 py-2 font-inv-serif text-xs font-semibold text-inv-olive-deep shadow-xs transition-colors hover:bg-inv-tint"
+                >
+                  <span>🎫 Xem thẻ mời &amp; số bàn (Boarding Pass)</span>
+                </a>
               </div>
             )}
 

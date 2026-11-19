@@ -131,7 +131,7 @@ export function HeroSection() {
               {/* Floating Card 2: Bottom-Right (RSVP Toast) */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -bottom-3 -right-10 z-20 hidden md:flex items-center gap-3 rounded-2xl border border-[#E8E2D9] bg-white/95 p-3.5 shadow-sm backdrop-blur-md transition-transform hover:-translate-y-0.5 duration-300"
+                className="pointer-events-none absolute bottom-12 -right-6 z-20 hidden md:flex items-center gap-3 rounded-2xl border border-[#E8E2D9] bg-white/95 p-3.5 shadow-sm backdrop-blur-md transition-transform hover:-translate-y-0.5 duration-300"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                   <CheckCircle2 className="h-4 w-4" />
@@ -167,7 +167,7 @@ export function HeroSection() {
                 {!isOpened && (
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute top-[64%] left-1/2 z-40 -translate-x-1/2 transition-opacity duration-300"
+                    className="pointer-events-none absolute bottom-12 left-1/2 z-40 -translate-x-1/2 transition-opacity duration-300"
                   >
                     <div className="flex items-center gap-1.5 rounded-full border border-[#B89B72]/50 bg-white/95 px-3 py-1 text-[11px] font-medium tracking-wide text-[#7A1C24] shadow-md backdrop-blur-xs">
                       <span className="relative flex h-2 w-2">
@@ -194,7 +194,7 @@ export function HeroSection() {
               </div>
 
               {/* Phone Controls & Audio */}
-              <div className="mt-3 flex w-full flex-wrap items-center justify-between gap-2 px-1">
+              <div className="mt-6 flex w-full flex-wrap items-center justify-between gap-2 px-1">
                 <span className="text-[11px] text-[#6B655E]">
                   Chạm vào phong bì để trải nghiệm thiệp
                 </span>

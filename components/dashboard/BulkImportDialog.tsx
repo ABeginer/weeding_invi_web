@@ -308,6 +308,35 @@ export function BulkImportDialog({
             </div>
           )}
 
+          {/* Hướng dẫn trực quan dạng bảng Excel mini */}
+          <div className="space-y-1.5">
+            <span className="block text-xs font-semibold text-[#1F1D1A]">
+              Ví dụ định dạng các cột trong Excel / Google Sheets:
+            </span>
+            <div className="overflow-hidden rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] text-xs">
+              <div className="grid grid-cols-3 border-b border-[#E8E2D9] bg-[#F4EFEA] px-3 py-2 font-semibold text-[#1F1D1A]">
+                <span>Cột A: Tên khách *</span>
+                <span>Cột B: Vai vế</span>
+                <span>Cột C: Bàn (tùy chọn)</span>
+              </div>
+              <div className="divide-y divide-[#E8E2D9]/70 bg-white">
+                <div className="grid grid-cols-3 px-3 py-1.5 text-[#1F1D1A]">
+                  <span className="font-medium">Nguyễn Minh Anh</span>
+                  <span className="text-[#6B655E]">Bạn thân</span>
+                  <span className="text-[#8A6D3B]">Bàn 01</span>
+                </div>
+                <div className="grid grid-cols-3 px-3 py-1.5 text-[#1F1D1A]">
+                  <span className="font-medium">Chú Bảy cùng Gia đình</span>
+                  <span className="text-[#6B655E]">Cô / Chú</span>
+                  <span className="text-[#8A6D3B]">Bàn 05</span>
+                </div>
+              </div>
+            </div>
+            <p className="text-[11px] text-[#6B655E] italic">
+              💡 Bôi đen các cột trong Excel/Google Sheets rồi bấm Ctrl+C và dán vào ô bên dưới.
+            </p>
+          </div>
+
           <Textarea
             label="Dán danh sách khách mời (từ Excel / Google Sheets)"
             placeholder={`Nguyễn Minh Anh\tBạn thân\nTrần Quang Huy\tĐồng nghiệp\tBàn 1\nBác Nguyễn Văn Ba\tHọ hàng\tBàn 2\nChị Mai & Anh Tuấn`}
