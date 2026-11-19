@@ -67,6 +67,7 @@ interface PhotosManagerProps {
   content: WeddingContent;
   photos: WeddingPhoto[];
   designerImageFields?: DesignerImageField[];
+  ledToken?: string;
   onPhotosStateChange: (
     nextPhotos: WeddingPhoto[],
     nextContent?: WeddingContent,
@@ -121,6 +122,7 @@ export function PhotosManager({
   content,
   photos,
   designerImageFields = [],
+  ledToken,
   onPhotosStateChange,
 }: PhotosManagerProps) {
   const { showToast } = useToast();
@@ -158,9 +160,98 @@ export function PhotosManager({
   const [designerFieldBusy, setDesignerFieldBusy] = React.useState<string | null>(null);
   const [designerFieldError, setDesignerFieldError] = React.useState<string | null>(null);
 
+  const [pinEnabled, setPinEnabled] = React.useState(Boolean(content.sharePinEnabled));
+  const [pinValue, setPinValue] = React.useState(content.sharePin ?? "");
+  const [pinBusy, setPinBusy] = React.useState(false);
+  const [copiedShareLink, setCopiedShareLink] = React.useState(false);
+
+  React.useEffect(() => {
+    setPinEnabled(Boolean(content.sharePinEnabled));
+    setPinValue(content.sharePin ?? "");
+  }, [content.sharePin, content.sharePinEnabled]);
+
+  const handleTogglePinEnabled = async () => {
+    const nextEnabled = !pinEnabled;
+    const defaultPin = pinValue || "1234";
+    setPinEnabled(nextEnabled);
+    if (nextEnabled && !pinValue) {
+      setPinValue("1234");
+    }
+    setPinBusy(true);
+
+    const nextContent = {
+      ...content,
+      sharePinEnabled: nextEnabled,
+      sharePin: nextEnabled ? defaultPin : pinValue,
+    };
+
+    try {
+      const saved = await updateContent(weddingId, { content: nextContent });
+      onPhotosStateChange(photos, saved.content);
+      showToast(
+        nextEnabled
+          ? "Đã bật Cổng trợ lý gia đình (/share)"
+          : "Đã tắt Cổng trợ lý gia đình",
+        "success",
+      );
+    } catch {
+      setPinEnabled(!nextEnabled);
+      showToast("Không thể cập nhật cài đặt mã PIN", "error");
+    } finally {
+      setPinBusy(false);
+    }
+  };
+
+  const handleSavePin = async () => {
+    if (pinValue.length !== 4) {
+      showToast("Mã PIN phải gồm đúng 4 chữ số", "error");
+      return;
+    }
+    setPinBusy(true);
+    const nextContent = {
+      ...content,
+      sharePinEnabled: true,
+      sharePin: pinValue,
+    };
+
+    try {
+      const saved = await updateContent(weddingId, { content: nextContent });
+      onPhotosStateChange(photos, saved.content);
+      showToast("Đã lưu mã PIN mới thành công", "success");
+    } catch {
+      showToast("Không thể lưu mã PIN", "error");
+    } finally {
+      setPinBusy(false);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/share/${weddingSlug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = url;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedShareLink(true);
+    showToast("Đã sao chép link Cổng trợ lý gia đình", "success");
+    window.setTimeout(() => setCopiedShareLink(false), 2000);
+  };
+
   const handleCopyLedLink = async () => {
     if (typeof window === "undefined") return;
-    const url = `${window.location.origin}/led/${weddingSlug}`;
+    const url = ledToken
+      ? `${window.location.origin}/led/${weddingSlug}?key=${ledToken}`
+      : `${window.location.origin}/led/${weddingSlug}`;
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -176,7 +267,7 @@ export function PhotosManager({
       document.body.removeChild(textarea);
     }
     setCopiedLedLink(true);
-    showToast("Đã sao chép link màn hình LED cho kỹ thuật viên", "success");
+    showToast("Đã sao chép link màn hình LED (kèm mã bảo mật)", "success");
     window.setTimeout(() => setCopiedLedLink(false), 2000);
   };
 
@@ -1470,7 +1561,7 @@ export function PhotosManager({
         ) : (
           <div className="mt-4 flex flex-wrap items-center gap-2.5 pt-3 border-t border-border/70">
             <a
-              href={`/led/${weddingSlug}`}
+              href={ledToken ? `/led/${weddingSlug}?key=${ledToken}` : `/led/${weddingSlug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-accent bg-accent px-4 text-xs font-semibold text-accent-fg shadow-xs transition-colors hover:bg-accent-hover active:scale-95"
@@ -1492,6 +1583,85 @@ export function PhotosManager({
               )}
               <span>
                 {copiedLedLink ? "Đã sao chép link LED" : "Copy link cho kỹ thuật viên âm thanh / ánh sáng"}
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Cổng chia sẻ quyền trợ lý & gia đình (4-Digit PIN) */}
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 shadow-xs">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-sans text-base font-semibold text-fg">
+                Cổng trợ lý tiệc cưới &amp; Duyệt ảnh gia đình
+              </h3>
+              <span className="rounded-full bg-[#FAF8F5] border border-[#E8E2D9] px-2.5 py-0.5 text-[10px] font-bold text-[#B89B72] uppercase">
+                4-DIGIT PIN
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-fg-muted leading-relaxed">
+              Cung cấp link bảo mật bằng mã PIN 4 số cho người thân hoặc wedding planner để duyệt ảnh Photo Wall và xem thống kê RSVP mà không cần chia sẻ tài khoản đăng nhập của bạn.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleTogglePinEnabled}
+              disabled={pinBusy}
+              className={cn(
+                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
+                pinEnabled
+                  ? "bg-[#2F6F4E] text-white shadow-xs"
+                  : "border border-border bg-surface-alt text-fg-muted hover:text-fg",
+              )}
+            >
+              {pinEnabled ? "Đang bật chia sẻ PIN" : "Đang tắt"}
+            </button>
+          </div>
+        </div>
+
+        {pinEnabled && (
+          <div className="mt-4 pt-4 border-t border-border/70 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <label htmlFor="share-pin-input" className="text-xs font-medium text-fg whitespace-nowrap">
+                Mã PIN 4 số:
+              </label>
+              <input
+                id="share-pin-input"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={pinValue}
+                onChange={(e) => setPinValue(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="Ví dụ: 1234"
+                className="h-8 w-24 rounded-lg border border-border bg-bg px-2.5 text-center font-mono text-sm font-bold tracking-widest text-fg focus:border-accent focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleSavePin}
+                disabled={pinBusy || pinValue.length !== 4 || pinValue === content.sharePin}
+                className="h-8 cursor-pointer rounded-lg border border-accent bg-accent px-3 text-xs font-semibold text-accent-fg disabled:opacity-50 transition-colors hover:bg-accent-hover"
+              >
+                {pinBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Lưu PIN"}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyShareLink}
+              className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 text-xs font-medium text-fg transition-colors hover:bg-surface-alt active:scale-95"
+            >
+              {copiedShareLink ? (
+                <Check className="h-3.5 w-3.5 text-success-fg" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+              <span>
+                {copiedShareLink ? "Đã copy link trợ lý" : "Copy link Cổng trợ lý (/share)"}
               </span>
             </button>
           </div>

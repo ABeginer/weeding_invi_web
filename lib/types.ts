@@ -73,6 +73,7 @@ export interface WeddingDetail extends Wedding {
   designerTemplate?: WeddingDesignerTemplateInfo | null;
   /** Canvas mới nhất để dashboard biết field ảnh khách cần điền. */
   designerCanvas?: Record<string, unknown> | null;
+  ledToken?: string;
 }
 
 export type DesignerTemplateStatus = "draft" | "review" | "published" | "archived";

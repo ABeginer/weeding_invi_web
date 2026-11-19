@@ -83,6 +83,10 @@ export type WeddingContent = {
   musicUrl?: string;
   musicTitle?: string;
   mealMode?: "meat" | "veg" | "both";
+  photoApprovalMode?: "manual" | "auto";
+  photoModeration?: Record<string, "pending" | "approved" | "hidden">;
+  sharePinEnabled?: boolean;
+  sharePin?: string;
 };
 
 export type WeddingEvent = {
@@ -375,6 +379,15 @@ export const weddingContentInputSchema = z.object({
   musicUrl: z.string().trim().max(500).optional(),
   musicTitle: z.string().trim().max(120).optional(),
   mealMode: z.enum(["meat", "veg", "both"]).optional(),
+  photoApprovalMode: z.enum(["manual", "auto"]).optional(),
+  photoModeration: z.record(z.string(), z.enum(["pending", "approved", "hidden"])).optional(),
+  sharePinEnabled: z.boolean().optional(),
+  sharePin: z
+    .string()
+    .trim()
+    .regex(/^\d{4}$/, "Mã PIN phải gồm đúng 4 chữ số.")
+    .optional()
+    .or(z.literal("")),
   timeline: z
     .array(
       z.object({

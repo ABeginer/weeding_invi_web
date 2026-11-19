@@ -85,6 +85,7 @@ export function RsvpWishBlock({
   const [authorKey, setAuthorKey] = React.useState<string | undefined>(undefined);
   const [hasExistingWish, setHasExistingWish] = React.useState(false);
   const [honeypot, setHoneypot] = React.useState("");
+  const formLoadedAtRef = React.useRef<number>(Date.now());
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
 
@@ -250,6 +251,8 @@ export function RsvpWishBlock({
             authorKey,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
+            website_url: honeypot,
+            formLoadedAt: formLoadedAtRef.current,
           }
           : {
             weddingSlug: effectiveWeddingSlug,
@@ -263,6 +266,8 @@ export function RsvpWishBlock({
             authorKey,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
+            website_url: honeypot,
+            formLoadedAt: formLoadedAtRef.current,
           },
       );
       if (!savedSlug && res.slug) {
@@ -329,6 +334,8 @@ export function RsvpWishBlock({
         authorKey,
         turnstileToken: turnstileToken ?? undefined,
         website: honeypot,
+        website_url: honeypot,
+        formLoadedAt: formLoadedAtRef.current,
       });
       setMessage("");
       setPublicWishSent(true);
@@ -422,7 +429,17 @@ export function RsvpWishBlock({
                 aria-hidden="true"
                 value={honeypot}
                 onChange={(e) => setHoneypot(e.target.value)}
-                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none"
+                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
+              />
+              <input
+                name="website_url"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
               />
 
               <div>
@@ -621,7 +638,17 @@ export function RsvpWishBlock({
               aria-hidden="true"
               value={honeypot}
               onChange={(e) => setHoneypot(e.target.value)}
-              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none"
+              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
+            />
+            <input
+              name="website_url"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
             />
 
             <div>

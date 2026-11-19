@@ -10,6 +10,8 @@ export const GET = route(async (_req: Request, { params }: Ctx) => {
     return fail("Không tìm thấy thiệp cưới.", 404);
   }
 
-  return json(wedding);
+  return json(wedding, 200, {
+    "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+  });
 });
 

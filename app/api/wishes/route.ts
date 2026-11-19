@@ -41,8 +41,18 @@ export const POST = route(async (req: Request) => {
 
   const body = await readBody(req);
 
-  if (typeof body?.website === "string" && body.website.trim() !== "") {
-    return json({ ok: true });
+  // Honeypot anti-spam check (website hoặc website_url)
+  if (
+    (typeof body?.website === "string" && body.website.trim() !== "") ||
+    (typeof body?.website_url === "string" && body.website_url.trim() !== "")
+  ) {
+    return json({ ok: true, updated: false, approved: true });
+  }
+
+  // Timing check: Chặn spam submit dưới 1200ms từ lúc mở form
+  const formLoadedAt = typeof body?.formLoadedAt === "number" ? body.formLoadedAt : null;
+  if (formLoadedAt && Date.now() - formLoadedAt < 1200) {
+    return json({ ok: true, updated: false, approved: true });
   }
 
   const captcha = await verifyTurnstileToken(req, body?.turnstileToken);

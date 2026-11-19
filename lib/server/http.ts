@@ -4,8 +4,11 @@ import { getUser, type AuthUser } from "./auth";
 export const SLUG_RE = /^[a-f0-9]{12}$/;
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function json(data: unknown, status = 200): Response {
-  return NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
+export function json(data: unknown, status = 200, headers?: HeadersInit): Response {
+  return NextResponse.json(data, {
+    status,
+    headers: headers ?? { "Cache-Control": "no-store" },
+  });
 }
 
 export function fail(message: string, status = 400): Response {

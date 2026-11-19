@@ -204,6 +204,8 @@ export interface SubmitRsvpInput {
   wish?: string;
   turnstileToken?: string;
   website?: string;
+  website_url?: string;
+  formLoadedAt?: number;
   /** Khoá định danh người gửi cho link chung (uuid lưu ở localStorage). */
   authorKey?: string;
 }
@@ -264,9 +266,33 @@ export async function submitWish(input: {
   authorKey?: string;
   turnstileToken?: string;
   website?: string;
+  website_url?: string;
+  formLoadedAt?: number;
 }): Promise<{ updated: boolean }> {
   const res = await request<{ ok: boolean; updated?: boolean }>("/api/wishes", post(input));
   return { updated: res.updated === true };
+}
+
+export function verifySharePin(
+  slug: string,
+  pin: string,
+): Promise<{ ok: boolean; error?: string }> {
+  return request("/api/share/verify-pin", post({ slug, pin }));
+}
+
+export function moderatePhoto(
+  slug: string,
+  photoId: string,
+  status: "approved" | "hidden" | "pending",
+): Promise<{ ok: boolean; photoModeration: Record<string, "pending" | "approved" | "hidden"> }> {
+  return request("/api/share/moderate-photo", post({ slug, photoId, status }));
+}
+
+export function setPhotoApprovalMode(
+  slug: string,
+  mode: "manual" | "auto",
+): Promise<{ ok: boolean; photoApprovalMode: "manual" | "auto" }> {
+  return request("/api/share/set-mode", post({ slug, mode }));
 }
 
 export type PublicWish = { id: string; name: string; message: string };

@@ -13,9 +13,32 @@ import {
 } from "lucide-react";
 import type { PublicWeddingData } from "@/lib/server/public-wedding";
 import type { WeddingPhoto } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface LedPhotoWallClientProps {
   wedding: PublicWeddingData;
+}
+
+function filterApprovedPhotos(
+  allPhotos: WeddingPhoto[],
+  content: PublicWeddingData["content"],
+): WeddingPhoto[] {
+  const approvalMode = content.photoApprovalMode ?? "manual";
+  const moderation = content.photoModeration ?? {};
+
+  const albumPhotos = allPhotos.filter((p) => {
+    if (p.kind !== "album") return false;
+    const status = moderation[p.id];
+    if (approvalMode === "auto") {
+      return status !== "hidden";
+    }
+    return status === "approved";
+  });
+
+  if (albumPhotos.length > 0) return albumPhotos;
+
+  // Fallback sang ảnh couple / banner nếu chưa có ảnh album đã duyệt
+  return allPhotos.filter((p) => p.kind === "couple" || p.kind === "banner");
 }
 
 export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
@@ -24,11 +47,21 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
     .filter(Boolean)
     .join(" & ");
 
-  // Initial photos: ưu tiên ảnh album của khách mời, fallback sang ảnh gallery nếu chưa có ảnh album
+  // Initial photos: ưu tiên ảnh album đã duyệt, fallback sang ảnh cưới hoặc cache offline
   const [photos, setPhotos] = React.useState<WeddingPhoto[]>(() => {
-    const albumOnly = (wedding.photos || []).filter((p) => p.kind === "album");
-    if (albumOnly.length > 0) return albumOnly;
-    return (wedding.photos || []).filter((p) => p.kind === "couple" || p.kind === "banner");
+    const liveFiltered = filterApprovedPhotos(wedding.photos || [], wedding.content);
+    if (liveFiltered.length > 0) return liveFiltered;
+
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`inviwedd_led_cache_${slug}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return liveFiltered;
   });
 
   const [currentIndex, setCurrentIndex] = React.useState(0);
@@ -36,6 +69,41 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
   const [speedMs, setSpeedMs] = React.useState<number>(8000);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = React.useState<string | null>(null);
+
+  // Auto-hide cursor & toolbar sau 3000ms idle
+  const [isIdle, setIsIdle] = React.useState(false);
+  const idleTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    const handleActivity = () => {
+      setIsIdle(false);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        setIsIdle(true);
+      }, 3000);
+    };
+
+    window.addEventListener("mousemove", handleActivity);
+    window.addEventListener("mousedown", handleActivity);
+    window.addEventListener("keydown", handleActivity);
+    idleTimerRef.current = setTimeout(() => setIsIdle(true), 3000);
+
+    return () => {
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("mousedown", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, []);
+
+  // Lưu cache offline mỗi khi danh sách ảnh thay đổi
+  React.useEffect(() => {
+    if (photos.length > 0 && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`inviwedd_led_cache_${slug}`, JSON.stringify(photos));
+      } catch {}
+    }
+  }, [photos, slug]);
 
   // Sinh mã QR dẫn tới trang album/gửi ảnh của khách (/a/[slug])
   React.useEffect(() => {
@@ -62,7 +130,7 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
     return () => clearInterval(interval);
   }, [isPlaying, photos.length, speedMs]);
 
-  // 15s polling tự động tải ảnh mới được duyệt mà không cần reload trình duyệt
+  // 15s polling tự động tải ảnh mới được duyệt mà không cần reload trình duyệt (offline-resilient)
   React.useEffect(() => {
     const pollInterval = setInterval(async () => {
       try {
@@ -71,16 +139,13 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
         });
         if (res.ok) {
           const data: PublicWeddingData = await res.json();
-          const nextAlbum = (data.photos || []).filter((p) => p.kind === "album");
-          const nextList =
-            nextAlbum.length > 0
-              ? nextAlbum
-              : (data.photos || []).filter((p) => p.kind === "couple" || p.kind === "banner");
-
-          setPhotos(nextList);
+          const nextList = filterApprovedPhotos(data.photos || [], data.content);
+          if (nextList.length > 0) {
+            setPhotos(nextList);
+          }
         }
       } catch {
-        // bỏ qua lỗi mạng tạm thời
+        // Mạng sảnh tiệc chập chờn / rớt Wi-Fi: im lặng bỏ qua, tiếp tục phát ảnh từ state / cache
       }
     }, 15000);
 
@@ -117,9 +182,19 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
   const dateFormatted = primaryDate ? primaryDate.slice(0, 10).split("-").reverse().join(".") : "";
 
   return (
-    <main className="relative h-[100dvh] w-screen overflow-hidden bg-[#141210] text-[#FAF8F5] select-none">
+    <main
+      className={cn(
+        "relative h-[100dvh] w-screen overflow-hidden bg-[#141210] text-[#FAF8F5] select-none transition-all",
+        isIdle && "cursor-none",
+      )}
+    >
       {/* Top Header - Tối giản, thanh lịch */}
-      <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-6 bg-gradient-to-b from-[#141210]/90 to-transparent pointer-events-none">
+      <header
+        className={cn(
+          "absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-8 py-6 bg-gradient-to-b from-[#141210]/90 to-transparent pointer-events-none transition-opacity duration-500",
+          isIdle ? "opacity-30" : "opacity-100",
+        )}
+      >
         <div>
           <h1 className="font-serif text-2xl font-bold tracking-wide text-[#FAF8F5]/95 drop-shadow-md sm:text-3xl">
             {couple}
@@ -137,8 +212,13 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
         </div>
       </header>
 
-      {/* Operator Toolbar (Ẩn, chỉ hiện khi rê chuột lên góc trên phải) */}
-      <div className="absolute top-6 right-8 z-40 flex items-center gap-2 rounded-full border border-white/10 bg-[#1F1D1A]/85 px-4 py-2 opacity-0 backdrop-blur-md transition-opacity hover:opacity-100 shadow-xl">
+      {/* Operator Toolbar (Ẩn khi idle, hiện khi di chuột) */}
+      <div
+        className={cn(
+          "absolute top-6 right-8 z-40 flex items-center gap-2 rounded-full border border-white/10 bg-[#1F1D1A]/85 px-4 py-2 backdrop-blur-md shadow-xl transition-all duration-300",
+          isIdle ? "opacity-0 pointer-events-none" : "opacity-90 hover:opacity-100",
+        )}
+      >
         <button
           type="button"
           onClick={handlePrev}

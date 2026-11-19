@@ -16,6 +16,7 @@ import {
   MailOpen,
   MessageSquareHeart,
   Smartphone,
+  Sparkles,
   Tv,
   Users,
 } from "lucide-react";
@@ -50,8 +51,9 @@ import { PhotosManager } from "./PhotosManager";
 import { StatCards } from "./StatCards";
 import { WeddingInfoEditor } from "./WeddingInfoEditor";
 import { WishList } from "./WishList";
+import { PhotoModerator } from "./PhotoModerator";
 
-type DetailTab = "info" | "events" | "photos" | "guests" | "wishes" | "stats" | "preview";
+type DetailTab = "info" | "events" | "photos" | "moderation" | "guests" | "wishes" | "stats" | "preview";
 
 interface WeddingDetailViewProps {
   weddingId: string;
@@ -65,6 +67,7 @@ const SIDEBAR_TABS: {
   { id: "info", label: "Thông tin cưới", Icon: FileEdit },
   { id: "events", label: "Lễ & địa điểm", Icon: CalendarHeart },
   { id: "photos", label: "Ảnh cưới", Icon: ImageIcon },
+  { id: "moderation", label: "Duyệt ảnh LED", Icon: Sparkles },
   { id: "guests", label: "Khách mời", Icon: Users },
   { id: "wishes", label: "Lời chúc", Icon: MessageSquareHeart },
   { id: "stats", label: "Thống kê", Icon: BarChart3 },
@@ -743,13 +746,32 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
 
           {activeTab === "photos" && (
             <PhotosManager
+              templateId={wedding.templateId}
               weddingId={wedding.id}
               weddingSlug={wedding.slug}
               plan={wedding.plan}
               content={draftContent}
               photos={photos}
               designerImageFields={designerImageFields}
+              ledToken={wedding.ledToken}
               onPhotosStateChange={handlePhotosStateChange}
+            />
+          )}
+
+          {activeTab === "moderation" && (
+            <PhotoModerator
+              weddingSlug={wedding.slug}
+              photos={photos}
+              initialApprovalMode={draftContent.photoApprovalMode}
+              initialModeration={draftContent.photoModeration}
+              onModerationChange={(nextMod, nextMode) => {
+                const next = {
+                  ...draftContent,
+                  photoModeration: nextMod,
+                  ...(nextMode ? { photoApprovalMode: nextMode } : {}),
+                };
+                setDraftContent(next);
+              }}
             />
           )}
 

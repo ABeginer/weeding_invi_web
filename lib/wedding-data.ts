@@ -131,6 +131,19 @@ function normalizeStringArray(raw: unknown, max: number): string[] | undefined {
   return values.length > 0 ? values : undefined;
 }
 
+function normalizePhotoModeration(
+  raw: unknown,
+): Record<string, "pending" | "approved" | "hidden"> | undefined {
+  if (!isRecord(raw)) return undefined;
+  const result: Record<string, "pending" | "approved" | "hidden"> = {};
+  for (const [id, val] of Object.entries(raw)) {
+    if (val === "approved" || val === "hidden" || val === "pending") {
+      result[id] = val;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
 /**
  * Chuẩn hóa `weddings.content` từ dữ liệu v3/v4 hoặc định dạng cũ trước migration_v3.
  */
@@ -175,6 +188,13 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
       musicUrl: clampString(raw.musicUrl, 500),
       musicTitle: clampString(raw.musicTitle, 120),
       mealMode: raw.mealMode === "veg" || raw.mealMode === "both" ? raw.mealMode : "meat",
+      photoApprovalMode: raw.photoApprovalMode === "auto" ? "auto" : "manual",
+      photoModeration: normalizePhotoModeration(raw.photoModeration),
+      sharePinEnabled: raw.sharePinEnabled === true,
+      sharePin:
+        typeof raw.sharePin === "string" && /^\d{4}$/.test(raw.sharePin.trim())
+          ? raw.sharePin.trim()
+          : undefined,
     };
   }
 
@@ -225,6 +245,14 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
     hideCouplePhotos: raw.hideCouplePhotos === true,
     hostFirst: raw.hostFirst === "bride" ? "bride" : "groom",
     timeline: normalizeTimeline(raw.timeline),
+    mealMode: "meat",
+    photoApprovalMode: raw.photoApprovalMode === "auto" ? "auto" : "manual",
+    photoModeration: normalizePhotoModeration(raw.photoModeration),
+    sharePinEnabled: raw.sharePinEnabled === true,
+    sharePin:
+      typeof raw.sharePin === "string" && /^\d{4}$/.test(raw.sharePin.trim())
+        ? raw.sharePin.trim()
+        : undefined,
   };
 }
 

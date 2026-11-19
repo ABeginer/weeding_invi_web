@@ -78,32 +78,38 @@ export const GET = route(
 
     const events = await getGuestVisibleEvents(row.wedding_id, row.id);
 
-    return json({
-      name: row.name,
-      status: row.status,
-      plusOnes: typeof row.plus_ones === "number" ? row.plus_ones : 0,
-      diet: row.diet === "meat" || row.diet === "veg" ? row.diet : null,
-      songRequest:
-        typeof row.song_request === "string" && row.song_request.trim()
-          ? row.song_request
-          : null,
-      rideNeeded: row.ride_needed === true,
-      relationshipGroup:
-        row.relationship_group === "elder" ||
-        row.relationship_group === "peer_formal" ||
-        row.relationship_group === "close_friend" ||
-        row.relationship_group === "family"
-          ? row.relationship_group
-          : null,
-      customPronounHost: row.custom_pronoun_host ?? null,
-      customPronounGuest: row.custom_pronoun_guest ?? null,
-      tableNumber: row.table_number ?? null,
-      dietaryPreference:
-        row.dietary_preference === "vegetarian" ||
-        row.dietary_preference === "standard"
-          ? row.dietary_preference
-          : null,
-      events,
-    });
+    return json(
+      {
+        name: row.name,
+        status: row.status,
+        plusOnes: typeof row.plus_ones === "number" ? row.plus_ones : 0,
+        diet: row.diet === "meat" || row.diet === "veg" ? row.diet : null,
+        songRequest:
+          typeof row.song_request === "string" && row.song_request.trim()
+            ? row.song_request
+            : null,
+        rideNeeded: row.ride_needed === true,
+        relationshipGroup:
+          row.relationship_group === "elder" ||
+          row.relationship_group === "peer_formal" ||
+          row.relationship_group === "close_friend" ||
+          row.relationship_group === "family"
+            ? row.relationship_group
+            : null,
+        customPronounHost: row.custom_pronoun_host ?? null,
+        customPronounGuest: row.custom_pronoun_guest ?? null,
+        tableNumber: row.table_number ?? null,
+        dietaryPreference:
+          row.dietary_preference === "vegetarian" ||
+          row.dietary_preference === "standard"
+            ? row.dietary_preference
+            : null,
+        events,
+      },
+      200,
+      {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    );
   },
 );

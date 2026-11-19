@@ -84,6 +84,7 @@ export function TemplateRsvpSection({
   const [name, setName] = React.useState(guestName ?? (isReadOnlyPreview ? (data.ui.defaultGuestName ?? "") : ""));
   const [message, setMessage] = React.useState("");
   const [honeypot, setHoneypot] = React.useState("");
+  const formLoadedAtRef = React.useRef<number>(Date.now());
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
 
@@ -216,6 +217,8 @@ export function TemplateRsvpSection({
             wish: trimmedMessage || undefined,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
+            website_url: honeypot,
+            formLoadedAt: formLoadedAtRef.current,
           }
           : {
             weddingSlug: effectiveWeddingSlug,
@@ -228,6 +231,8 @@ export function TemplateRsvpSection({
             wish: trimmedMessage || undefined,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
+            website_url: honeypot,
+            formLoadedAt: formLoadedAtRef.current,
           },
       );
       if (!savedSlug && res.slug) {
@@ -293,6 +298,8 @@ export function TemplateRsvpSection({
         message: trimmedMessage,
         turnstileToken: turnstileToken ?? undefined,
         website: honeypot,
+        website_url: honeypot,
+        formLoadedAt: formLoadedAtRef.current,
       });
       setMessage("");
       setPublicWishSent(true);
@@ -514,7 +521,17 @@ export function TemplateRsvpSection({
                 aria-hidden="true"
                 value={honeypot}
                 onChange={(e) => setHoneypot(e.target.value)}
-                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none"
+                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
+              />
+              <input
+                name="website_url"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
               />
 
               <input
@@ -694,7 +711,17 @@ export function TemplateRsvpSection({
               aria-hidden="true"
               value={honeypot}
               onChange={(e) => setHoneypot(e.target.value)}
-              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none"
+              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
+            />
+            <input
+              name="website_url"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
             />
 
             <div>
