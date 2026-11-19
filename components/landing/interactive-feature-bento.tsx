@@ -339,7 +339,7 @@ export function InteractiveFeatureBento() {
                 {/* Left Pass Body */}
                 <div className="p-5 sm:p-6 md:col-span-8">
                   <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-3">
-                    <span className="font-serif text-xs font-semibold tracking-widest text-[#B89B72] uppercase">
+                    <span className="font-sans text-xs font-semibold tracking-widest text-[#B89B72] uppercase">
                       WEDDING BOARDING PASS
                     </span>
                     <span className="text-[10px] text-[#6B655E]">HẠNG THƯƠNG GIA</span>

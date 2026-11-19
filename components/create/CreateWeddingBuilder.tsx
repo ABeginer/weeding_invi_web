@@ -536,7 +536,7 @@ export function CreateWeddingBuilder({
       if (newUrls.length > 0) {
         setAlbumPhotos((prev) => [...prev, ...newUrls].slice(0, 10));
         setCompressionToast(
-          `Đã tối ưu ${newUrls.length} ảnh (${formatFileSize(totalOriginal)} → ${formatFileSize(totalSaved)})`,
+          `${newUrls.length} ảnh đã sẵn sàng hiển thị sắc nét`,
         );
         setTimeout(() => setCompressionToast(null), 4000);
       }
@@ -1137,7 +1137,7 @@ export function CreateWeddingBuilder({
                           <button
                             type="button"
                             onClick={() => setCoverPhotoUrl(null)}
-                            className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-black"
+                            className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white hover:bg-[#151412]"
                           >
                             ✕
                           </button>
@@ -1152,7 +1152,7 @@ export function CreateWeddingBuilder({
                             )}
                           </div>
                           <p className="mt-3 text-xs font-semibold text-[#1F1D1A]">
-                            {compressing ? "Đang tối ưu & nén ảnh WebP..." : "Tải ảnh từ thiết bị"}
+                            {compressing ? "Đang chuẩn bị ảnh sắc nét..." : "Tải ảnh từ thiết bị"}
                           </p>
                           <p className="mt-1 text-[11px] text-[#6B655E]">
                             Hỗ trợ JPG, PNG, WebP hoặc HEIC (Tối đa 25MB)
@@ -1160,7 +1160,7 @@ export function CreateWeddingBuilder({
                         </div>
                       )}
 
-                      <label className="mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full bg-[#1F1D1A] px-5 text-xs font-semibold text-white transition-colors hover:bg-black">
+                      <label className="mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full bg-[#1F1D1A] px-5 text-xs font-semibold text-white transition-colors hover:bg-[#151412]">
                         <span>{coverPhotoUrl ? "Đổi ảnh khác" : "Chọn ảnh"}</span>
                         <input
                           type="file"
@@ -1290,7 +1290,7 @@ export function CreateWeddingBuilder({
                                 src={tpl.coverImage}
                                 alt={tpl.name}
                                 loading="lazy"
-                                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                className="h-full w-full object-cover transition-transform duration-500 ease-luxury group-hover:scale-105"
                               />
                               {isSelected && (
                                 <div className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#7A1C24] text-white">
@@ -1298,7 +1298,7 @@ export function CreateWeddingBuilder({
                                 </div>
                               )}
                             </div>
-                            <p className="mt-1.5 truncate font-serif text-sm font-medium text-[#1F1D1A]">
+                            <p className="mt-1.5 truncate font-sans text-sm font-semibold text-[#1F1D1A]">
                               {tpl.name}
                             </p>
                             <p className="truncate text-[10px] text-[#6B655E]">

@@ -228,7 +228,7 @@ export function DesignerTemplateCard({
                         src={option.coverUrl}
                         alt=""
                         loading="lazy"
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover transition-opacity duration-500 ease-luxury"
                       />
                     )}
                   </span>

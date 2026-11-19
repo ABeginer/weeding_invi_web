@@ -13,6 +13,7 @@
   --color-editorial-burgundy-hover: #5E141B;
   --color-editorial-gold: #B89B72;
   --color-editorial-border: #E8E2D9;
+  --ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
   --font-inv-serif: var(--font-lora), Georgia, "Times New Roman", serif;
   /* Font chữ viết tay được chuyển sang Lora italic để hỗ trợ đầy đủ dấu tiếng Việt */
   --font-inv-script: var(--font-lora), var(--font-cormorant), Georgia, serif;
@@ -100,6 +101,14 @@
 
   --radius-card: 1rem;
   --radius-pill: 9999px;
+}
+
+:root {
+  --ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility ease-luxury {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .font-inv-script,

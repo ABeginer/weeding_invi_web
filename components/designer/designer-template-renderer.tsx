@@ -406,7 +406,7 @@ function DesignerCountdown({
       <div className="mt-1.5 grid grid-cols-4 gap-1">
         {units.map((unit) => (
           <div key={unit.label} className="rounded-md border border-current/15 px-1 py-1">
-            <p className="font-display text-sm font-semibold leading-none">
+            <p className="font-display text-sm font-semibold leading-none tabular-nums">
               {String(unit.value).padStart(2, "0")}
             </p>
             <p className="mt-0.5 text-[6px] uppercase opacity-70">{unit.label}</p>

@@ -39,10 +39,16 @@ export function DesignerShowcase({
 
   if (loading) {
     return (
-      <section className="border-b border-border bg-bg py-10 sm:py-14">
-        <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 text-xs text-text-muted sm:px-6">
-          <Loader2 className="h-4 w-4 animate-spin text-accent-text" />
-          Đang tải mẫu thiết kế...
+      <section className="border-b border-[#E8E2D9] bg-[#FAF8F5] py-10 sm:py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: limit ?? 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="aspect-[390/844] w-full rounded-2xl border border-[#E8E2D9] bg-[#EFEAE4] animate-pulse"
+              />
+            ))}
+          </div>
         </div>
       </section>
     );

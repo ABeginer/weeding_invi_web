@@ -614,7 +614,7 @@ export function BulkImportDialog({
                       onClick={() => handleCopyItem(guest, "link")}
                     >
                       {linkCopied ? (
-                        <Check className="h-3.5 w-3.5 text-green-600" aria-hidden="true" />
+                        <Check className="h-3.5 w-3.5 text-[#2F6F4E]" aria-hidden="true" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                       )}
@@ -626,7 +626,7 @@ export function BulkImportDialog({
                       onClick={() => handleCopyItem(guest, "invite")}
                     >
                       {inviteCopied ? (
-                        <Check className="h-3.5 w-3.5 text-green-600" aria-hidden="true" />
+                        <Check className="h-3.5 w-3.5 text-[#2F6F4E]" aria-hidden="true" />
                       ) : (
                         <MessageSquareShare className="h-3.5 w-3.5" aria-hidden="true" />
                       )}

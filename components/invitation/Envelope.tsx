@@ -15,7 +15,7 @@ interface EnvelopeProps {
   contained?: boolean;
 }
 
-const DOOR_EASE = [0.16, 1, 0.3, 1] as const;
+const DOOR_EASE = [0.22, 1, 0.36, 1] as const;
 /** Cửa phải đi sau cửa trái một nhịp ngắn để không trượt đều như máy. */
 const DOOR_STAGGER = 0.08;
 

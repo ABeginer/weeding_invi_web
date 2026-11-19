@@ -391,7 +391,7 @@ function Countdown({ target }: { target: string }) {
             }}
           >
             <p
-              className="text-xl leading-none sm:text-2xl"
+              className="text-xl leading-none tabular-nums sm:text-2xl"
               style={{
                 color: CREAM,
                 fontFamily: "var(--font-playfair)",

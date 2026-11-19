@@ -166,7 +166,7 @@ export async function compressImageToWebP(
     file: compressedFile,
     originalSize,
     compressedSize: blob.size,
-    savedText: `Đã tối ưu ${formatFileSize(originalSize)} → ${formatFileSize(blob.size)} (${outputExt.toUpperCase()})`,
+    savedText: "Ảnh đã sẵn sàng hiển thị sắc nét",
   };
 }
 

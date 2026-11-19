@@ -134,7 +134,7 @@ export function GuestBoardingPass({
 
   return (
     <section
-      aria-label="Thẻ lên tiệc cưới Boarding Pass"
+      aria-label="Thẻ mời & Số bàn (Boarding Pass)"
       className={`mx-auto w-full max-w-[430px] px-3.5 py-4 ${className}`}
     >
       {/* Khung vé Perforated Ticket */}
@@ -142,7 +142,7 @@ export function GuestBoardingPass({
         {/* 1. Header Strip (#7A1C24 - Deep Burgundy) */}
         <div className="flex items-center justify-between border-b border-[#5E141B] bg-[#7A1C24] px-5 py-3 text-white">
           <p className="text-[10px] font-bold tracking-[0.22em] text-[#B89B72] uppercase">
-            Thiệp mời · Boarding Pass
+            Thẻ mời &amp; Số bàn · Boarding Pass
           </p>
           <span className="text-[11px] font-medium tracking-wider text-[#FAF8F5]/90">
             {formattedDate || coupleTitle || "WEDDING INVITATION"}
@@ -159,7 +159,7 @@ export function GuestBoardingPass({
               {guestName || "Quý khách"}
             </h2>
             {coupleTitle && (
-              <p className="mt-0.5 font-serif text-xs text-[#6B655E]">
+              <p className="mt-0.5 font-sans text-xs text-[#6B655E]">
                 Tham dự tiệc cưới cùng {coupleTitle}
               </p>
             )}
@@ -173,7 +173,7 @@ export function GuestBoardingPass({
                 Số bàn
               </p>
               {tableDisplay ? (
-                <p className="mt-1 font-serif text-2xl font-bold tracking-tight text-[#7A1C24]">
+                <p className="mt-1 font-serif text-2xl font-bold tracking-tight tabular-nums text-[#7A1C24]">
                   {tableDisplay}
                 </p>
               ) : (
@@ -219,7 +219,7 @@ export function GuestBoardingPass({
         {/* 4. Bottom Stub (Cuống vé Check-in & Mã QR) */}
         <div className="flex items-center justify-between gap-3 bg-[#F4EFEA] px-5 py-4">
           <div className="min-w-0 flex-1 space-y-1">
-            <p className="font-serif text-sm font-semibold text-[#1F1D1A]">
+            <p className="font-sans text-sm font-semibold text-[#1F1D1A]">
               Mã Check-in Bàn Tiệc
             </p>
             <p className="text-[11px] leading-relaxed text-[#6B655E]">
@@ -254,7 +254,7 @@ export function GuestBoardingPass({
           type="button"
           onClick={handleDownload}
           disabled={isDownloading}
-          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#1F1D1A] px-5 py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-black disabled:opacity-60"
+          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#1F1D1A] px-5 py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#151412] disabled:opacity-60"
         >
           {isDownloading ? (
             <>
@@ -274,7 +274,7 @@ export function GuestBoardingPass({
           <button
             type="button"
             onClick={() => setGiftModalOpen(true)}
-            className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#7A1C24] bg-white px-5 py-3 text-xs font-semibold text-[#7A1C24] shadow-2xs transition-colors hover:bg-[#7A1C24]/5"
+            className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#E8E2D9] bg-white px-5 py-3 text-xs font-semibold text-[#7A1C24] shadow-2xs transition-colors hover:bg-[#FAF8F5]"
           >
             <HeartHandshake className="h-4 w-4" />
             <span>Mừng cưới qua VietQR</span>
@@ -300,7 +300,7 @@ export function GuestBoardingPass({
             </button>
 
             <h3 className="font-serif text-lg font-semibold text-[#1F1D1A]">
-              Lưu vé Boarding Pass
+              Lưu Thẻ mời &amp; Số bàn
             </h3>
 
             <div className="mt-2 rounded-xl border border-[#B89B72]/40 bg-[#FAF3E3] p-3 text-center text-xs text-[#8A6D3B]">
@@ -312,7 +312,7 @@ export function GuestBoardingPass({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={savedDataUrl}
-                alt="Vé mời cưới Boarding Pass"
+                alt="Thẻ mời &amp; Số bàn (Boarding Pass)"
                 className="max-h-[55vh] w-auto object-contain"
               />
             </div>
@@ -320,7 +320,7 @@ export function GuestBoardingPass({
             <button
               type="button"
               onClick={() => setFallbackModalOpen(false)}
-              className="mt-4 w-full cursor-pointer rounded-full bg-[#1F1D1A] py-2.5 text-xs font-semibold text-white transition-colors hover:bg-black"
+              className="mt-4 w-full cursor-pointer rounded-full bg-[#1F1D1A] py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#151412]"
             >
               Đã lưu xong · Đóng lại
             </button>

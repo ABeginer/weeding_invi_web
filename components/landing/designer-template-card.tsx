@@ -125,7 +125,7 @@ export function DesignerTemplateCard({ template }: DesignerTemplateCardProps) {
       >
         <div
           ref={frameRef}
-          className="relative aspect-[390/844] w-full overflow-hidden rounded-2xl border border-border bg-surface-alt shadow-lg"
+          className="relative aspect-[390/844] w-full overflow-hidden rounded-2xl border border-border bg-surface-alt shadow-lg transition-transform duration-500 ease-luxury group-hover:scale-[1.02]"
         >
           {template.coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -138,7 +138,7 @@ export function DesignerTemplateCard({ template }: DesignerTemplateCardProps) {
               height={1688}
               onError={() => setCoverFailed(true)}
               className={cn(
-                "h-full w-full object-cover transition-opacity duration-300",
+                "h-full w-full object-cover transition-opacity duration-500 ease-luxury",
                 showLive && loaded ? "opacity-0" : "opacity-100",
               )}
             />
@@ -153,7 +153,7 @@ export function DesignerTemplateCard({ template }: DesignerTemplateCardProps) {
               loading="lazy"
               onLoad={() => setLoaded(true)}
               className={cn(
-                "pointer-events-none absolute top-0 left-0 origin-top-left border-0 transition-opacity duration-300",
+                "pointer-events-none absolute top-0 left-0 origin-top-left border-0 transition-opacity duration-500 ease-luxury",
                 loaded ? "opacity-100" : "opacity-0",
               )}
               style={{

@@ -309,7 +309,7 @@ export function TemplateGridBrowser({ templates, initialStyle }: TemplateGridBro
             onClick={handleResetFilters}
             className="mt-6 inline-flex cursor-pointer items-center justify-center rounded-full border border-[#1F1D1A] bg-transparent px-6 py-2.5 text-xs font-semibold text-[#1F1D1A] transition-colors hover:bg-[#1F1D1A] hover:text-white"
           >
-            Đặt lại bộ lọc
+            Xem tất cả mẫu
           </button>
         </div>
       ) : (

@@ -971,7 +971,7 @@ export function GuestTable({
               )}
             >
               <span>Tất cả</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
                 {totalCount}
               </span>
             </button>
@@ -988,7 +988,7 @@ export function GuestTable({
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[#8A6D3B] animate-pulse" />
               <span>Chưa gửi</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-bold">
+              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-bold tabular-nums">
                 {unsentCount}
               </span>
             </button>
@@ -1004,7 +1004,7 @@ export function GuestTable({
               )}
             >
               <span>Đã gửi</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
                 {sentCount}
               </span>
             </button>
@@ -1020,7 +1020,7 @@ export function GuestTable({
               )}
             >
               <span>Đã xác nhận</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
                 {acceptedCount}
               </span>
             </button>
@@ -1036,7 +1036,7 @@ export function GuestTable({
               )}
             >
               <span>Chờ phản hồi</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
                 {pendingCount}
               </span>
             </button>
@@ -1052,7 +1052,7 @@ export function GuestTable({
               )}
             >
               <span>Từ chối</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
                 {declinedCount}
               </span>
             </button>
@@ -1223,9 +1223,9 @@ export function GuestTable({
                   setSearch("");
                   setFilterTab("all");
                 }}
-                className="rounded-full bg-[#1F1D1A] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-black"
+                className="rounded-full bg-[#1F1D1A] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#151412]"
               >
-                Xóa bộ lọc
+                Xem tất cả khách
               </button>
             ) : (
               <>
@@ -1391,7 +1391,7 @@ export function GuestTable({
                                 title="Nhấn để đổi bàn"
                                 className="inline-flex cursor-pointer items-center gap-0.5 rounded-full border border-[#B89B72]/40 bg-[#FAF8F5] px-2 py-0.5 text-[10px] font-medium text-[#B89B72] hover:border-[#7A1C24] hover:text-[#7A1C24]"
                               >
-                                <span>📍 {guest.tableNumber}</span>
+                                <span className="tabular-nums">📍 {guest.tableNumber}</span>
                               </button>
                             ) : (
                               <button

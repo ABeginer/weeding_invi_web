@@ -544,7 +544,7 @@ export function QrCheckInScanner({
               <button
                 type="button"
                 onClick={() => setScanFeedback(null)}
-                className="mt-4 rounded-full bg-[#1F1D1A] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-black"
+                className="mt-4 rounded-full bg-[#1F1D1A] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#151412]"
               >
                 Tiếp tục quét
               </button>
@@ -576,7 +576,7 @@ export function QrCheckInScanner({
                 <p className="text-[10px] font-bold tracking-[0.2em] text-[#6B655E] uppercase">
                   Vị trí bàn tiệc
                 </p>
-                <p className="mt-1 font-serif text-4xl sm:text-5xl font-bold tracking-tight text-[#7A1C24]">
+                <p className="mt-1 font-serif text-4xl sm:text-5xl font-bold tracking-tight tabular-nums text-[#7A1C24]">
                   {scanFeedback.guest.tableNumber
                     ? /^bàn\s*/i.test(scanFeedback.guest.tableNumber)
                       ? scanFeedback.guest.tableNumber.toUpperCase()
@@ -603,7 +603,7 @@ export function QrCheckInScanner({
                   >
                     <Minus className="h-3 w-3" />
                   </button>
-                  <span className="w-7 text-center font-bold text-xs text-[#1F1D1A]">
+                  <span className="w-7 text-center font-bold text-xs tabular-nums text-[#1F1D1A]">
                     {stepperCount}
                   </span>
                   <button
@@ -623,7 +623,7 @@ export function QrCheckInScanner({
                 <button
                   type="button"
                   onClick={() => setScanFeedback(null)}
-                  className="flex-1 rounded-full bg-[#1F1D1A] py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-black"
+                  className="flex-1 rounded-full bg-[#1F1D1A] py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#151412]"
                 >
                   Tiếp tục quét tiếp
                 </button>

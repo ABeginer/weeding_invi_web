@@ -170,7 +170,7 @@ export function ThemedCalendar({ theme, targetDate }: ThemedCalendarProps) {
                   color: theme.accentTextColor,
                   fontFamily: theme.headingFontFamily,
                 }}
-                className="font-serif text-2xl font-bold sm:text-3xl"
+                className="font-serif text-2xl font-bold tabular-nums sm:text-3xl"
               >
                 {item.val}
               </span>

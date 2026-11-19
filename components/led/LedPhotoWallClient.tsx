@@ -323,7 +323,7 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
               src={currentPhoto.url}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 h-full w-full object-cover opacity-25 blur-3xl scale-110 transition-opacity duration-1000"
+              className="absolute inset-0 h-full w-full object-cover opacity-25 blur-3xl scale-110 transition-opacity duration-700 ease-luxury"
             />
           )}
 
@@ -331,13 +331,13 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
           {currentPhoto && (
             <div
               key={`fg-${currentPhoto.id}`}
-              className="relative z-10 flex h-[82vh] w-[90vw] items-center justify-center animate-[fadeIn_1000ms_ease-in-out]"
+              className="relative z-10 flex h-[82vh] w-[90vw] items-center justify-center animate-[fadeIn_700ms_cubic-bezier(0.22,1,0.36,1)]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={currentPhoto.url}
                 alt={`Ảnh tiệc cưới ${currentIndex + 1}`}
-                className="max-h-full max-w-full rounded-2xl object-contain shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10 transition-transform duration-1000"
+                className="max-h-full max-w-full rounded-2xl object-contain shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10 transition-transform duration-700 ease-luxury"
               />
             </div>
           )}

@@ -787,7 +787,7 @@ function Countdown({ iso }: { iso: string }) {
     <p className="mt-2 text-[14px]" style={{ fontFamily: SERIF, color: ON_RED }}>
       {parts.map((part, index) => (
         <span key={part.label}>
-          <span style={{ color: GOLD, fontSize: 20 }}>{part.value}</span>{" "}
+          <span className="tabular-nums" style={{ color: GOLD, fontSize: 20 }}>{part.value}</span>{" "}
           <span style={{ color: MUTED }}>{part.label}</span>
           {index < parts.length - 1 ? " · " : ""}
         </span>

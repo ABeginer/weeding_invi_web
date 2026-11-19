@@ -440,7 +440,7 @@ export function FamilySharePortal({
                 <p className="text-[11px] font-medium text-[#6B655E] uppercase tracking-wider">
                   Tổng khách mời
                 </p>
-                <p className="mt-1 font-mono text-2xl font-bold text-[#1F1D1A]">
+                <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-[#1F1D1A]">
                   {stats.totalGuests}
                 </p>
                 <p className="mt-0.5 text-[11px] text-[#6B655E]">
@@ -453,7 +453,7 @@ export function FamilySharePortal({
                   Sẽ tham dự (Headcount)
                 </p>
                 <div className="mt-1 flex items-baseline gap-2">
-                  <span className="font-mono text-2xl font-bold text-[#2F6F4E]">
+                  <span className="font-mono text-2xl font-bold tabular-nums text-[#2F6F4E]">
                     {stats.totalHeadcount}
                   </span>
                   <span className="text-[11px] text-[#6B655E]">
@@ -469,7 +469,7 @@ export function FamilySharePortal({
                 <p className="text-[11px] font-medium text-[#B89B72] uppercase tracking-wider">
                   Chưa phản hồi
                 </p>
-                <p className="mt-1 font-mono text-2xl font-bold text-[#B8860B]">
+                <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-[#8A6D3B]">
                   {stats.pending}
                 </p>
                 <p className="mt-0.5 text-[11px] text-[#6B655E]">
@@ -482,11 +482,11 @@ export function FamilySharePortal({
                   Khẩu phần ăn
                 </p>
                 <div className="mt-1 flex items-baseline gap-3">
-                  <span className="font-mono text-lg font-bold text-[#1F1D1A]">
+                  <span className="font-mono text-lg font-bold tabular-nums text-[#1F1D1A]">
                     {stats.meatCount} Mặn
                   </span>
                   <span className="text-[#E8E2D9]">/</span>
-                  <span className="font-mono text-lg font-bold text-[#2F6F4E]">
+                  <span className="font-mono text-lg font-bold tabular-nums text-[#2F6F4E]">
                     {stats.vegCount} Chay
                   </span>
                 </div>
@@ -609,7 +609,7 @@ export function FamilySharePortal({
                               </span>
                             )}
                             {guest.status === "pending" && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[#B8860B]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#B8860B]">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#8A6D3B]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#8A6D3B]">
                                 <Clock className="h-3 w-3" />
                                 Chờ
                               </span>

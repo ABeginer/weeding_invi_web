@@ -70,7 +70,7 @@ export function WishOverlay() {
           type="button"
           onClick={() => setDismissed(true)}
           aria-label="Ẩn sổ lưu bút"
-          className="pointer-events-auto flex h-5 w-5 items-center justify-center rounded-full bg-black/35 text-white/85 hover:bg-black/55"
+          className="pointer-events-auto flex h-5 w-5 items-center justify-center rounded-full bg-[#1F1D1A]/40 text-white/85 hover:bg-[#151412]/80 transition-colors"
         >
           <X className="h-3 w-3" aria-hidden="true" />
         </button>

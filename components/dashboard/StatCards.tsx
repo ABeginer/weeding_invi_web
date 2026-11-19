@@ -209,7 +209,7 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
       <div className="rounded-2xl border border-[#E8E2D9] bg-white p-4 sm:p-5 shadow-2xs space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="flex items-center gap-2 font-serif text-base font-semibold text-[#1F1D1A]">
+            <h3 className="flex items-center gap-2 font-sans text-base font-semibold text-[#1F1D1A]">
               <CalendarHeart className="h-4 w-4 text-[#7A1C24]" aria-hidden="true" />
               <span>Phân bổ theo từng lễ</span>
             </h3>

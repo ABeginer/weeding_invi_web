@@ -120,7 +120,7 @@ export function Gallery() {
           <img
             src={activePhoto.url}
             alt={activePhoto.alt}
-            className="max-h-[64dvh] w-auto max-w-full rounded-lg object-contain select-none"
+            className="max-h-[64dvh] w-auto max-w-full rounded-lg object-contain select-none transition-opacity duration-500 ease-luxury"
           />
 
           <button
