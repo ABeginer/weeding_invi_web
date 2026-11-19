@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ChevronDown,
   Gift,
+  GripVertical,
   LayoutTemplate,
   Loader2,
   Lock,
@@ -36,6 +37,7 @@ import {
   toIsoPlus07,
 } from "@/lib/types";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
+import { getTemplateSections, SECTION_LABELS } from "@/config/template-sections";
 import { TEMPLATE_REGISTRY } from "@/templates/registry";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -303,36 +305,96 @@ export function WeddingInfoEditor({
   };
 
   const [draggingSection, setDraggingSection] = React.useState<string | null>(null);
-  const sectionLabels: Record<string, string> = {
-    family: "Gia đình",
-    calendar: "Lịch & đếm ngược",
-    map: "Sự kiện & bản đồ",
-    dresscode: "Dress code",
-    album: "Album ảnh",
-    albumQr: "QR album khách",
-    gift: "Hộp quà",
-    rsvp: "Xác nhận & lời chúc",
-  };
-  const defaultSectionOrder = ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+  const [dragOrder, setDragOrderState] = React.useState<string[] | null>(null);
+  const dragOrderRef = React.useRef<string[] | null>(null);
+  const draftRef = React.useRef(draftContent);
+  React.useEffect(() => {
+    draftRef.current = draftContent;
+  }, [draftContent]);
+
+  const setDragOrder = React.useCallback((next: string[] | null) => {
+    dragOrderRef.current = next;
+    setDragOrderState(next);
+  }, []);
+
+  // Chỉ hiện những phần mà template này thực sự có, và đã tính cả gói
+  // (QR album khách chỉ có từ Pro trở lên) — xem card_exp.md §21.
+  const templateSections = getTemplateSections(draftTemplateId, wedding.plan);
+  const allowedSections = templateSections.sections;
+  const orderableSections = allowedSections.filter((key) => key !== "music");
+  const sectionLabels = SECTION_LABELS;
+  const defaultSectionOrder = orderableSections;
   const hiddenSet = new Set(draftContent.hiddenSections ?? []);
   const storedOrder = (draftContent.sectionOrder ?? []).filter(
-    (key) => sectionLabels[key] && !hiddenSet.has(key),
+    (key) => orderableSections.includes(key) && !hiddenSet.has(key),
   );
   const visibleOrder = [
     ...storedOrder,
     ...defaultSectionOrder.filter((key) => !storedOrder.includes(key)),
   ].filter((key) => !hiddenSet.has(key));
 
-  const moveSection = (from: string, to: string) => {
-    if (from === to) return;
-    const next = [...visibleOrder];
-    const fromIndex = next.indexOf(from);
-    const toIndex = next.indexOf(to);
-    if (fromIndex < 0 || toIndex < 0) return;
+  /** Trong lúc kéo, hiển thị thứ tự tạm; nhả tay mới ghi vào draft. */
+  const orderedSections = dragOrder ?? visibleOrder;
+
+  const moveSectionOrder = (from: string, to: string): string[] | null => {
+    const order = dragOrderRef.current ?? visibleOrder;
+    const fromIndex = order.indexOf(from);
+    const toIndex = order.indexOf(to);
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return null;
+    const next = [...order];
     next.splice(fromIndex, 1);
     next.splice(toIndex, 0, from);
-    onDraftChange({ ...draftContent, sectionOrder: next });
+    return next;
   };
+
+  /**
+   * Kéo thả bằng Pointer Events: HTML5 drag (draggable/onDragStart) không chạy
+   * trên cảm ứng nên mobile không kéo được. Ở đây dùng pointermove + elementFromPoint
+   * để chạy được cả chuột và tay. Thứ tự tạm giữ ở state local, nhả tay mới ghi
+   * vào draft (tránh gọi onDraftChange liên tục khi đang rê).
+   */
+  const startSectionDrag =
+    (key: string) => (event: React.PointerEvent<HTMLElement>) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      event.preventDefault();
+      setDraggingSection(key);
+      setDragOrder(visibleOrder);
+    };
+
+  React.useEffect(() => {
+    if (!draggingSection) return;
+
+    const onMove = (event: PointerEvent) => {
+      const element = document.elementFromPoint(event.clientX, event.clientY);
+      const row =
+        element instanceof Element
+          ? element.closest<HTMLElement>("[data-section-row]")
+          : null;
+      const overKey = row?.dataset.sectionRow;
+      if (!overKey || overKey === draggingSection) return;
+      const next = moveSectionOrder(draggingSection, overKey);
+      if (next) setDragOrder(next);
+    };
+
+    const finish = () => {
+      const finalOrder = dragOrderRef.current;
+      if (finalOrder) {
+        onDraftChange({ ...draftRef.current, sectionOrder: finalOrder });
+      }
+      setDragOrder(null);
+      setDraggingSection(null);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draggingSection, onDraftChange]);
 
   const timeline =
     draftContent.timeline && draftContent.timeline.length > 0
@@ -970,48 +1032,140 @@ export function WeddingInfoEditor({
           <div>
             <p className="text-xs font-medium text-fg">Hiện / ẩn phần trên thiệp</p>
             <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              {[
-                ["album", "Album ảnh"],
-                ["albumQr", "QR album khách"],
-                ["gift", "Hộp quà mừng"],
-                ["calendar", "Lịch cưới & đếm ngược"],
-                ["map", "Sự kiện & bản đồ"],
-                ["family", "Thông tin gia đình"],
-                ["dresscode", "Dress code"],
-                ["rsvp", "Xác nhận & lời chúc"],
-                ["music", "Nhạc nền"],
-              ].map(([key, label]) => {
-                const hidden = (draftContent.hiddenSections ?? []).includes(key);
-                return (
-                  <label
-                    key={key}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-bg px-3 py-2 text-xs text-fg"
-                  >
-                    <span>{label}</span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={!hidden}
-                      onClick={() => toggleSection(key)}
-                      className={cn(
-                        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-                        hidden ? "bg-border" : "bg-accent",
-                      )}
+              {(
+                [
+                  "album",
+                  "albumQr",
+                  "gift",
+                  "calendar",
+                  "map",
+                  "family",
+                  "dresscode",
+                  "rsvp",
+                  "music",
+                ] as const
+              )
+                .filter((key) => allowedSections.includes(key))
+                .map((key) => {
+                  const hidden = (draftContent.hiddenSections ?? []).includes(key);
+                  return (
+                    <label
+                      key={key}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border bg-bg px-3 py-2 text-xs text-fg"
                     >
-                      <span
+                      <span>{SECTION_LABELS[key]}</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={!hidden}
+                        onClick={() => toggleSection(key)}
                         className={cn(
-                          "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
-                          hidden ? "translate-x-0.5" : "translate-x-4",
+                          "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                          hidden ? "bg-border" : "bg-accent",
                         )}
-                      />
-                    </button>
-                  </label>
-                );
-              })}
+                      >
+                        <span
+                          className={cn(
+                            "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+                            hidden ? "translate-x-0.5" : "translate-x-4",
+                          )}
+                        />
+                      </button>
+                    </label>
+                  );
+                })}
             </div>
             <p className="mt-1 text-[10px] text-fg-muted">
               Tắt = ẩn phần đó khỏi thiệp khách.
             </p>
+
+            {/* Nằm ngay dưới "Xác nhận & lời chúc" đúng như mong đợi */}
+            {allowedSections.includes("rsvp") && (
+              <div className="mt-2 rounded-lg border border-border bg-bg px-3 py-2">
+                <label
+                  className={cn(
+                    "flex items-center justify-between gap-2 text-xs text-fg",
+                    (draftContent.hiddenSections ?? []).includes("rsvp") &&
+                      "cursor-not-allowed opacity-60",
+                  )}
+                >
+                  <span className="min-w-0">
+                    <span className="block">Hiển thị lời chúc trên thiệp</span>
+                    <span className="mt-0.5 block text-[10px] text-fg-muted">
+                      {(draftContent.hiddenSections ?? []).includes("rsvp")
+                        ? "Đang tắt “Xác nhận & lời chúc” nên mục này cũng tắt."
+                        : "Dải lời chúc chạy ngang trong khung lời chúc; duyệt từng lời ở tab Lời chúc."}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={
+                      draftContent.showWishesOnCard === true &&
+                      !(draftContent.hiddenSections ?? []).includes("rsvp")
+                    }
+                    aria-label="Hiển thị lời chúc trên thiệp"
+                    disabled={(draftContent.hiddenSections ?? []).includes("rsvp")}
+                    onClick={() =>
+                      onDraftChange({
+                        ...draftContent,
+                        showWishesOnCard: !draftContent.showWishesOnCard,
+                      })
+                    }
+                    className={cn(
+                      "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                      draftContent.showWishesOnCard &&
+                        !(draftContent.hiddenSections ?? []).includes("rsvp")
+                        ? "bg-accent"
+                        : "bg-border",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+                        draftContent.showWishesOnCard &&
+                          !(draftContent.hiddenSections ?? []).includes("rsvp")
+                          ? "translate-x-4"
+                          : "translate-x-0.5",
+                      )}
+                    />
+                  </button>
+                </label>
+
+                {/* Kiểu hiển thị: ô cuối thiệp / overlay nổi trên thiệp */}
+                {draftContent.showWishesOnCard &&
+                  !(draftContent.hiddenSections ?? []).includes("rsvp") && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border pt-2">
+                      <span className="text-[10px] text-fg-muted">Kiểu hiển thị:</span>
+                      <div className="flex rounded-full border border-border p-0.5">
+                        {(
+                          [
+                            ["box", "Cuối thiệp"],
+                            ["overlay", "Overlay trên thiệp"],
+                          ] as const
+                        ).map(([value, label]) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() =>
+                              onDraftChange({ ...draftContent, wishDisplayStyle: value })
+                            }
+                            aria-pressed={(draftContent.wishDisplayStyle ?? "box") === value}
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors",
+                              (draftContent.wishDisplayStyle ?? "box") === value
+                                ? "bg-accent text-white"
+                                : "text-fg-muted hover:text-fg",
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -1020,87 +1174,97 @@ export function WeddingInfoEditor({
               Kéo thả để đổi thứ tự. Phần đang ẩn không hiện trong danh sách.
             </p>
             <div className="mt-2 space-y-1.5">
-              {visibleOrder.map((key) => (
+              {orderedSections.map((key) => (
                 <div
                   key={key}
-                  draggable
-                  onDragStart={() => setDraggingSection(key)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={() => {
-                    if (draggingSection) moveSection(draggingSection, key);
-                    setDraggingSection(null);
-                  }}
-                  onDragEnd={() => setDraggingSection(null)}
+                  data-section-row={key}
                   className={cn(
-                    "flex cursor-grab items-center justify-between rounded-lg border border-border bg-bg px-3 py-2 text-xs text-fg",
-                    draggingSection === key && "opacity-50",
+                    "flex items-center justify-between gap-2 rounded-lg border bg-bg px-2.5 py-2 text-xs text-fg transition-colors",
+                    draggingSection === key
+                      ? "border-accent bg-accent-soft/60 shadow-sm"
+                      : "border-border",
                   )}
                 >
-                  <span>{sectionLabels[key]}</span>
-                  <span className="text-[10px] text-fg-muted">⋮⋮</span>
+                  <span className="min-w-0 flex-1 truncate">{sectionLabels[key]}</span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onPointerDown={startSectionDrag(key)}
+                    aria-label={`Kéo để đổi thứ tự: ${sectionLabels[key]}`}
+                    title="Kéo để đổi thứ tự"
+                    className="flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-md border border-border bg-surface text-fg-muted transition-colors hover:border-accent hover:text-accent-text active:cursor-grabbing active:border-accent"
+                  >
+                    <GripVertical className="h-4 w-4" aria-hidden="true" />
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="space-y-2 rounded-xl border border-border bg-bg p-3">
-            <label className="flex items-center justify-between gap-3 text-xs font-medium text-fg">
-              <span>Hiện ảnh cô dâu &amp; chú rể trong phần gia đình</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={!draftContent.hideCouplePhotos}
-                onClick={() =>
-                  onDraftChange({
-                    ...draftContent,
-                    hideCouplePhotos: !draftContent.hideCouplePhotos,
-                  })
-                }
-                className={cn(
-                  "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-                  draftContent.hideCouplePhotos ? "bg-border" : "bg-accent",
-                )}
-              >
-                <span
-                  className={cn(
-                    "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
-                    draftContent.hideCouplePhotos ? "translate-x-0.5" : "translate-x-4",
-                  )}
-                />
-              </button>
-            </label>
-            <p className="text-[10px] text-fg-muted">
-              Tắt ảnh: chỉ hiện tên cô dâu/chú rể, một trên một dưới.
-            </p>
-
-            <div>
-              <p className="text-xs font-medium text-fg">Nhà xuất hiện trước</p>
-              <p className="mt-0.5 text-[10px] text-fg-muted">
-                Dùng để chọn nhà trai/gái sẽ xuất hiện ở bên trái hay bên trên thiệp.
-              </p>
-              <div className="mt-2 flex gap-3">
-                {[
-                  ["groom", "Nhà trai"],
-                  ["bride", "Nhà gái"],
-                ].map(([value, label]) => (
-                  <label key={value} className="flex items-center gap-1.5 text-xs text-fg">
-                    <input
-                      type="radio"
-                      name="hostFirst"
-                      value={value}
-                      checked={(draftContent.hostFirst ?? "groom") === value}
-                      onChange={() =>
-                        onDraftChange({
-                          ...draftContent,
-                          hostFirst: value as "groom" | "bride",
-                        })
-                      }
+            {templateSections.couplePhotos && (
+              <>
+                <label className="flex items-center justify-between gap-3 text-xs font-medium text-fg">
+                  <span>Hiện ảnh cô dâu &amp; chú rể trong phần gia đình</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!draftContent.hideCouplePhotos}
+                    onClick={() =>
+                      onDraftChange({
+                        ...draftContent,
+                        hideCouplePhotos: !draftContent.hideCouplePhotos,
+                      })
+                    }
+                    className={cn(
+                      "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+                      draftContent.hideCouplePhotos ? "bg-border" : "bg-accent",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+                        draftContent.hideCouplePhotos ? "translate-x-0.5" : "translate-x-4",
+                      )}
                     />
-                    {label}
-                  </label>
-                ))}
+                  </button>
+                </label>
+                <p className="text-[10px] text-fg-muted">
+                  Tắt ảnh: chỉ hiện tên cô dâu/chú rể, một trên một dưới.
+                </p>
+              </>
+            )}
+
+            {templateSections.hostFirst && (
+              <div>
+                <p className="text-xs font-medium text-fg">Nhà xuất hiện trước</p>
+                <p className="mt-0.5 text-[10px] text-fg-muted">
+                  Dùng để chọn nhà trai/gái sẽ xuất hiện ở bên trái hay bên trên thiệp.
+                </p>
+                <div className="mt-2 flex gap-3">
+                  {[
+                    ["groom", "Nhà trai"],
+                    ["bride", "Nhà gái"],
+                  ].map(([value, label]) => (
+                    <label key={value} className="flex items-center gap-1.5 text-xs text-fg">
+                      <input
+                        type="radio"
+                        name="hostFirst"
+                        value={value}
+                        checked={(draftContent.hostFirst ?? "groom") === value}
+                        onChange={() =>
+                          onDraftChange({
+                            ...draftContent,
+                            hostFirst: value as "groom" | "bride",
+                          })
+                        }
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </Card>
 

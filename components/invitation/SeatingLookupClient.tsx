@@ -90,6 +90,7 @@ export function SeatingLookupClient({ slug }: { slug: string }) {
       <div className="text-center">
         <Link
           href={`/m/${slug}`}
+          prefetch={false}
           className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-surface px-6 text-sm font-medium text-text transition-colors hover:border-accent"
         >
           Mở thiệp mời của bạn

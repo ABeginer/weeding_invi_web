@@ -47,6 +47,7 @@ import type {
   WeddingPlan,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { getTemplatePhotos } from "@/config/template-sections";
 import { TemplateLightboxModal } from "@/templates/shared/TemplateOverlays";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -55,6 +56,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ImageCropDialog } from "./ImageCropDialog";
 
 interface PhotosManagerProps {
+  templateId?: string | null;
   weddingId: string;
   weddingSlug: string;
   plan: WeddingPlan;
@@ -108,6 +110,7 @@ const SINGLE_SLOTS: SlotMeta[] = [
 const ALBUM_ENABLED = true;
 
 export function PhotosManager({
+  templateId,
   weddingId,
   weddingSlug,
   plan,
@@ -118,6 +121,12 @@ export function PhotosManager({
 }: PhotosManagerProps) {
   const { showToast } = useToast();
   const limits = getPlanLimits(plan);
+  // Mỗi mẫu chỉ cho upload những ô ảnh mà thiệp thật sự hiển thị (card_exp §27).
+  const photoSlots = getTemplatePhotos(templateId);
+  const galleryEnabled = ALBUM_ENABLED && photoSlots.gallery;
+  const visibleSingleSlots = SINGLE_SLOTS.filter((meta) =>
+    meta.slot === "hero" ? photoSlots.hero : photoSlots.couple,
+  );
 
   const [slotStatus, setSlotStatus] = React.useState<
     Partial<Record<MainPhotoSlot, string>>
@@ -259,7 +268,7 @@ export function PhotosManager({
   const reachedAlbumLimit = albumPhotos.length >= albumLimit;
 
   React.useEffect(() => {
-    if (!ALBUM_ENABLED || plan === "free" || !weddingSlug) {
+    if (!galleryEnabled || plan === "free" || !weddingSlug) {
       setAlbumQr(null);
       return;
     }
@@ -857,7 +866,7 @@ export function PhotosManager({
         )}
 
         <div className="grid gap-4 sm:grid-cols-3">
-          {SINGLE_SLOTS.map((meta) => {
+          {visibleSingleSlots.map((meta) => {
             const currentPhoto = getSlotPhoto(meta.slot);
             const busyText = slotStatus[meta.slot];
             const inputRef = inputRefs[meta.slot];
@@ -1140,9 +1149,9 @@ export function PhotosManager({
             </div>
             <p className="mt-0.5 text-xs text-fg-muted">
               Album ảnh để khách mời quét mã QR và xem toàn bộ album ảnh cưới trên điện thoại.
-              {!ALBUM_ENABLED && " Tính năng đang hoàn thiện và sẽ mở lại sau."}
+              {!galleryEnabled && " Tính năng đang hoàn thiện và sẽ mở lại sau."}
             </p>
-            {ALBUM_ENABLED && (
+            {galleryEnabled && (
               <a
                 href={`/a/${weddingSlug}`}
                 target="_blank"
@@ -1186,10 +1195,10 @@ export function PhotosManager({
                     size="sm"
                     onClick={() => albumInputRef.current?.click()}
                     disabled={
-                      !ALBUM_ENABLED || reachedAlbumLimit || Boolean(albumStatus)
+                      !galleryEnabled || reachedAlbumLimit || Boolean(albumStatus)
                     }
                     title={
-                      !ALBUM_ENABLED
+                      !galleryEnabled
                         ? "Tính năng đang hoàn thiện"
                         : reachedAlbumLimit
                           ? plan === "pro"
@@ -1205,7 +1214,7 @@ export function PhotosManager({
                     )}
                     <span>
                       {albumStatus ??
-                        (ALBUM_ENABLED ? "Tải ảnh vào album" : "Đang hoàn thiện")}
+                        (galleryEnabled ? "Tải ảnh vào album" : "Đang hoàn thiện")}
                     </span>
                   </Button>
                 </div>

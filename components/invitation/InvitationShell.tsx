@@ -23,7 +23,9 @@ interface InvitationShellProps {
 
 const TARGET_VOLUME = 0.6;
 const FADE_DURATION_MS = 2000;
-const ENVELOPE_DISMISS_MS = 900;
+// Cửa mở 800ms (cửa phải trễ thêm 80ms); cho nội dung hiện lên sớm hơn để
+// hero bắt đầu ngay khi cửa vừa rời khung, không chờ hẳn rồi mới chạy.
+const ENVELOPE_DISMISS_MS = 820;
 
 export function InvitationShell({
   guestName,
@@ -375,7 +377,7 @@ export function InvitationShell({
             ? envelopeDismissed
               ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100"
               : isOpened
-                ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300"
+                ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300"
                 : "pointer-events-none mx-auto h-full w-full overflow-hidden bg-inv-bg opacity-0"
             : cn(
               "mx-auto w-full bg-inv-bg",
@@ -383,7 +385,7 @@ export function InvitationShell({
               envelopeDismissed
                 ? "min-h-screen-dvh overflow-x-clip opacity-100 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
                 : isOpened
-                  ? "min-h-screen-dvh overflow-x-clip opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
+                  ? "min-h-screen-dvh overflow-x-clip opacity-100 transition-[opacity,transform] duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
                   : "pointer-events-none h-screen-dvh overflow-hidden opacity-0 motion-safe:translate-y-4",
             )
         }

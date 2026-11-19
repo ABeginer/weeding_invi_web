@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { toAbsoluteSiteUrl } from "@/config/site";
 import { DesignerInvitation } from "@/components/designer/designer-invitation";
 import type { DesignerCanvasContent } from "@/components/ops/designer-types";
@@ -9,7 +9,6 @@ import { InvitePageClient } from "@/components/invitation/InvitePageClient";
 import { buildDesignerInviteValues } from "@/lib/designer-invite";
 import {
   FREE_INVITE_VIEW_LIMIT,
-  INVITE_VIEW_COOKIE,
   isLikelyCrawler,
   trackGuestView,
 } from "@/lib/server/invite-limits";
@@ -113,17 +112,13 @@ export default async function PersonalInvitePage({ params }: PageProps) {
   const wedding = await getWeddingByGuestSlug(slug).catch(() => null);
   const content = wedding?.content ?? createDefaultWeddingContent();
 
+  // Gói Free: mỗi link cá nhân chỉ được mở 30 lượt. Đếm mỗi lượt mở (không
+  // phân biệt thiết bị); bot/preview của Zalo-Facebook thì không tính.
   if (wedding && wedding.plan === "free") {
-    const cookieStore = await cookies();
-    const requestHeaders = await headers();
-    const viewKey = cookieStore.get(INVITE_VIEW_COOKIE)?.value;
-    const userAgent = requestHeaders.get("user-agent");
-    if (viewKey && !isLikelyCrawler(userAgent)) {
-      const viewCount = await trackGuestView(wedding.guestId, viewKey);
-      if (
-        viewCount !== null &&
-        viewCount > FREE_INVITE_VIEW_LIMIT
-      ) {
+    const userAgent = (await headers()).get("user-agent");
+    if (!isLikelyCrawler(userAgent)) {
+      const viewCount = await trackGuestView(wedding.guestId);
+      if (viewCount !== null && viewCount > FREE_INVITE_VIEW_LIMIT) {
         const limitedData = toTemplateData({
           templateId: wedding.templateId,
           plan: wedding.plan,

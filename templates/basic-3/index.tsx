@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { CalendarHeart, MapPin } from "lucide-react";
 import { CoupleDisplayName } from "@/components/invitation/CoupleDisplayName";
 import { GiftModal } from "@/components/invitation/GiftModal";
@@ -86,7 +86,7 @@ export default function Basic3Template({
         }}
       >
         {!opened && (
-          <motion.div
+          <m.div
             key="basic3-cover"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -104,7 +104,7 @@ export default function Basic3Template({
               opened && "pointer-events-none",
             )}
           >
-            <motion.button
+            <m.button
               type="button"
               onClick={handleOpen}
               exit={
@@ -161,8 +161,8 @@ export default function Basic3Template({
               <span className="inline-flex h-10 items-center rounded-full bg-[#7A3535] px-6 text-xs font-medium tracking-[0.12em] text-white uppercase transition-colors group-hover:bg-[#612828]">
                 {data.ui.tapHint}
               </span>
-            </motion.button>
-          </motion.div>
+            </m.button>
+          </m.div>
         )}
       </AnimatePresence>
 

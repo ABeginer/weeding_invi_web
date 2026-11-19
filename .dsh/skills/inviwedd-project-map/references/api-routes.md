@@ -37,6 +37,7 @@ Auth legend:
 | GET | `/api/weddings/[id]/guests` | JWT+owner | List guests. Without `page` returns all rows (legacy); with `page` returns `{items,page,pageSize,total,totalPages}` and supports `q` + `status` filters | `app/api/weddings/[id]/guests/route.ts` |
 | POST | `/api/weddings/[id]/guests` | JWT+owner | Create guest (plan guest limit) | `app/api/weddings/[id]/guests/route.ts` |
 | POST | `/api/weddings/[id]/guests/bulk` | JWT+owner | Bulk create ≤500 names (plan guest limit) | `app/api/weddings/[id]/guests/bulk/route.ts` |
+| DELETE | `/api/weddings/[id]/guests/bulk` | JWT+owner | Bulk delete ≤500 guests by id (drops invalid UUIDs, scoped to the wedding) | `app/api/weddings/[id]/guests/bulk/route.ts` |
 | PATCH | `/api/weddings/[id]/guests/[guestId]` | JWT+owner | Rename guest | `app/api/weddings/[id]/guests/[guestId]/route.ts` |
 | DELETE | `/api/weddings/[id]/guests/[guestId]` | JWT+owner | Delete guest | `app/api/weddings/[id]/guests/[guestId]/route.ts` |
 | POST | `/api/weddings/[id]/guests/[guestId]/events` | JWT+owner | Replace the guest's event assignments | `app/api/weddings/[id]/guests/[guestId]/events/route.ts` |

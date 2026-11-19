@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { MotionProvider } from "@/components/theme/MotionProvider";
 import type { GuestDiet, GuestStatus, TemplateData } from "@/lib/types";
 import Basic1Template from "./basic-1";
 import { TemplatePreviewRenderer } from "./TemplatePreviewRenderer";
@@ -54,22 +55,26 @@ export function LiveTemplateRenderer({
     );
   }
 
+  // basic-1 tự render cây invitation (Hero/Envelope/RevealSection dùng `m`)
+  // nên phải tự bọc LazyMotion: nhánh này không đi qua TemplatePreviewRenderer.
   return (
-    <Basic1Template
-      data={data}
-      mode="live"
-      contained={false}
-      viewport="desktop"
-      externalMusicControl={false}
-      inviteSlug={inviteSlug}
-      weddingSlug={weddingSlug}
-      invitationMode={invitationMode}
-      guestName={guestName}
-      initialStatus={initialStatus}
-      initialPlusOnes={initialPlusOnes}
-      initialDiet={initialDiet}
-      initialSongRequest={initialSongRequest}
-      initialRideNeeded={initialRideNeeded}
-    />
+    <MotionProvider>
+      <Basic1Template
+        data={data}
+        mode="live"
+        contained={false}
+        viewport="desktop"
+        externalMusicControl={false}
+        inviteSlug={inviteSlug}
+        weddingSlug={weddingSlug}
+        invitationMode={invitationMode}
+        guestName={guestName}
+        initialStatus={initialStatus}
+        initialPlusOnes={initialPlusOnes}
+        initialDiet={initialDiet}
+        initialSongRequest={initialSongRequest}
+        initialRideNeeded={initialRideNeeded}
+      />
+    </MotionProvider>
   );
 }

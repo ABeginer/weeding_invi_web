@@ -166,7 +166,7 @@ export function EventDetails() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className={cn(
-                          "inline-flex items-center justify-center rounded-full bg-inv-olive-btn font-inv-serif tracking-[0.04em] text-white uppercase transition-colors hover:bg-inv-olive-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg motion-safe:animate-[inv-pill-pulse_2.8s_ease-in-out_infinite]",
+                          "inline-flex items-center justify-center rounded-full bg-inv-olive-btn font-inv-serif tracking-[0.04em] text-white uppercase transition-colors hover:bg-inv-olive-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg inv-cta-pulse",
                           isContained
                             ? "w-full max-w-[205px] px-4 py-2 text-[12.5px]"
                             : "min-w-[210px] max-w-full px-7 py-2.5 text-[14px]",

@@ -62,6 +62,9 @@ export type WeddingContent = {
   date: string; // ISO, có +07:00
   quote: string; // lời dẫn ngắn, tối đa 200 ký tự
   shareGuestName?: boolean; // in tên khách trên ảnh OG khi chia sẻ
+  showWishesOnCard?: boolean; // hiển thị lời chúc đã duyệt lên thiệp
+  wishApprovalMode?: "manual" | "auto"; // duyệt tay / duyệt tự động
+  wishDisplayStyle?: "box" | "overlay"; // ô cuối thiệp / overlay trên thiệp
   heroPhotoId: string | null;
   groomPhotoId: string | null;
   bridePhotoId: string | null;
@@ -139,6 +142,8 @@ export type TemplateData = {
   events: WeddingEvent[];
   dressCode?: string[];
   hiddenSections?: string[];
+  showWishesOnCard?: boolean;
+  wishDisplayStyle?: "box" | "overlay";
   sectionOrder?: string[];
   hideCouplePhotos?: boolean;
   hostFirst?: "groom" | "bride";
@@ -352,6 +357,9 @@ export const weddingContentInputSchema = z.object({
     .trim()
     .max(QUOTE_MAX_LENGTH, `Lời dẫn ngắn tối đa ${QUOTE_MAX_LENGTH} ký tự.`),
   shareGuestName: z.boolean().optional().transform((val) => val ?? false),
+  showWishesOnCard: z.boolean().optional().transform((val) => val ?? false),
+  wishApprovalMode: z.enum(["manual", "auto"]).optional(),
+  wishDisplayStyle: z.enum(["box", "overlay"]).optional(),
   heroPhotoId: uuidOrNullSchema,
   groomPhotoId: uuidOrNullSchema,
   bridePhotoId: uuidOrNullSchema,

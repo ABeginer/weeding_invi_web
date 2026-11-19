@@ -204,6 +204,42 @@ const NEW_TEMPLATE_DEMO_COUPLES: Record<
   string,
   { groomName: string; brideName: string; groomFullName: string; brideFullName: string }
 > = {
+  "flowery-white": {
+    groomName: "Văn Long",
+    brideName: "Thu Hà",
+    groomFullName: "Hoàng Văn Long",
+    brideFullName: "Nguyễn Thị Thu Hà",
+  },
+  "minimal-brown": {
+    groomName: "Đăng Khoa",
+    brideName: "Mỹ Duyên",
+    groomFullName: "Trần Đăng Khoa",
+    brideFullName: "Nguyễn Mỹ Duyên",
+  },
+  "minimal-red": {
+    groomName: "Quốc Anh",
+    brideName: "Cát Tường",
+    groomFullName: "Phan Quốc Anh",
+    brideFullName: "Lê Thị Cát Tường",
+  },
+  "do-ruou-vang": {
+    groomName: "Duy Khang",
+    brideName: "Thu Hà",
+    groomFullName: "Lý Duy Khang",
+    brideFullName: "Phan Thu Hà",
+  },
+  "long-phung": {
+    groomName: "Hoài Nam",
+    brideName: "Ngọc Linh",
+    groomFullName: "Phan Hoài Nam",
+    brideFullName: "Lê Ngọc Linh",
+  },
+  "do-truyen-thong": {
+    groomName: "Gia Khánh",
+    brideName: "Quỳnh Anh",
+    groomFullName: "Phan Gia Khánh",
+    brideFullName: "Phạm Quỳnh Anh",
+  },
   "do-may-man": {
     groomName: "Hoàng Long",
     brideName: "Bảo Ngọc",

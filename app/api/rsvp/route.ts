@@ -4,6 +4,7 @@ import { fail, json, readBody, route, SLUG_RE, text } from "@/lib/server/http";
 import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { verifyTurnstileToken } from "@/lib/server/turnstile";
 import { isWeddingSuspended } from "@/lib/server/weddings";
+import { normalizeAuthorKey, saveWishOnce } from "@/lib/server/wishes";
 import { parseDiet, parsePlusOnes, sanitizeSongRequest } from "@/lib/rsvp-input";
 import type { WeddingPlan } from "@/lib/types";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
@@ -69,6 +70,7 @@ export const POST = route(async (req: Request) => {
   const songRequest = status === "accepted" ? sanitizeSongRequest(body?.songRequest) : null;
   const rideNeeded = status === "accepted" && body?.rideNeeded === true;
   const wishMessage = text(body?.wish, 500);
+  const authorKeyInput = normalizeAuthorKey(body?.authorKey);
   const respondedAt = new Date().toISOString();
 
   const client = db();
@@ -141,15 +143,21 @@ export const POST = route(async (req: Request) => {
     const data = res.data;
     let wishSaved = false;
     if (wishMessage) {
-      const { error: wishError } = await client.from("wishes").insert({
-        wedding_id: data.wedding_id,
-        guest_id: data.id,
+      const { data: contentRow } = await client
+        .from("weddings")
+        .select("content")
+        .eq("id", data.wedding_id)
+        .maybeSingle();
+      const content = (contentRow?.content ?? {}) as Record<string, unknown>;
+      const saved = await saveWishOnce(client, {
+        weddingId: data.wedding_id,
+        guestId: data.id,
+        authorKey: `guest:${data.id}`,
         name: data.name,
         message: wishMessage,
-      });
-      if (!wishError) {
-        wishSaved = true;
-      }
+        autoApprove: content.wishApprovalMode === "auto",
+      }).catch(() => null);
+      wishSaved = saved?.saved === true;
     }
 
     return json({ ok: true, slug: data.slug, wishSaved });
@@ -236,15 +244,21 @@ export const POST = route(async (req: Request) => {
   const data = res.data;
   let wishSaved = false;
   if (wishMessage) {
-    const { error: wishError } = await client.from("wishes").insert({
-      wedding_id: weddingRow.id,
-      guest_id: data.id,
+    const { data: contentRow } = await client
+      .from("weddings")
+      .select("content")
+      .eq("id", weddingRow.id)
+      .maybeSingle();
+    const content = (contentRow?.content ?? {}) as Record<string, unknown>;
+    const saved = await saveWishOnce(client, {
+      weddingId: weddingRow.id,
+      guestId: data.id,
+      authorKey: authorKeyInput ?? `guest:${data.id}`,
       name,
       message: wishMessage,
-    });
-    if (!wishError) {
-      wishSaved = true;
-    }
+      autoApprove: content.wishApprovalMode === "auto",
+    }).catch(() => null);
+    wishSaved = saved?.saved === true;
   }
 
   return json({ ok: true, slug: data.slug, wishSaved }, 201);

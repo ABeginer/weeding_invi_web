@@ -3,6 +3,8 @@
 import * as React from "react";
 import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
 import { submitRsvp, submitWish } from "@/lib/api";
+import { WishMarquee } from "@/components/invitation/WishMarquee";
+import { WishOverlay } from "@/components/invitation/WishOverlay";
 import type { GuestDiet, GuestStatus, TemplateData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
@@ -47,12 +49,28 @@ export function TemplateRsvpSection({
   const isNameLocked = !isPublicMode && !isReadOnlyPreview && Boolean(guestName && guestName.trim().length > 0);
   const effectiveWeddingSlug = weddingSlug ?? data.weddingSlug;
 
+  // Khóa thực đơn theo cấu hình thiệp (dashboard → "Thực đơn"):
+  //   "meat"/"veg" chỉ cho đúng một lựa chọn, "both" mới cho khách chọn.
+  // Cùng quy tắc với RsvpWishBlock để hai hệ template không lệch nhau.
+  const mealMode = data.mealMode ?? "meat";
+  const dietOptions =
+    mealMode === "both"
+      ? [
+          { value: "meat" as const, label: "Mặn" },
+          { value: "veg" as const, label: "Chay" },
+        ]
+      : mealMode === "veg"
+        ? [{ value: "veg" as const, label: "Chay" }]
+        : [{ value: "meat" as const, label: "Mặn" }];
+
   const [status, setStatus] = React.useState<GuestStatus>(initialStatus);
   const [selectedChoice, setSelectedChoice] = React.useState<
     "accepted" | "declined" | null
   >(initialStatus !== "pending" ? initialStatus : null);
   const [plusOnes, setPlusOnes] = React.useState<number>(initialPlusOnes);
-  const [diet, setDiet] = React.useState<GuestDiet | null>(initialDiet ?? "meat");
+  const [diet, setDiet] = React.useState<GuestDiet | null>(
+    initialDiet ?? (mealMode === "veg" ? "veg" : "meat"),
+  );
   const [songRequest, setSongRequest] = React.useState<string>(initialSongRequest ?? "");
 
   const [isEditingRsvp, setIsEditingRsvp] = React.useState(
@@ -91,8 +109,14 @@ export function TemplateRsvpSection({
   }, [initialPlusOnes]);
 
   React.useEffect(() => {
-    setDiet(initialDiet);
-  }, [initialDiet]);
+    setDiet(
+      mealMode === "both"
+        ? initialDiet
+        : mealMode === "veg"
+          ? "veg"
+          : "meat",
+    );
+  }, [initialDiet, mealMode]);
 
   React.useEffect(() => {
     if (guestName) setName(guestName);
@@ -301,7 +325,98 @@ export function TemplateRsvpSection({
         alert: "border-lnd-gold-soft bg-lnd-gold-tint text-lnd-body",
         badge: "border-lnd-gold-soft bg-lnd-surface text-lnd-body",
       }
-      : tone === "sunset"
+      : tone === "flowery"
+        ? {
+          wrap: "bg-transparent text-[#595638]",
+          eyebrow: "text-[#8A8460]",
+          heading: "text-[#464E25] font-display",
+          subtext: "text-[#8A8460]",
+          card: "border border-[#464E25]/25 bg-[#FDFAF5] text-[#595638]",
+          input:
+            "border border-[#464E25]/30 bg-white text-[#595638] placeholder:text-[#8A8460]/80 focus:border-[#464E25] focus:ring-[#464E25]",
+          primaryBtn: "bg-[#464E25] text-[#FDFAF5] hover:bg-[#3A411E] font-semibold",
+          outlineBtn:
+            "border border-[#464E25] bg-transparent text-[#464E25] hover:bg-[#F1EEE2]",
+          alert: "border-[#464E25]/30 bg-white text-[#595638]",
+          badge: "border-[#464E25]/30 bg-white text-[#464E25]",
+        }
+        : tone === "minbrown"
+        ? {
+          wrap: "bg-transparent text-[#A76B43]",
+          eyebrow: "text-[#A76B43]",
+          heading: "text-[#A76B43] font-display",
+          subtext: "text-[#A76B43]/85",
+          label: "text-[#A76B43]",
+          card: "border border-[#A76B43]/30 bg-[#F7F7F8] text-[#A76B43]",
+          input:
+            "border border-[#A76B43]/35 bg-white text-[#A76B43] placeholder:text-[#A76B43]/45 focus:border-[#A76B43] focus:ring-[#A76B43]",
+          primaryBtn: "bg-[#A76B43] text-white hover:bg-[#8F5735] font-semibold",
+          outlineBtn:
+            "border border-[#A76B43] bg-transparent text-[#A76B43] hover:bg-[#F4EAE2]",
+          alert: "border-[#A76B43]/35 bg-white text-[#A76B43]",
+          badge: "border-[#A76B43]/35 bg-white text-[#A76B43]",
+        }
+        : tone === "minred"
+        ? {
+          wrap: "bg-transparent border-y border-[#E1BC7C]/30 text-[#E9D4AE]",
+          eyebrow: "text-[#B89667]",
+          heading: "text-[#E1BC7C] font-display",
+          subtext: "text-[#B89667]",
+          card: "border border-[#E1BC7C]/35 bg-[#2C0102]/70 text-[#E9D4AE]",
+          input:
+            "border border-[#E1BC7C]/45 bg-[#1E0101]/80 text-[#E9D4AE] placeholder:text-[#B89667]/80 focus:border-[#E1BC7C] focus:ring-[#E1BC7C]",
+          primaryBtn: "bg-[#E1BC7C] text-[#390102] hover:bg-[#F0D3A0] font-semibold",
+          outlineBtn:
+            "border border-[#E1BC7C] bg-transparent text-[#E1BC7C] hover:bg-[#2C0102]",
+          alert: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E9D4AE]",
+          badge: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E1BC7C]",
+        }
+        : tone === "ruby"
+        ? {
+          wrap: "bg-[#390202] border-y border-[#E5C787]/40 text-[#E5E4D0]",
+          eyebrow: "text-[#E5C787]",
+          heading: "text-[#F7E7CE] font-display",
+          subtext: "text-[#B3B2A0]",
+          card: "border border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
+          input:
+            "border border-[#E5C787]/60 bg-[#2E0409] text-[#E5E4D0] placeholder:text-[#9C9B8A] focus:border-[#E5C787] focus:ring-[#E5C787]",
+          primaryBtn: "bg-[#F7E7CE] text-[#390202] hover:bg-[#FFF6E6] font-semibold",
+          outlineBtn:
+            "border border-[#E5C787] bg-transparent text-[#E5C787] hover:bg-[#4A060C]",
+          alert: "border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
+          badge: "border-[#E5C787]/50 bg-[#390202] text-[#E5C787]",
+        }
+        : tone === "velvet"
+        ? {
+          wrap: "bg-[#4A0B0A] border-y border-[#8A6A3A] text-[#E9CE91]",
+          eyebrow: "text-[#E9CE91]",
+          heading: "text-[#E9CE91] font-display",
+          subtext: "text-[#BFA478]",
+          card: "border border-[#8A6A3A]/60 bg-[#5A0D0C] text-[#E9CE91]",
+          input:
+            "border border-[#8A6A3A]/70 bg-[#3A0807] text-[#E9CE91] placeholder:text-[#A98F6C] focus:border-[#E9CE91] focus:ring-[#E9CE91]",
+          primaryBtn: "bg-[#E9CE91] text-[#3B0A0D] hover:bg-[#F2E0B6] font-semibold",
+          outlineBtn:
+            "border border-[#E9CE91]/70 bg-transparent text-[#E9CE91] hover:bg-[#5A0D0C]",
+          alert: "border-[#8A6A3A] bg-[#5A0D0C] text-[#E9CE91]",
+          badge: "border-[#8A6A3A] bg-[#4A0B0A] text-[#E9CE91]",
+        }
+        : tone === "red"
+        ? {
+          wrap: "bg-[#fff7eb] border-y border-[#e0cba4] text-[#4a1010]",
+          eyebrow: "text-[#800000]",
+          heading: "text-[#800000] font-display",
+          subtext: "text-[#8a6a63]",
+          card: "border border-[#e0cba4] bg-white text-[#4a1010]",
+          input:
+            "border border-[#e0cba4] bg-white text-[#4a1010] placeholder:text-[#a98d7d] focus:border-[#800000] focus:ring-[#800000]",
+          primaryBtn: "bg-[#800000] text-[#ffeed2] hover:bg-[#5c0000] font-medium",
+          outlineBtn:
+            "border border-[#c9a24a] bg-white text-[#800000] hover:bg-[#fff1dd]",
+          alert: "border-[#e0cba4] bg-[#fff1dd] text-[#4a1010]",
+          badge: "border-[#e0cba4] bg-[#fff7eb] text-[#7a0b0b]",
+        }
+        : tone === "sunset"
         ? {
           wrap: "bg-[#FBF3ED] border-y border-[#E7CFC3] text-[#322424]",
           eyebrow: "text-[#8A4444]",
@@ -331,7 +446,8 @@ export function TemplateRsvpSection({
           badge: "border-[#DFD5C3] bg-[#FAF7F0] text-[#23201C]",
         };
 
-  const turnstileTheme = tone === "obsidian" ? "dark" : "light";
+  const turnstileTheme =
+    tone === "obsidian" || tone === "velvet" || tone === "ruby" || tone === "minred" ? "dark" : "light";
 
   if (isPublicMode) {
     return (
@@ -459,6 +575,17 @@ export function TemplateRsvpSection({
               </button>
             </form>
           )}
+
+          {/* Sổ lưu bút luôn hiển thị, kể cả sau khi khách đã xác nhận/gửi lời chúc */}
+          <WishOverlay />
+          <WishMarquee
+            tone={
+              tone === "obsidian" || tone === "velvet" || tone === "ruby" || tone === "red"
+                ? "dark"
+                : "light"
+            }
+            className="mt-5"
+          />
         </div>
       </section>
     );
@@ -685,23 +812,29 @@ export function TemplateRsvpSection({
                 </div>
 
                 <div>
-                  <span className="block text-xs font-semibold">Ăn chay / Ăn mặn</span>
-                  <div className="mt-1.5 grid grid-cols-2 gap-2">
-                    {[
-                      { value: "meat" as const, label: "Mặn" },
-                      { value: "veg" as const, label: "Chay" },
-                    ].map((opt) => {
-                      const active = (diet ?? "meat") === opt.value;
+                  <span className="block text-xs font-semibold">
+                    {dietOptions.length > 1 ? "Ăn chay / Ăn mặn" : "Thực đơn"}
+                  </span>
+                  <div
+                    className={cn(
+                      "mt-1.5 grid gap-2",
+                      dietOptions.length > 1 ? "grid-cols-2" : "grid-cols-1",
+                    )}
+                  >
+                    {dietOptions.map((opt) => {
+                      const active = (diet ?? dietOptions[0].value) === opt.value;
+                      const locked = dietOptions.length === 1;
                       return (
                         <button
                           key={opt.value}
                           type="button"
-                          disabled={submitting !== null}
+                          disabled={submitting !== null || locked}
                           aria-pressed={active}
                           onClick={() => setDiet(opt.value)}
                           className={cn(
                             "inline-flex h-9 cursor-pointer items-center justify-center rounded-lg text-xs font-medium transition-colors",
                             active ? styles.primaryBtn : styles.outlineBtn,
+                            locked && "cursor-default opacity-90",
                           )}
                         >
                           {opt.label}
@@ -709,6 +842,11 @@ export function TemplateRsvpSection({
                       );
                     })}
                   </div>
+                  {dietOptions.length === 1 && (
+                    <p className="mt-1.5 text-[11px] opacity-70">
+                      Thiệp đã cố định thực đơn này.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -819,6 +957,17 @@ export function TemplateRsvpSection({
             )}
           </form>
         )}
+
+        {/* Sổ lưu bút dưới nút "Thay đổi lựa chọn...", luôn hiển thị */}
+        <WishOverlay />
+        <WishMarquee
+          tone={
+            tone === "obsidian" || tone === "velvet" || tone === "ruby" || tone === "red"
+              ? "dark"
+              : "light"
+          }
+          className="mt-5"
+        />
       </div>
     </section>
   );

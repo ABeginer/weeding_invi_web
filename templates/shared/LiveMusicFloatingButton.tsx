@@ -55,7 +55,19 @@ export function LiveMusicFloatingButton({
       ? "border-[#C6A962] bg-[#FAF7F0] text-[#3F3626] hover:bg-[#EFEAE0] focus-visible:ring-[#706040]"
       : tone === "sunset"
         ? "border-[#D7B3A5] bg-[#FFFBF8] text-[#7A3535] hover:bg-[#F5E6DF] focus-visible:ring-[#7A3535]"
-        : "border-lnd-gold-soft bg-lnd-bg text-lnd-gold sm:bg-lnd-bg/90 sm:backdrop-blur-sm hover:border-lnd-gold focus-visible:ring-lnd-gold";
+        : tone === "red"
+          ? "border-[#c9a24a] bg-[#fff7eb] text-[#800000] hover:bg-[#fff1dd] focus-visible:ring-[#800000]"
+          : tone === "flowery"
+            ? "border-[#464E25]/45 bg-[#FDFAF5] text-[#464E25] hover:bg-[#F1EEE2] focus-visible:ring-[#464E25]"
+            : tone === "minbrown"
+            ? "border-[#A76B43]/50 bg-white text-[#7E4E2E] hover:bg-[#F4EAE2] focus-visible:ring-[#A76B43]"
+            : tone === "minred"
+            ? "border-[#E1BC7C]/60 bg-[#1E0101] text-[#E1BC7C] hover:bg-[#2C0102] focus-visible:ring-[#E1BC7C]"
+            : tone === "ruby"
+            ? "border-[#E5C787]/70 bg-[#390202] text-[#E5C787] hover:bg-[#4A060C] focus-visible:ring-[#E5C787]"
+            : tone === "velvet"
+            ? "border-[#E9CE91]/70 bg-[#4A0B0A] text-[#E9CE91] hover:bg-[#5A0D0C] focus-visible:ring-[#E9CE91]"
+            : "border-lnd-gold-soft bg-lnd-bg text-lnd-gold sm:bg-lnd-bg/90 sm:backdrop-blur-sm hover:border-lnd-gold focus-visible:ring-lnd-gold";
 
   return (
     <>

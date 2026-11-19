@@ -1,7 +1,7 @@
 ---
 name: inviwedd-project-map
 description: "Use at the start of any task on the Inviwedd wedding invitation project and after any major change to it"
-version: 1.1.2
+version: 1.1.9
 metadata:
   hermes:
     tags: [project, architecture, memory]
@@ -53,6 +53,7 @@ Photos: Cloudflare R2 bucket `thiep-cuoi-photos` (binding PHOTOS), served by /me
 - `references/decisions.md` — product/technical decisions and the reason for each.
 - `references/open-items.md` — handoff, known bugs, owner-blocked items.
 - `references/changelog.md` — dated change log, newest first.
+- `card_exp.md` (repo root) — bài học làm template (bug đã gặp + cách tránh); **đọc trước khi tạo mẫu mới**.
 
 ## Working agreements
 - SQL migrations are delivered as separate `.sql` files, never pasted inline in chat.
@@ -70,4 +71,4 @@ Steps: edit only the affected file with a small patch; prepend one dated line to
 At session start: read `references/open-items.md`, compare **Last verified** with `git log`, and patch this skill before starting the task if newer commits exist.
 
 ## Last verified
-2026-11-15 · migrations v11–v16 applied (only a designer role) · designer versioning + Đào Phấn v10 (1 animation, no cover) · animation Phase 3/4/5 + multi-select/replay/text effects · designer templates merged into main carousel/grid with auto-running selected preview · publish saves canvas first · canvas fixed 390×844 with sticky scrollable sidebar tabs **Element / Layer / Bìa** · 3 cover templates (split drag, card open, fade) + cover upload · CTA “Dùng thiệp này” creates/assigns designer directly; existing designer invites auto-use latest published · falling effects pointer-events none · - Last verified 2026-11-15 · `/ops` retries auth · `/w` and `/m` both render assigned Designer · functional calendar/map/RSVP blocks + standard RSVP appended · cover uses `background` asset kind + icon/full preview · dashboard picker merges code + Designer without Designer badge · live Designer preview · custom image slots + Photos-tab fields · deployed Worker `5d3ddef9` (`https://wedding-invitation.inviwedd.workers.dev`). Verified: typecheck, lint 0 errors (124 warnings), test 54/54, build. Missing: real Auth0 CTA/assignment test, P0 payment/CSP/backup checks, per-template music, export layers, new fonts.
+2026-11-18 · **Lời chúc: 1 người = 1 lời** (unique `author_key`, migration **v18 chưa chạy**), **duyệt lời chúc** (`approved`, duyệt tay/tự động + popup cảnh báo), **dải lời chúc chạy ngang seamless** trong block lời chúc (áp dụng mọi mẫu) · **Template `do-ruou-vang` "Đỏ Rượu Vang"** (nền #390202, sao ✦ nhấp nháy, hoa hồng góc bìa, viền kép vàng, **đếm ngược** giờ cưới, album coverflow có chấm, tone `ruby`) · **Template `long-phung` "Long Phụng Đỏ"** (rồng/phượng line-art vàng tách từ asset khách, bìa tách rèm + parallax + bụi vàng, ruột nền đỏ trầm, album lưới editorial, tone `velvet`) · **Template capabilities** (`config/template-sections.ts`: dashboard chỉ hiện phần template thật có; kéo thả thứ tự bằng Pointer Events nên chạy cả mobile; key chuẩn `family/calendar/map/dresscode/album/albumQr/gift/rsvp/music`; `map` = "Sự kiện và chỉ đường"; `hostFirst`, `couplePhotos` khai báo theo template; `albumQr` chỉ hiện từ gói Pro vì `getTemplateSections` nhận cả `plan`) · **Free link 30 lượt mở** (`track_guest_view_open`, nhắc + nút Pro dưới thanh search; migration v17 **chưa chạy**) · **`do-truyen-thong` "Đỏ - Truyền thống"** (custom code: bìa hai cánh + tiếng ting, hero vòm, sự kiện, lịch trình từ `data.timeline`, coverflow album, RSVP khoá món, QR album Pro-gated) · **Motion v14** (`m` + `LazyMotion domAnimation` qua `components/theme/MotionProvider.tsx`) · **VietQR tự sinh = Pro/VIP** · Guest table: bulk delete + bảng gọn một màn hình · Designer versioning (Đào Phấn v10), migrations v11–v16 applied. Verified 2026-11-18: typecheck, lint 0 errors, test 74/74, build 46/46, ảnh chụp thật 390/1280px cho `do-truyen-thong`. Missing: real Auth0 CTA test, P0 payment/CSP/backup checks, per-template music, export layers, new fonts, pass 768px, xác nhận nhánh Pro của VietQR và view-limit sau khi chạy migration.

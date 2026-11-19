@@ -43,6 +43,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { EventsManager } from "./EventsManager";
+import { getTemplateSections } from "@/config/template-sections";
 import { GuestTable } from "./GuestTable";
 import { PhotosManager } from "./PhotosManager";
 import { StatCards } from "./StatCards";
@@ -435,12 +436,16 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               ["albumQr", "QR album"],
               ["gift", "Hộp quà"],
               ["calendar", "Lịch"],
-              ["map", "Bản đồ"],
+              ["map", "Sự kiện"],
               ["family", "Gia đình"],
               ["dresscode", "Dress code"],
               ["rsvp", "Xác nhận"],
               ["music", "Nhạc"],
-            ].map(([key, label]) => {
+            ]
+              .filter(([key]) =>
+                getTemplateSections(draftTemplateId, wedding.plan).sections.includes(key),
+              )
+              .map(([key, label]) => {
               const hidden = (draftContent.hiddenSections ?? []).includes(key);
               return (
                 <button
@@ -752,7 +757,30 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             />
           )}
 
-          {activeTab === "wishes" && <WishList weddingId={wedding.id} />}
+          {activeTab === "wishes" && (
+            <WishList
+              weddingId={wedding.id}
+              wishesHidden={(draftContent.hiddenSections ?? []).includes("rsvp")}
+              showOnCard={draftContent.showWishesOnCard === true}
+              approvalMode={draftContent.wishApprovalMode === "auto" ? "auto" : "manual"}
+              displayStyle={draftContent.wishDisplayStyle === "overlay" ? "overlay" : "box"}
+              onToggleShowOnCard={(next) =>
+                setDraftContent((prev) =>
+                  prev ? { ...prev, showWishesOnCard: next } : prev,
+                )
+              }
+              onApprovalModeChange={(mode) =>
+                setDraftContent((prev) =>
+                  prev ? { ...prev, wishApprovalMode: mode } : prev,
+                )
+              }
+              onDisplayStyleChange={(style) =>
+                setDraftContent((prev) =>
+                  prev ? { ...prev, wishDisplayStyle: style } : prev,
+                )
+              }
+            />
+          )}
 
           {activeTab === "stats" && (
             <StatCards weddingId={wedding.id} refreshSignal={statsRefreshSignal} />

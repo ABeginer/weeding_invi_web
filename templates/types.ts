@@ -36,7 +36,13 @@ export type BaseTemplateId =
   | "do-may-man"
   | "xanh-tu-do"
   | "do-mix-xanh"
-  | "nau-toi-gian";
+  | "nau-toi-gian"
+  | "do-truyen-thong"
+  | "long-phung"
+  | "do-ruou-vang"
+  | "minimal-red"
+  | "minimal-brown"
+  | "flowery-white";
 
 export type TemplateId =
   | BaseTemplateId

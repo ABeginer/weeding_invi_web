@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import { MotionProvider } from "@/components/theme/MotionProvider";
 import type { WeddingTemplateProps } from "./types";
 import { THEME_CONFIGS } from "./themed/theme-configs";
 
@@ -102,12 +103,30 @@ const DynamicDoMixXanh = dynamic(() => import("./do-mix-xanh"), {
 const DynamicNauToiGian = dynamic(() => import("./nau-toi-gian"), {
   loading: () => <TemplateLoadingFallback />,
 });
+const DynamicDoTruyenThong = dynamic(() => import("./do-truyen-thong"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicLongPhung = dynamic(() => import("./long-phung"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicDoRuouVang = dynamic(() => import("./do-ruou-vang"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicMinimalRed = dynamic(() => import("./minimal-red"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicMinimalBrown = dynamic(() => import("./minimal-brown"), {
+  loading: () => <TemplateLoadingFallback />,
+});
+const DynamicFloweryWhite = dynamic(() => import("./flowery-white"), {
+  loading: () => <TemplateLoadingFallback />,
+});
 
 export interface TemplatePreviewRendererProps extends WeddingTemplateProps {
   templateId: string;
 }
 
-export function TemplatePreviewRenderer({
+function TemplatePreviewRendererInner({
   templateId,
   ...props
 }: TemplatePreviewRendererProps) {
@@ -125,6 +144,18 @@ export function TemplatePreviewRenderer({
   }
 
   switch (templateId) {
+    case "do-ruou-vang":
+      return <DynamicDoRuouVang {...props} />;
+    case "minimal-red":
+      return <DynamicMinimalRed {...props} />;
+    case "minimal-brown":
+      return <DynamicMinimalBrown {...props} />;
+    case "flowery-white":
+      return <DynamicFloweryWhite {...props} />;
+    case "long-phung":
+      return <DynamicLongPhung {...props} />;
+    case "do-truyen-thong":
+      return <DynamicDoTruyenThong {...props} />;
     case "nau-toi-gian":
       return <DynamicNauToiGian {...props} />;
     case "do-mix-xanh":
@@ -182,4 +213,16 @@ export function TemplatePreviewRenderer({
     default:
       return <DynamicBasic1 {...props} />;
   }
+}
+
+/**
+ * Mọi màn hình render template đều đi qua đây (thiệp thật, preview, demo,
+ * dashboard, landing), nên đặt LazyMotion ở đây là đủ để `m` luôn có context.
+ */
+export function TemplatePreviewRenderer(props: TemplatePreviewRendererProps) {
+  return (
+    <MotionProvider>
+      <TemplatePreviewRendererInner {...props} />
+    </MotionProvider>
+  );
 }

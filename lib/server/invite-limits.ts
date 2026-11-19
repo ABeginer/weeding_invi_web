@@ -1,6 +1,5 @@
 import { db } from "./supabase";
 
-export const INVITE_VIEW_COOKIE = "invite_view_key";
 export const FREE_INVITE_VIEW_LIMIT = 30;
 
 const CRAWLER_RE =
@@ -11,24 +10,21 @@ export function isLikelyCrawler(userAgent: string | null | undefined): boolean {
 }
 
 /**
- * Records one unique view for a guest link and returns the total unique views.
- * Returns null when the migration/RPC is not available yet, so callers can
- * fail open instead of taking the invitation down.
+ * Cộng 1 lượt mở cho link thiệp cá nhân và trả về tổng số lượt.
+ * Đếm MỌI lượt mở (không phân biệt thiết bị), đúng nghiệp vụ "30 lần xem".
+ *
+ * Trả null khi migration/RPC chưa có, để caller fail open thay vì làm sập thiệp.
  */
-export async function trackGuestView(
-  guestId: string,
-  viewKey: string,
-): Promise<number | null> {
-  if (!guestId || !viewKey) return null;
-  const { data, error } = await db().rpc("track_guest_view", {
+export async function trackGuestView(guestId: string): Promise<number | null> {
+  if (!guestId) return null;
+  const { data, error } = await db().rpc("track_guest_view_open", {
     p_guest_id: guestId,
-    p_view_key: viewKey,
   });
   if (error) {
     const message = error.message ?? "";
     if (
       error.code === "42883" ||
-      /function .*track_guest_view|does not exist|schema cache/i.test(message)
+      /function .*track_guest_view_open|does not exist|schema cache/i.test(message)
     ) {
       return null;
     }

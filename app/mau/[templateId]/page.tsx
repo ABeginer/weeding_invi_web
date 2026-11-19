@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ templateId: string }>;
-  searchParams: Promise<{ embed?: string }>;
+  searchParams: Promise<{ embed?: string; opened?: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function TemplateDemoPage({ params, searchParams }: PageProps) {
   const { templateId } = await params;
-  const { embed } = await searchParams;
+  const { embed, opened } = await searchParams;
   const tpl = getTemplateMeta(templateId);
 
   if (!tpl) {
@@ -62,6 +62,7 @@ export default async function TemplateDemoPage({ params, searchParams }: PagePro
       isAuthenticated={isAuthenticated}
       userEmail={userEmail}
       embed={embed === "1"}
+      initialOpened={opened === "1"}
     />
   );
 }

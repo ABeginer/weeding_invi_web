@@ -141,3 +141,55 @@ Each entry: decision → reason → where it lives in code. "Owner" means the re
 - **A suspended wedding is indistinguishable from a missing one for guests** — public pages, the public API, the invite API, RSVP and wishes all return not-found/403. Chosen over a dedicated "locked" page so a suspension cannot be used to confirm that a private invitation exists. Code: `lib/server/weddings.ts`, `lib/server/public-wedding.ts`, `app/api/rsvp`, `app/api/wishes`.
 - **Miniflare/workerd only starts for `next dev`** — production builds and the deployed Worker get bindings from Cloudflare, so starting the local Workers runtime during `next build` only adds failure modes and build time. Code: `next.config.ts`.
 
+## Template motion (Motion v14)
+- **Templates use `m` + one `LazyMotion`, not `motion`** — the engine is the former Framer Motion (renamed to Motion; npm `motion` is a wrapper whose only runtime dependency is `framer-motion`), so this was a rename plus a smaller feature bundle, not a second library. Code: `components/theme/MotionProvider.tsx`.
+- **The provider sits at the two render boundaries, not the root layout** — every template mount goes through `TemplatePreviewRenderer` (real invitation, preview, demo, dashboard, landing hero), while `LiveTemplateRenderer`'s `basic-1` branch renders the invitation tree directly and needs its own. Wrapping the root layout would charge the landing/dashboard/ops routes ~34KB gzip of animation they never use.
+- **`domAnimation` is sufficient** — no template uses `layout`, `layoutId` or Motion `drag`, so `domMax` is not needed; re-check this if a template adds layout animation.
+- **Measured engine cost** (esbuild, identical imports, minified + gzip): `motion` 48.9KB → `m` + `domAnimation` 33.6KB, i.e. −31%. `m` alone is ~5KB; the rest is the feature set.
+- **The designer canvas stays on CSS keyframes** — its animation is JSON that the editor preview, the public page and the publish snapshot all read; Motion props are live React state and cannot be serialised or versioned that way. Never animate one element with both `m` and the designer CSS vars — two transforms collide.
+- **`strict` is deliberate** — there are no DOM tests, so a missing provider would otherwise silently drop animation; it now throws at render, which the static prerender of `/` and the `/mau/<id>` smoke test catch.
+
+## Template "Đỏ - truyền thống" (`do-truyen-thong`, 2026-11-18)
+- **Custom code template, không dùng `ThemedTemplate`** — thiết kế cần bìa hai cánh, ảnh vòm, coverflow album và lịch trình; `ThemedTemplate` không có section schedule và album mặc định là grid. Đây là mẫu thứ 5 đi theo hướng custom (cùng nhóm `nau-toi-gian`, `do-may-man`…).
+- **Lịch trình đọc thẳng `data.timeline`** (WeddingInfoEditor đã cho thêm/xoá tối đa 6 mục) — không hardcode giờ trong template, để khách sửa ở dashboard.
+- **QR album gate ba lớp**: `plan !== "free"` + có `weddingSlug` + `!hiddenSections.has("albumQr")`. Free ẩn hẳn; Pro/VIP bật tắt bằng toggle có sẵn của dashboard, không thêm UI mới.
+- **Meal lock nằm trong `TemplateRsvpSection`**, không tạo form RSVP mới (card_exp §10) — `meat`/`veg` khoá một lựa chọn, `both` cho chọn; `RsvpWishBlock` đã có cùng quy tắc nên hai hệ không lệch.
+- **Bìa ở chế độ `contained` phải neo `items-start`** — bìa là `absolute inset-0` phủ toàn bộ trang dài; căn giữa sẽ đẩy khối chữ ra ngoài khung điện thoại (lỗi đã gặp khi preview).
+- **Ảnh lazy phải khai báo `width`/`height`** (hộp quà 760×760) — nếu không, ảnh dưới màn hình đầu có chiều cao 0 và layout nhảy khi tải.
+- **Ảnh mockup không dùng làm nền thiệp** (card_exp §2): nền đỏ/vòm/khung đều dựng bằng CSS; chỉ hộp quà là asset thật đã tách nền.
+- **VietQR tự sinh là quyền Pro/VIP, không phải Free** (2026-11-18) — trước đây `GiftModal` sinh VietQR từ số tài khoản cho mọi gói, làm mất giá trị Pro. Nay Free chỉ thấy số tài khoản/lời chúc; Pro/VIP thấy VietQR, trừ bên nào đã tự tải ảnh QR (khi đó ẩn VietQR của bên đó). Quy tắc: `showVietQr = plan !== "free" && có bên chưa có ảnh QR`. Code: `components/invitation/GiftModal.tsx`.
+- **Hiệu ứng cuộn chỉ một kiểu "fade-in up", chạy một lần** theo `animation_guide` — `SectionReveal` bọc từng section; không có ambient motion sau khi hiện, để giữ chất truyền thống trang trọng.
+- **Một ngày chỉ hiện 2 lần** (2026-11-18): khối "Sự kiện" và "Thông tin tiệc cưới". Khối gia đình/hero/footer không lặp ngày. Quy ước này ghi trong `card_exp.md` §20.
+- **Dấu `&` phải mở đầu dòng khi xuống dòng** — dòng phụ huynh được tách tại `&` thành 2 dòng; tên cô dâu chú rể luôn 3 dòng. Ghi trong `card_exp.md` §20.
+
+## Giới hạn lượt xem thiệp Free (2026-11-18)
+- **Đếm MỖI lượt mở**, không đếm unique browser — nghiệp vụ là "mỗi link custom có 30 lần xem tất cả". Trước đó dùng cookie `invite_view_key` nên cùng một máy mở 100 lần vẫn chỉ tính 1, khách không thấy giới hạn.
+- **Phạm vi**: chỉ link cá nhân `/m/<guestSlug>` của gói Free. `/w/<slug>` với gói Free đã bị chặn hẳn ("Link công khai chỉ dành cho gói Pro").
+- **Ngưỡng**: cho 30 lượt, lượt thứ 31 trả `FreeInviteLimit` (vẫn dùng được hộp quà + gửi lời chúc).
+- **Bot/Zalo/Facebook preview không tính** (`isLikelyCrawler`), để share link không đốt lượt.
+- **Fail-open**: thiếu RPC/migration thì trả `null` và cho qua — không làm sập thiệp thật. Vì vậy migration v17 phải chạy mới có hiệu lực.
+- **UI**: dòng nhắc + nút "Nâng cấp lên gói Pro" nằm ngay dưới thanh tìm kiếm trong tab Khách mời, chỉ hiện với gói Free.
+
+## Template capabilities (2026-11-18)
+- **Dashboard chỉ hiện điều khiển cho phần template thật sự có** — nguồn duy nhất `config/template-sections.ts` (`getTemplateSections(templateId)`), gồm `sections`, `couplePhotos`, `hostFirst`. Template mới khai báo ngoại lệ trong `TEMPLATE_OVERRIDES`, không sửa dashboard.
+- **Key `hiddenSections`/`sectionOrder` phải khớp tuyệt đối giữa dashboard và template.** Lỗi đã gặp: template dùng `events`, dashboard dùng `map` → section bị đẩy xuống cuối (order 99) và nút ẩn/hiện vô tác dụng. Key chuẩn: family · calendar · map · dresscode · album · albumQr · gift · rsvp · music.
+- **`hostFirst` do template quyết định** — dashboard chỉ lưu `"groom" | "bride"`; template phải tự đổi thứ tự cột (trước đây `do-truyen-thong` bỏ qua nên nút bấm không có tác dụng).
+- **Một nút nâng cấp chỉ đặt một chỗ** trong mỗi khối; không lặp ở header và không thêm dòng "Chỉ gói Pro/VIP" khi đã có nút.
+
+## Template "Long Phụng" (2026-11-18)
+- **Bảng màu chính thức:** `main #69100F`, `text #E9CE91` (khách cung cấp). Suy ra nền `#2A0605`, card đậm `#4A0B0A`, vàng đậm `#C6A45E`. Ban đầu `color_code.txt` rỗng nên đã sample tạm từ mockup; khi có mã chính thức thì thay toàn bộ — **luôn ưu tiên mã khách đưa hơn màu sample**.
+- **Ruột thiệp nền đỏ trầm**, không dùng kem: mockup pic1–pic4 đều đỏ, và mô tả cũng nói đỏ là màu nền chủ đạo "ở cả bìa lẫn các mảng khối bên trong". Kem chỉ dùng cho chữ.
+- **Charm/Srisakdi bị thay bằng Cormorant Garamond italic**: hai font mô tả yêu cầu không có glyph tiếng Việt; ưu tiên không vỡ dấu hơn là đúng tên font.
+- **Tone `velvet`** được thêm vào bộ tone dùng chung (RSVP, gift, nút nhạc) thay vì hard-code trong template, để mẫu sau dùng lại được; tone `red` cũ giữ nguyên cho `do-truyen-thong`.
+- **Rồng/phượng tách từ một ảnh đen**: dò đường viền bằng cột/hàng sáng >80% chiều cao, rồi `luminance → alpha` để có line-art trong suốt — asset gốc 7,4MB xuống còn ~85KB/ảnh.
+- **Gạch trang trí tiêu đề đặt trên/dưới**, không hai bên: khung preview 390px trên desktop vẫn có viewport 1280 nên `sm:` sẽ bật gạch hai bên và làm tiêu đề xuống dòng.
+
+## Template "Đỏ Rượu Vang" (2026-11-18)
+- **Màu:** `#390202` nền + `#E5E4D0` chữ (khách đưa). Dòng `golder outline: #390202` trong `color_code.txt` là **lỗi copy** (viền trùng màu nền) → dùng champagne `#E5C787` theo mô tả; burgundy `#6E0B14`/`#8F111D` cho nền thẻ.
+- **Font tên:** Playfair italic, không dùng Pattaya (thiếu glyph tiếng Việt, và mockup cũng là serif).
+- **Ruột tối**, không phải trắng kem như mô tả — cả 4 mockup đều nền rượu vang.
+- **Album: coverflow** theo mockup, dù mô tả ghi "editorial grid". Lý do: mockup là ảnh thật của mẫu, và mẫu Long Phụng đã dùng lưới nên cần khác biệt. Nếu khách muốn lưới, đổi 1 component là xong.
+- **Tone `ruby`** dùng chung thay vì hard-code, để mẫu đỏ-trầm sau này tái sử dụng.
+- **Đếm ngược render sau khi mount** (state `now = null` lúc đầu) để không lệch hydration giữa server và client.
+- **Asset hoa:** kiểm tra bằng ảnh ghép trên nền thật trước khi dùng; quy trình key + 3 cái bẫy ghi ở `card_exp.md` §22.23.
+

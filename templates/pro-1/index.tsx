@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Diamond, MapPin } from "lucide-react";
 import { CoupleDisplayName } from "@/components/invitation/CoupleDisplayName";
 import { GiftModal } from "@/components/invitation/GiftModal";
@@ -89,7 +89,7 @@ export default function Pro1Template({
         }}
       >
         {!opened && (
-          <motion.div
+          <m.div
             key="pro1-curtains"
             initial={{ opacity: 1 }}
             exit={{ opacity: 1 }}
@@ -108,7 +108,7 @@ export default function Pro1Template({
             )}
           >
             {/* Left curtain */}
-            <motion.div
+            <m.div
               aria-hidden="true"
               exit={prefersReducedMotion ? { opacity: 0 } : { x: "-100%" }}
               transition={{
@@ -118,7 +118,7 @@ export default function Pro1Template({
               className="absolute inset-y-0 left-0 w-1/2 border-r border-lnd-gold-soft bg-lnd-surface"
             />
             {/* Right curtain */}
-            <motion.div
+            <m.div
               aria-hidden="true"
               exit={prefersReducedMotion ? { opacity: 0 } : { x: "100%" }}
               transition={{
@@ -128,7 +128,7 @@ export default function Pro1Template({
               className="absolute inset-y-0 right-0 w-1/2 border-l border-lnd-gold-soft bg-lnd-surface"
             />
 
-            <motion.button
+            <m.button
               type="button"
               onClick={handleOpen}
               exit={
@@ -193,8 +193,8 @@ export default function Pro1Template({
               >
                 {data.ui.tapHint}
               </span>
-            </motion.button>
-          </motion.div>
+            </m.button>
+          </m.div>
         )}
       </AnimatePresence>
 

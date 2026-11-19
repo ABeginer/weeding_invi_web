@@ -32,6 +32,9 @@
 23. **Auth0 RSC cookie vs Bearer divergence** — `/ops` works with a Bearer token even when the server-side Auth0 session cookie is missing; canvas and preview fetch via Bearer API.
 24. **Designer catalog preview is iframe-based** — only one desktop hover iframe mounted at a time, cache 60s.
 25. **Catalog deep-link / assignment** — integrated with designer template selection.
+26. **Motion v14 migration is build-verified but not browser-verified** — `m` + `LazyMotion(domAnimation)` typechecks, lints, tests and builds, and `/` prerenders through the `strict` provider; the visual behaviour of `AnimatePresence` exit animations (cover open/close) still needs one real browser pass on a device. `domAnimation` covers animate/variants/exit/tap/hover/focus but not `layout`/`drag`; if a template later adds those, switch `MotionProvider` to `domMax`.
+27. **Vườn Ô Liu motion tuning is local only — not committed, not deployed** (2026-11-17). Soft springs, 0.8s doors / 820ms dismiss, 3-tier petals, and a **per-element** olive reveal (`RevealSection` sets `--olive-delay` per `h1–h4/p/label/img` at 95ms steps; the block itself no longer animates) are verified by typecheck/lint/test/build and `/mau/basic-1` 200, but the *feel* has not been reviewed in a browser or on a phone. The stagger runs in a client effect, so SSR HTML has no `--olive-delay` (falls back to `0s`); elements rendered later (e.g. `RsvpWishBlock` after submit) get no delay. Polaroid `rotate` now comes from the variant — re-check the resting −3,5° if the inner div's classes change.
+28. **`do-truyen-thong` verified at 390px and 1280px** (2026-11-18) — cover (no centre seam), compact hero with the full arch photo in the first screen, family block (parents split at `&`, no date), events, party + calendar heart, dress code, timeline, 1.5s auto-advance album, gift box and red RSVP were checked with real CDP screenshots; layout width equals viewport (no horizontal overflow). Album arrows: `display:none` at 390px, `flex` at 1280px; card transform changes within 1.7s (auto-advance confirmed). Gift popup at **gói Free** shows **no VietQR**. Still unverified: the **Pro path** (VietQR visible; custom QR hiding VietQR), 768px, reduced-motion variants, the door-open **sound**, and the reveal timing by eye.
 
 ## Still blocked on the owner
 1. Run `supabase/migration_v16_ops_roles_template_meta.sql`, then grant a `designer` email in `/ops/roles` and verify that account sees only Template + Thiết kế mẫu.
@@ -41,6 +44,7 @@
 5. After deploy, verify the retention cron and CSP.
 6. Confirm the sellable feature set (pricing copy is truthful but a draft).
 7. Decide whether to merge duplicate accounts manually or fund a merge feature.
+8. **Run `supabase/migration_v17_invite_limits.sql`** — rev 2 (2026-11-18) đếm **mỗi lượt mở** qua RPC `track_guest_view_open`; bản cũ đếm unique theo cookie. Until it is applied the free-invite **30-view limit** and the **couple-name lock** are both inactive: `trackGuestView` fails open when the RPC is missing, and the name-lock columns don't exist. Code: `lib/server/invite-limits.ts`, `app/m/[slug]/page.tsx`. See `HANDOFFV3.md` §0ae-old.
 
 ## Deliberately not stored here
 - Secret values, tokens, bank account numbers, real personal emails, and `.env*` contents.

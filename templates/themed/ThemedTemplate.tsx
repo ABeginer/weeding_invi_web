@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import {
   Compass,
   Heart,
@@ -129,7 +129,7 @@ export function ThemedTemplate({
         }}
       >
         {!opened && (
-          <motion.div
+          <m.div
             key={`${theme.id}-cover`}
             initial={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.96 }}
@@ -279,7 +279,7 @@ export function ThemedTemplate({
               </div>
 
               {/* Open Button with Metallic Sweep Shine Overlay */}
-              <motion.button
+              <m.button
                 type="button"
                 whileHover={prefersReducedMotion ? {} : { scale: 1.04 }}
                 whileTap={prefersReducedMotion ? {} : { scale: 0.96 }}
@@ -296,9 +296,9 @@ export function ThemedTemplate({
                 )}
                 <MailOpen className="h-4 w-4" />
                 <span>Mở Thiệp</span>
-              </motion.button>
+              </m.button>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 

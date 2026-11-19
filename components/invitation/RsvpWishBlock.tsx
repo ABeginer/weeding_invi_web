@@ -2,13 +2,16 @@
 
 import * as React from "react";
 import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
-import { submitRsvp, submitWish } from "@/lib/api";
+import { getWishes, submitRsvp, submitWish } from "@/lib/api";
+import { getWishAuthorKey } from "@/lib/wish-author";
 import type { GuestDiet, GuestStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
+import { WishMarquee } from "./WishMarquee";
+import { WishOverlay } from "./WishOverlay";
 import {
   useInvitationContained,
   useInvitationReadOnly,
@@ -78,11 +81,39 @@ export function RsvpWishBlock({
 
   const [name, setName] = React.useState(guestName ?? (isReadOnlyPreview ? (data.ui.defaultGuestName ?? "") : ""));
   const [message, setMessage] = React.useState("");
+  /** Khoá định danh người gửi (link chung) — để mỗi người chỉ có 1 lời chúc. */
+  const [authorKey, setAuthorKey] = React.useState<string | undefined>(undefined);
+  const [hasExistingWish, setHasExistingWish] = React.useState(false);
   const [honeypot, setHoneypot] = React.useState("");
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
 
   const [submitting, setSubmitting] = React.useState<"rsvp" | "wish" | null>(null);
+
+  // Mỗi người một lời chúc: lấy khoá định danh + điền sẵn lời chúc cũ để sửa.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    setAuthorKey(getWishAuthorKey(effectiveWeddingSlug));
+  }, [effectiveWeddingSlug]);
+
+  React.useEffect(() => {
+    if (isReadOnlyPreview || !effectiveWeddingSlug) return;
+    let alive = true;
+    getWishes({
+      weddingSlug: effectiveWeddingSlug,
+      slug: isPublicMode ? undefined : slug,
+      authorKey,
+    })
+      .then((res) => {
+        if (!alive || !res.mine) return;
+        setHasExistingWish(true);
+        setMessage((prev) => (prev.trim().length > 0 ? prev : res.mine!.message));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [authorKey, effectiveWeddingSlug, isPublicMode, isReadOnlyPreview, slug]);
 
   const [rsvpFeedback, setRsvpFeedback] = React.useState<{
     choice: "accepted" | "declined";
@@ -216,6 +247,7 @@ export function RsvpWishBlock({
             songRequest: nextSongRequest,
             rideNeeded: nextRideNeeded,
             wish: trimmedMessage || undefined,
+            authorKey,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
           }
@@ -228,6 +260,7 @@ export function RsvpWishBlock({
             songRequest: nextSongRequest,
             rideNeeded: nextRideNeeded,
             wish: trimmedMessage || undefined,
+            authorKey,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
           },
@@ -293,6 +326,7 @@ export function RsvpWishBlock({
         weddingSlug: effectiveWeddingSlug,
         name: trimmedName,
         message: trimmedMessage,
+        authorKey,
         turnstileToken: turnstileToken ?? undefined,
         website: honeypot,
       });
@@ -459,6 +493,10 @@ export function RsvpWishBlock({
               </div>
             </form>
           )}
+
+          {/* Sổ lưu bút luôn hiển thị, kể cả sau khi đã gửi lời chúc */}
+          <WishOverlay />
+          <WishMarquee tone="olive" className="mt-5" />
         </div>
       </RevealSection>
     );
@@ -766,6 +804,12 @@ export function RsvpWishBlock({
                 className="min-h-[96px] rounded-[19px] border-inv-olive-btn bg-inv-bg px-4 py-3 font-inv-serif text-base text-inv-ink placeholder:text-inv-olive-btn/80 focus-visible:border-inv-olive-deep focus-visible:ring-inv-olive sm:text-sm"
                 rows={3}
               />
+              {hasExistingWish && (
+                <p className="mt-1.5 px-1 font-inv-serif text-[11px] leading-relaxed text-inv-muted">
+                  Bạn đã gửi lời chúc trước đó — sửa lại ở trên rồi gửi để cập nhật
+                  (mỗi người chỉ có một lời chúc).
+                </p>
+              )}
               <div className="mt-1 flex justify-end px-2">
                 <span
                   className={
@@ -839,6 +883,11 @@ export function RsvpWishBlock({
             </div>
           </form>
         )}
+
+        {/* Sổ lưu bút nằm dưới nút "Thay đổi lựa chọn..." và luôn hiển thị,
+            kể cả sau khi khách đã xác nhận tham dự. */}
+        <WishOverlay />
+        <WishMarquee tone="olive" className="mt-5" />
       </div>
     </RevealSection>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Heart, MailOpen, MapPin } from "lucide-react";
 import { CoupleDisplayName } from "@/components/invitation/CoupleDisplayName";
 import { GiftModal } from "@/components/invitation/GiftModal";
@@ -86,7 +86,7 @@ export default function Basic2Template({
         }}
       >
         {!opened && (
-          <motion.div
+          <m.div
             key="basic2-cover"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -107,7 +107,7 @@ export default function Basic2Template({
               opened && "pointer-events-none",
             )}
           >
-            <motion.button
+            <m.button
               type="button"
               onClick={handleOpen}
               exit={
@@ -177,8 +177,8 @@ export default function Basic2Template({
                 <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>{data.ui.tapHint}</span>
               </span>
-            </motion.button>
-          </motion.div>
+            </m.button>
+          </m.div>
         )}
       </AnimatePresence>
 

@@ -25,6 +25,8 @@ interface TemplateDemoViewerProps {
   userEmail?: string | null;
   /** Chế độ nhúng cho card/popup trang chủ: chỉ render nội dung thiệp, không toolbar. */
   embed?: boolean;
+  /** Mở sẵn thiệp (bỏ qua bìa) — tiện cho QA/chụp ảnh, cùng quy ước với /tao-thiep/preview. */
+  initialOpened?: boolean;
 }
 
 function getDemoPlanBadgeClasses(plan: WeddingPlan): string {
@@ -42,11 +44,12 @@ export function TemplateDemoViewer({
   isAuthenticated,
   userEmail = null,
   embed = false,
+  initialOpened = false,
 }: TemplateDemoViewerProps) {
   const router = useRouter();
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
   const [viewport, setViewport] = React.useState<DemoViewportMode>("phone");
-  const [isOpened, setIsOpened] = React.useState(false);
+  const [isOpened, setIsOpened] = React.useState(initialOpened);
   const [userPlan, setUserPlan] = React.useState<WeddingPlan>("free");
   const [upgradeOpen, setUpgradeOpen] = React.useState(false);
   const [paymentPlan, setPaymentPlan] = React.useState<Exclude<WeddingPlan, "free"> | null>(null);

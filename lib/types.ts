@@ -154,6 +154,8 @@ export interface Wish {
   name: string;
   message: string;
   createdAt: string;
+  /** Đã được chủ thiệp duyệt để hiện lên thiệp chưa. */
+  approved?: boolean;
 }
 
 export interface EventGuestCount {

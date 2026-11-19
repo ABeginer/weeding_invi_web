@@ -25,6 +25,7 @@ import {
   ApiError,
   buildGuestLink,
   deleteGuest,
+  deleteGuests,
   listGifts,
   listGuests,
   listGuestsPage,
@@ -115,6 +116,8 @@ export function GuestTable({
 
   const [deletingGuest, setDeletingGuest] = React.useState<Guest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const [bulkDeleting, setBulkDeleting] = React.useState(false);
 
   const loadGuests = React.useCallback(async () => {
     setLoading(true);
@@ -480,13 +483,46 @@ export function GuestTable({
     }
   };
 
+  const handleConfirmBulkDelete = async () => {
+    if (selectedGuestIds.length === 0) return;
+    const ids = selectedGuestIds;
+    setBulkDeleting(true);
+    try {
+      const { deleted } = await deleteGuests(weddingId, ids);
+      setGuests((prev) => prev.filter((item) => !ids.includes(item.id)));
+      setTotal((prev) => Math.max(0, prev - deleted));
+      setSelectedGuestIds([]);
+      setBulkDeleteOpen(false);
+      showToast(`Đã xóa ${deleted} khách mời`, "success");
+      onGuestsChanged?.();
+      // Xóa hết khách của trang hiện tại thì lùi về trang trước.
+      if (guests.length <= deleted && page > 1) {
+        setPage((prev) => Math.max(1, prev - 1));
+      } else {
+        void loadGuests();
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setBulkDeleteOpen(false);
+        window.location.assign("/auth/login");
+        return;
+      }
+      showToast(
+        err instanceof Error ? err.message : "Không thể xóa khách mời.",
+        "error",
+      );
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const renderAssignedEventsSummary = (guest: Guest) => {
     const resolved = getResolvedEvents(guest);
     return (
       <button
         type="button"
         onClick={() => openAssignDialog(guest)}
-        className="group inline-flex cursor-pointer flex-wrap items-center gap-1 rounded-lg border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className="group inline-flex max-w-[220px] cursor-pointer flex-wrap items-center gap-1 rounded-lg border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         title="Nhấn để phân bổ lễ mời"
       >
         {resolved.length === 0 ? (
@@ -498,7 +534,7 @@ export function GuestTable({
           resolved.map((evt) => (
             <span
               key={evt.id}
-              className="shrink-0 whitespace-nowrap rounded-full border border-accent/40 bg-accent-soft px-2.5 py-0.5 text-[11px] font-medium text-text"
+              className="max-w-full truncate rounded-full border border-accent/40 bg-accent-soft px-2.5 py-0.5 text-[11px] font-medium text-text"
             >
               {evt.title}
             </span>
@@ -643,6 +679,23 @@ export function GuestTable({
         </div>
       </Card>
 
+      {/* Gói Free: mỗi link thiệp custom chỉ được mở 30 lượt */}
+      {plan === "free" && (
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-border bg-surface-muted px-3.5 py-2.5">
+          <p className="text-[11px] leading-relaxed text-fg-muted sm:text-xs">
+            Mỗi link thiệp custom có{" "}
+            <strong className="font-semibold text-fg">30 lần xem</strong> tất cả.
+            Nâng cấp lên Pro để miễn giới hạn này.
+          </p>
+          <Link
+            href="/#bang-gia"
+            className="inline-flex h-8 shrink-0 items-center rounded-lg bg-accent px-3 text-[11px] font-semibold text-accent-fg transition-opacity hover:opacity-90"
+          >
+            Nâng cấp lên gói Pro
+          </Link>
+        </div>
+      )}
+
       {/* Collapsible song requests */}
       {songRequests.length > 0 && (
         <details className="group rounded-xl border border-border bg-surface p-4">
@@ -675,13 +728,22 @@ export function GuestTable({
           <span className="text-xs font-medium text-text sm:text-sm">
             Đã chọn <strong>{selectedGuestIds.length}</strong> khách mời
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSelectedGuestIds([])}
             >
               Bỏ chọn
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+              aria-label="Xóa khách mời đã chọn"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              <span>Xóa</span>
             </Button>
             <Button
               variant="primary"
@@ -760,12 +822,14 @@ export function GuestTable({
                         className="h-4 w-4 rounded border-border accent-accent"
                       />
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3">Khách mời</th>
-                    <th className="whitespace-nowrap px-4 py-3">Trạng thái</th>
-                    <th className="whitespace-nowrap px-4 py-3">Bài hát yêu cầu</th>
-                    <th className="whitespace-nowrap px-4 py-3">Các lễ được mời</th>
-                    <th className="whitespace-nowrap px-4 py-3">Phản hồi lúc</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-right">Thao tác</th>
+                    <th className="whitespace-nowrap px-3 py-3">Khách mời</th>
+                    <th className="whitespace-nowrap px-3 py-3">Trạng thái</th>
+                    <th className="whitespace-nowrap px-3 py-3">Bài hát</th>
+                    <th className="whitespace-nowrap px-3 py-3">Lễ mời</th>
+                    <th className="hidden whitespace-nowrap px-3 py-3 xl:table-cell">Phản hồi</th>
+                    <th className="sticky right-0 z-10 border-l border-border bg-surface-muted px-3 py-3 text-right">
+                      Thao tác
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/80">
@@ -773,8 +837,8 @@ export function GuestTable({
                     const isCopied = copiedId === guest.id;
                     const isInviteCopied = copiedInviteId === guest.id;
                     return (
-                      <tr key={guest.id} className="hover:bg-surface-muted/45">
-                        <td className="w-10 px-4 py-3.5">
+                      <tr key={guest.id} className="group hover:bg-surface-muted/45">
+                        <td className="w-10 px-3 py-3.5">
                           <input
                             type="checkbox"
                             checked={selectedGuestIds.includes(guest.id)}
@@ -783,34 +847,48 @@ export function GuestTable({
                             className="h-4 w-4 rounded border-border accent-accent"
                           />
                         </td>
-                        <td className="min-w-[160px] px-4 py-3.5">
-                          <div className="font-medium text-fg">{guest.name}</div>
+                        <td className="min-w-[140px] px-3 py-3.5">
+                          <div
+                            className="max-w-[180px] truncate font-medium text-fg"
+                            title={guest.name}
+                          >
+                            {guest.name}
+                          </div>
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3.5">
+                        <td className="whitespace-nowrap px-3 py-3.5">
                           <StatusBadge status={guest.status} />
                           {renderGuestExtras(guest)}
                         </td>
-                        <td className="max-w-[150px] px-4 py-3.5 text-xs text-fg">
+                        <td className="max-w-[140px] px-3 py-3.5 text-xs text-fg">
                           {guest.songRequest ? (
-                            <span className="block truncate" title={guest.songRequest}>
+                            <span
+                              className="block max-w-[140px] truncate"
+                              title={guest.songRequest}
+                            >
                               {guest.songRequest}
                             </span>
                           ) : (
                             <span className="text-fg-muted">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-3.5">
                           {renderAssignedEventsSummary(guest)}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3.5 text-xs text-fg-muted">
+                        <td className="hidden whitespace-nowrap px-3 py-3.5 text-xs text-fg-muted xl:table-cell">
                           {formatDateTimeVi(guest.respondedAt)}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3.5">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="sticky right-0 z-10 border-l border-border bg-surface px-3 py-3.5 group-hover:bg-surface-muted/45">
+                          <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="outline"
-                              size="sm"
+                              size="icon"
                               onClick={() => handleCopyLink(guest)}
+                              title={isCopied ? "Đã chép link thiệp" : "Chép link thiệp"}
+                              aria-label={
+                                isCopied
+                                  ? "Đã chép link thiệp"
+                                  : `Chép link thiệp của ${guest.name}`
+                              }
                             >
                               {isCopied ? (
                                 <Check
@@ -820,12 +898,19 @@ export function GuestTable({
                               ) : (
                                 <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                               )}
-                              <span>{isCopied ? "Đã chép" : "Chép link"}</span>
                             </Button>
                             <Button
                               variant="secondary"
-                              size="sm"
+                              size="icon"
                               onClick={() => handleCopyInvite(guest)}
+                              title={
+                                isInviteCopied ? "Đã chép lời mời" : "Chép lời mời"
+                              }
+                              aria-label={
+                                isInviteCopied
+                                  ? "Đã chép lời mời"
+                                  : `Chép lời mời cho ${guest.name}`
+                              }
                             >
                               {isInviteCopied ? (
                                 <Check
@@ -838,7 +923,6 @@ export function GuestTable({
                                   aria-hidden="true"
                                 />
                               )}
-                              <span>{isInviteCopied ? "Đã chép" : "Chép lời mời"}</span>
                             </Button>
                             <a
                               href={`/m/${guest.slug}`}
@@ -1314,6 +1398,34 @@ export function GuestTable({
             onClick={handleConfirmDelete}
           >
             Xóa khách mời
+          </Button>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={bulkDeleteOpen}
+        onClose={() => !bulkDeleting && setBulkDeleteOpen(false)}
+        title="Xác nhận xóa khách mời"
+        description={
+          selectedGuestIds.length > 0
+            ? `Bạn có chắc muốn xóa ${selectedGuestIds.length} khách mời đã chọn? Link thiệp riêng của những khách này sẽ không còn mở được nữa.`
+            : undefined
+        }
+      >
+        <div className="flex justify-end gap-2 pt-2">
+          <Button
+            variant="outline"
+            onClick={() => setBulkDeleteOpen(false)}
+            disabled={bulkDeleting}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="danger"
+            loading={bulkDeleting}
+            onClick={handleConfirmBulkDelete}
+          >
+            Xóa {selectedGuestIds.length} khách mời
           </Button>
         </div>
       </Dialog>

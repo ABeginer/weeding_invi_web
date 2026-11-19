@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "motion/react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -92,7 +92,7 @@ function Cover({
       }}
     >
       <HeartPetalField />
-      <motion.div
+      <m.div
         initial={false}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -162,7 +162,7 @@ function Cover({
           Mở thiệp
         </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -950,7 +950,7 @@ export default function DoMayManTemplate(props: WeddingTemplateProps) {
     >
       <AnimatePresence>
         {!opened && (
-          <motion.div
+          <m.div
             key="do-may-cover"
             className={cn(contained ? "absolute inset-0 z-50" : "fixed inset-0 z-50")}
             initial={{ opacity: 1 }}
@@ -958,7 +958,7 @@ export default function DoMayManTemplate(props: WeddingTemplateProps) {
             transition={{ duration: prefersReduced ? 0 : 0.45 }}
           >
             <Cover data={data} guestName={displayGuest} onOpen={open} />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "motion/react";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
 import { CoupleDisplayName } from "./CoupleDisplayName";
@@ -49,7 +49,7 @@ export function Hero({ guestName }: HeroProps) {
         "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-8 md:text-left",
       )}
     >
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={
@@ -107,9 +107,9 @@ export function Hero({ guestName }: HeroProps) {
           </span>
           <span>{dateParts.dotDate}</span>
         </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={
@@ -142,7 +142,7 @@ export function Hero({ guestName }: HeroProps) {
             <TemplatePhotoPlaceholder />
           )}
         </div>
-      </motion.div>
+      </m.div>
     </section>
   );
 }

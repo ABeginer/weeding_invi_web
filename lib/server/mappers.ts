@@ -56,8 +56,10 @@ export interface WishRow {
   id: string;
   wedding_id: string;
   guest_id: string | null;
+  author_key?: string | null;
   name: string;
   message: string;
+  approved?: boolean | null;
   created_at: string;
 }
 
@@ -160,6 +162,7 @@ export function toWish(row: WishRow): Wish {
     name: row.name,
     message: row.message,
     createdAt: row.created_at,
+    approved: row.approved === true,
   };
 }
 

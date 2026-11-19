@@ -100,12 +100,6 @@ export function MusicEditor({
             Chọn một bài có sẵn hoặc tải file MP3 riêng.
           </p>
         </div>
-        {!isPro && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent-soft px-2.5 py-1 text-[10px] font-semibold text-accent-text">
-            <Lock className="h-3 w-3" />
-            Nâng cấp lên Pro để upload file nhạc
-          </span>
-        )}
       </div>
 
       <div className="grid gap-2 sm:grid-cols-3">
@@ -146,7 +140,7 @@ export function MusicEditor({
           <div>
             <p className="text-xs font-semibold text-fg">Nhạc riêng của bạn</p>
             <p className="mt-0.5 text-[10px] text-fg-muted">
-              MP3, tối đa 8 MB. Chỉ gói Pro/VIP.
+              MP3, tối đa 8 MB.
             </p>
           </div>
           {isPro ? (

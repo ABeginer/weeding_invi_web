@@ -204,6 +204,8 @@ export interface SubmitRsvpInput {
   wish?: string;
   turnstileToken?: string;
   website?: string;
+  /** Khoá định danh người gửi cho link chung (uuid lưu ở localStorage). */
+  authorKey?: string;
 }
 
 export interface SubmitRsvpResponse {
@@ -258,10 +260,71 @@ export async function submitWish(input: {
   weddingSlug?: string;
   name: string;
   message: string;
+  /** Khoá định danh người gửi cho link chung (uuid lưu ở localStorage). */
+  authorKey?: string;
   turnstileToken?: string;
   website?: string;
-}): Promise<void> {
-  await request("/api/wishes", post(input));
+}): Promise<{ updated: boolean }> {
+  const res = await request<{ ok: boolean; updated?: boolean }>("/api/wishes", post(input));
+  return { updated: res.updated === true };
+}
+
+export type PublicWish = { id: string; name: string; message: string };
+
+/** Lời chúc đã được chủ thiệp duyệt + lời chúc của chính người xem. */
+export async function getWishes(params: {
+  weddingSlug?: string;
+  slug?: string;
+  authorKey?: string;
+}): Promise<{
+  enabled?: boolean;
+  wishes?: PublicWish[];
+  mine?: { name: string; message: string } | null;
+}> {
+  const qs = new URLSearchParams();
+  if (params.weddingSlug) qs.set("weddingSlug", params.weddingSlug);
+  if (params.slug) qs.set("slug", params.slug);
+  if (params.authorKey) qs.set("authorKey", params.authorKey);
+  return request<{
+    enabled?: boolean;
+    wishes?: PublicWish[];
+    mine?: { name: string; message: string } | null;
+  }>(`/api/wishes?${qs.toString()}`);
+}
+
+/** Duyệt / bỏ duyệt một lời chúc để hiện lên thiệp. */
+export function setWishApproved(
+  weddingId: string,
+  wishId: string,
+  approved: boolean,
+): Promise<Wish> {
+  return authRequest<Wish>(`/api/weddings/${encodeURIComponent(weddingId)}/wishes`, patch({ id: wishId, approved }));
+}
+
+/** Duyệt tự động (duyệt tất cả + lời chúc sau tự lên thiệp) hoặc về duyệt tay. */
+export function setWishApprovalMode(
+  weddingId: string,
+  mode: "manual" | "auto",
+): Promise<{ mode: "manual" | "auto"; approvedCount: number }> {
+  return authRequest<{ mode: "manual" | "auto"; approvedCount: number }>(
+    `/api/weddings/${encodeURIComponent(weddingId)}/wishes`,
+    post({ action: mode }),
+  );
+}
+
+/** Xoá lời chúc (1 hoặc nhiều). */
+export function deleteWishes(
+  weddingId: string,
+  ids: string[],
+): Promise<{ deleted: number }> {
+  return authRequest<{ deleted: number }>(
+    `/api/weddings/${encodeURIComponent(weddingId)}/wishes`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    },
+  );
 }
 
 export function syncMe(): Promise<UserProfile> {
@@ -519,6 +582,20 @@ export async function deleteGuest(weddingId: string, guestId: string): Promise<v
   await authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/${encodeURIComponent(guestId)}`,
     { method: "DELETE" },
+  );
+}
+
+/** Xóa nhiều khách mời trong một request (thanh thao tác hàng loạt). */
+export async function deleteGuests(
+  weddingId: string,
+  guestIds: string[],
+): Promise<{ deleted: number }> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/guests/bulk`,
+    {
+      method: "DELETE",
+      body: JSON.stringify({ ids: guestIds }),
+    },
   );
 }
 

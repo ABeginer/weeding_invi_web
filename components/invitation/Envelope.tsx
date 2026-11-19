@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import {
   useInvitationContained,
@@ -15,7 +15,9 @@ interface EnvelopeProps {
   contained?: boolean;
 }
 
-const DOOR_EASE = [0.22, 1, 0.36, 1] as const;
+const DOOR_EASE = [0.16, 1, 0.3, 1] as const;
+/** Cửa phải đi sau cửa trái một nhịp ngắn để không trượt đều như máy. */
+const DOOR_STAGGER = 0.08;
 
 function BotanicalLineArt() {
   return (
@@ -69,7 +71,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
       }
       aria-label="Thiệp mời cưới"
     >
-      <motion.div
+      <m.div
         aria-hidden="true"
         initial={false}
         animate={
@@ -82,7 +84,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         transition={
           prefersReducedMotion
             ? { duration: 0.01 }
-            : { duration: 0.9, ease: DOOR_EASE }
+            : { duration: 0.8, ease: DOOR_EASE }
         }
         className="pointer-events-none absolute inset-y-0 left-0 z-20 w-[63.2%] will-change-transform"
       >
@@ -120,9 +122,9 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
             className="h-full w-full select-none object-contain drop-shadow-[2px_5px_10px_color-mix(in_srgb,var(--inv-olive-deep)_42%,transparent)]"
           />
         </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div
+      <m.div
         aria-hidden="true"
         initial={false}
         animate={
@@ -135,7 +137,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         transition={
           prefersReducedMotion
             ? { duration: 0.01 }
-            : { duration: 0.9, ease: DOOR_EASE }
+            : { duration: 0.8, delay: DOOR_STAGGER, ease: DOOR_EASE }
         }
         className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[50%] overflow-hidden bg-inv-paper will-change-transform"
         style={{
@@ -146,7 +148,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         <div className="pointer-events-none absolute inset-y-0 right-0 w-[200%]">
           <BotanicalLineArt />
         </div>
-      </motion.div>
+      </m.div>
 
       <button
         type="button"
@@ -158,7 +160,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
           isContained ? "pt-[14%] pb-[9%]" : "pt-[13dvh] pb-[6dvh]",
         )}
       >
-        <motion.div
+        <m.div
           animate={opening ? { opacity: 0, y: -6 } : { opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
           className={cn(
@@ -181,9 +183,9 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
           >
             {displayName}
           </p>
-        </motion.div>
+        </m.div>
 
-        <motion.span
+        <m.span
           animate={opening ? { opacity: 0 } : { opacity: 1 }}
           transition={{ duration: 0.25 }}
           className="w-full"
@@ -191,7 +193,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
           <span className="inline-block font-inv-serif text-[12px] tracking-[0.14em] uppercase text-inv-tap-hint [text-shadow:0_1px_4px_rgba(255,255,255,0.95),0_0_10px_rgba(255,255,255,0.85)] motion-safe:animate-[inv-tap-hint-pulse_2.4s_ease-in-out_infinite]">
             {data.ui.tapHint}
           </span>
-        </motion.span>
+        </m.span>
       </button>
     </div>
   );
