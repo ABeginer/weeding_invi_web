@@ -3,6 +3,28 @@ import { UPLOAD_ALLOWED_MIME_TYPES, UPLOAD_MAX_BYTES } from "@/config/plans";
 const MAX_DIMENSION = 1280;
 const WEBP_QUALITY = 0.78;
 
+export interface CompressOptions {
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+}
+
+export interface CompressResult {
+  file: File;
+  originalSize: number;
+  compressedSize: number;
+  savedText: string;
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes <= 0) return "0 KB";
+  if (bytes >= 1024 * 1024) {
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1).replace(".", ",")} MB`;
+  }
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
 export function validateImageFile(file: File): string | null {
   if (!(UPLOAD_ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)) {
     return "Chỉ hỗ trợ định dạng ảnh JPG, PNG hoặc WebP.";
@@ -40,6 +62,106 @@ function canvasToBlob(
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), mimeType, quality);
   });
+}
+
+/**
+ * Client-side Automatic WebP Image Compression utility
+ */
+export async function compressImageToWebP(
+  file: File,
+  options: CompressOptions = {},
+): Promise<CompressResult> {
+  const { maxWidth = 1600, maxHeight = 1600, quality = 0.82 } = options;
+  const originalSize = file.size;
+
+  let srcW = 0;
+  let srcH = 0;
+  let drawable: ImageBitmap | HTMLImageElement;
+
+  if (typeof window !== "undefined" && "createImageBitmap" in window) {
+    try {
+      const bitmap = await createImageBitmap(file);
+      srcW = bitmap.width;
+      srcH = bitmap.height;
+      drawable = bitmap;
+    } catch {
+      const img = await loadImageElement(file);
+      srcW = img.naturalWidth || img.width;
+      srcH = img.naturalHeight || img.height;
+      drawable = img;
+    }
+  } else {
+    const img = await loadImageElement(file);
+    srcW = img.naturalWidth || img.width;
+    srcH = img.naturalHeight || img.height;
+    drawable = img;
+  }
+
+  if (!srcW || !srcH) {
+    throw new Error("Không thể đọc kích thước của hình ảnh.");
+  }
+
+  let targetW = srcW;
+  let targetH = srcH;
+  const longerSide = Math.max(srcW, srcH);
+  const maxLimit = Math.max(maxWidth, maxHeight);
+
+  if (longerSide > maxLimit) {
+    const scale = maxLimit / longerSide;
+    targetW = Math.max(1, Math.round(srcW * scale));
+    targetH = Math.max(1, Math.round(srcH * scale));
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("Trình duyệt không hỗ trợ Canvas để nén ảnh.");
+  }
+
+  ctx.drawImage(drawable, 0, 0, targetW, targetH);
+
+  if ("close" in drawable && typeof drawable.close === "function") {
+    drawable.close();
+  }
+
+  let blob = await canvasToBlob(canvas, "image/webp", quality);
+  let outputType = "image/webp";
+  let outputExt = "webp";
+
+  if (!blob || blob.type !== "image/webp") {
+    blob = await canvasToBlob(canvas, "image/jpeg", 0.85);
+    outputType = "image/jpeg";
+    outputExt = "jpg";
+  }
+
+  if (!blob) {
+    throw new Error("Không thể xuất file nén.");
+  }
+
+  if (blob.size >= originalSize) {
+    return {
+      file,
+      originalSize,
+      compressedSize: originalSize,
+      savedText: `Giữ nguyên kích thước gốc: ${formatFileSize(originalSize)}`,
+    };
+  }
+
+  const baseName = file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+  const compressedFile = new File([blob], `${baseName}.${outputExt}`, {
+    type: outputType,
+    lastModified: Date.now(),
+  });
+
+  return {
+    file: compressedFile,
+    originalSize,
+    compressedSize: blob.size,
+    savedText: `Đã tối ưu ${formatFileSize(originalSize)} → ${formatFileSize(blob.size)} (${outputExt.toUpperCase()})`,
+  };
 }
 
 /**
@@ -174,4 +296,3 @@ export async function createOgCoverImage(file: File): Promise<File> {
     lastModified: Date.now(),
   });
 }
-

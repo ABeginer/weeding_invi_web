@@ -2,20 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Mail, Smartphone, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, MessageCircle, Sparkles } from "lucide-react";
 import { MusicToggle } from "@/components/demo/music-toggle";
-import { LANDING_COPY } from "@/config/landing";
 import { SITE_LINKS } from "@/config/site";
 import { getDemoTemplateData } from "@/content/demo";
 import { HERO_PREVIEW_TEMPLATES } from "@/templates/registry";
 import { TemplatePreviewRenderer } from "@/templates/TemplatePreviewRenderer";
 import { PhoneFrame } from "./phone-frame";
-
-const TRUST_BADGES = [
-  { icon: Sparkles, label: "Không giới hạn lượt mở thiệp" },
-  { icon: Mail, label: "Tự động đổi xưng hô lễ phép" },
-  { icon: Smartphone, label: "Chạm & mở phong bì mượt mà" },
-];
 
 export function HeroSection() {
   const [isOpened, setIsOpened] = React.useState(false);
@@ -30,104 +23,133 @@ export function HeroSection() {
   const createHref = `${SITE_LINKS.createWedding}?template=${encodeURIComponent(
     activeTemplate.id,
   )}`;
-  const copy = LANDING_COPY.hero;
 
   return (
-    <section className="relative overflow-hidden border-b border-border bg-bg">
-      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-start gap-7 px-4 pt-6 pb-8 sm:px-6 md:grid-cols-12 md:gap-8 md:pt-8 md:pb-10 lg:gap-10 lg:pt-10">
-        <div className="space-y-4 text-center md:col-span-7 md:pt-1 md:text-left">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1">
-            <span
-              className="h-1.5 w-1.5 animate-pulse rounded-full bg-success-fg"
-              aria-hidden="true"
-            />
-            <span className="text-[12px] font-semibold tracking-[0.12em] text-accent-text uppercase sm:text-[13px]">
-              {copy.eyebrow}
-            </span>
-          </div>
+    <section className="relative overflow-hidden border-b border-[#E8E2D9] bg-[#FAF8F5] py-14 sm:py-20 lg:py-24">
+      {/* Decorative ambient gradient */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[520px] w-[520px] rounded-full bg-[#B89B72]/10 blur-[120px]" />
+        <div className="absolute top-1/3 -right-20 h-[380px] w-[380px] rounded-full bg-[#7A1C24]/5 blur-[100px]" />
+      </div>
 
-          <div className="relative">
-            <h1 className="font-display text-[clamp(28px,5.2vw,42px)] leading-[1.1] font-semibold tracking-tight text-accent-text">
-              {copy.title}
-            </h1>
-            <div
-              aria-hidden="true"
-              className="hero-hairline mt-3 h-[1.5px] rounded-full bg-accent/70"
-            />
-          </div>
-
-          <p className="mx-auto max-w-lg text-sm leading-relaxed text-text sm:text-base md:mx-0">
-            {copy.description}
-          </p>
-
-          <div className="flex flex-col items-stretch justify-center gap-2.5 pt-0.5 sm:flex-row sm:items-center md:justify-start">
-            <Link
-              href={createHref}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-accent px-6 text-xs font-semibold text-accent-fg shadow-md transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:h-11 sm:text-sm"
-            >
-              <span>{copy.primaryCta}</span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-
-            <Link
-              href={SITE_LINKS.templates}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border bg-transparent px-5 text-xs font-medium text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:h-11 sm:text-sm"
-            >
-              <span>{copy.secondaryCta}</span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-
-          <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-1 text-[11px] text-text-muted md:justify-start sm:text-xs">
-            {TRUST_BADGES.map((badge) => (
-              <li key={badge.label} className="inline-flex items-center gap-1.5">
-                <badge.icon className="h-3.5 w-3.5 text-accent-text" aria-hidden="true" />
-                {badge.label}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="relative flex flex-col items-center md:col-span-5 md:items-end">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-            <div className="absolute left-1/2 top-6 h-72 w-72 -translate-x-1/2 rounded-full bg-accent/15 blur-3xl" />
-            <div className="absolute left-1/3 top-40 h-56 w-56 rounded-full bg-accent-soft blur-3xl" />
-            <div className="absolute right-2 top-24 h-32 w-32 rounded-full bg-warning-soft/70 blur-2xl" />
-            <div className="absolute left-6 top-16 h-1.5 w-1.5 rounded-full bg-accent/60" />
-            <div className="absolute right-10 top-8 h-1 w-1 rounded-full bg-accent/50" />
-            <div className="absolute bottom-24 left-10 h-1 w-1 rounded-full bg-accent/40" />
-          </div>
-
-          <div className="flex w-full max-w-[352px] flex-col items-center md:w-auto md:max-w-none">
-            <PhoneFrame
-              scrollRef={phoneScrollRef}
-              enableFloat
-              lockedScroll={!isOpened}
-              desktopOffsetPx={116}
-            >
-              <TemplatePreviewRenderer
-                key={activeTemplate.id}
-                templateId={activeTemplate.id}
-                data={demoData}
-                mode="demo"
-                contained
-                viewport="phone"
-                isOpened={isOpened}
-                onOpenedChange={setIsOpened}
-                externalMusicControl
-              />
-            </PhoneFrame>
-
-            <div className="mt-2.5 flex w-full flex-wrap items-center justify-between gap-2 px-1">
-              <span className="text-[11px] text-text-muted">
-                {copy.phoneHelperHint}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
+          {/* Left Column: Editorial Copy */}
+          <div className="space-y-6 text-center lg:col-span-7 lg:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#E8E2D9] bg-white/80 px-4 py-1.5 shadow-2xs backdrop-blur-xs">
+              <Sparkles className="h-3.5 w-3.5 text-[#B89B72]" aria-hidden="true" />
+              <span className="text-[12px] font-medium tracking-wide text-[#7A1C24] sm:text-[13px]">
+                Nền tảng thiệp cưới điện tử tinh tế
               </span>
-              <MusicToggle
-                src={activeTemplate.defaultMusic.src}
-                title={activeTemplate.defaultMusic.title}
-                resetKey={activeTemplate.id}
-                compact
-              />
+            </div>
+
+            <h1 className="font-serif text-4xl leading-[1.12] font-normal tracking-tight text-[#1F1D1A] sm:text-5xl lg:text-[3.5rem]">
+              Thiệp cưới online <span className="font-serif italic font-normal text-[#7A1C24]">tinh tế</span> —{" "}
+              Chạm đúng <span className="font-serif italic font-normal text-[#B89B72]">lễ nghĩa</span> từng vị khách
+            </h1>
+
+            <p className="mx-auto max-w-xl text-base leading-relaxed text-[#6B655E] sm:text-lg lg:mx-0">
+              Tự động cá nhân hóa xưng hô theo từng vai vế gia đình, tối ưu hiển thị tin nhắn xem trước trên Zalo và theo dõi phản hồi tham dự tức thì.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col items-stretch justify-center gap-3 pt-2 sm:flex-row sm:items-center lg:justify-start">
+              <Link
+                href={createHref}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#7A1C24] px-8 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#5E141B] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF8F5]"
+              >
+                <span>Tạo thiệp miễn phí</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+
+              <Link
+                href={SITE_LINKS.templates}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[#E8E2D9] bg-white px-7 text-sm font-medium text-[#1F1D1A] transition-colors hover:bg-[#F4EFEA] hover:border-[#B89B72]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24]"
+              >
+                <span>Xem bộ sưu tập mẫu</span>
+              </Link>
+            </div>
+
+            {/* Trust Micro-copy */}
+            <div className="pt-2">
+              <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-[#6B655E] lg:justify-start">
+                <span>Miễn phí tạo & sửa</span>
+                <span className="text-[#B89B72]" aria-hidden="true">·</span>
+                <span>Không giới hạn lượt xem</span>
+                <span className="text-[#B89B72]" aria-hidden="true">·</span>
+                <span>Tối ưu hiển thị Zalo</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Right Column: Phone Frame + Floating Editorial Cards */}
+          <div className="relative flex flex-col items-center lg:col-span-5 lg:items-end">
+            <div className="relative flex w-full max-w-[340px] flex-col items-center sm:max-w-[360px]">
+              {/* Floating Card 1: Top-Left (Zalo Message Preview) */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -top-4 -left-12 z-20 hidden md:flex items-center gap-3 rounded-2xl border border-[#E8E2D9] bg-white/95 p-3.5 shadow-sm backdrop-blur-md transition-transform hover:-translate-y-0.5 duration-300"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0068FF]/10 text-[#0068FF]">
+                  <MessageCircle className="h-4 w-4" />
+                </div>
+                <div className="text-left text-xs">
+                  <p className="font-semibold text-[#1F1D1A]">Trân trọng kính mời:</p>
+                  <p className="text-[#6B655E]">Chú Bảy cùng Gia đình</p>
+                </div>
+              </div>
+
+              {/* Floating Card 2: Bottom-Right (RSVP Toast) */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -bottom-3 -right-10 z-20 hidden md:flex items-center gap-3 rounded-2xl border border-[#E8E2D9] bg-white/95 p-3.5 shadow-sm backdrop-blur-md transition-transform hover:-translate-y-0.5 duration-300"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+                <div className="text-left text-xs">
+                  <p className="font-semibold text-[#1F1D1A]">Bạn Thanh Mai đã xác nhận</p>
+                  <p className="text-[#6B655E]">2 người · Ăn mặn</p>
+                </div>
+              </div>
+
+              {/* Interactive Phone Frame */}
+              <div className="w-full">
+                <PhoneFrame
+                  scrollRef={phoneScrollRef}
+                  enableFloat
+                  lockedScroll={!isOpened}
+                  desktopOffsetPx={60}
+                >
+                  <TemplatePreviewRenderer
+                    key={activeTemplate.id}
+                    templateId={activeTemplate.id}
+                    data={demoData}
+                    mode="demo"
+                    contained
+                    viewport="phone"
+                    isOpened={isOpened}
+                    onOpenedChange={setIsOpened}
+                    externalMusicControl
+                  />
+                </PhoneFrame>
+              </div>
+
+              {/* Phone Controls & Audio */}
+              <div className="mt-3 flex w-full flex-wrap items-center justify-between gap-2 px-1">
+                <span className="text-[11px] text-[#6B655E]">
+                  Chạm vào phong bì để trải nghiệm thiệp
+                </span>
+                <MusicToggle
+                  src={activeTemplate.defaultMusic.src}
+                  title={activeTemplate.defaultMusic.title}
+                  resetKey={activeTemplate.id}
+                  compact
+                />
+              </div>
             </div>
           </div>
         </div>

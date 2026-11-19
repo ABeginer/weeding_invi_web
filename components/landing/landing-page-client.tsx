@@ -14,7 +14,6 @@ import { LandingNavbar } from "./navbar";
 import { PaymentTransferModal } from "./pricing-modals";
 import { PricingTable } from "./pricing-table";
 import { VIP_SALES_ENABLED } from "@/config/pricing";
-import { SocialProofMarquee } from "./social-proof-marquee";
 import { TemplateShowcase } from "./template-showcase";
 import { ToolsPreviewSection } from "./tools-preview";
 
@@ -107,11 +106,10 @@ export function LandingPageClient({
   }, [adoptAccountTheme, resolvedAuthenticated, resolvedEmail, setSessionInfo]);
 
   return (
-    <div className="landing-theme min-h-screen-dvh bg-bg text-text overflow-x-hidden">
+    <div className="landing-theme min-h-screen-dvh bg-[#FAF8F5] text-[#1F1D1A] overflow-x-hidden">
       <LandingNavbar isAuthenticated={resolvedAuthenticated} userEmail={resolvedEmail} />
       <main>
         <HeroSection />
-        <SocialProofMarquee />
         <TemplateShowcase />
         <InteractiveFeatureBento />
         <ToolsPreviewSection />

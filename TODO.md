@@ -4,11 +4,13 @@ Cập nhật: 2026-11-15 (Verified & Reconciled). Dưới đây là danh sách v
 
 ## A. Chủ dự án cần làm (Owner-only)
 
-- [x] Chạy `supabase/migration_v16_ops_roles_template_meta.sql` (bảng `ops_members` +
-      cột `designer_templates.display_title`) — **Đã áp dụng trên production (Verified 2026-11-15)**.
+- [x] Chạy các migration cơ sở dữ liệu:
+  - `migration_v16_ops_roles_template_meta.sql` (bảng `ops_members`, vai trò designer) — **Đã áp dụng trên production**.
+  - `migration_v17_invite_limits.sql` (giới hạn 30 lượt mở thiệp gói Free, khoá tên cặp đôi) — **Đã áp dụng trên production**.
+  - `migration_v18_wish_once.sql` (RPC `save_wish_once_v18` chống spam lời chúc) — **Đã áp dụng trên production**.
 - [ ] Xác nhận email admin trong `ops_members` (hiện fallback `ADMIN_EMAILS`).
 - [ ] Trước `npm run deploy`: `npx wrangler login` (hoặc đặt `CLOUDFLARE_API_TOKEN`).
-- [ ] Workers Free chỉ có 10 ms CPU nên cần **Workers Paid** (~$5/tháng) cho SSR/cron.
+- [ ] **Bật Cloudflare Workers Paid (~$5/tháng)**: CPU free 10 ms không đủ cho Next.js 16 SSR và cron retention (tránh lỗi Error 1102).
 - [ ] Sau deploy: xác nhận cron dọn dữ liệu chạy (`wrangler tail` lúc 03:00 UTC, log `[retention]`);
       chạy thử `POST /api/ops/retention/run` với `{ "dryRun": true, "reason": "..." }` trước.
 - [ ] Kiểm tra CSP trên trình duyệt thật: Turnstile, nhạc nền, Google Maps, preview Zalo.
@@ -115,17 +117,36 @@ placeholder. Lưu dưới dạng **layout JSON + ảnh nền webp** (không flat
       thay vì bake vào một ảnh nền. Cần cột/bảng lưu layer + endpoint upload mới
       (chưa làm vì prompt cấm đổi backend/storage).
 
-## B6. Tối ưu production (sau đợt audit)
+## B6. Tối ưu production & Hạ tầng (sau đợt audit)
 
-- [ ] Bật Workers Paid trước production ($5/tháng): CPU free 10 ms không đủ cho
-      SSR và cron (Error 1102), dù bundle 16,7 MiB < 64 MiB.
+- [ ] **Bật Cloudflare Workers Paid trước production ($5/tháng)**: CPU free 10 ms không đủ cho
+      Next.js 16 SSR và cron retention (tránh lỗi Error 1102), dù bundle 16,7 MiB < 64 MiB.
+- [ ] **Thiết lập tự động sao lưu Supabase Database định kỳ**: Tạo GitHub Action hoặc cron
+      Worker chạy lệnh `pg_dump` nén tải lên bucket Cloudflare R2 hằng tuần/hằng ngày để
+      bảo vệ dữ liệu tiệc cưới khách hàng (do Supabase Free không có PITR/auto-backup).
 - [ ] Tạo Cloudflare Cache Rule cho `/media/*` (Edge TTL dài) để ảnh không chạy Worker.
 - [ ] Cache HTML `/w` (30–60 s) và `/m` (15–30 s) + cơ chế purge khi sửa nội dung/suspend.
 - [ ] Tách font designer khỏi root layout (chỉ tải ở `/m`, `/mau`, `/ops/designer`).
-- [ ] Backup Supabase hằng tuần (`pg_dump` → R2) vì free plan không có backup.
 - [ ] Giảm ảnh 1600 → 1280 px nếu R2 gần 8–9 GB; dọn `designer_template_versions`
       không còn wedding ghim nếu DB gần 400 MB.
 - [ ] Ops: chuyển lọc/phân trang weddings/users xuống SQL khi dữ liệu lớn.
+
+## B7. Tái cấu trúc mã nguồn (Codebase Refactoring & Component Modularity)
+
+- [ ] **Tách nhỏ các "God Components" ở Dashboard**:
+  - `components/dashboard/WeddingInfoEditor.tsx` (~1.700 dòng): Chia nhỏ theo từng section chức năng:
+    - `CoupleInfoSection.tsx`: Thông tin chú rể, cô dâu, ngày cưới, xưng hô.
+    - `EventTimelineSection.tsx`: Danh sách sự kiện, nghi lễ (Ăn hỏi, Vu Quy, Tiệc cưới).
+    - `TemplateSelectorSection.tsx`: Lựa chọn mẫu thiệp (Code vs Designer) và ghim version.
+    - `ShareSettingsSection.tsx`: Tuỳ chỉnh chia sẻ, hiển thị tên khách mời, lời nhắn.
+  - `components/dashboard/GuestTable.tsx` (~1.360 dòng): Chia nhỏ thành:
+    - `GuestFilterToolbar.tsx`: Tìm kiếm, bộ lọc trạng thái RSVP, nhóm khách.
+    - `GuestPaginationBar.tsx`: Thanh điều hướng phân trang 50 khách/trang.
+    - `GuestBatchActions.tsx`: Các thao tác hàng loạt (xoá, đổi nhóm, xuất danh sách).
+  - `components/dashboard/PhotosManager.tsx` (~1.370 dòng): Chia nhỏ thành:
+    - Quản lý slot ảnh theo từng nhóm riêng: ảnh bìa (banner), ảnh đôi (couple), album ảnh (gallery).
+    - Tách riêng `ImageCropDialog` và logic nén/upload client-side.
+- [ ] **Sửa script test trong package.json**: Thay đổi `"test"` thành `node --test tests/*.test.ts` (loại bỏ `--test-isolation=none` để tương thích tốt với mọi phiên bản Node.js).
 
 ## C. Đã xong
 

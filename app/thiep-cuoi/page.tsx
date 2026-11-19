@@ -54,27 +54,38 @@ export default async function TemplateCollectionPage({
   );
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-      <header className="mx-auto max-w-2xl text-center">
-        <p className="text-[11px] font-semibold tracking-[0.24em] text-accent-text uppercase">
-          Bộ sưu tập mẫu thiệp
-        </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold text-text sm:text-4xl">
-          Mẫu thiệp cưới online
-        </h1>
-        <p className="mt-2 text-sm text-text-muted sm:text-base">
-          Chọn mẫu bạn thích, xem thử và dùng ngay.
-        </p>
+    <div className="min-h-screen bg-[#FAF8F5] text-[#1F1D1A]">
+      {/* Editorial Page Header */}
+      <header className="border-b border-[#E8E2D9] pt-16 pb-12 text-center sm:pt-20 sm:pb-14">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <p className="text-xs font-semibold tracking-[0.2em] text-[#7A1C24] uppercase">
+            BỘ SƯU TẬP 2026
+          </p>
+
+          <h1 className="mt-4 font-serif text-4xl font-normal tracking-tight text-[#1F1D1A] sm:text-5xl lg:text-6xl">
+            Chọn mẫu thiệp cho <span className="italic text-[#7A1C24]">ngày trọng đại</span>
+          </h1>
+
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#6B655E]">
+            Tối ưu hiển thị mượt mà trên điện thoại, hỗ trợ nhạc nền, bản đồ chỉ đường và tự động cá nhân hóa xưng hô theo từng vị khách.
+          </p>
+        </div>
       </header>
 
-      <div className="mt-8 sm:mt-10">
-        <LiveTemplateCollection initialTemplates={templates} variant="grid" initialStyle={initialStyle} />
-      </div>
+      {/* Main Catalog Viewport */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <LiveTemplateCollection
+          initialTemplates={templates}
+          variant="grid"
+          initialStyle={initialStyle}
+        />
 
-      <p className="mx-auto mt-10 max-w-xl text-center text-xs leading-relaxed text-text-muted">
-        Mọi mẫu đều có link riêng cho từng khách, xác nhận tham dự, lời chúc,
-        lịch trình và bản đồ chỉ đường. Gói Miễn phí dùng được ngay cho 20 khách.
-      </p>
-    </main>
+        <div className="border-t border-[#E8E2D9] py-12 text-center">
+          <p className="mx-auto max-w-xl text-xs leading-relaxed text-[#6B655E]">
+            Mọi mẫu thiệp đều cung cấp link riêng biệt cho từng vị khách, hệ thống xác nhận tham dự (RSVP), sổ mừng trực tuyến, lịch trình và bản đồ tiệc cưới. Gói Miễn phí dùng được ngay.
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }

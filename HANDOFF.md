@@ -41,7 +41,7 @@ Browser ──HTTPS──> Cloudflare Worker (Next.js 16 / OpenNext)
 
 ## 4. Trước khi phát hành — cần chủ dự án
 
-1. **Migration**: v11, v12, v13 đã chạy và đã được verify (REST + render trang).
+1. **Migration**: v11, v12, v13, v16, v17, v18 đã chạy và đã được verify trên production.
 2. **Cron retention**: sau deploy kiểm tra `wrangler tail` lúc 03:00 UTC (log `[retention]`);
    chạy thử `POST /api/ops/retention/run` với `dryRun: true` trước.
 3. **CSP**: kiểm tra trên trình duyệt thật (Turnstile, nhạc nền, Google Maps, Zalo);

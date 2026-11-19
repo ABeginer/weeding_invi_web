@@ -2,7 +2,17 @@
 
 @theme inline {
   --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: var(--font-lora), var(--font-cormorant), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-cormorant), var(--font-playfair), var(--font-lora), Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-cormorant), var(--font-playfair), Georgia, "Times New Roman", serif;
+  --color-editorial-bg: #FAF8F5;
+  --color-editorial-surface: #FFFFFF;
+  --color-editorial-linen: #F4EFEA;
+  --color-editorial-text: #1F1D1A;
+  --color-editorial-muted: #6B655E;
+  --color-editorial-burgundy: #7A1C24;
+  --color-editorial-burgundy-hover: #5E141B;
+  --color-editorial-gold: #B89B72;
+  --color-editorial-border: #E8E2D9;
   --font-inv-serif: var(--font-lora), Georgia, "Times New Roman", serif;
   /* Font chữ viết tay được chuyển sang Lora italic để hỗ trợ đầy đủ dấu tiếng Việt */
   --font-inv-script: var(--font-lora), var(--font-cormorant), Georgia, serif;

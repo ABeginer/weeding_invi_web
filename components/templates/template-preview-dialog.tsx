@@ -2,14 +2,11 @@
 
 import * as React from "react";
 import { useUser } from "@auth0/nextjs-auth0";
-import { Check, Music2, Pause, Play, X } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Music2, Pause, Play, X } from "lucide-react";
 import { PLAN_LABELS, getTemplateFeatures, type TemplateFeature } from "@/config/template-features";
 import { SITE_LINKS } from "@/config/site";
 import { cn } from "@/lib/utils";
-import {
-  frameOffsetMax,
-  setFrameOffset,
-} from "@/lib/frame-scroll";
+import { frameOffsetMax, setFrameOffset } from "@/lib/frame-scroll";
 import type { CollectionTemplate } from "./types";
 
 interface TemplatePreviewDialogProps {
@@ -22,10 +19,10 @@ const FOCUSABLE =
 
 function SnapshotPlaceholder({ name }: { name: string }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-surface-alt px-4 text-center">
-      <span className="h-10 w-10 rounded-full border border-border bg-surface" aria-hidden="true" />
-      <p className="text-sm font-medium text-text">{name}</p>
-      <p className="text-xs text-text-muted">Chưa có ảnh xem trước</p>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[#F4EFEA] px-4 text-center">
+      <span className="h-10 w-10 rounded-full border border-[#E8E2D9] bg-white" aria-hidden="true" />
+      <p className="font-serif text-base text-[#1F1D1A]">{name}</p>
+      <p className="text-xs text-[#6B655E]">Chưa có ảnh xem trước</p>
     </div>
   );
 }
@@ -44,23 +41,23 @@ function FeatureList({
   return (
     <section className="mt-5">
       <div className="flex items-center gap-2">
-        <h3 className="text-xs font-semibold tracking-[0.16em] text-text-muted uppercase">
+        <h3 className="text-xs font-semibold tracking-[0.16em] text-[#6B655E] uppercase">
           {title}
         </h3>
         {badge && (
-          <span className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-text">
+          <span className="rounded-full border border-[#7A1C24]/30 bg-[#7A1C24]/10 px-2 py-0.5 text-[10px] font-semibold text-[#7A1C24]">
             {badge}
           </span>
         )}
       </div>
-      <ul className="mt-2 space-y-2">
+      <ul className="mt-2.5 space-y-2">
         {features.map((feature) => (
-          <li key={feature.id} className="flex items-start gap-2 text-sm text-text">
-            <Check className="mt-0.5 h-4 w-4 shrink-0 text-success-fg" aria-hidden="true" />
+          <li key={feature.id} className="flex items-start gap-2 text-xs sm:text-sm text-[#1F1D1A]">
+            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
             <span className="flex flex-wrap items-center gap-1.5">
               {feature.label}
               {feature.comingSoon && (
-                <span className="rounded-full border border-soon-border bg-soon-bg px-2 py-0.5 text-[10px] font-medium text-soon-fg">
+                <span className="rounded-full border border-[#E8E2D9] bg-[#F4EFEA] px-2 py-0.5 text-[10px] font-medium text-[#6B655E]">
                   Sắp có
                 </span>
               )}
@@ -230,13 +227,15 @@ export function TemplatePreviewDialog({
       className="fixed inset-0 z-50 flex items-end justify-center md:items-center"
       data-preview-paused={paused ? "true" : "false"}
     >
+      {/* Dim Backdrop */}
       <div
-        className="template-dialog-overlay absolute inset-0 bg-text/50"
+        className="template-dialog-overlay absolute inset-0 bg-[#1F1D1A]/50 backdrop-blur-xs transition-opacity duration-200"
         data-state={state}
         aria-hidden="true"
         onClick={requestClose}
       />
 
+      {/* Editorial Luxury Dialog Panel */}
       <div
         ref={panelRef}
         role="dialog"
@@ -244,33 +243,36 @@ export function TemplatePreviewDialog({
         aria-labelledby={titleId}
         data-state={state}
         onKeyDown={trapFocus}
-        className="template-dialog-panel relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-border bg-surface shadow-2xl supports-[backdrop-filter]:bg-surface/90 backdrop-blur-[16px] md:max-h-[85vh] md:w-[clamp(640px,50vw,960px)] md:rounded-3xl"
+        className="template-dialog-panel relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-[#E8E2D9] bg-[#FAF8F5] shadow-2xl md:max-h-[85vh] md:w-[clamp(680px,55vw,980px)] md:rounded-3xl"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-3">
+        {/* Top Header */}
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#E8E2D9] bg-white px-6 py-4">
           <div className="min-w-0">
-            <h2 id={titleId} className="truncate font-display text-lg font-semibold text-text">
+            <h2 id={titleId} className="truncate font-serif text-2xl font-normal text-[#1F1D1A]">
               {template.name}
             </h2>
-            <p className="truncate text-xs text-text-muted">
-              {planLabel} · {template.subtitle}
+            <p className="truncate text-xs text-[#6B655E] mt-0.5">
+              <span className="font-semibold text-[#7A1C24]">{planLabel}</span> · {template.subtitle}
             </p>
           </div>
           <button
             ref={closeRef}
             type="button"
             onClick={requestClose}
-            className="inline-flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="inline-flex h-9 min-w-9 cursor-pointer items-center justify-center rounded-full border border-[#E8E2D9] bg-white px-3 text-xs font-medium text-[#1F1D1A] transition-colors hover:bg-[#F4EFEA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24]"
           >
             <X className="h-4 w-4" aria-hidden="true" />
-            <span>Đóng</span>
+            <span className="hidden sm:inline ml-1">Đóng</span>
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] md:grid-cols-2 md:grid-rows-1">
-          <div className="order-1 border-b border-border p-4 md:order-2 md:border-b-0 md:border-l">
+        {/* Modal Body: Left Details & Right Realistic Phone Frame */}
+        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] md:grid-cols-12 md:grid-rows-1">
+          {/* Right Column on desktop: Phone Frame Preview (col-span-6) */}
+          <div className="order-1 flex flex-col items-center justify-center border-b border-[#E8E2D9] bg-[#F4EFEA] p-6 md:order-2 md:col-span-6 md:border-b-0 md:border-l">
             <div
               ref={frameRef}
-              className="snapshot-frame no-scrollbar relative mx-auto h-[45vh] w-full max-w-[320px] overflow-y-auto overflow-x-hidden rounded-[2rem] border-8 border-text/80 bg-surface-alt md:h-[62vh]"
+              className="snapshot-frame no-scrollbar relative mx-auto h-[46vh] w-full max-w-[290px] overflow-y-auto overflow-x-hidden rounded-[2.5rem] border-8 border-[#1F1D1A] bg-white shadow-xl md:h-[58vh]"
             >
               {liveUrl ? (
                 <iframe
@@ -302,34 +304,32 @@ export function TemplatePreviewDialog({
               )}
             </div>
 
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {/* Play/Pause & Music Controls */}
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
               <button
                 type="button"
                 onClick={() => setPaused((current) => !current)}
                 aria-pressed={paused}
-                className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-3.5 text-xs font-medium text-[#1F1D1A] shadow-2xs transition-colors hover:bg-[#F4EFEA]"
               >
-                {paused ? (
-                  <Play className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <Pause className="h-4 w-4" aria-hidden="true" />
-                )}
-                <span>{paused ? "Phát xem trước" : "Tạm dừng xem trước"}</span>
+                {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+                <span>{paused ? "Phát cuộn" : "Tạm dừng"}</span>
               </button>
               <button
                 type="button"
                 onClick={toggleMusic}
-                className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-3.5 text-xs font-medium text-[#1F1D1A] shadow-2xs transition-colors hover:bg-[#F4EFEA]"
               >
-                <Music2 className="h-4 w-4" aria-hidden="true" />
+                <Music2 className="h-3.5 w-3.5" />
                 <span>{musicOn ? "Tắt nhạc" : "Bật nhạc"}</span>
               </button>
             </div>
           </div>
 
-          <div className="order-2 flex min-h-0 flex-col md:order-1">
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-              <p className="text-sm leading-relaxed text-text-muted">
+          {/* Left Column on desktop: Features & Prominent CTA (col-span-6) */}
+          <div className="order-2 flex min-h-0 flex-col md:order-1 md:col-span-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              <p className="text-sm leading-relaxed text-[#6B655E]">
                 {template.description}
               </p>
 
@@ -342,28 +342,32 @@ export function TemplatePreviewDialog({
               <FeatureList title="Riêng mẫu này" features={features.extras} />
             </div>
 
-            <div className="shrink-0 border-t border-border bg-surface px-5 py-3">
-              <div className="flex flex-col gap-2 sm:flex-row">
+            {/* Bottom Actions Bar */}
+            <div className="shrink-0 border-t border-[#E8E2D9] bg-white px-6 py-4">
+              <div className="flex flex-col gap-2.5 sm:flex-row">
                 {template.demoUrl && (
                   <a
                     href={template.demoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-border bg-surface px-5 text-sm font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-4 text-xs font-semibold text-[#1F1D1A] transition-colors hover:bg-[#F4EFEA]"
                   >
-                    Xem thử
+                    <span>Mở toàn màn hình</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 )}
                 <a
                   href={useHref}
-                  className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-accent px-5 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[#7A1C24] px-5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#5E141B]"
                 >
-                  Dùng thiệp này
+                  <span>Dùng mẫu này</span>
+                  <ArrowRight className="h-4 w-4" />
                 </a>
               </div>
             </div>
           </div>
         </div>
+
         <audio ref={audioRef} src="/media/wedding.mp3" loop preload="auto" />
       </div>
     </div>
