@@ -12,6 +12,16 @@ interface PreviewState {
   date: string;
   quote: string;
   opened: boolean;
+  guestName?: string;
+  audioMuted?: boolean;
+  groomParents?: string;
+  brideParents?: string;
+  eventLocation?: string;
+  eventAddress?: string;
+  mapUrl?: string;
+  bank?: string;
+  accountNumber?: string;
+  accountName?: string;
 }
 
 interface PreviewFrameProps extends Omit<PreviewState, "opened"> {
@@ -41,6 +51,16 @@ export function PreviewFrame({
     date,
     quote,
     opened: initialOpened,
+    guestName: "",
+    audioMuted: false,
+    groomParents: "",
+    brideParents: "",
+    eventLocation: "",
+    eventAddress: "",
+    mapUrl: "",
+    bank: "",
+    accountNumber: "",
+    accountName: "",
   });
 
   React.useEffect(() => {
@@ -66,6 +86,26 @@ export function PreviewFrame({
         quote: cleanString(payload.quote, 200, previous.quote),
         opened:
           typeof payload.opened === "boolean" ? payload.opened : previous.opened,
+        guestName:
+          typeof payload.guestName === "string" ? payload.guestName : previous.guestName,
+        audioMuted:
+          typeof payload.audioMuted === "boolean" ? payload.audioMuted : previous.audioMuted,
+        groomParents:
+          typeof payload.groomParents === "string" ? payload.groomParents : previous.groomParents,
+        brideParents:
+          typeof payload.brideParents === "string" ? payload.brideParents : previous.brideParents,
+        eventLocation:
+          typeof payload.eventLocation === "string" ? payload.eventLocation : previous.eventLocation,
+        eventAddress:
+          typeof payload.eventAddress === "string" ? payload.eventAddress : previous.eventAddress,
+        mapUrl:
+          typeof payload.mapUrl === "string" ? payload.mapUrl : previous.mapUrl,
+        bank:
+          typeof payload.bank === "string" ? payload.bank : previous.bank,
+        accountNumber:
+          typeof payload.accountNumber === "string" ? payload.accountNumber : previous.accountNumber,
+        accountName:
+          typeof payload.accountName === "string" ? payload.accountName : previous.accountName,
       }));
     };
 
@@ -87,20 +127,53 @@ export function PreviewFrame({
             brideName: state.bride || "Cô dâu",
             groomFullName: "",
             brideFullName: "",
-            groomParents: "",
-            brideParents: "",
+            groomParents: state.groomParents || "",
+            brideParents: state.brideParents || "",
           },
           date: state.date,
           quote: state.quote,
           heroPhotoId: null,
           groomPhotoId: null,
           bridePhotoId: null,
-          gift: emptyGiftInfo(),
+          gift: {
+            ...emptyGiftInfo(),
+            groomBankName: state.bank || "",
+            groomAccountNumber: state.accountNumber || "",
+            groomAccountName: state.accountName || "",
+          },
         },
-        events: [],
+        events: state.eventLocation
+          ? [
+              {
+                id: "preview-event-1",
+                title: "Lễ Thành Hôn & Tiệc Cưới",
+                startsAt: state.date,
+                lunarDate: "",
+                venueName: state.eventLocation,
+                venueAddress: state.eventAddress || "",
+                mapEmbedUrl: null,
+                mapDirectionsUrl: state.mapUrl || null,
+                position: 0,
+              },
+            ]
+          : [],
         photos: [],
       }),
-    [state.bride, state.date, state.groom, state.quote, state.templateId],
+    [
+      state.accountName,
+      state.accountNumber,
+      state.bank,
+      state.bride,
+      state.brideParents,
+      state.date,
+      state.eventAddress,
+      state.eventLocation,
+      state.groom,
+      state.groomParents,
+      state.mapUrl,
+      state.quote,
+      state.templateId,
+    ],
   );
 
   return (
@@ -115,7 +188,10 @@ export function PreviewFrame({
       onOpenedChange={(opened) =>
         setState((previous) => ({ ...previous, opened }))
       }
-      externalMusicControl={false}
+      guestName={state.guestName || null}
+      invitationMode={state.guestName ? "personal" : "public"}
+      isMusicPlaying={!state.audioMuted}
+      externalMusicControl={true}
     />
   );
 }

@@ -26,14 +26,20 @@ export function formatFileSize(bytes: number): string {
 }
 
 export function validateImageFile(file: File): string | null {
-  if (!(UPLOAD_ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)) {
-    return "Chỉ hỗ trợ định dạng ảnh JPG, PNG hoặc WebP.";
+  const allowedMime = [
+    ...UPLOAD_ALLOWED_MIME_TYPES,
+    "image/heic",
+    "image/heif",
+  ] as readonly string[];
+  const isAllowedExt = /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name);
+  if (!allowedMime.includes(file.type.toLowerCase()) && !isAllowedExt) {
+    return "Chỉ hỗ trợ định dạng ảnh JPG, PNG, WebP hoặc HEIC.";
   }
   if (file.size <= 0) {
     return "File ảnh rỗng hoặc không đọc được.";
   }
-  if (file.size > UPLOAD_MAX_BYTES) {
-    return "Ảnh tải lên vượt quá dung lượng tối đa 5 MB.";
+  if (file.size > 25 * 1024 * 1024) {
+    return "Ảnh tải lên vượt quá dung lượng tối đa 25 MB.";
   }
   return null;
 }

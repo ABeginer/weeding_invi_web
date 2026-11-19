@@ -11,14 +11,15 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  Eye,
+  CreditCard,
   FileText,
   Image as ImageIcon,
   Loader2,
+  MapPin,
+  Music,
   Palette,
-  RotateCcw,
-  Search,
   Sparkles,
+  Trash2,
   Upload,
   Volume2,
   VolumeX,
@@ -35,11 +36,16 @@ import {
   ApiError,
   assignDesignerTemplate,
   checkWeddingSlugAvailability,
+  createEvent,
   createWedding,
   listWeddings,
   syncMe,
 } from "@/lib/api";
-import { compressImageToWebP, type CompressResult } from "@/lib/image-compress";
+import {
+  compressImageToWebP,
+  formatFileSize,
+  validateImageFile,
+} from "@/lib/image-compress";
 import {
   emptyGiftInfo,
   NAME_MAX_LENGTH,
@@ -83,6 +89,13 @@ const ROLE_PREVIEWS = [
   { id: "default", label: "Khách mặc định", name: "" },
   { id: "elder", label: "Chú Bảy (Họ hàng)", name: "Chú Bảy cùng Gia đình" },
   { id: "friend", label: "Bạn thân", name: "Bạn Tuấn Anh" },
+] as const;
+
+const MUSIC_TRACKS = [
+  { id: "default", name: "Nhạc nền du dương (Mặc định)", genre: "Acoustic Romantic" },
+  { id: "beautiful-in-white", name: "Beautiful in White (Piano Solo)", genre: "Piano Wedding" },
+  { id: "until-i-found-you", name: "Until I Found You (Vintage String)", genre: "Classical Strings" },
+  { id: "anh-nang-cua-anh", name: "Ánh Nắng Của Anh (Lofi Chill)", genre: "Lofi Wedding" },
 ] as const;
 
 function buildPreviewUrl(params: {
@@ -137,18 +150,32 @@ export function CreateWeddingBuilder({
   const [designerName, setDesignerName] = React.useState<string | null>(null);
   const [designerPlan, setDesignerPlan] = React.useState<"free" | "pro" | "vip" | null>(null);
 
-  // Form inputs
+  // Tab 1: Info inputs
   const [groomName, setGroomName] = React.useState("");
   const [brideName, setBrideName] = React.useState("");
-  const [date, setDate] = React.useState(DEFAULT_WEDDING_DATE_ISO);
+  const [groomParents, setGroomParents] = React.useState("");
+  const [brideParents, setBrideParents] = React.useState("");
   const [quote, setQuote] = React.useState("");
   const [slug, setSlug] = React.useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = React.useState(false);
 
-  // Image upload & compression state
+  // Tab 2: Event inputs
+  const [date, setDate] = React.useState(DEFAULT_WEDDING_DATE_ISO);
+  const [eventLocation, setEventLocation] = React.useState("");
+  const [eventAddress, setEventAddress] = React.useState("");
+  const [mapUrl, setMapUrl] = React.useState("");
+
+  // Tab 3: Photos & WebP compression state
   const [coverPhotoUrl, setCoverPhotoUrl] = React.useState<string | null>(null);
+  const [albumPhotos, setAlbumPhotos] = React.useState<string[]>([]);
   const [compressing, setCompressing] = React.useState(false);
   const [compressionToast, setCompressionToast] = React.useState<string | null>(null);
+
+  // Tab 4: Style & Music & QR gift info
+  const [selectedMusic, setSelectedMusic] = React.useState("default");
+  const [bank, setBank] = React.useState("");
+  const [accountNumber, setAccountNumber] = React.useState("");
+  const [accountName, setAccountName] = React.useState("");
 
   // Role preview & audio
   const [selectedRole, setSelectedRole] = React.useState<(typeof ROLE_PREVIEWS)[number]>(
@@ -222,7 +249,7 @@ export function CreateWeddingBuilder({
 
   // Restore draft smoothly in useEffect
   React.useEffect(() => {
-    const saved = readWeddingDraft();
+    const saved = readWeddingDraft(initialTemplateId);
     if (!saved) return;
 
     if (!initialTemplateId) {
@@ -236,6 +263,15 @@ export function CreateWeddingBuilder({
       setSlug(saved.slug);
       setSlugManuallyEdited(true);
     }
+    if (saved.groomParents) setGroomParents(saved.groomParents);
+    if (saved.brideParents) setBrideParents(saved.brideParents);
+    if (saved.eventLocation) setEventLocation(saved.eventLocation);
+    if (saved.eventAddress) setEventAddress(saved.eventAddress);
+    if (saved.mapUrl) setMapUrl(saved.mapUrl);
+    if (saved.musicTrack) setSelectedMusic(saved.musicTrack);
+    if (saved.bank) setBank(saved.bank);
+    if (saved.accountNumber) setAccountNumber(saved.accountNumber);
+    if (saved.accountName) setAccountName(saved.accountName);
   }, [initialTemplateId]);
 
   // Auto-save debounce (800ms) to localStorage
@@ -255,22 +291,40 @@ export function CreateWeddingBuilder({
           date: isoDate,
           quote: quote.trim(),
           slug: slug.trim(),
+          groomParents: groomParents.trim(),
+          brideParents: brideParents.trim(),
+          eventLocation: eventLocation.trim(),
+          eventAddress: eventAddress.trim(),
+          mapUrl: mapUrl.trim(),
+          musicTrack: selectedMusic,
+          bank: bank.trim(),
+          accountNumber: accountNumber.trim(),
+          accountName: accountName.trim(),
         };
         writeWeddingDraft(draft);
-        if (typeof window !== "undefined") {
-          try {
-            window.localStorage.setItem(
-              `inviwedd_draft_${templateId}`,
-              JSON.stringify(draft),
-            );
-          } catch {}
-        }
       }
       setAutoSaveStatus("saved");
     }, 800);
 
     return () => window.clearTimeout(timer);
-  }, [brideName, date, designerTemplateId, groomName, quote, slug, templateId]);
+  }, [
+    accountName,
+    accountNumber,
+    bank,
+    brideName,
+    brideParents,
+    date,
+    designerTemplateId,
+    eventAddress,
+    eventLocation,
+    groomName,
+    groomParents,
+    mapUrl,
+    quote,
+    selectedMusic,
+    slug,
+    templateId,
+  ]);
 
   // Suggest slug from couple names if not manually edited
   React.useEffect(() => {
@@ -318,7 +372,7 @@ export function CreateWeddingBuilder({
           } else {
             setSlugStatus({
               state: "unavailable",
-              message: "Đường dẫn này đã có người dùng, vui lòng chọn tên khác.",
+              message: "Đường dẫn này đã được sử dụng.",
             });
           }
         })
@@ -326,52 +380,28 @@ export function CreateWeddingBuilder({
           if (slugCheckSeqRef.current !== seq) return;
           setSlugStatus({ state: "idle" });
         });
-    }, 350);
+    }, 400);
 
     return () => window.clearTimeout(timer);
   }, [slug]);
 
-  // Fetch designer template info if set
-  React.useEffect(() => {
-    if (!designerTemplateId) return;
-    let cancelled = false;
-    fetch("/api/public/designer-templates")
-      .then((res) => (res.ok ? res.json() : { items: [] }))
-      .then((data: { items?: Array<{ id: string; name: string; displayTitle: string | null; plan: "free" | "pro" | "vip" }> }) => {
-        if (cancelled) return;
-        const match = (data.items ?? []).find((item) => item.id === designerTemplateId);
-        if (match) {
-          setDesignerName(match.displayTitle ?? match.name);
-          setDesignerPlan(match.plan);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [designerTemplateId]);
-
-  const dateValue = toDatetimeLocalVn(date);
-  const datePreview = formatWeddingDateParts(date);
-
-  const [iframeSrc, setIframeSrc] = React.useState(() =>
-    designerTemplateId
-      ? `/mau/designer/${designerTemplateId}/embed`
-      : buildPreviewUrl({
-          templateId,
-          groom: groomName.trim(),
-          bride: brideName.trim(),
-          date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
-          quote: quote.trim(),
-          opened: previewOpened,
-        }),
-  );
+  // Iframe URL
   const previewKey = designerTemplateId ?? templateId;
+  const [iframeSrc, setIframeSrc] = React.useState(() =>
+    buildPreviewUrl({
+      templateId,
+      groom: groomName.trim(),
+      bride: brideName.trim(),
+      date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
+      quote: quote.trim(),
+      opened: previewOpened,
+    }),
+  );
 
   React.useEffect(() => {
     setIframeSrc(
       designerTemplateId
-        ? `/mau/designer/${designerTemplateId}/embed`
+        ? `/ops/designer/${designerTemplateId}/preview`
         : buildPreviewUrl({
             templateId,
             groom: groomName.trim(),
@@ -395,14 +425,40 @@ export function CreateWeddingBuilder({
           quote: quote.trim(),
           opened: previewOpened,
           guestName: selectedRole.name,
+          audioMuted,
+          groomParents: groomParents.trim(),
+          brideParents: brideParents.trim(),
+          eventLocation: eventLocation.trim(),
+          eventAddress: eventAddress.trim(),
+          mapUrl: mapUrl.trim(),
+          bank: bank.trim(),
+          accountNumber: accountNumber.trim(),
+          accountName: accountName.trim(),
         },
       },
       window.location.origin,
     );
-  }, [brideName, date, groomName, previewOpened, quote, selectedRole.name, templateId]);
+  }, [
+    accountName,
+    accountNumber,
+    audioMuted,
+    bank,
+    brideName,
+    brideParents,
+    date,
+    eventAddress,
+    eventLocation,
+    groomName,
+    groomParents,
+    mapUrl,
+    previewOpened,
+    quote,
+    selectedRole.name,
+    templateId,
+  ]);
 
   React.useEffect(() => {
-    const timer = window.setTimeout(sendPreview, 150);
+    const timer = window.setTimeout(sendPreview, 120);
     return () => window.clearTimeout(timer);
   }, [sendPreview]);
 
@@ -416,44 +472,87 @@ export function CreateWeddingBuilder({
     return () => window.removeEventListener("message", onMessage);
   }, [sendPreview]);
 
-  // Image compression upload handler
+  // Cover photo upload handler with WebP compression
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setCompressing(true);
-      const res: CompressResult = await compressImageToWebP(file, {
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.82,
-      });
-
-      const objectUrl = URL.createObjectURL(res.file);
-      setCoverPhotoUrl(objectUrl);
-      setCompressionToast(res.savedText);
-
-      window.setTimeout(() => {
-        setCompressionToast(null);
-      }, 4500);
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        setSubmitError(validationError);
+        return;
+      }
+      const result = await compressImageToWebP(file);
+      const url = URL.createObjectURL(result.file);
+      setCoverPhotoUrl(url);
+      setCompressionToast(result.savedText);
+      setTimeout(() => setCompressionToast(null), 4000);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Không thể xử lý hình ảnh.");
+      setSubmitError(err instanceof Error ? err.message : "Không thể nén ảnh.");
     } finally {
       setCompressing(false);
-      e.target.value = "";
+    }
+  };
+
+  // Album photos upload handler with WebP compression
+  const handleAlbumUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setCompressing(true);
+      const newUrls: string[] = [];
+      let totalSaved = 0;
+      let totalOriginal = 0;
+
+      for (let i = 0; i < Math.min(files.length, 6); i++) {
+        const file = files[i];
+        const validationError = validateImageFile(file);
+        if (validationError) continue;
+        const res = await compressImageToWebP(file);
+        newUrls.push(URL.createObjectURL(res.file));
+        totalOriginal += res.originalSize;
+        totalSaved += res.compressedSize;
+      }
+
+      if (newUrls.length > 0) {
+        setAlbumPhotos((prev) => [...prev, ...newUrls].slice(0, 10));
+        setCompressionToast(
+          `Đã tối ưu ${newUrls.length} ảnh (${formatFileSize(totalOriginal)} → ${formatFileSize(totalSaved)})`,
+        );
+        setTimeout(() => setCompressionToast(null), 4000);
+      }
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Lỗi khi xử lý album ảnh.");
+    } finally {
+      setCompressing(false);
     }
   };
 
   const handleResetDefaults = () => {
     if (!confirm("Bạn có chắc muốn đặt lại toàn bộ thông tin về mặc định?")) return;
-    clearWeddingDraft();
     setGroomName("");
     setBrideName("");
     setDate(DEFAULT_WEDDING_DATE_ISO);
     setQuote("");
     setSlug("");
-    setCoverPhotoUrl(null);
     setSlugManuallyEdited(false);
+    setCoverPhotoUrl(null);
+    setAlbumPhotos([]);
+    setGroomParents("");
+    setBrideParents("");
+    setEventLocation("");
+    setEventAddress("");
+    setMapUrl("");
+    setSelectedMusic("default");
+    setBank("");
+    setAccountNumber("");
+    setAccountName("");
+    setFieldErrors({});
+    setSubmitError(null);
+    clearWeddingDraft(templateId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -491,6 +590,15 @@ export function CreateWeddingBuilder({
       date: isoDate,
       quote: cleanQuote,
       slug: slugCheck.slug,
+      groomParents: groomParents.trim(),
+      brideParents: brideParents.trim(),
+      eventLocation: eventLocation.trim(),
+      eventAddress: eventAddress.trim(),
+      mapUrl: mapUrl.trim(),
+      musicTrack: selectedMusic,
+      bank: bank.trim(),
+      accountNumber: accountNumber.trim(),
+      accountName: accountName.trim(),
     };
 
     writeWeddingDraft(draft);
@@ -511,17 +619,36 @@ export function CreateWeddingBuilder({
             brideName: draft.brideName,
             groomFullName: "",
             brideFullName: "",
-            groomParents: "",
-            brideParents: "",
+            groomParents: draft.groomParents,
+            brideParents: draft.brideParents,
           },
           date: draft.date,
           quote: draft.quote,
           heroPhotoId: null,
           groomPhotoId: null,
           bridePhotoId: null,
-          gift: emptyGiftInfo(),
+          gift: {
+            ...emptyGiftInfo(),
+            groomBankName: draft.bank,
+            groomAccountNumber: draft.accountNumber,
+            groomAccountName: draft.accountName,
+          },
         },
       });
+
+      if (draft.eventLocation) {
+        try {
+          await createEvent(created.id, {
+            title: "Lễ Thành Hôn & Tiệc Cưới",
+            startsAt: draft.date,
+            venueName: draft.eventLocation,
+            venueAddress: draft.eventAddress || undefined,
+            mapDirectionsUrl: draft.mapUrl || undefined,
+          });
+        } catch {
+          // Event creation optional on first step
+        }
+      }
 
       if (designerTemplateId) {
         try {
@@ -535,7 +662,7 @@ export function CreateWeddingBuilder({
         }
       }
 
-      clearWeddingDraft();
+      clearWeddingDraft(templateId);
       router.push(`${SITE_LINKS.dashboard}/weddings/${created.id}`);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -560,6 +687,9 @@ export function CreateWeddingBuilder({
   const displayName = designerTemplateId
     ? designerName ?? "Mẫu Designer"
     : selectedTemplate?.name ?? "Chọn mẫu thiệp";
+
+  const dateValue = toDatetimeLocalVn(date);
+  const datePreview = formatWeddingDateParts(date);
 
   const filteredTemplates = React.useMemo(() => {
     const needle = templateQuery.trim().toLowerCase();
@@ -671,7 +801,7 @@ export function CreateWeddingBuilder({
                 )}
               >
                 <FileText className="h-3.5 w-3.5" />
-                <span>Thông tin</span>
+                <span className="truncate">Thông tin</span>
               </button>
 
               <button
@@ -685,7 +815,7 @@ export function CreateWeddingBuilder({
                 )}
               >
                 <Calendar className="h-3.5 w-3.5" />
-                <span>Sự kiện</span>
+                <span className="truncate">Sự kiện</span>
               </button>
 
               <button
@@ -699,7 +829,7 @@ export function CreateWeddingBuilder({
                 )}
               >
                 <ImageIcon className="h-3.5 w-3.5" />
-                <span>Hình ảnh</span>
+                <span className="truncate">Hình ảnh</span>
               </button>
 
               <button
@@ -713,7 +843,7 @@ export function CreateWeddingBuilder({
                 )}
               >
                 <Palette className="h-3.5 w-3.5" />
-                <span>Mẫu thiệp</span>
+                <span className="truncate">Giao diện</span>
               </button>
             </div>
           </div>
@@ -728,7 +858,7 @@ export function CreateWeddingBuilder({
                 </div>
               )}
 
-              {/* Tab 1: Info (Tên & Đường dẫn) */}
+              {/* Tab 1: Info (Tên & Gia đình & Lời mời & Đường dẫn) */}
               {activeTab === "info" && (
                 <div className="space-y-5">
                   <div>
@@ -779,6 +909,39 @@ export function CreateWeddingBuilder({
                       {fieldErrors.brideName && (
                         <p className="mt-1 text-xs text-rose-600">{fieldErrors.brideName}</p>
                       )}
+                    </div>
+                  </div>
+
+                  {/* Gia đình hai bên */}
+                  <div className="rounded-2xl border border-[#E8E2D9] bg-white p-4 space-y-4">
+                    <p className="text-xs font-semibold text-[#1F1D1A]">
+                      Thông tin phụ mẫu hai bên (Tùy chọn)
+                    </p>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-medium text-[#6B655E]">
+                          Nhà trai (Phụ mẫu chú rể)
+                        </label>
+                        <input
+                          type="text"
+                          value={groomParents}
+                          onChange={(e) => setGroomParents(e.target.value)}
+                          placeholder="Ông Nguyễn Văn A & Bà Trần Thị B"
+                          className="mt-1.5 h-10 w-full rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] px-3.5 text-xs text-[#1F1D1A] outline-none focus:bg-white focus:border-[#7A1C24] focus:ring-1 focus:ring-[#7A1C24]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#6B655E]">
+                          Nhà gái (Phụ mẫu cô dâu)
+                        </label>
+                        <input
+                          type="text"
+                          value={brideParents}
+                          onChange={(e) => setBrideParents(e.target.value)}
+                          placeholder="Ông Lê Văn C & Bà Phạm Thị D"
+                          className="mt-1.5 h-10 w-full rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] px-3.5 text-xs text-[#1F1D1A] outline-none focus:bg-white focus:border-[#7A1C24] focus:ring-1 focus:ring-[#7A1C24]"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -836,15 +999,15 @@ export function CreateWeddingBuilder({
                 </div>
               )}
 
-              {/* Tab 2: Event (Ngày giờ) */}
+              {/* Tab 2: Event (Ngày giờ & Địa điểm tiệc) */}
               {activeTab === "event" && (
                 <div className="space-y-5">
                   <div>
                     <h3 className="font-serif text-xl font-normal text-[#1F1D1A]">
-                      Thời gian &amp; Sự kiện
+                      Thời gian &amp; Địa điểm
                     </h3>
                     <p className="mt-0.5 text-xs text-[#6B655E]">
-                      Thời gian diễn ra lễ cưới chính thức.
+                      Thông tin sự kiện tổ chức lễ cưới chính thức.
                     </p>
                   </div>
 
@@ -874,12 +1037,57 @@ export function CreateWeddingBuilder({
                       </p>
                     </div>
                   </div>
+
+                  {/* Tên địa điểm */}
+                  <div>
+                    <label className="block text-xs font-medium text-[#1F1D1A]">
+                      Tên địa điểm / Nhà hàng
+                    </label>
+                    <input
+                      type="text"
+                      value={eventLocation}
+                      onChange={(e) => setEventLocation(e.target.value)}
+                      placeholder="Trung tâm Hội nghị Tiệc cưới The Grand Palace"
+                      className="mt-1.5 h-10 w-full rounded-xl border border-[#E8E2D9] bg-white px-3.5 text-sm text-[#1F1D1A] outline-none focus:border-[#7A1C24] focus:ring-1 focus:ring-[#7A1C24]"
+                    />
+                  </div>
+
+                  {/* Địa chỉ chi tiết */}
+                  <div>
+                    <label className="block text-xs font-medium text-[#1F1D1A]">
+                      Địa chỉ chi tiết
+                    </label>
+                    <input
+                      type="text"
+                      value={eventAddress}
+                      onChange={(e) => setEventAddress(e.target.value)}
+                      placeholder="142/18 Cộng Hòa, Phường 4, Quận Tân Bình, TP. HCM"
+                      className="mt-1.5 h-10 w-full rounded-xl border border-[#E8E2D9] bg-white px-3.5 text-sm text-[#1F1D1A] outline-none focus:border-[#7A1C24] focus:ring-1 focus:ring-[#7A1C24]"
+                    />
+                  </div>
+
+                  {/* Link Google Maps */}
+                  <div>
+                    <label className="block text-xs font-medium text-[#1F1D1A]">
+                      Đường dẫn Google Maps (Chỉ đường)
+                    </label>
+                    <div className="mt-1.5 flex rounded-xl border border-[#E8E2D9] bg-white px-3 text-sm focus-within:border-[#7A1C24] focus-within:ring-1 focus-within:ring-[#7A1C24]">
+                      <MapPin className="my-auto h-4 w-4 text-[#B89B72]" />
+                      <input
+                        type="url"
+                        value={mapUrl}
+                        onChange={(e) => setMapUrl(e.target.value)}
+                        placeholder="https://maps.app.goo.gl/..."
+                        className="h-10 flex-1 bg-transparent px-2 text-sm text-[#1F1D1A] outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Tab 3: Photos (Tải ảnh + Nén WebP) */}
+              {/* Tab 3: Photos (Tải ảnh + Nén WebP tự động) */}
               {activeTab === "photos" && (
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <div>
                     <h3 className="font-serif text-xl font-normal text-[#1F1D1A]">
                       Hình ảnh cưới
@@ -948,81 +1156,237 @@ export function CreateWeddingBuilder({
                       </label>
                     </div>
                   </div>
+
+                  {/* Album ảnh cưới */}
+                  <div>
+                    <label className="block text-xs font-medium text-[#1F1D1A]">
+                      Album ảnh kỷ niệm ({albumPhotos.length}/10)
+                    </label>
+                    <p className="mt-0.5 text-[11px] text-[#6B655E]">
+                      Chọn nhiều ảnh cùng lúc, hệ thống sẽ tự động nén tối ưu.
+                    </p>
+
+                    <div className="mt-2 grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+                      {albumPhotos.map((url, index) => (
+                        <div
+                          key={index}
+                          className="group relative aspect-square overflow-hidden rounded-xl border border-[#E8E2D9] bg-[#F4EFEA]"
+                        >
+                          <img
+                            src={url}
+                            alt={`Album ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAlbumPhotos((prev) => prev.filter((_, i) => i !== index))
+                            }
+                            className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {albumPhotos.length < 10 && (
+                        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8E2D9] bg-white text-[#6B655E] transition-colors hover:border-[#B89B72] hover:text-[#7A1C24]">
+                          <Upload className="h-5 w-5" />
+                          <span className="mt-1 text-[10px] font-medium">+ Thêm ảnh</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleAlbumUpload}
+                            disabled={compressing}
+                            className="sr-only"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Tab 4: Style (Đổi mẫu thiệp) */}
+              {/* Tab 4: Style & Music & QR gift info */}
               {activeTab === "style" && (
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <div>
                     <h3 className="font-serif text-xl font-normal text-[#1F1D1A]">
-                      Chọn mẫu thiệp cưới
+                      Giao diện &amp; Âm nhạc
                     </h3>
                     <p className="mt-0.5 text-xs text-[#6B655E]">
-                      Chuyển đổi giao diện ngay lập tức mà không làm mất thông tin đã điền.
+                      Tùy biến mẫu thiệp, bài hát và tài khoản nhận mừng cưới.
                     </p>
                   </div>
 
-                  {/* Filter Pills */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {THEME_FILTERS.map((theme) => (
-                      <button
-                        key={theme}
-                        type="button"
-                        onClick={() => setThemeFilter(theme)}
-                        className={cn(
-                          "rounded-full px-3 py-1 text-xs transition-colors",
-                          themeFilter === theme
-                            ? "bg-[#7A1C24] text-white"
-                            : "border border-[#E8E2D9] bg-white text-[#6B655E] hover:border-[#B89B72]",
-                        )}
-                      >
-                        {theme}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Section 4.1: Template Picker */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-[#1F1D1A]">
+                        Chọn mẫu thiệp cưới
+                      </label>
+                      <span className="text-[11px] text-[#6B655E]">
+                        {filteredTemplates.length} mẫu
+                      </span>
+                    </div>
 
-                  {/* Template Picker Grid */}
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {filteredTemplates.map((tpl) => {
-                      const isSelected = templateId === tpl.id && !designerTemplateId;
-                      return (
+                    {/* Filter Pills */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {THEME_FILTERS.map((theme) => (
                         <button
-                          key={tpl.id}
+                          key={theme}
                           type="button"
-                          onClick={() => {
-                            setTemplateId(tpl.id);
-                            setDesignerTemplateId(undefined);
-                          }}
+                          onClick={() => setThemeFilter(theme)}
                           className={cn(
-                            "group flex flex-col overflow-hidden rounded-xl border p-2 text-left transition-all",
-                            isSelected
-                              ? "border-[#7A1C24] bg-white ring-2 ring-[#7A1C24]/30 shadow-xs"
-                              : "border-[#E8E2D9] bg-white hover:border-[#B89B72]",
+                            "rounded-full px-3 py-1 text-xs transition-colors",
+                            themeFilter === theme
+                              ? "bg-[#7A1C24] text-white"
+                              : "border border-[#E8E2D9] bg-white text-[#6B655E] hover:border-[#B89B72]",
                           )}
                         >
-                          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-[#F4EFEA]">
-                            <img
-                              src={tpl.coverImage}
-                              alt={tpl.name}
-                              loading="lazy"
-                              className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                            />
-                            {isSelected && (
-                              <div className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#7A1C24] text-white">
-                                <Check className="h-3 w-3" />
-                              </div>
-                            )}
-                          </div>
-                          <p className="mt-1.5 truncate font-serif text-sm font-medium text-[#1F1D1A]">
-                            {tpl.name}
-                          </p>
-                          <p className="truncate text-[10px] text-[#6B655E]">
-                            {tpl.subtitle}
-                          </p>
+                          {theme}
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
+
+                    {/* Template Picker Grid */}
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 max-h-[340px] overflow-y-auto p-1 border border-[#E8E2D9] rounded-2xl bg-[#FAF8F5]">
+                      {filteredTemplates.map((tpl) => {
+                        const isSelected = templateId === tpl.id && !designerTemplateId;
+                        return (
+                          <button
+                            key={tpl.id}
+                            type="button"
+                            onClick={() => {
+                              setTemplateId(tpl.id);
+                              setDesignerTemplateId(undefined);
+                            }}
+                            className={cn(
+                              "group flex flex-col overflow-hidden rounded-xl border p-2 text-left transition-all",
+                              isSelected
+                                ? "border-[#7A1C24] bg-white ring-2 ring-[#7A1C24]/30 shadow-xs"
+                                : "border-[#E8E2D9] bg-white hover:border-[#B89B72]",
+                            )}
+                          >
+                            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-[#F4EFEA]">
+                              <img
+                                src={tpl.coverImage}
+                                alt={tpl.name}
+                                loading="lazy"
+                                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                              />
+                              {isSelected && (
+                                <div className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#7A1C24] text-white">
+                                  <Check className="h-3 w-3" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="mt-1.5 truncate font-serif text-sm font-medium text-[#1F1D1A]">
+                              {tpl.name}
+                            </p>
+                            <p className="truncate text-[10px] text-[#6B655E]">
+                              {tpl.subtitle}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Section 4.2: Wedding Music */}
+                  <div className="space-y-3 rounded-2xl border border-[#E8E2D9] bg-white p-4">
+                    <div className="flex items-center gap-2">
+                      <Music className="h-4 w-4 text-[#7A1C24]" />
+                      <label className="text-xs font-semibold text-[#1F1D1A]">
+                        Nhạc nền tiệc cưới
+                      </label>
+                    </div>
+
+                    <div className="space-y-2">
+                      {MUSIC_TRACKS.map((track) => (
+                        <label
+                          key={track.id}
+                          className={cn(
+                            "flex cursor-pointer items-center justify-between rounded-xl border p-3 text-xs transition-colors",
+                            selectedMusic === track.id
+                              ? "border-[#7A1C24] bg-[#FAF8F5] text-[#7A1C24] font-medium"
+                              : "border-[#E8E2D9] hover:bg-[#FAF8F5] text-[#1F1D1A]",
+                          )}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="radio"
+                              name="musicTrack"
+                              value={track.id}
+                              checked={selectedMusic === track.id}
+                              onChange={() => setSelectedMusic(track.id)}
+                              className="text-[#7A1C24] focus:ring-[#7A1C24]"
+                            />
+                            <div>
+                              <p className="font-medium">{track.name}</p>
+                              <p className="text-[10px] text-[#6B655E]">{track.genre}</p>
+                            </div>
+                          </div>
+                          <Volume2 className="h-3.5 w-3.5 text-[#B89B72]" />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Section 4.3: Gift QR / Bank Info */}
+                  <div className="space-y-3 rounded-2xl border border-[#E8E2D9] bg-white p-4">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-[#7A1C24]" />
+                      <label className="text-xs font-semibold text-[#1F1D1A]">
+                        Mừng cưới &amp; VietQR (Tùy chọn)
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-[#6B655E]">
+                      Hỗ trợ khách quét mã VietQR tự động hoặc sao chép nhanh số tài khoản.
+                    </p>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-[#6B655E]">
+                          Ngân hàng
+                        </label>
+                        <input
+                          type="text"
+                          value={bank}
+                          onChange={(e) => setBank(e.target.value)}
+                          placeholder="Vd: Vietcombank, MB Bank, Techcombank..."
+                          className="mt-1 h-9 w-full rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] px-3 text-xs text-[#1F1D1A] outline-none focus:bg-white focus:border-[#7A1C24]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-xs font-medium text-[#6B655E]">
+                            Số tài khoản
+                          </label>
+                          <input
+                            type="text"
+                            value={accountNumber}
+                            onChange={(e) => setAccountNumber(e.target.value)}
+                            placeholder="Vd: 1029384756"
+                            className="mt-1 h-9 w-full rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] px-3 text-xs text-[#1F1D1A] outline-none focus:bg-white focus:border-[#7A1C24]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-[#6B655E]">
+                            Chủ tài khoản
+                          </label>
+                          <input
+                            type="text"
+                            value={accountName}
+                            onChange={(e) => setAccountName(e.target.value)}
+                            placeholder="Vd: NGUYEN MINH KHOI"
+                            className="mt-1 h-9 w-full rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] px-3 text-xs text-[#1F1D1A] outline-none focus:bg-white focus:border-[#7A1C24]"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
