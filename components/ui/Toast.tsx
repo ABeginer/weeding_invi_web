@@ -6,14 +6,20 @@ import { cn } from "@/lib/utils";
 
 export type ToastType = "success" | "error" | "info";
 
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface ToastItem {
   id: string;
   message: string;
   type: ToastType;
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
-  showToast: (message: string, type?: ToastType) => void;
+  showToast: (message: string, type?: ToastType, action?: ToastAction) => void;
 }
 
 const ToastContext = React.createContext<ToastContextValue | null>(null);
@@ -26,12 +32,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showToast = React.useCallback(
-    (message: string, type: ToastType = "info") => {
+    (message: string, type: ToastType = "info", action?: ToastAction) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      setToasts((prev) => [...prev, { id, message, type }]);
+      setToasts((prev) => [...prev, { id, message, type, action }]);
       window.setTimeout(() => {
         removeToast(id);
-      }, 3200);
+      }, action ? 5000 : 3200);
     },
     [removeToast]
   );
@@ -50,23 +56,35 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             className={cn(
               "pointer-events-auto flex w-full items-center gap-2.5 rounded-xl border px-4 py-3 text-sm shadow-lg transition-all",
               toast.type === "success" &&
-                "border-success-border bg-success-bg text-success-fg",
+                "border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E]",
               toast.type === "error" &&
-                "border-danger-border bg-danger-bg text-danger-fg",
+                "border-[#ECCFCF] bg-[#FBEFEF] text-[#9E3B3B]",
               toast.type === "info" &&
-                "border-border bg-surface text-fg"
+                "border-[#E8E2D9] bg-white text-[#1F1D1A]"
             )}
           >
             {toast.type === "success" && (
-              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#2F6F4E]" aria-hidden="true" />
             )}
             {toast.type === "error" && (
-              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-[#9E3B3B]" aria-hidden="true" />
             )}
             {toast.type === "info" && (
-              <Info className="h-4 w-4 shrink-0 text-accent-text" aria-hidden="true" />
+              <Info className="h-4 w-4 shrink-0 text-[#B89B72]" aria-hidden="true" />
             )}
             <span className="flex-1 font-medium">{toast.message}</span>
+            {toast.action && (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.action?.onClick();
+                  removeToast(toast.id);
+                }}
+                className="ml-1 cursor-pointer font-semibold underline underline-offset-2 hover:opacity-80"
+              >
+                {toast.action.label}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => removeToast(toast.id)}

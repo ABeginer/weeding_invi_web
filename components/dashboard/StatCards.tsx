@@ -96,49 +96,49 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
       label: "Tổng khách mời",
       value: stats.total,
       Icon: Users,
-      accent: "border border-accent/35 bg-accent-soft text-text",
+      accent: "border border-[#E8E2D9] bg-[#FAF8F5] text-[#7A1C24]",
     },
     {
-      label: "Chấp nhận",
+      label: "Đã xác nhận",
       value: stats.accepted,
       Icon: CheckCircle2,
-      accent: "border border-success-border bg-success-bg text-success-fg",
+      accent: "border border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E]",
     },
     {
       label: "Số người sẽ đến",
       value: acceptedHeadcount,
       Icon: UserCheck,
-      accent: "border border-success-border bg-success-bg text-success-fg",
+      accent: "border border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E]",
     },
     {
       label: "Suất mặn",
       value: meatCount,
       Icon: Utensils,
-      accent: "border border-accent/35 bg-accent-soft text-text",
+      accent: "border border-[#E8E2D9] bg-[#FAF8F5] text-[#1F1D1A]",
     },
     {
       label: "Suất chay",
       value: vegCount,
       Icon: Utensils,
-      accent: "border border-sage bg-surface text-text",
+      accent: "border border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E]",
     },
     {
       label: "Từ chối",
       value: stats.declined,
       Icon: XCircle,
-      accent: "border border-danger-border bg-danger-bg text-danger-fg",
+      accent: "border border-[#ECCFCF] bg-[#FBEFEF] text-[#9E3B3B]",
     },
     {
       label: "Chưa phản hồi",
       value: stats.pending,
       Icon: Clock,
-      accent: "border border-neutral-border bg-neutral-bg text-neutral-fg",
+      accent: "border border-[#E8DAC0] bg-[#FAF3E3] text-[#8A6D3B]",
     },
     {
       label: "Lời chúc",
       value: stats.wishes,
       Icon: MessageSquareHeart,
-      accent: "border border-accent/35 bg-accent-soft text-text",
+      accent: "border border-[#B89B72]/40 bg-[#F4EFEA] text-[#B89B72]",
     },
   ];
 
@@ -146,77 +146,84 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
   const unassignedCount = stats.unassignedCount ?? stats.total;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 text-[#1F1D1A]">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-fg">
+          <h2 className="font-serif text-2xl font-semibold text-[#1F1D1A]">
             Tổng quan phản hồi
           </h2>
-          <p className="text-xs text-fg-muted sm:text-sm">
+          <p className="mt-0.5 text-xs text-[#6B655E] sm:text-sm">
             Theo dõi tỷ lệ xác nhận tham dự và phân bổ khách theo từng buổi lễ.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadStats}>
-          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={loadStats}
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-3.5 py-1.5 text-xs font-medium text-[#1F1D1A] shadow-2xs hover:bg-[#FAF8F5]"
+        >
+          <RefreshCw className="h-3.5 w-3.5 text-[#B89B72]" aria-hidden="true" />
           <span>Cập nhật</span>
-        </Button>
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {items.map((item) => (
-          <Card key={item.label} className="p-4">
+          <div
+            key={item.label}
+            className="rounded-2xl border border-[#E8E2D9] bg-white p-4 shadow-2xs transition-all hover:border-[#B89B72]/50"
+          >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-fg-muted">{item.label}</span>
+              <span className="text-xs font-medium text-[#6B655E]">{item.label}</span>
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-lg ${item.accent}`}
               >
                 <item.Icon className="h-4 w-4" aria-hidden="true" />
               </span>
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-fg sm:text-3xl">
+            <p className="mt-2 font-serif text-2xl font-semibold tabular-nums text-[#1F1D1A] sm:text-3xl">
               {item.value}
             </p>
-          </Card>
+          </div>
         ))}
       </div>
 
-      <Card className="p-4 sm:p-5">
+      <div className="rounded-2xl border border-[#E8E2D9] bg-white p-4 sm:p-5 shadow-2xs">
         <div className="flex items-center justify-between gap-2 text-sm">
-          <span className="font-medium text-fg">Tỷ lệ khách đã phản hồi</span>
-          <span className="font-semibold tabular-nums text-accent-text">
+          <span className="font-medium text-[#1F1D1A]">Tỷ lệ khách đã phản hồi</span>
+          <span className="font-serif text-lg font-semibold tabular-nums text-[#7A1C24]">
             {responded}/{stats.total} ({responseRate}%)
           </span>
         </div>
-        <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-surface-muted">
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#FAF8F5] border border-[#E8E2D9]">
           <div
-            className="h-full rounded-full bg-accent transition-all duration-300"
+            className="h-full rounded-full bg-[#7A1C24] transition-all duration-300"
             style={{ width: `${responseRate}%` }}
           />
         </div>
-        <p className="mt-2 text-xs text-fg-muted">
+        <p className="mt-2 text-xs text-[#6B655E]">
           Bao gồm {stats.accepted} khách xác nhận tham dự ({acceptedHeadcount} người dự kiến ·{" "}
           {meatCount} suất mặn, {vegCount} suất chay) và {stats.declined} khách báo bận.
         </p>
-      </Card>
+      </div>
 
-      <Card className="space-y-4 p-4 sm:p-5">
+      <div className="rounded-2xl border border-[#E8E2D9] bg-white p-4 sm:p-5 shadow-2xs space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="flex items-center gap-2 font-sans text-base font-semibold text-fg">
-              <CalendarHeart className="h-4 w-4 text-accent-text" aria-hidden="true" />
+            <h3 className="flex items-center gap-2 font-serif text-base font-semibold text-[#1F1D1A]">
+              <CalendarHeart className="h-4 w-4 text-[#7A1C24]" aria-hidden="true" />
               <span>Phân bổ theo từng lễ</span>
             </h3>
-            <p className="mt-0.5 text-xs text-fg-muted">
+            <p className="mt-0.5 text-xs text-[#6B655E]">
               Khách chưa gán lễ cụ thể sẽ nhìn thấy toàn bộ các lễ trên thiệp mời của mình.
             </p>
           </div>
-          <span className="shrink-0 rounded-full border border-neutral-border bg-neutral-bg px-2.5 py-1 text-xs font-medium text-neutral-fg">
+          <span className="shrink-0 rounded-full border border-[#E8E2D9] bg-[#FAF8F5] px-2.5 py-1 text-xs font-medium text-[#6B655E]">
             Mặc định tất cả lễ: {unassignedCount} khách
           </span>
         </div>
 
         {eventCounts.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border px-4 py-5 text-center text-xs text-fg-muted sm:text-sm">
+          <p className="rounded-xl border border-dashed border-[#E8E2D9] px-4 py-5 text-center text-xs text-[#6B655E]">
             Chưa có lễ nào được tạo. Thêm lễ trong mục &ldquo;Lễ &amp; địa điểm&rdquo; để phân bổ khách mời.
           </p>
         ) : (
@@ -229,22 +236,22 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
               return (
                 <div
                   key={item.eventId}
-                  className="rounded-xl border border-border bg-bg p-3.5"
+                  className="rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] p-3.5"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-fg">{item.title}</span>
+                    <span className="text-sm font-medium text-[#1F1D1A]">{item.title}</span>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-full border border-accent/40 bg-accent-soft px-2.5 py-0.5 font-medium text-text">
+                      <span className="rounded-full border border-[#B89B72]/40 bg-[#F4EFEA] px-2.5 py-0.5 font-medium text-[#1F1D1A]">
                         Gán riêng: {item.assignedCount}
                       </span>
-                      <span className="text-fg-muted tabular-nums">
+                      <span className="text-[#6B655E] tabular-nums">
                         Hiển thị cho {item.visibleGuestCount}/{stats.total} khách
                       </span>
                     </div>
                   </div>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#E8E2D9]">
                     <div
-                      className="h-full rounded-full bg-accent/85 transition-all duration-300"
+                      className="h-full rounded-full bg-[#7A1C24] transition-all duration-300"
                       style={{ width: `${barPct}%` }}
                     />
                   </div>
@@ -253,7 +260,7 @@ export function StatCards({ weddingId, refreshSignal = 0 }: StatCardsProps) {
             })}
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
