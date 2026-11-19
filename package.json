@@ -19,6 +19,7 @@
     "clsx": "^2.1.1",
     "critters": "file:vendor/critters-stub",
     "jose": "^6.2.17",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.475.0",
     "motion": "^14.14.0",
     "next": "^16.4.6",

@@ -96,7 +96,7 @@ export default async function FamilySharePage({ params }: PageProps) {
     getPublicWeddingBySlug(slug),
     client
       .from("guests")
-      .select("id, name, relationship_group, status, plus_ones, diet")
+      .select("id, name, slug, relationship_group, status, plus_ones, diet, table_number, checked_in_at, checked_in_count")
       .eq("wedding_id", weddingRow.id)
       .order("created_at", { ascending: false }),
     listWeddingPhotos(weddingRow.id),
@@ -109,10 +109,14 @@ export default async function FamilySharePage({ params }: PageProps) {
   const guests = (guestRowsRes.data ?? []).map((row) => ({
     id: row.id,
     name: row.name,
+    slug: row.slug,
     relationshipGroup: row.relationship_group,
     status: row.status,
     plusOnes: row.plus_ones,
     diet: row.diet,
+    tableNumber: row.table_number ?? null,
+    checkedInAt: row.checked_in_at ?? null,
+    checkedInCount: typeof row.checked_in_count === "number" ? row.checked_in_count : null,
   }));
 
   return (

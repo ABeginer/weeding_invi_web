@@ -124,6 +124,8 @@ export interface Guest {
   customPronounGuest?: string | null;
   tableNumber?: string | null;
   dietaryPreference?: DietaryPreference | null;
+  checkedInAt?: string | null;
+  checkedInCount?: number | null;
   respondedAt: string | null;
   createdAt: string;
   eventIds?: string[];

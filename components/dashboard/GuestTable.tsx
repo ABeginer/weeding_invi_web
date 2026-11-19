@@ -103,7 +103,8 @@ type QuickFilter =
   | "pending"
   | "declined"
   | "veg"
-  | "unassigned";
+  | "unassigned"
+  | "checkedIn";
 
 function getRelationshipLabel(group?: Guest["relationshipGroup"]): string | null {
   if (!group) return null;
@@ -749,6 +750,9 @@ export function GuestTable({
       if (filterTab === "unassigned") {
         return !g.tableNumber || !g.tableNumber.trim();
       }
+      if (filterTab === "checkedIn") {
+        return Boolean(g.checkedInAt);
+      }
       return true;
     });
   }, [guests, search, filterTab, sentGuestIds]);
@@ -759,6 +763,10 @@ export function GuestTable({
   const unsentCount = Math.max(0, totalCount - sentCount);
   const unassignedCount = React.useMemo(
     () => guests.filter((g) => !g.tableNumber || !g.tableNumber.trim()).length,
+    [guests],
+  );
+  const checkedInCount = React.useMemo(
+    () => guests.filter((g) => Boolean(g.checkedInAt)).length,
     [guests],
   );
   const sentPercent = totalCount > 0 ? Math.round((sentCount / totalCount) * 100) : 0;
@@ -1080,6 +1088,23 @@ export function GuestTable({
                 {unassignedCount}
               </span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterTab("checkedIn")}
+              className={cn(
+                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+                filterTab === "checkedIn"
+                  ? "bg-[#2F6F4E] text-white shadow-xs font-semibold"
+                  : "border border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E] hover:bg-[#d8ece0]",
+              )}
+            >
+              <Check className="h-3 w-3" />
+              <span>Đã đến</span>
+              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+                {checkedInCount}
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -1334,6 +1359,15 @@ export function GuestTable({
                                 {isVeg ? "Chay" : "Mặn"}
                               </span>
                             )}
+                            {guest.checkedInAt && (
+                              <span
+                                title="Khách đã check-in tại sảnh cưới"
+                                className="inline-flex items-center gap-0.5 rounded-full border border-[#BBDBC9] bg-[#ECF5F0] px-2 py-0.5 text-[10px] font-semibold text-[#2F6F4E]"
+                              >
+                                <Check className="h-2.5 w-2.5" />
+                                <span>Đã đến</span>
+                              </span>
+                            )}
                             {editingTableGuestId === guest.id ? (
                               <div className="inline-flex items-center gap-1">
                                 <input
@@ -1585,6 +1619,15 @@ export function GuestTable({
                           )}
                         >
                           {isVeg ? "Ăn Chay" : "Ăn Mặn"}
+                        </span>
+                      )}
+                      {guest.checkedInAt && (
+                        <span
+                          title="Khách đã check-in tại sảnh cưới"
+                          className="inline-flex items-center gap-0.5 rounded-full border border-[#BBDBC9] bg-[#ECF5F0] px-2 py-0.5 text-[10px] font-semibold text-[#2F6F4E]"
+                        >
+                          <Check className="h-2.5 w-2.5" />
+                          <span>Đã đến</span>
                         </span>
                       )}
                     </div>

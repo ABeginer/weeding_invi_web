@@ -48,6 +48,8 @@ export interface GuestRow {
   custom_pronoun_guest?: string | null;
   table_number?: string | null;
   dietary_preference?: string | null;
+  checked_in_at?: string | null;
+  checked_in_count?: number | null;
   responded_at: string | null;
   created_at: string;
 }
@@ -147,6 +149,11 @@ export function toGuest(row: GuestRow, eventIds?: string[]): Guest {
       row.dietary_preference === "vegetarian" ||
       row.dietary_preference === "standard"
         ? row.dietary_preference
+        : null,
+    checkedInAt: row.checked_in_at ?? null,
+    checkedInCount:
+      typeof row.checked_in_count === "number" && Number.isFinite(row.checked_in_count)
+        ? row.checked_in_count
         : null,
     respondedAt: row.responded_at,
     createdAt: row.created_at,
