@@ -30,18 +30,29 @@ interface GiftSideData {
   qrUrl: string | null;
 }
 
-async function copyTextSafe(value: string): Promise<void> {
+async function copyTextSafe(value: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(value);
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+    throw new Error("Clipboard unavailable");
   } catch {
+    try {
     const textarea = document.createElement("textarea");
     textarea.value = value;
     textarea.style.position = "fixed";
     textarea.style.opacity = "0";
+    textarea.style.left = "-9999px";
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
-    document.execCommand("copy");
+    const success = document.execCommand("copy");
     document.body.removeChild(textarea);
+    return success;
+  } catch {
+    return false;
+    }
   }
 }
 
@@ -267,7 +278,8 @@ export function GiftModal({
 
   const handleCopyAccount = async (side: GiftSideData) => {
     if (!side.accountNumber) return;
-    await copyTextSafe(side.accountNumber);
+    const ok = await copyTextSafe(side.accountNumber);
+    if (!ok) return;
     setCopiedSide(side.id);
     window.setTimeout(() => {
       setCopiedSide((prev) => (prev === side.id ? null : prev));
@@ -453,7 +465,7 @@ export function GiftModal({
                         type="button"
                         onClick={() => handleCopyAccount(side)}
                         className={cn(
-                          "inline-flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          "inline-flex h-9 w-full cursor-pointer touch-manipulation select-none items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2",
                           toneTheme.copyBtn,
                           toneTheme.ring,
                         )}

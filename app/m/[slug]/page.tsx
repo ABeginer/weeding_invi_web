@@ -5,6 +5,7 @@ import { toAbsoluteSiteUrl } from "@/config/site";
 import { DesignerInvitation } from "@/components/designer/designer-invitation";
 import type { DesignerCanvasContent } from "@/components/ops/designer-types";
 import { FreeInviteLimit } from "@/components/invitation/FreeInviteLimit";
+import { InvitationDesktopStage } from "@/components/invitation/InvitationDesktopStage";
 import { InvitePageClient } from "@/components/invitation/InvitePageClient";
 import { buildDesignerInviteValues } from "@/lib/designer-invite";
 import {
@@ -50,14 +51,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     process.env.SHARE_SHOW_GUEST_NAME === "true";
   const title =
     wedding && showGuestName && wedding.guestName?.trim()
-      ? `${baseTitle} — Kính mời ${wedding.guestName.trim()}`
+      ? `${baseTitle} — Trân trọng kính mời ${wedding.guestName.trim()}`
       : baseTitle;
 
-  const trimmedQuote = content.quote.trim();
-  const description =
-    trimmedQuote.length > 0
+  const dateFormatted = formatWeddingDateParts(content.date).dotDate;
+  const primaryEvent = wedding?.events?.[0];
+  const venueFormatted = primaryEvent?.venueName ? `tại ${primaryEvent.venueName}` : "";
+  const ceremonySummary = [dateFormatted, venueFormatted].filter(Boolean).join(" ");
+
+  const trimmedQuote = content.quote?.trim() ?? "";
+  const description = ceremonySummary
+    ? `Trân trọng kính mời quý khách tham dự lễ cưới của ${templateData.couple.groomName} & ${templateData.couple.brideName} vào ngày ${ceremonySummary}.${trimmedQuote ? ` "${trimmedQuote.slice(0, 80)}"` : ""}`
+    : trimmedQuote.length > 0
       ? trimmedQuote.slice(0, 160)
-      : "Mời bạn xem thiệp cưới của chúng tôi";
+      : "Trân trọng kính mời quý khách tham dự lễ cưới của chúng tôi.";
 
   const coupleLabel = `${templateData.couple.groomName} & ${templateData.couple.brideName}`;
   const dateLabel = content.date.slice(0, 10).split("-").reverse().join(".");
@@ -94,6 +101,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
               width: 1200,
               height: 630,
               alt: title,
+              type: "image/png",
             },
           ]
         : undefined,
@@ -180,25 +188,39 @@ export default async function PersonalInvitePage({ params }: PageProps) {
       photos: wedding.photos,
     });
 
+    const coverPhoto =
+      wedding.photos.find((p) => p.kind === "og")?.url ??
+      designerData.photos.heroUrl ??
+      designerData.photos.gallery[0]?.url ??
+      null;
+    const coupleLabel = `${content.couple.groomName} & ${content.couple.brideName}`;
+
     return (
-      <DesignerInvitation
-        canvas={
-          wedding.designerTemplate.canvas as unknown as DesignerCanvasContent
-        }
-        values={values}
-        coupleLabel={`${content.couple.groomName} & ${content.couple.brideName}`}
-        data={designerData}
-        weddingSlug={wedding.slug}
-        guestName={wedding.guestName}
-        invitationMode="personal"
-        plan={wedding.plan}
-        overrides={content.designerOverrides}
-        initialStatus={wedding.rsvpStatus}
-        initialPlusOnes={wedding.plusOnes}
-        initialDiet={wedding.diet}
-        initialSongRequest={wedding.songRequest}
-        initialRideNeeded={wedding.rideNeeded}
-      />
+      <InvitationDesktopStage
+        coverPhotoUrl={coverPhoto}
+        coupleLabel={coupleLabel}
+        hasMusic={true}
+        musicTitle="Nhạc nền"
+      >
+        <DesignerInvitation
+          canvas={
+            wedding.designerTemplate.canvas as unknown as DesignerCanvasContent
+          }
+          values={values}
+          coupleLabel={coupleLabel}
+          data={designerData}
+          weddingSlug={wedding.slug}
+          guestName={wedding.guestName}
+          invitationMode="personal"
+          plan={wedding.plan}
+          overrides={content.designerOverrides}
+          initialStatus={wedding.rsvpStatus}
+          initialPlusOnes={wedding.plusOnes}
+          initialDiet={wedding.diet}
+          initialSongRequest={wedding.songRequest}
+          initialRideNeeded={wedding.rideNeeded}
+        />
+      </InvitationDesktopStage>
     );
   }
 

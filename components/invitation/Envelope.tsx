@@ -156,8 +156,10 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         disabled={opening}
         aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayName}`}
         className={cn(
-          "relative z-30 flex h-full w-full cursor-pointer flex-col items-center justify-between px-6 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-inv-olive-deep",
-          isContained ? "pt-[14%] pb-[9%]" : "pt-[13dvh] pb-[6dvh]",
+          "relative z-30 flex h-full w-full cursor-pointer flex-col items-center justify-between px-6 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-inv-olive-deep touch-manipulation select-none",
+          isContained
+            ? "pt-[14%] pb-[9%]"
+            : "pt-[max(13dvh,env(safe-area-inset-top))] pb-[max(6dvh,env(safe-area-inset-bottom))]",
         )}
       >
         <m.div

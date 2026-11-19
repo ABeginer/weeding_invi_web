@@ -14,6 +14,7 @@ import type {
 import { toTemplateData } from "@/lib/wedding-data";
 import { buildSalutation } from "@/lib/salutation-engine";
 import { GuestBoardingPass } from "./GuestBoardingPass";
+import { InvitationDesktopStage } from "./InvitationDesktopStage";
 import { LiveTemplateRenderer } from "@/templates/LiveTemplateRenderer";
 
 interface InvitePageClientProps {
@@ -131,8 +132,19 @@ export function InvitePageClient({
     );
   }
 
+  const coverPhoto =
+    displayData.photos.heroUrl ||
+    displayData.photos.gallery[0]?.url ||
+    null;
+  const coupleTitle = `${displayData.couple.groomName} & ${displayData.couple.brideName}`;
+
   return (
-    <>
+    <InvitationDesktopStage
+      coverPhotoUrl={coverPhoto}
+      coupleLabel={coupleTitle}
+      hasMusic={Boolean(displayData.music?.src)}
+      musicTitle={displayData.music?.title}
+    >
       {invite?.tableNumber && (
         <GuestBoardingPass
           guestName={guestLabel ?? invite.name}
@@ -154,6 +166,6 @@ export function InvitePageClient({
         initialSongRequest={invite?.songRequest ?? null}
         initialRideNeeded={invite?.rideNeeded ?? false}
       />
-    </>
+    </InvitationDesktopStage>
   );
 }

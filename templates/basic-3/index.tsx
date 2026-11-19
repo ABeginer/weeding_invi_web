@@ -62,6 +62,9 @@ export default function Basic3Template({
   const hasFamilies = Boolean(data.couple.groomParents || data.couple.brideParents);
 
   const handleOpen = () => {
+    try {
+      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+    } catch {}
     setOpened(true);
     onOpenedChange?.(true);
   };
@@ -115,7 +118,7 @@ export default function Basic3Template({
               transition={{ duration: prefersReducedMotion ? 0.2 : 0.5 }}
               aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayGuest}`}
               className={cn(
-                "group relative flex h-full w-full cursor-pointer flex-col items-center justify-between rounded-t-full rounded-b-3xl border border-[#CFA89A] bg-[#FFFBF8] text-center shadow-[0_20px_50px_rgba(122,53,53,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A3535]",
+                "group relative flex h-full w-full cursor-pointer flex-col items-center justify-between rounded-t-full rounded-b-3xl border border-[#CFA89A] bg-[#FFFBF8] text-center shadow-[0_20px_50px_rgba(122,53,53,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A3535] touch-manipulation select-none",
                 isDesktopLayout ? "max-w-[440px]" : "max-w-[380px]",
                 contained ? "max-h-[560px] px-5 pt-10 pb-7" : "max-h-[660px] px-6 pt-14 pb-9",
               )}

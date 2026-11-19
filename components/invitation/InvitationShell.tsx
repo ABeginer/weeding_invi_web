@@ -55,6 +55,18 @@ export function InvitationShell({
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const fadeTimerRef = React.useRef<number | null>(null);
   const autoScrollStoppedRef = React.useRef(false);
+  const wasPlayingBeforeHideRef = React.useRef(false);
+  const userManuallyMutedRef = React.useRef(false);
+
+  const broadcastMusicState = React.useCallback((playing: boolean) => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("inviwedd:music-state-change", {
+          detail: { isPlaying: playing },
+        }),
+      );
+    } catch {}
+  }, []);
 
   const clearFade = React.useCallback(() => {
     if (fadeTimerRef.current !== null) {
@@ -92,22 +104,26 @@ export function InvitationShell({
         playPromise
           .then(() => {
             setIsPlaying(true);
+            broadcastMusicState(true);
             startFadeIn(audio);
           })
           .catch(() => {
             setIsPlaying(false);
+            broadcastMusicState(false);
             if (audio.error) {
               setAudioAvailable(false);
             }
           });
       } else {
         setIsPlaying(true);
+        broadcastMusicState(true);
         startFadeIn(audio);
       }
     } catch {
       setIsPlaying(false);
+      broadcastMusicState(false);
     }
-  }, [audioAvailable, data.music?.src, startFadeIn]);
+  }, [audioAvailable, broadcastMusicState, data.music?.src, startFadeIn]);
 
   const handleOpenEnvelope = React.useCallback(() => {
     setIsOpened(true);
@@ -144,43 +160,78 @@ export function InvitationShell({
     if (!audio || !audioAvailable) return;
 
     if (audio.paused) {
+      userManuallyMutedRef.current = false;
       playAudio();
     } else {
+      userManuallyMutedRef.current = true;
       clearFade();
       audio.pause();
       setIsPlaying(false);
+      broadcastMusicState(false);
     }
-  }, [audioAvailable, clearFade, playAudio]);
+  }, [audioAvailable, broadcastMusicState, clearFade, playAudio]);
 
+  // Lắng nghe lệnh bật/tắt nhạc từ Desktop Floating Utility Rail hoặc các block khác
+  React.useEffect(() => {
+    const onToggle = () => handleToggleMusic();
+    window.addEventListener("inviwedd:toggle-music", onToggle);
+    return () => {
+      window.removeEventListener("inviwedd:toggle-music", onToggle);
+    };
+  }, [handleToggleMusic]);
+
+  // Quản lý vòng đời audio khi người dùng chuyển tab hoặc ẩn ứng dụng Zalo/Messenger
   React.useEffect(() => {
     const handleVisibilityChange = () => {
       const audio = audioRef.current;
       if (!audio) return;
-      if (document.hidden && !audio.paused) {
-        clearFade();
-        audio.pause();
-        setIsPlaying(false);
+
+      if (document.hidden) {
+        if (!audio.paused) {
+          wasPlayingBeforeHideRef.current = true;
+          clearFade();
+          audio.pause();
+          setIsPlaying(false);
+          broadcastMusicState(false);
+        } else {
+          wasPlayingBeforeHideRef.current = false;
+        }
+      } else {
+        // Khi quay trở lại tab/ứng dụng: chỉ tự động phát tiếp nếu trước đó đang phát và người dùng không bấm mute tay
+        if (wasPlayingBeforeHideRef.current && !userManuallyMutedRef.current) {
+          playAudio();
+        }
       }
     };
 
     const handlePageHide = () => {
       const audio = audioRef.current;
       if (audio && !audio.paused) {
+        wasPlayingBeforeHideRef.current = true;
         clearFade();
         audio.pause();
         setIsPlaying(false);
+        broadcastMusicState(false);
+      }
+    };
+
+    const handlePageShow = () => {
+      if (wasPlayingBeforeHideRef.current && !userManuallyMutedRef.current) {
+        playAudio();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pageshow", handlePageShow);
 
     return () => {
       clearFade();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
     };
-  }, [clearFade]);
+  }, [broadcastMusicState, clearFade, playAudio]);
 
   React.useEffect(() => {
     const config = data.ui.autoScroll;

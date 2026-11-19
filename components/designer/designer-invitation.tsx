@@ -214,21 +214,65 @@ export function DesignerInvitation({
         "--color-inv-cream-soft": "#F7EFE8",
       };
 
+  const wasPlayingBeforeHideRef = React.useRef(false);
+  const userManuallyMutedRef = React.useRef(false);
+
+  const broadcastMusicState = React.useCallback((playing: boolean) => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("inviwedd:music-state-change", {
+          detail: { isPlaying: playing },
+        }),
+      );
+    } catch {}
+  }, []);
+
+  const playAudio = React.useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    try {
+      const promise = audio.play();
+      if (promise !== undefined) {
+        promise
+          .then(() => {
+            setIsPlaying(true);
+            broadcastMusicState(true);
+          })
+          .catch(() => {
+            setIsPlaying(false);
+            broadcastMusicState(false);
+          });
+      } else {
+        setIsPlaying(true);
+        broadcastMusicState(true);
+      }
+    } catch {
+      setIsPlaying(false);
+      broadcastMusicState(false);
+    }
+  }, [broadcastMusicState]);
+
+  const pauseAudio = React.useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    setIsPlaying(false);
+    broadcastMusicState(false);
+  }, [broadcastMusicState]);
+
   const toggleMusic = React.useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
     if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
+      userManuallyMutedRef.current = true;
+      pauseAudio();
     } else {
-      audio
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false));
+      userManuallyMutedRef.current = false;
+      playAudio();
     }
-  }, [isPlaying]);
+  }, [isPlaying, pauseAudio, playAudio]);
 
-  // Lắng nghe sự kiện bật/tắt nhạc từ block Nhạc nền trong canvas
+  // Lắng nghe sự kiện bật/tắt nhạc từ block Nhạc nền trong canvas hoặc Desktop Floating Utility Rail
   React.useEffect(() => {
     const handleToggle = () => toggleMusic();
     window.addEventListener("inviwedd:toggle-music", handleToggle);
@@ -236,6 +280,68 @@ export function DesignerInvitation({
       window.removeEventListener("inviwedd:toggle-music", handleToggle);
     };
   }, [toggleMusic]);
+
+  // Tự động phát khi chạm vào bìa cover
+  React.useEffect(() => {
+    const handleOpen = () => {
+      if (!userManuallyMutedRef.current) {
+        playAudio();
+      }
+    };
+    window.addEventListener("inviwedd:open-envelope", handleOpen);
+    return () => {
+      window.removeEventListener("inviwedd:open-envelope", handleOpen);
+    };
+  }, [playAudio]);
+
+  // Quản lý vòng đời audio khi người dùng chuyển tab hoặc ẩn ứng dụng Zalo/Messenger
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      if (document.hidden) {
+        if (!audio.paused) {
+          wasPlayingBeforeHideRef.current = true;
+          audio.pause();
+          setIsPlaying(false);
+          broadcastMusicState(false);
+        } else {
+          wasPlayingBeforeHideRef.current = false;
+        }
+      } else {
+        if (wasPlayingBeforeHideRef.current && !userManuallyMutedRef.current) {
+          playAudio();
+        }
+      }
+    };
+
+    const handlePageHide = () => {
+      const audio = audioRef.current;
+      if (audio && !audio.paused) {
+        wasPlayingBeforeHideRef.current = true;
+        audio.pause();
+        setIsPlaying(false);
+        broadcastMusicState(false);
+      }
+    };
+
+    const handlePageShow = () => {
+      if (wasPlayingBeforeHideRef.current && !userManuallyMutedRef.current) {
+        playAudio();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, [broadcastMusicState, playAudio]);
 
   return (
     <div

@@ -63,6 +63,9 @@ export default function Pro1Template({
   const hasFamilies = Boolean(data.couple.groomParents || data.couple.brideParents);
 
   const handleOpen = () => {
+    try {
+      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+    } catch {}
     setOpened(true);
     onOpenedChange?.(true);
   };

@@ -31,7 +31,7 @@ export function MusicPlayer({
         }
         title={data.music.title}
         className={cn(
-          "group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border transition-all duration-200 sm:h-12 sm:w-12",
+          "group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border transition-all duration-200 sm:h-12 sm:w-12 touch-manipulation",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg",
           isPlaying
             ? "border-white/70 bg-inv-olive-btn text-white shadow-[0_6px_18px_color-mix(in_srgb,var(--inv-olive-deep)_34%,transparent)] hover:bg-inv-olive-hover"

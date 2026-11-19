@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -16,12 +16,37 @@ export async function GET(request: Request) {
   const date = clean(url.searchParams.get("date"), 40);
   const style = clean(url.searchParams.get("style"), 20);
 
+  // Modern Editorial Luxury Palettes
   const palette =
     style === "sage"
-      ? { bg: "#F3EFE6", ink: "#2C2523", accent: "#4A5D4E", soft: "#DCE3D8" }
+      ? {
+          bg: "#F4F7F4",
+          ink: "#1F1D1A",
+          muted: "#5A655C",
+          accent: "#2F6F4E",
+          gold: "#A89472",
+          soft: "#E2ECE5",
+          border: "#D2DFD6",
+        }
       : style === "blush"
-        ? { bg: "#FAF3F0", ink: "#2C2523", accent: "#B87D74", soft: "#F0DBD4" }
-        : { bg: "#FAF8F5", ink: "#2C2523", accent: "#C5A059", soft: "#EFE4CE" };
+        ? {
+            bg: "#FAF5F5",
+            ink: "#1F1D1A",
+            muted: "#6B5E60",
+            accent: "#8B3A44",
+            gold: "#B89B72",
+            soft: "#F5E6E8",
+            border: "#EAD5D8",
+          }
+        : {
+            bg: "#FAF8F5",
+            ink: "#1F1D1A",
+            muted: "#6B655E",
+            accent: "#7A1C24",
+            gold: "#B89B72",
+            soft: "#F4EFEA",
+            border: "#E8E2D9",
+          };
 
   return new ImageResponse(
     (
@@ -35,61 +60,102 @@ export async function GET(request: Request) {
           justifyContent: "center",
           backgroundColor: palette.bg,
           color: palette.ink,
-          padding: 64,
+          padding: "60px 80px", // Minimum 80px horizontal, 60px vertical safe-zone
+          boxSizing: "border-box",
+          position: "relative",
         }}
       >
+        {/* Subtle decorative luxury border */}
         <div
           style={{
             position: "absolute",
-            inset: 28,
-            border: `1px solid ${palette.accent}`,
-            opacity: 0.45,
+            inset: 32,
+            border: `1px solid ${palette.gold}`,
+            opacity: 0.4,
+            pointerEvents: "none",
           }}
         />
+
+        {/* Eyebrow */}
         <div
           style={{
             display: "flex",
-            fontSize: 20,
-            letterSpacing: 8,
+            fontSize: 18,
+            letterSpacing: 6,
             textTransform: "uppercase",
             color: palette.accent,
+            fontWeight: 600,
           }}
         >
           Thiệp cưới trực tuyến
         </div>
+
+        {/* Couple names */}
         <div
           style={{
             display: "flex",
-            marginTop: 26,
-            fontSize: 66,
-            fontWeight: 600,
+            marginTop: 24,
+            fontSize: 62,
+            fontWeight: 700,
             textAlign: "center",
-            lineHeight: 1.15,
+            lineHeight: 1.18,
+            color: palette.ink,
+            maxWidth: 1000,
+            justifyContent: "center",
           }}
         >
           {couple}
         </div>
+
+        {/* Ceremony date */}
         {date ? (
-          <div style={{ display: "flex", marginTop: 16, fontSize: 28, opacity: 0.75 }}>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 14,
+              fontSize: 26,
+              color: palette.muted,
+              fontWeight: 500,
+              letterSpacing: 1,
+            }}
+          >
             {date}
           </div>
         ) : null}
+
+        {/* Personalized guest invitation pill */}
         {guest ? (
           <div
             style={{
               display: "flex",
-              marginTop: 44,
-              padding: "16px 36px",
+              alignItems: "center",
+              marginTop: 36,
+              padding: "14px 38px",
               borderRadius: 999,
               backgroundColor: palette.soft,
-              fontSize: 30,
-              fontWeight: 500,
+              border: `1px solid ${palette.border}`,
+              fontSize: 28,
+              fontWeight: 600,
+              color: palette.accent,
+              boxShadow: "0 2px 8px rgba(31,29,26,0.04)",
             }}
           >
             Trân trọng kính mời: {guest}
           </div>
         ) : null}
-        <div style={{ display: "flex", marginTop: 30, fontSize: 18, opacity: 0.6 }}>
+
+        {/* Brand signature */}
+        <div
+          style={{
+            display: "flex",
+            marginTop: 28,
+            fontSize: 16,
+            letterSpacing: 3,
+            textTransform: "uppercase",
+            color: palette.muted,
+            opacity: 0.7,
+          }}
+        >
           inviwedd.vn
         </div>
       </div>
@@ -98,7 +164,8 @@ export async function GET(request: Request) {
       width: WIDTH,
       height: HEIGHT,
       headers: {
-        "Cache-Control": "public, max-age=86400, s-maxage=604800",
+        "Cache-Control":
+          "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
       },
     },
   );

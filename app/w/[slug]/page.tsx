@@ -4,6 +4,7 @@ import { cache } from "react";
 import { toAbsoluteSiteUrl } from "@/config/site";
 import { DesignerInvitation } from "@/components/designer/designer-invitation";
 import type { DesignerCanvasContent } from "@/components/ops/designer-types";
+import { InvitationDesktopStage } from "@/components/invitation/InvitationDesktopStage";
 import { buildDesignerInviteValues } from "@/lib/designer-invite";
 import { formatWeddingDateParts } from "@/lib/utils";
 import { getPublicWeddingBySlug } from "@/lib/server/public-wedding";
@@ -42,11 +43,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     photos: wedding.photos,
   });
   const title = `Thiệp cưới ${templateData.couple.groomName} & ${templateData.couple.brideName}`;
-  const trimmedQuote = wedding.content.quote.trim();
-  const description =
-    trimmedQuote.length > 0
-      ? trimmedQuote.slice(0, 160)
-      : "Mời bạn xem thiệp cưới của chúng tôi";
+  const primaryEvent = wedding.events?.[0];
+  const dateFormatted = formatWeddingDateParts(primaryEvent?.startsAt ?? wedding.content.date).dotDate;
+  const venueFormatted = primaryEvent?.venueName || primaryEvent?.venueAddress || "";
+  const description = venueFormatted
+    ? `Hôn lễ diễn ra vào ${dateFormatted} tại ${venueFormatted}. Trân trọng kính mời bạn xem thiệp cưới và gửi lời chúc phúc.`
+    : wedding.content.quote.trim() || `Trân trọng kính mời bạn đến chung vui cùng chúng tôi vào ngày ${dateFormatted}.`;
 
   const rawOgImage =
     wedding.photos.find((p) => p.kind === "og")?.url ??
@@ -71,6 +73,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
               url: ogImageUrl,
               width: 1200,
               height: 630,
+              type: "image/png",
               alt: title,
             },
           ]
@@ -140,19 +143,33 @@ export default async function PublicWeddingPage({ params }: PageProps) {
       events: wedding.events,
       photos: wedding.photos,
     });
+    const coverPhoto =
+      wedding.photos.find((p) => p.kind === "og")?.url ??
+      designerData.photos.heroUrl ??
+      designerData.photos.gallery[0]?.url ??
+      null;
+    const coupleLabel = `${wedding.content.couple.groomName} & ${wedding.content.couple.brideName}`;
+
     return (
-      <DesignerInvitation
-        canvas={
-          wedding.designerTemplate.canvas as unknown as DesignerCanvasContent
-        }
-        values={values}
-        coupleLabel={`${wedding.content.couple.groomName} & ${wedding.content.couple.brideName}`}
-        data={designerData}
-        weddingSlug={wedding.slug}
-        invitationMode="public"
-        plan={wedding.plan}
-        overrides={wedding.content.designerOverrides}
-      />
+      <InvitationDesktopStage
+        coverPhotoUrl={coverPhoto}
+        coupleLabel={coupleLabel}
+        hasMusic={true}
+        musicTitle="Nhạc nền"
+      >
+        <DesignerInvitation
+          canvas={
+            wedding.designerTemplate.canvas as unknown as DesignerCanvasContent
+          }
+          values={values}
+          coupleLabel={coupleLabel}
+          data={designerData}
+          weddingSlug={wedding.slug}
+          invitationMode="public"
+          plan={wedding.plan}
+          overrides={wedding.content.designerOverrides}
+        />
+      </InvitationDesktopStage>
     );
   }
 
@@ -165,12 +182,26 @@ export default async function PublicWeddingPage({ params }: PageProps) {
     photos: wedding.photos,
   });
 
+  const coverPhoto =
+    wedding.photos.find((p) => p.kind === "og")?.url ??
+    templateData.photos.heroUrl ??
+    templateData.photos.gallery[0]?.url ??
+    null;
+  const coupleLabel = `${wedding.content.couple.groomName} & ${wedding.content.couple.brideName}`;
+
   return (
-    <LiveTemplateRenderer
-      templateId={wedding.templateId}
-      data={templateData}
-      weddingSlug={wedding.slug}
-      invitationMode="public"
-    />
+    <InvitationDesktopStage
+      coverPhotoUrl={coverPhoto}
+      coupleLabel={coupleLabel}
+      hasMusic={Boolean(templateData.music?.src)}
+      musicTitle={templateData.music?.title}
+    >
+      <LiveTemplateRenderer
+        templateId={wedding.templateId}
+        data={templateData}
+        weddingSlug={wedding.slug}
+        invitationMode="public"
+      />
+    </InvitationDesktopStage>
   );
 }

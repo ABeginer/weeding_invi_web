@@ -62,6 +62,9 @@ export default function Basic2Template({
   const hasFamilies = Boolean(data.couple.groomParents || data.couple.brideParents);
 
   const handleOpen = () => {
+    try {
+      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+    } catch {}
     setOpened(true);
     onOpenedChange?.(true);
   };
@@ -121,7 +124,7 @@ export default function Basic2Template({
               }}
               aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayGuest}`}
               className={cn(
-                "group relative flex h-full w-full cursor-pointer flex-col items-center justify-between border border-[#C6A962] bg-white text-center shadow-[0_18px_45px_rgba(31,29,26,0.08)] transition-colors hover:border-[#9E803B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#706040]",
+                "group relative flex h-full w-full cursor-pointer flex-col items-center justify-between border border-[#C6A962] bg-white text-center shadow-[0_18px_45px_rgba(31,29,26,0.08)] transition-colors hover:border-[#9E803B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#706040] touch-manipulation select-none",
                 isDesktopLayout ? "max-w-[440px]" : "max-w-[380px]",
                 contained ? "max-h-[560px] px-5 py-7" : "max-h-[660px] px-6 py-10",
               )}

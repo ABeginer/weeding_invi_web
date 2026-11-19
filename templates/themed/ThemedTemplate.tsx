@@ -99,6 +99,9 @@ export function ThemedTemplate({
   };
 
   const handleOpen = () => {
+    try {
+      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+    } catch {}
     setOpened(true);
     onOpenedChange?.(true);
   };
