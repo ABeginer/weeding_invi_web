@@ -19,6 +19,8 @@ const INFO_POPOVER_TEXTS = {
     "Gửi 1 link riêng cho từng khách, thiệp và ảnh xem trước trên Zalo tự hiện đúng vai vế (Chú Bảy, Sếp, Bạn thân...).",
   music:
     "Tự tải lên bài hát kỷ niệm của hai bạn (MP3) để phát ngay khi khách chạm mở phong bì.",
+  qrOnlineAlbum:
+    "Tạo mã QR riêng để khách mời quét và gửi ảnh chụp tại tiệc vào album kỷ niệm online của hai bạn mà không cần cài app hay đăng nhập.",
   excel:
     "Tải toàn bộ danh sách xác nhận tham dự & thực đơn mặn/chay ra file Excel chuẩn tiếng Việt chỉ với 1 chạm.",
   boardingPass:
@@ -203,6 +205,16 @@ export function PricingTable({
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <div className="flex items-center gap-1.5 font-medium text-[#1F1D1A]">
+                    <span>QR Online Album</span>
+                    <FeatureInfoPopover
+                      content={INFO_POPOVER_TEXTS.qrOnlineAlbum}
+                      variant="light"
+                    />
+                  </div>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
                   <div className="flex items-center gap-1.5">
                     <span>Xuất danh sách Excel</span>
                     <FeatureInfoPopover
@@ -284,7 +296,7 @@ export function PricingTable({
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
                   <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
-                    <span>Live QR Photo Wall &amp; Chiếu LED</span>
+                    <span>Live QR Photo Wall &amp; Chiếu màn hình LED</span>
                     <FeatureInfoPopover
                       content={INFO_POPOVER_TEXTS.livePhotoWall}
                       variant="dark"

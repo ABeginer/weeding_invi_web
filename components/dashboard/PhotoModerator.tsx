@@ -268,6 +268,10 @@ export function PhotoModerator({
   // Xử lý tải toàn bộ ảnh dạng file ZIP 100% Client-Side
   const handleDownloadZip = async () => {
     if (isDownloadingZip) return;
+    if (plan && plan !== "vip") {
+      setVipUpgradeOpen(true);
+      return;
+    }
     if (targetDownloadPhotos.length === 0) {
       showToast(
         downloadScope === "approved"
@@ -480,7 +484,13 @@ export function PhotoModerator({
           {/* Tải bảng QR để bàn */}
           <button
             type="button"
-            onClick={() => setStandeeModalOpen(true)}
+            onClick={() => {
+              if (plan && plan !== "vip") {
+                setVipUpgradeOpen(true);
+                return;
+              }
+              setStandeeModalOpen(true);
+            }}
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#B89B72]/60 bg-white px-3 py-2 text-xs font-semibold text-[#1F1D1A] shadow-xs transition-colors hover:bg-[#FAF8F5] active:scale-95"
           >
             <Printer className="h-3.5 w-3.5 text-[#B89B72]" />

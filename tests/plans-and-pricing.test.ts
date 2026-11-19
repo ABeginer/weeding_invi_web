@@ -28,6 +28,7 @@ describe("3-Tier Entitlement (Free / Pro / VIP) & Pricing Logic", () => {
       "tableQrPoster",
       "photoWallZip",
       "familyPinShare",
+      "qrOnlineAlbum",
     ];
 
     for (const f of features) {
@@ -54,6 +55,7 @@ describe("3-Tier Entitlement (Free / Pro / VIP) & Pricing Logic", () => {
     assert.equal(canUseFeature("pro", "customMusicUpload"), true);
     assert.equal(canUseFeature("pro", "vietQrImages"), true);
     assert.equal(canUseFeature("pro", "exportCsv"), true);
+    assert.equal(canUseFeature("pro", "qrOnlineAlbum"), true);
 
     // Toàn bộ tính năng sảnh tiệc VIP phải bị khóa trên gói Pro
     const vipOnlyFeatures: PlanFeature[] = [
@@ -96,6 +98,7 @@ describe("3-Tier Entitlement (Free / Pro / VIP) & Pricing Logic", () => {
       "tableQrPoster",
       "photoWallZip",
       "familyPinShare",
+      "qrOnlineAlbum",
     ];
 
     for (const f of allFeatures) {

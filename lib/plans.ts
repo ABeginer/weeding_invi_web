@@ -9,7 +9,8 @@ export type PlanFeature =
   | "ledMode"
   | "tableQrPoster"
   | "photoWallZip"
-  | "familyPinShare";
+  | "familyPinShare"
+  | "qrOnlineAlbum";
 
 export interface PlanLimitsData {
   name: string;
@@ -29,6 +30,7 @@ export interface PlanLimitsData {
   tableQrPoster: boolean;
   photoWallZip: boolean;
   familyPinShare: boolean;
+  qrOnlineAlbum: boolean;
 }
 
 export const PLAN_CONFIGS: Record<PlanTier, PlanLimitsData> = {
@@ -48,6 +50,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanLimitsData> = {
     tableQrPoster: false,
     photoWallZip: false,
     familyPinShare: false,
+    qrOnlineAlbum: false,
   },
   pro: {
     name: "Gói Pro",
@@ -67,6 +70,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanLimitsData> = {
     tableQrPoster: false,
     photoWallZip: false,
     familyPinShare: false,
+    qrOnlineAlbum: true,
   },
   vip: {
     name: "Gói VIP",
@@ -86,6 +90,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanLimitsData> = {
     tableQrPoster: true,
     photoWallZip: true,
     familyPinShare: true,
+    qrOnlineAlbum: true,
   },
 };
 

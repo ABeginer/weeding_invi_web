@@ -1,6 +1,7 @@
 import { fail, json, route } from "@/lib/server/http";
 import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { toPhoto, type PhotoRow } from "@/lib/server/mappers";
+import { canUseFeature } from "@/lib/plans";
 import {
   buildPhotoStorageKey,
   deletePhotoObject,
@@ -37,9 +38,9 @@ export const POST = route(async (req: Request, { params }: Ctx) => {
     return fail("Thiệp cưới hiện đang tạm ngưng.", 403);
   }
 
-  // Khóa tính năng album/LED nếu thiệp chưa nâng cấp gói VIP
-  if (wedding.plan !== "vip") {
-    return fail("Tính năng gửi ảnh lên màn hình LED chỉ khả dụng cho thiệp gói VIP.", 403);
+  // Khóa tính năng gửi ảnh vào Online Album nếu thiệp là gói free
+  if (!canUseFeature(wedding.plan, "qrOnlineAlbum")) {
+    return fail("Tính năng gửi ảnh vào Online Album chỉ khả dụng từ gói Pro trở lên.", 403);
   }
 
   let formData: FormData;
