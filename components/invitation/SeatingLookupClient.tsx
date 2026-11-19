@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { getInvite } from "@/lib/api";
 import { buildSalutation } from "@/lib/salutation-engine";
+import { formatWeddingDateParts } from "@/lib/utils";
 import { GuestBoardingPass } from "@/components/invitation/GuestBoardingPass";
 
 export function SeatingLookupClient({ slug }: { slug: string }) {
@@ -73,19 +74,20 @@ export function SeatingLookupClient({ slug }: { slug: string }) {
         </h1>
       </div>
 
-      {invite.tableNumber ? (
-        <GuestBoardingPass
-          guestName={salutation.guestLabel}
-          plusOnes={invite.plusOnes ?? 0}
-          diet={invite.diet}
-          tableNumber={invite.tableNumber}
-        />
-      ) : (
-        <div className="mx-auto max-w-md rounded-2xl border border-dashed border-border bg-surface p-6 text-center text-sm text-text-muted">
-          Cô dâu chú rể chưa xếp bàn cho bạn. Bạn vui lòng xem lại thiệp hoặc hỏi
-          người đón khách tại sảnh.
-        </div>
-      )}
+      <GuestBoardingPass
+        guestName={salutation.guestLabel}
+        slug={slug}
+        tableNumber={invite.tableNumber}
+        plusOnes={invite.plusOnes ?? 0}
+        diet={invite.diet}
+        weddingDate={invite.events?.[0]?.startsAt}
+        venueName={invite.events?.[0]?.venueName}
+        venueTime={
+          invite.events?.[0]?.startsAt
+            ? formatWeddingDateParts(invite.events[0].startsAt).time
+            : undefined
+        }
+      />
 
       <div className="text-center">
         <Link

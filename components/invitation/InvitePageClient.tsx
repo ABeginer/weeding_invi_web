@@ -13,6 +13,7 @@ import type {
 } from "@/lib/types";
 import { toTemplateData } from "@/lib/wedding-data";
 import { buildSalutation } from "@/lib/salutation-engine";
+import { formatWeddingDateParts } from "@/lib/utils";
 import { GuestBoardingPass } from "./GuestBoardingPass";
 import { InvitationDesktopStage } from "./InvitationDesktopStage";
 import { LiveTemplateRenderer } from "@/templates/LiveTemplateRenderer";
@@ -138,6 +139,10 @@ export function InvitePageClient({
     null;
   const coupleTitle = `${displayData.couple.groomName} & ${displayData.couple.brideName}`;
 
+  const primaryEvent = displayData.events?.[0];
+  const eventDate = primaryEvent?.startsAt ?? displayData.date;
+  const eventTime = eventDate ? formatWeddingDateParts(eventDate).time : undefined;
+
   return (
     <InvitationDesktopStage
       coverPhotoUrl={coverPhoto}
@@ -145,12 +150,19 @@ export function InvitePageClient({
       hasMusic={Boolean(displayData.music?.src)}
       musicTitle={displayData.music?.title}
     >
-      {invite?.tableNumber && (
+      {invite && (
         <GuestBoardingPass
           guestName={guestLabel ?? invite.name}
+          slug={slug}
+          tableNumber={invite.tableNumber}
           plusOnes={invite.plusOnes ?? 0}
           diet={invite.diet}
-          tableNumber={invite.tableNumber}
+          weddingDate={eventDate}
+          coupleTitle={coupleTitle}
+          venueName={primaryEvent?.venueName}
+          venueTime={eventTime}
+          gift={displayData.gift}
+          plan={plan}
         />
       )}
       <LiveTemplateRenderer

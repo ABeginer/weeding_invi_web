@@ -5,8 +5,9 @@ import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
 import { submitRsvp, submitWish } from "@/lib/api";
 import { WishMarquee } from "@/components/invitation/WishMarquee";
 import { WishOverlay } from "@/components/invitation/WishOverlay";
+import { GuestBoardingPass } from "@/components/invitation/GuestBoardingPass";
 import type { GuestDiet, GuestStatus, TemplateData } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
 import type { TemplateRenderMode } from "../types";
 import type { TemplateTone } from "./TemplateOverlays";
@@ -684,6 +685,26 @@ export function TemplateRsvpSection({
               <p className={cn("mt-2 text-xs font-medium", styles.eyebrow)}>
                 Lời chúc của bạn cũng đã được gửi tới cô dâu &amp; chú rể.
               </p>
+            )}
+            {activeChoice === "accepted" && (inviteSlug || walkInGuest?.slug) && (
+              <div className="pt-2 text-left">
+                <GuestBoardingPass
+                  guestName={name || guestName || "Quý khách"}
+                  slug={inviteSlug || walkInGuest?.slug || ""}
+                  plusOnes={summaryPlusOnes}
+                  diet={summaryDiet}
+                  weddingDate={data.events?.[0]?.startsAt ?? data.date}
+                  coupleTitle={`${data.couple.groomName} & ${data.couple.brideName}`}
+                  venueName={data.events?.[0]?.venueName}
+                  venueTime={
+                    (data.events?.[0]?.startsAt ?? data.date)
+                      ? formatWeddingDateParts(data.events?.[0]?.startsAt ?? data.date).time
+                      : undefined
+                  }
+                  gift={data.gift}
+                  plan={data.plan}
+                />
+              </div>
             )}
             <button
               type="button"

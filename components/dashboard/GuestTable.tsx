@@ -29,6 +29,7 @@ import { buildInviteShareMessage } from "@/config/share-templates";
 import {
   ApiError,
   buildGuestLink,
+  bulkAssignTable,
   deleteGuest,
   deleteGuests,
   getStats,
@@ -101,7 +102,8 @@ type QuickFilter =
   | "accepted"
   | "pending"
   | "declined"
-  | "veg";
+  | "veg"
+  | "unassigned";
 
 function getRelationshipLabel(group?: Guest["relationshipGroup"]): string | null {
   if (!group) return null;
@@ -165,6 +167,14 @@ export function GuestTable({
   const [exporting, setExporting] = React.useState(false);
   const [editError, setEditError] = React.useState<string | null>(null);
   const [savingEdit, setSavingEdit] = React.useState(false);
+
+  // Inline table assignment state
+  const [editingTableGuestId, setEditingTableGuestId] = React.useState<string | null>(null);
+  const [inlineTableValue, setInlineTableValue] = React.useState("");
+
+  // Bulk table assignment state
+  const [bulkTableValue, setBulkTableValue] = React.useState("");
+  const [bulkAssigningTable, setBulkAssigningTable] = React.useState(false);
 
   // Assign events dialog state
   const [assigningGuest, setAssigningGuest] = React.useState<Guest | null>(null);
@@ -572,6 +582,85 @@ export function GuestTable({
     }
   };
 
+  const handleStartEditTable = (guest: Guest) => {
+    setEditingTableGuestId(guest.id);
+    setInlineTableValue(guest.tableNumber ?? "");
+  };
+
+  const handleSaveInlineTable = async (guest: Guest) => {
+    if (editingTableGuestId !== guest.id) return;
+    const trimmed = inlineTableValue.trim() || null;
+    const previousTable = guest.tableNumber ?? null;
+    setEditingTableGuestId(null);
+
+    if (trimmed === previousTable) return;
+
+    // Optimistic local state update
+    setGuests((prev) =>
+      prev.map((g) => (g.id === guest.id ? { ...g, tableNumber: trimmed } : g)),
+    );
+
+    try {
+      await updateGuest(weddingId, guest.id, {
+        name: guest.name,
+        tableNumber: trimmed,
+      });
+      showToast(
+        trimmed
+          ? `Đã xếp "${guest.name}" vào ${trimmed}`
+          : `Đã hủy xếp bàn cho "${guest.name}"`,
+        "success",
+      );
+      onGuestsChanged?.();
+    } catch (err) {
+      // Rollback on error
+      setGuests((prev) =>
+        prev.map((g) =>
+          g.id === guest.id ? { ...g, tableNumber: previousTable } : g,
+        ),
+      );
+      showToast(
+        err instanceof Error ? err.message : "Không thể cập nhật số bàn.",
+        "error",
+      );
+    }
+  };
+
+  const handleApplyBulkTable = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (selectedGuestIds.length === 0) return;
+    const trimmed = bulkTableValue.trim() || null;
+    setBulkAssigningTable(true);
+
+    const originalGuests = [...guests];
+    setGuests((prev) =>
+      prev.map((g) =>
+        selectedGuestIds.includes(g.id) ? { ...g, tableNumber: trimmed } : g,
+      ),
+    );
+
+    try {
+      await bulkAssignTable(weddingId, selectedGuestIds, trimmed);
+      showToast(
+        trimmed
+          ? `Đã xếp ${selectedGuestIds.length} khách vào "${trimmed}"`
+          : `Đã xóa số bàn cho ${selectedGuestIds.length} khách`,
+        "success",
+      );
+      setSelectedGuestIds([]);
+      setBulkTableValue("");
+      onGuestsChanged?.();
+    } catch (err) {
+      setGuests(originalGuests);
+      showToast(
+        err instanceof Error ? err.message : "Không thể gán số bàn hàng loạt.",
+        "error",
+      );
+    } finally {
+      setBulkAssigningTable(false);
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!deletingGuest) return;
     setDeleting(true);
@@ -657,6 +746,9 @@ export function GuestTable({
           g.dietaryPreference === "vegetarian"
         );
       }
+      if (filterTab === "unassigned") {
+        return !g.tableNumber || !g.tableNumber.trim();
+      }
       return true;
     });
   }, [guests, search, filterTab, sentGuestIds]);
@@ -665,6 +757,10 @@ export function GuestTable({
   const totalCount = stats?.total ?? total;
   const sentCount = Math.min(sentGuestIds.size, totalCount);
   const unsentCount = Math.max(0, totalCount - sentCount);
+  const unassignedCount = React.useMemo(
+    () => guests.filter((g) => !g.tableNumber || !g.tableNumber.trim()).length,
+    [guests],
+  );
   const sentPercent = totalCount > 0 ? Math.round((sentCount / totalCount) * 100) : 0;
   const acceptedCount = stats?.accepted ?? 0;
   const acceptedHeadcount = stats?.acceptedHeadcount ?? stats?.accepted ?? 0;
@@ -968,6 +1064,22 @@ export function GuestTable({
                 {vegCount}
               </span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterTab("unassigned")}
+              className={cn(
+                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+                filterTab === "unassigned"
+                  ? "bg-[#7A1C24] text-white shadow-xs font-semibold"
+                  : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#7A1C24]/30",
+              )}
+            >
+              <span>Chưa xếp bàn</span>
+              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+                {unassignedCount}
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -1003,6 +1115,28 @@ export function GuestTable({
               <CalendarHeart className="h-3.5 w-3.5 text-[#B89B72]" />
               <span>Gán buổi lễ</span>
             </button>
+
+            {/* Gán số bàn hàng loạt */}
+            <form
+              onSubmit={handleApplyBulkTable}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-2.5 py-1 shadow-2xs"
+            >
+              <span className="text-[11px] font-medium text-[#6B655E]">Gán vào bàn:</span>
+              <input
+                type="text"
+                value={bulkTableValue}
+                onChange={(e) => setBulkTableValue(e.target.value)}
+                placeholder="Bàn 08..."
+                className="h-5 w-20 bg-transparent text-xs text-[#1F1D1A] outline-none placeholder:text-[#6B655E]/60"
+              />
+              <button
+                type="submit"
+                disabled={bulkAssigningTable || !bulkTableValue.trim()}
+                className="cursor-pointer rounded-full bg-[#7A1C24] px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-[#5E141B] disabled:opacity-40"
+              >
+                {bulkAssigningTable ? "..." : "Áp dụng"}
+              </button>
+            </form>
             <button
               type="button"
               onClick={() => setBulkDeleteOpen(true)}
@@ -1200,10 +1334,40 @@ export function GuestTable({
                                 {isVeg ? "Chay" : "Mặn"}
                               </span>
                             )}
-                            {guest.tableNumber && (
-                              <span className="rounded-full border border-[#E8E2D9] bg-white px-2 py-0.5 text-[10px] font-medium text-[#B89B72]">
-                                {guest.tableNumber}
-                              </span>
+                            {editingTableGuestId === guest.id ? (
+                              <div className="inline-flex items-center gap-1">
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  value={inlineTableValue}
+                                  onChange={(e) => setInlineTableValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") handleSaveInlineTable(guest);
+                                    if (e.key === "Escape") setEditingTableGuestId(null);
+                                  }}
+                                  onBlur={() => handleSaveInlineTable(guest)}
+                                  placeholder="Số bàn..."
+                                  className="h-6 w-20 rounded border border-[#7A1C24] bg-white px-1.5 text-[11px] font-medium text-[#1F1D1A] outline-none shadow-xs"
+                                />
+                              </div>
+                            ) : guest.tableNumber ? (
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditTable(guest)}
+                                title="Nhấn để đổi bàn"
+                                className="inline-flex cursor-pointer items-center gap-0.5 rounded-full border border-[#B89B72]/40 bg-[#FAF8F5] px-2 py-0.5 text-[10px] font-medium text-[#B89B72] hover:border-[#7A1C24] hover:text-[#7A1C24]"
+                              >
+                                <span>📍 {guest.tableNumber}</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditTable(guest)}
+                                title="Nhấn để xếp bàn nhanh"
+                                className="inline-flex cursor-pointer items-center gap-0.5 rounded-full border border-dashed border-[#E8E2D9] bg-white px-2 py-0.5 text-[10px] text-[#6B655E] hover:border-[#7A1C24] hover:text-[#7A1C24]"
+                              >
+                                <span>+ Xếp bàn</span>
+                              </button>
                             )}
                           </div>
                         </td>
@@ -1359,10 +1523,39 @@ export function GuestTable({
                             </span>
                           )}
                         </div>
-                        {guest.tableNumber && (
-                          <p className="mt-0.5 text-xs text-[#B89B72] font-medium">
-                            📍 {guest.tableNumber}
-                          </p>
+                        {editingTableGuestId === guest.id ? (
+                          <div className="mt-1 inline-flex items-center gap-1">
+                            <input
+                              autoFocus
+                              type="text"
+                              value={inlineTableValue}
+                              onChange={(e) => setInlineTableValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveInlineTable(guest);
+                                if (e.key === "Escape") setEditingTableGuestId(null);
+                              }}
+                              onBlur={() => handleSaveInlineTable(guest)}
+                              placeholder="Nhập số bàn..."
+                              className="h-6 w-24 rounded border border-[#7A1C24] bg-white px-1.5 text-xs text-[#1F1D1A] outline-none shadow-xs"
+                            />
+                          </div>
+                        ) : guest.tableNumber ? (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditTable(guest)}
+                            className="mt-0.5 inline-flex cursor-pointer items-center gap-1 text-xs text-[#B89B72] font-medium hover:text-[#7A1C24]"
+                          >
+                            <span>📍 {guest.tableNumber}</span>
+                            <span className="text-[10px] text-[#6B655E]">(đổi)</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditTable(guest)}
+                            className="mt-0.5 inline-flex cursor-pointer items-center gap-0.5 text-xs text-[#6B655E] underline underline-offset-2 hover:text-[#7A1C24]"
+                          >
+                            + Xếp bàn
+                          </button>
                         )}
                       </div>
                     </div>

@@ -637,6 +637,18 @@ export async function deleteGuests(
   );
 }
 
+/** Gán số bàn hàng loạt cho danh sách khách đã chọn */
+export function bulkAssignTable(
+  weddingId: string,
+  guestIds: string[],
+  tableNumber: string | null,
+): Promise<{ updated: number; tableNumber: string | null }> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/guests/bulk`,
+    patch({ ids: guestIds, tableNumber }),
+  );
+}
+
 export function setGuestEvents(
   weddingId: string,
   guestId: string,

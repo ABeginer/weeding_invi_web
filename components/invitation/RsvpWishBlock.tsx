@@ -5,11 +5,12 @@ import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
 import { getWishes, submitRsvp, submitWish } from "@/lib/api";
 import { getWishAuthorKey } from "@/lib/wish-author";
 import type { GuestDiet, GuestStatus } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
+import { GuestBoardingPass } from "./GuestBoardingPass";
 import { WishMarquee } from "./WishMarquee";
 import { WishOverlay } from "./WishOverlay";
 import {
@@ -610,6 +611,27 @@ export function RsvpWishBlock({
                 </p>
               )}
             </div>
+
+            {activeChoice === "accepted" && (slug || walkInGuest?.slug) && (
+              <div className="pt-2 text-left">
+                <GuestBoardingPass
+                  guestName={name || guestName || "Quý khách"}
+                  slug={slug || walkInGuest?.slug || ""}
+                  plusOnes={summaryPlusOnes}
+                  diet={summaryDiet}
+                  weddingDate={data.events?.[0]?.startsAt ?? data.date}
+                  coupleTitle={`${data.couple.groomName} & ${data.couple.brideName}`}
+                  venueName={data.events?.[0]?.venueName}
+                  venueTime={
+                    (data.events?.[0]?.startsAt ?? data.date)
+                      ? formatWeddingDateParts(data.events?.[0]?.startsAt ?? data.date).time
+                      : undefined
+                  }
+                  gift={data.gift}
+                  plan={data.plan}
+                />
+              </div>
+            )}
 
             <div className="flex justify-center">
               <Button

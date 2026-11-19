@@ -127,3 +127,45 @@ export const DELETE = authRoute<Ctx>(async (req, user, { params }) => {
   if (error) throw error;
   return json({ deleted: ids.length });
 });
+
+/** Cập nhật hàng loạt (ví dụ: gán số bàn) — dùng cho thanh thao tác hàng loạt. */
+export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
+  const { id } = await params;
+  const wedding = await getOwnedWedding(id, user.id);
+  if (!wedding) return fail("Không tìm thấy thiệp cưới.", 404);
+
+  const body = await readBody(req);
+  if (!Array.isArray(body?.ids)) return fail("Danh sách khách không hợp lệ.");
+
+  const ids = Array.from(
+    new Set(
+      (body.ids as unknown[])
+        .map((value) => (typeof value === "string" ? value.trim() : ""))
+        .filter((value) => UUID_RE.test(value)),
+    ),
+  );
+
+  if (ids.length === 0) return fail("Danh sách khách không hợp lệ.");
+  if (ids.length > 500) return fail("Tối đa 500 khách mỗi lần cập nhật.");
+
+  const patch: Record<string, unknown> = {};
+  if (body?.tableNumber !== undefined) {
+    patch.table_number =
+      typeof body.tableNumber === "string" && body.tableNumber.trim()
+        ? text(body.tableNumber, 50)
+        : null;
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return fail("Không có dữ liệu cần cập nhật.");
+  }
+
+  const { error } = await db()
+    .from("guests")
+    .update(patch)
+    .eq("wedding_id", wedding.id)
+    .in("id", ids);
+
+  if (error) throw error;
+  return json({ updated: ids.length, tableNumber: patch.table_number ?? null });
+});
