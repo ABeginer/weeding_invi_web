@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LandingPageClient } from "@/components/landing/landing-page-client";
+import { FAQ_ITEMS } from "@/components/landing/faq";
 import { LANDING_COPY } from "@/config/landing";
 import { resolveAppBaseUrl, toAbsoluteSiteUrl } from "@/config/site";
 
@@ -34,5 +35,53 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <LandingPageClient />;
+  const siteUrl = resolveAppBaseUrl();
+
+  const webApplicationSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Inviwedd",
+    applicationCategory: "LifestyleApplication",
+    operatingSystem: "All",
+    url: siteUrl,
+    description: LANDING_COPY.seo.description,
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "VND",
+      lowPrice: "0",
+      highPrice: "499000",
+      offerCount: "3",
+    },
+  };
+
+  const faqPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ_ITEMS.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(webApplicationSchema),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqPageSchema),
+        }}
+      />
+      <LandingPageClient />
+    </>
+  );
 }

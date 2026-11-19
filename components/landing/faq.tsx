@@ -1,12 +1,12 @@
 import * as React from "react";
 import { ChevronDown, HelpCircle } from "lucide-react";
 
-interface FaqItem {
+export interface FaqItem {
   question: string;
   answer: string;
 }
 
-const FAQ_ITEMS: FaqItem[] = [
+export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Dữ liệu được lưu bao lâu?",
     answer:

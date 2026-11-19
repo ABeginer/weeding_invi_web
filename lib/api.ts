@@ -549,14 +549,26 @@ export function createGuest(weddingId: string, name: string): Promise<Guest> {
   );
 }
 
+export interface BulkGuestCreateItem {
+  name: string;
+  relationshipGroup?: Guest["relationshipGroup"] | null;
+  tableNumber?: string | null;
+}
+
 export function createGuestsBulk(
   weddingId: string,
-  names: string[],
+  itemsOrNames: string[] | BulkGuestCreateItem[],
   eventIds: string[] = [],
 ): Promise<Guest[]> {
+  const isStringArray =
+    itemsOrNames.length > 0 && typeof itemsOrNames[0] === "string";
+  const payload = isStringArray
+    ? { names: itemsOrNames, eventIds }
+    : { items: itemsOrNames, eventIds };
+
   return authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/bulk`,
-    post({ names, eventIds }),
+    post(payload),
   );
 }
 

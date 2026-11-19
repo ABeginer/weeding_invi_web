@@ -16,6 +16,7 @@ import {
   MailOpen,
   MessageSquareHeart,
   Smartphone,
+  Tv,
   Users,
 } from "lucide-react";
 import { getPlanLabel } from "@/config/plans";
@@ -602,6 +603,16 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               >
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>Mở trang thiệp</span>
+              </a>
+              <a
+                href={`/led/${wedding.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent-text"
+                title="Mở màn hình chiếu LED tiệc cưới"
+              >
+                <Tv className="h-3.5 w-3.5 text-accent-text" aria-hidden="true" />
+                <span>Màn hình LED</span>
               </a>
             </>
           )}

@@ -1,31 +1,40 @@
 import type { MetadataRoute } from "next";
-import { SITE_LINKS, toAbsoluteSiteUrl } from "@/config/site";
-import { IS_LUNAR_TOOL_PUBLIC } from "@/config/tools-copy";
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://wedding-invitation.inviwedd.workers.dev";
 
 export default function robots(): MetadataRoute.Robots {
-  const allowPaths = [
-    SITE_LINKS.home,
-    SITE_LINKS.tools,
-    SITE_LINKS.toolWeddingCalc,
-    ...(IS_LUNAR_TOOL_PUBLIC ? [SITE_LINKS.toolLunar] : []),
-  ];
+  const base = SITE_URL.replace(/\/+$/, "");
 
   return {
     rules: [
       {
         userAgent: "*",
-        allow: allowPaths,
+        allow: [
+          "/",
+          "/thiep-cuoi",
+          "/cong-cu",
+          "/cong-cu/*",
+          "/mau/*",
+          "/chinh-sach-bao-mat",
+          "/dieu-khoan-su-dung",
+        ],
         disallow: [
           "/api/",
           "/auth/",
           "/dashboard/",
+          "/dashboard/*",
+          "/ops/",
+          "/ops/*",
           "/m/",
           "/w/",
+          "/led/",
+          "/media/",
           "/tao-thiep/luu",
         ],
       },
     ],
-    sitemap: toAbsoluteSiteUrl("/sitemap.xml"),
+    sitemap: `${base}/sitemap.xml`,
   };
 }
-

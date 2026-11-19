@@ -1,63 +1,78 @@
 import type { MetadataRoute } from "next";
-import { SITE_LINKS, toAbsoluteSiteUrl } from "@/config/site";
-import { IS_LUNAR_TOOL_PUBLIC } from "@/config/tools-copy";
+import { TEMPLATE_REGISTRY } from "@/templates/registry";
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://wedding-invitation.inviwedd.workers.dev";
+
+function makeUrl(path: string): string {
+  const base = SITE_URL.replace(/\/+$/, "");
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${p}`;
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  const entries: MetadataRoute.Sitemap = [
+
+  // 1. Core pages
+  const coreEntries: MetadataRoute.Sitemap = [
     {
-      url: toAbsoluteSiteUrl(SITE_LINKS.home),
+      url: makeUrl("/"),
       lastModified: now,
-      changeFrequency: "weekly",
-      priority: 1,
+      changeFrequency: "daily",
+      priority: 1.0,
     },
     {
-      url: toAbsoluteSiteUrl(SITE_LINKS.tools),
+      url: makeUrl("/thiep-cuoi"),
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: toAbsoluteSiteUrl("/cong-cu/tao-loi-moi-zalo"),
+      url: makeUrl("/cong-cu"),
       lastModified: now,
       changeFrequency: "monthly",
-      priority: 0.8,
+      priority: 0.85,
     },
     {
-      url: toAbsoluteSiteUrl(SITE_LINKS.templates),
+      url: makeUrl("/cong-cu/bang-tinh-dam-cuoi"),
       lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.9,
+      changeFrequency: "monthly",
+      priority: 0.85,
     },
     {
-      url: toAbsoluteSiteUrl(SITE_LINKS.toolWeddingCalc),
+      url: makeUrl("/cong-cu/doi-am-lich"),
       lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.9,
+      changeFrequency: "monthly",
+      priority: 0.85,
     },
     {
-      url: toAbsoluteSiteUrl(SITE_LINKS.privacy),
+      url: makeUrl("/cong-cu/tao-loi-moi-zalo"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: makeUrl("/chinh-sach-bao-mat"),
       lastModified: now,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: toAbsoluteSiteUrl(SITE_LINKS.terms),
+      url: makeUrl("/dieu-khoan-su-dung"),
       lastModified: now,
       changeFrequency: "yearly",
       priority: 0.3,
     },
   ];
 
-  if (IS_LUNAR_TOOL_PUBLIC) {
-    entries.push({
-      url: toAbsoluteSiteUrl(SITE_LINKS.toolLunar),
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    });
-  }
+  // 2. All 27 template preview routes
+  const templateEntries: MetadataRoute.Sitemap = TEMPLATE_REGISTRY.map((tpl) => ({
+    url: makeUrl(`/mau/${tpl.id}`),
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
 
-  return entries;
+  return [...coreEntries, ...templateEntries];
 }
-

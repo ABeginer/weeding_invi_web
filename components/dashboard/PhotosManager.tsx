@@ -6,6 +6,8 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
+  Check,
+  Copy,
   Crop,
   ExternalLink,
   GripVertical,
@@ -14,7 +16,9 @@ import {
   Loader2,
   Lock,
   RefreshCw,
+  Sparkles,
   Trash2,
+  Tv,
   Upload,
   X,
 } from "lucide-react";
@@ -147,10 +151,34 @@ export function PhotosManager({
   const [albumStatus, setAlbumStatus] = React.useState<string | null>(null);
   const [albumQr, setAlbumQr] = React.useState<string | null>(null);
   const [qrPreviewOpen, setQrPreviewOpen] = React.useState(false);
+  const [ledUpgradeOpen, setLedUpgradeOpen] = React.useState(false);
+  const [copiedLedLink, setCopiedLedLink] = React.useState(false);
   const [failedAlbumUploads, setFailedAlbumUploads] = React.useState<FailedUploadItem[]>([]);
   const albumInputRef = React.useRef<HTMLInputElement | null>(null);
   const [designerFieldBusy, setDesignerFieldBusy] = React.useState<string | null>(null);
   const [designerFieldError, setDesignerFieldError] = React.useState<string | null>(null);
+
+  const handleCopyLedLink = async () => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/led/${weddingSlug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = url;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedLedLink(true);
+    showToast("Đã sao chép link màn hình LED cho kỹ thuật viên", "success");
+    window.setTimeout(() => setCopiedLedLink(false), 2000);
+  };
 
   const updateDesignerImage = async (key: string, value: string | null) => {
     const next = { ...(content.designerFields ?? {}) };
@@ -1397,6 +1425,114 @@ export function PhotosManager({
           </>
         )}
       </Card>
+
+      {/* Màn hình chiếu LED tiệc cưới (Live QR Photo Wall) */}
+      <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent-text">
+              <Tv className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-fg">
+                  Màn hình chiếu LED tiệc cưới (Live Photo Wall)
+                </h3>
+                <span className="rounded-full bg-[#1F1D1A] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#B89B72] uppercase">
+                  PRO
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-fg-muted">
+                Trình chiếu ảnh cưới &amp; ảnh khách mời tải lên trực tiếp lên màn hình LED / TV sảnh tiệc tỷ lệ 16:9 sắc nét.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {plan === "free" ? (
+          <div
+            onClick={() => setLedUpgradeOpen(true)}
+            className="mt-4 flex cursor-pointer flex-col gap-2 rounded-xl border border-dashed border-border bg-bg p-4 transition-colors hover:border-accent/40"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#8A6D3B]">
+                <Lock className="h-4 w-4 shrink-0" />
+                <span>Tính năng trình chiếu màn hình LED chỉ khả dụng ở gói Pro.</span>
+              </div>
+              <span className="text-xs font-semibold text-accent-text underline">
+                Tìm hiểu &amp; Nâng cấp →
+              </span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-fg-muted">
+              Khách mời quét mã QR ở góc màn hình để gửi ảnh trực tiếp từ điện thoại lên màn hình sân khấu tiệc cưới trong thời gian thực.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center gap-2.5 pt-3 border-t border-border/70">
+            <a
+              href={`/led/${weddingSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-accent bg-accent px-4 text-xs font-semibold text-accent-fg shadow-xs transition-colors hover:bg-accent-hover active:scale-95"
+            >
+              <Tv className="h-3.5 w-3.5" />
+              <span>Mở màn hình chiếu LED (Toàn màn hình)</span>
+              <ExternalLink className="h-3 w-3 opacity-70" />
+            </a>
+
+            <button
+              type="button"
+              onClick={handleCopyLedLink}
+              className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 text-xs font-medium text-fg transition-colors hover:bg-surface-alt active:scale-95"
+            >
+              {copiedLedLink ? (
+                <Check className="h-3.5 w-3.5 text-success-fg" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+              <span>
+                {copiedLedLink ? "Đã sao chép link LED" : "Copy link cho kỹ thuật viên âm thanh / ánh sáng"}
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Modal giới thiệu & nâng cấp gói Pro cho Màn hình LED */}
+      <Dialog
+        open={ledUpgradeOpen}
+        onClose={() => setLedUpgradeOpen(false)}
+        title="Màn hình chiếu LED tiệc cưới (Live Photo Wall)"
+        description="Tính năng cao cấp dành riêng cho gói Pro và VIP của Inviwedd."
+        className="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-bg p-4 text-xs text-fg space-y-2">
+            <div className="flex items-center gap-2 font-semibold text-accent-text">
+              <Sparkles className="h-4 w-4" />
+              <span>Trải nghiệm sân khấu tiệc cưới tương tác</span>
+            </div>
+            <ul className="list-disc pl-4 space-y-1 text-fg-muted">
+              <li>Khách mời quét mã QR ở góc màn hình để tải ảnh chụp tại tiệc cưới lên tức thì.</li>
+              <li>Tự động chiếu slideshow ảnh tỉ lệ 16:9 mượt mà, tối ưu cho màn hình LED sân khấu và TV 4K.</li>
+              <li>Chủ tiệc kiểm soát duyệt ảnh, không sợ nội dung không phù hợp.</li>
+              <li>Cung cấp link riêng cho kỹ thuật viên âm thanh/ánh sáng cắm trực tiếp vào máy phóng.</li>
+            </ul>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setLedUpgradeOpen(false)}>
+              Để sau
+            </Button>
+            <Link
+              href="/#bang-gia"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-accent bg-accent px-4 text-xs font-semibold text-accent-fg shadow-xs transition-colors hover:bg-accent-hover"
+            >
+              <span>Nâng cấp gói Pro ngay →</span>
+            </Link>
+          </div>
+        </div>
+      </Dialog>
 
       <TemplateLightboxModal
         photos={lightboxPhotos}
