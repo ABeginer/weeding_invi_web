@@ -214,6 +214,31 @@ export function CreateWeddingBuilder({
   const [previewOpened, setPreviewOpened] = React.useState(false);
   const [templateQuery, setTemplateQuery] = React.useState("");
   const [themeFilter, setThemeFilter] = React.useState<(typeof THEME_FILTERS)[number]>("Tất cả");
+  const [showPreviewNudge, setShowPreviewNudge] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("inviwedd_seen_mobile_preview_hint") === "1") return;
+    if (!groomName.trim() && !brideName.trim()) return;
+
+    const timer = window.setTimeout(() => {
+      if (localStorage.getItem("inviwedd_seen_mobile_preview_hint") !== "1") {
+        setShowPreviewNudge(true);
+      }
+    }, 1200);
+
+    return () => window.clearTimeout(timer);
+  }, [groomName, brideName]);
+
+  const handleMobilePreviewClick = () => {
+    setMobileTab("preview");
+    if (showPreviewNudge) {
+      setShowPreviewNudge(false);
+      try {
+        localStorage.setItem("inviwedd_seen_mobile_preview_hint", "1");
+      } catch {}
+    }
+  };
 
   const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
   const slugCheckSeqRef = React.useRef(0);
@@ -1478,7 +1503,22 @@ export function CreateWeddingBuilder({
       {/* D. Sticky Bottom Bar on Mobile (< lg) */}
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t border-[#E8E2D9] bg-white/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden">
         {/* Segmented Toggle: Chỉnh sửa | Xem trước */}
-        <div className="flex rounded-full border border-[#E8E2D9] bg-[#FAF8F5] p-1">
+        <div className="relative flex rounded-full border border-[#E8E2D9] bg-[#FAF8F5] p-1">
+          {/* First-Time "Xem trước" Floating Nudge */}
+          {showPreviewNudge && (
+            <div
+              onClick={handleMobilePreviewClick}
+              className="absolute -top-11 left-1/2 z-50 flex -translate-x-1/2 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full bg-[#1F1D1A] px-3.5 py-1.5 text-xs text-[#FAF8F5] shadow-lg backdrop-blur-xs"
+            >
+              <span>Xem tên hai bạn trên thiệp ngay</span>
+              <span className="text-[#B89B72]" aria-hidden="true">→</span>
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-0 w-0 border-x-4 border-x-transparent border-t-4 border-t-[#1F1D1A]"
+              />
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => setMobileTab("edit")}
@@ -1493,12 +1533,13 @@ export function CreateWeddingBuilder({
           </button>
           <button
             type="button"
-            onClick={() => setMobileTab("preview")}
+            onClick={handleMobilePreviewClick}
             className={cn(
               "rounded-full px-4 py-1.5 text-xs font-semibold transition-all",
               mobileTab === "preview"
                 ? "bg-[#1F1D1A] text-white shadow-xs"
                 : "text-[#6B655E]",
+              showPreviewNudge && "animate-luxury-shimmer text-[#7A1C24] font-bold ring-1 ring-[#B89B72]",
             )}
           >
             Xem trước

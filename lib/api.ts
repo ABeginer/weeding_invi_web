@@ -87,7 +87,7 @@ async function parseErrorResponse(res: Response): Promise<never> {
     if (body && typeof body.error === "string") message = body.error;
     if (body && typeof body.field === "string") field = body.field;
     if (body && typeof body.code === "string") code = body.code;
-  } catch {}
+  } catch { }
   throw new ApiError(message, res.status, field, code);
 }
 
@@ -244,15 +244,15 @@ export async function submitRsvp(
   const payload =
     typeof slugOrInput === "string"
       ? {
-          slug: slugOrInput,
-          status,
-          ...(extras?.plusOnes !== undefined ? { plusOnes: extras.plusOnes } : {}),
-          ...(extras?.diet !== undefined ? { diet: extras.diet } : {}),
-          ...(extras?.songRequest !== undefined ? { songRequest: extras.songRequest } : {}),
-          ...(extras?.rideNeeded !== undefined ? { rideNeeded: extras.rideNeeded } : {}),
-          ...(extras?.wish ? { wish: extras.wish } : {}),
-          ...(extras?.turnstileToken ? { turnstileToken: extras.turnstileToken } : {}),
-        }
+        slug: slugOrInput,
+        status,
+        ...(extras?.plusOnes !== undefined ? { plusOnes: extras.plusOnes } : {}),
+        ...(extras?.diet !== undefined ? { diet: extras.diet } : {}),
+        ...(extras?.songRequest !== undefined ? { songRequest: extras.songRequest } : {}),
+        ...(extras?.rideNeeded !== undefined ? { rideNeeded: extras.rideNeeded } : {}),
+        ...(extras?.wish ? { wish: extras.wish } : {}),
+        ...(extras?.turnstileToken ? { turnstileToken: extras.turnstileToken } : {}),
+      }
       : slugOrInput;
   return request<SubmitRsvpResponse>("/api/rsvp", post(payload));
 }

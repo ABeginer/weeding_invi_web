@@ -92,7 +92,7 @@ function saveSentGuestIds(weddingId: string, ids: Set<string>): void {
       `${SENT_STORAGE_KEY_PREFIX}${weddingId}`,
       JSON.stringify(Array.from(ids)),
     );
-  } catch {}
+  } catch { }
 }
 
 type QuickFilter =
@@ -148,6 +148,24 @@ export function GuestTable({
   const [sentGuestIds, setSentGuestIds] = React.useState<Set<string>>(() =>
     getSentGuestIds(weddingId),
   );
+
+  // First-time "Copy lời mời" guidance tooltip
+  const [showCopyInviteHint, setShowCopyInviteHint] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const seen = window.localStorage.getItem("inviwedd_seen_copy_invite_hint") === "1";
+    if (!seen) {
+      setShowCopyInviteHint(true);
+    }
+  }, []);
+
+  const dismissCopyInviteHint = React.useCallback(() => {
+    setShowCopyInviteHint(false);
+    try {
+      window.localStorage.setItem("inviwedd_seen_copy_invite_hint", "1");
+    } catch {}
+  }, []);
 
   // Dialog states
   const [addOpen, setAddOpen] = React.useState(false);
@@ -290,6 +308,7 @@ export function GuestTable({
 
   // 1-Tap Copy Invitation & Link + Auto-mark Sent
   const handleCopyInvite = async (guest: Guest) => {
+    dismissCopyInviteHint();
     const url = buildGuestLink(guest.slug);
     const message = buildInviteShareMessage(guest.name, url);
 
@@ -328,17 +347,17 @@ export function GuestTable({
       "success",
       !wasSent
         ? {
-            label: "Hoàn tác",
-            onClick: () => {
-              setSentGuestIds((prev) => {
-                const next = new Set(prev);
-                next.delete(guest.id);
-                saveSentGuestIds(weddingId, next);
-                return next;
-              });
-              showToast(`Đã hoàn tác: chuyển "${guest.name}" về Chưa gửi`, "info");
-            },
-          }
+          label: "Hoàn tác",
+          onClick: () => {
+            setSentGuestIds((prev) => {
+              const next = new Set(prev);
+              next.delete(guest.id);
+              saveSentGuestIds(weddingId, next);
+              return next;
+            });
+            showToast(`Đã hoàn tác: chuyển "${guest.name}" về Chưa gửi`, "info");
+          },
+        }
         : undefined,
     );
   };
@@ -758,6 +777,10 @@ export function GuestTable({
   }, [guests, search, filterTab, sentGuestIds]);
 
   // Derived KPI numbers
+  const firstUnsentGuestId = React.useMemo(() => {
+    return filteredGuests.find((g) => !sentGuestIds.has(g.id))?.id;
+  }, [filteredGuests, sentGuestIds]);
+
   const totalCount = stats?.total ?? total;
   const sentCount = Math.min(sentGuestIds.size, totalCount);
   const unsentCount = Math.max(0, totalCount - sentCount);
@@ -1433,7 +1456,33 @@ export function GuestTable({
 
                         {/* Primary Action Button (1-Tap Copy) + Secondary Icons */}
                         <td className="sticky right-0 z-10 border-l border-[#E8E2D9] bg-inherit px-4 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="relative flex items-center justify-end gap-1.5">
+                            {/* First-Time "Copy lời mời" Floating Tooltip */}
+                            {showCopyInviteHint && guest.id === firstUnsentGuestId && (
+                              <div
+                                role="tooltip"
+                                className="absolute -top-10 right-0 z-50 flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#1F1D1A] px-3.5 py-1.5 text-xs text-[#FAF8F5] shadow-lg backdrop-blur-xs"
+                              >
+                                <span className="text-[#B89B72]" aria-hidden="true">✦</span>
+                                <span>Bấm để copy sẵn lời mời đúng vai vế + link Zalo</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    dismissCopyInviteHint();
+                                  }}
+                                  className="ml-1 cursor-pointer rounded-full p-0.5 text-[#FAF8F5]/60 hover:text-white"
+                                  aria-label="Đóng gợi ý"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                                <span
+                                  aria-hidden="true"
+                                  className="absolute -bottom-1 right-8 h-0 w-0 border-x-4 border-x-transparent border-t-4 border-t-[#1F1D1A]"
+                                />
+                              </div>
+                            )}
+
                             {/* 1-Tap Copy & Auto-mark sent */}
                             <button
                               type="button"
@@ -1644,7 +1693,33 @@ export function GuestTable({
                   </div>
 
                   {/* Bottom row: Full-width prominent Copy button */}
-                  <div>
+                  <div className="relative">
+                    {/* First-Time "Copy lời mời" Floating Tooltip */}
+                    {showCopyInviteHint && guest.id === firstUnsentGuestId && (
+                      <div
+                        role="tooltip"
+                        className="absolute -top-11 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#1F1D1A] px-3.5 py-1.5 text-xs text-[#FAF8F5] shadow-lg backdrop-blur-xs"
+                      >
+                        <span className="text-[#B89B72]" aria-hidden="true">✦</span>
+                        <span>Bấm để copy sẵn lời mời đúng vai vế + link Zalo</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismissCopyInviteHint();
+                          }}
+                          className="ml-1 cursor-pointer rounded-full p-0.5 text-[#FAF8F5]/60 hover:text-white"
+                          aria-label="Đóng gợi ý"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        <span
+                          aria-hidden="true"
+                          className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-0 w-0 border-x-4 border-x-transparent border-t-4 border-t-[#1F1D1A]"
+                        />
+                      </div>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => handleCopyInvite(guest)}

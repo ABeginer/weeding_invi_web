@@ -110,6 +110,19 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
                 : "h-[96px] w-[96px] sm:h-[108px] sm:w-[108px]",
           )}
         >
+          {!opening && (
+            <>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -inset-2.5 rounded-full border border-[#B89B72]/70 animate-luxury-ripple"
+              />
+              <span
+                aria-hidden="true"
+                style={{ animationDelay: "0.8s" }}
+                className="pointer-events-none absolute -inset-5 rounded-full border border-[#B89B72]/30 animate-luxury-ripple"
+              />
+            </>
+          )}
           <img
             src="/images/olive-wax-seal.webp"
             alt=""

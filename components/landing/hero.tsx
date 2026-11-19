@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronUp, MessageCircle, Sparkles } from "lucide-react";
 import { MusicToggle } from "@/components/demo/music-toggle";
 import { SITE_LINKS } from "@/config/site";
 import { getDemoTemplateData } from "@/content/demo";
@@ -12,7 +12,33 @@ import { PhoneFrame } from "./phone-frame";
 
 export function HeroSection() {
   const [isOpened, setIsOpened] = React.useState(false);
+  const [hasScrolledPhone, setHasScrolledPhone] = React.useState(false);
+  const [swipeHintDismissed, setSwipeHintDismissed] = React.useState(false);
   const phoneScrollRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const el = phoneScrollRef.current;
+    if (!el || !isOpened) return;
+
+    const handleScroll = () => {
+      if (el.scrollTop > 12) {
+        setHasScrolledPhone(true);
+      }
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+    };
+  }, [isOpened]);
+
+  React.useEffect(() => {
+    if (!isOpened || hasScrolledPhone) return;
+    const timer = setTimeout(() => {
+      setSwipeHintDismissed(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [isOpened, hasScrolledPhone]);
 
   const activeTemplate = HERO_PREVIEW_TEMPLATES[0];
   const demoData = React.useMemo(
@@ -117,7 +143,7 @@ export function HeroSection() {
               </div>
 
               {/* Interactive Phone Frame */}
-              <div className="w-full">
+              <div className="relative w-full">
                 <PhoneFrame
                   scrollRef={phoneScrollRef}
                   enableFloat
@@ -136,6 +162,35 @@ export function HeroSection() {
                     externalMusicControl
                   />
                 </PhoneFrame>
+
+                {/* Pre-open Touch Ripple & Hint */}
+                {!isOpened && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-[64%] left-1/2 z-40 -translate-x-1/2 transition-opacity duration-300"
+                  >
+                    <div className="flex items-center gap-1.5 rounded-full border border-[#B89B72]/50 bg-white/95 px-3 py-1 text-[11px] font-medium tracking-wide text-[#7A1C24] shadow-md backdrop-blur-xs">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-[#B89B72] opacity-75 animate-ping" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-[#B89B72]" />
+                      </span>
+                      <span>Chạm mở phong bì</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Post-open Swipe-up Indicator */}
+                {isOpened && !hasScrolledPhone && !swipeHintDismissed && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute bottom-8 left-1/2 z-40 -translate-x-1/2 transition-opacity duration-500"
+                  >
+                    <div className="flex items-center gap-1.5 rounded-full border border-[#E8E2D9]/80 bg-[#1F1D1A]/95 px-3.5 py-1.5 text-[11px] font-medium tracking-wide text-[#FAF8F5] shadow-xl backdrop-blur-sm animate-luxury-swipe-up">
+                      <ChevronUp className="h-3.5 w-3.5 text-[#B89B72]" />
+                      <span>Cuộn ngay trong khung để xem thiệp</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Phone Controls & Audio */}

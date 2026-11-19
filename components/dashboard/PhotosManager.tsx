@@ -58,6 +58,7 @@ import { Card } from "@/components/ui/Card";
 import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/Toast";
 import { ImageCropDialog } from "./ImageCropDialog";
+import { LedMiniDemo } from "./LedMiniDemo";
 
 interface PhotosManagerProps {
   templateId?: string | null;
@@ -1543,8 +1544,11 @@ export function PhotosManager({
         {plan === "free" ? (
           <div
             onClick={() => setLedUpgradeOpen(true)}
-            className="mt-4 flex cursor-pointer flex-col gap-2 rounded-xl border border-dashed border-border bg-bg p-4 transition-colors hover:border-accent/40"
+            className="mt-4 flex cursor-pointer flex-col gap-3 rounded-xl border border-dashed border-border bg-bg p-4 transition-colors hover:border-accent/40"
           >
+            <div className="max-w-md mx-auto w-full">
+              <LedMiniDemo />
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-[#8A6D3B]">
                 <Lock className="h-4 w-4 shrink-0" />
@@ -1677,6 +1681,7 @@ export function PhotosManager({
         className="max-w-md"
       >
         <div className="space-y-4">
+          <LedMiniDemo />
           <div className="rounded-xl border border-border bg-bg p-4 text-xs text-fg space-y-2">
             <div className="flex items-center gap-2 font-semibold text-accent-text">
               <Sparkles className="h-4 w-4" />

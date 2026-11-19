@@ -1056,3 +1056,112 @@ body:has(.template-pro-obsidian) {
     animation: none;
   }
 }
+
+/* ==========================================================================
+   Editorial Luxury Guidance Animations (CLF & Low-Motion Safe)
+   ========================================================================== */
+
+@keyframes luxury-ripple {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
+  70% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+.animate-luxury-ripple {
+  animation: luxury-ripple 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes luxury-swipe-up {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+}
+
+.animate-luxury-swipe-up {
+  animation: luxury-swipe-up 2.4s cubic-bezier(0.22, 1, 0.36, 1) 2;
+}
+
+@keyframes luxury-shimmer {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(184, 155, 114, 0);
+    border-color: rgba(184, 155, 114, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(184, 155, 114, 0.3);
+    border-color: rgba(184, 155, 114, 0.85);
+  }
+}
+
+.animate-luxury-shimmer {
+  animation: luxury-shimmer 2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes led-mini-photo-1 {
+  0%, 45% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50%, 95% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes led-mini-photo-2 {
+  0%, 45% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  50%, 95% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+.animate-led-mini-photo-1 {
+  animation: led-mini-photo-1 5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.animate-led-mini-photo-2 {
+  animation: led-mini-photo-2 5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-luxury-ripple,
+  .animate-luxury-swipe-up,
+  .animate-luxury-shimmer,
+  .animate-led-mini-photo-1,
+  .animate-led-mini-photo-2 {
+    animation: none !important;
+    transform: none !important;
+  }
+}

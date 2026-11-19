@@ -21,6 +21,8 @@ const ROLE_CHIPS: RoleChipOption[] = [
   { label: "Bạn thân", relationship: "close_friend", defaultName: "Tuấn Anh" },
 ];
 
+const DEMO_ROLES = [ROLE_CHIPS[0], ROLE_CHIPS[2], ROLE_CHIPS[3]];
+
 const RSVP_STATS = {
   accepted: 48,
   pending: 12,
@@ -31,8 +33,46 @@ const TOTAL_RSVP = RSVP_STATS.accepted + RSVP_STATS.pending + RSVP_STATS.decline
 export function InteractiveFeatureBento() {
   const [selectedRole, setSelectedRole] = React.useState<RoleChipOption>(ROLE_CHIPS[0]);
   const [guestName, setGuestName] = React.useState(ROLE_CHIPS[0].defaultName);
+  const [hasUserInteracted, setHasUserInteracted] = React.useState(false);
+  const [isFlashing, setIsFlashing] = React.useState(false);
+  const [isVisible, setIsVisible] = React.useState(false);
+  const cardRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.45 },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (hasUserInteracted || !isVisible) return;
+
+    let index = 0;
+    const interval = setInterval(() => {
+      index = (index + 1) % DEMO_ROLES.length;
+      const nextRole = DEMO_ROLES[index];
+      setSelectedRole(nextRole);
+      setGuestName(nextRole.defaultName);
+      setIsFlashing(true);
+      setTimeout(() => {
+        setIsFlashing(false);
+      }, 500);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [hasUserInteracted, isVisible]);
 
   const handleSelectRole = (chip: RoleChipOption) => {
+    setHasUserInteracted(true);
     setSelectedRole(chip);
     setGuestName(chip.defaultName);
   };
@@ -66,7 +106,10 @@ export function InteractiveFeatureBento() {
         {/* Asymmetric Bento Grid */}
         <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Card 1 (Large - 7 cols): Auto Salutation & Zalo Preview */}
-          <div className="flex flex-col justify-between rounded-3xl border border-[#E8E2D9] bg-white p-6 shadow-2xs transition-all hover:border-[#B89B72]/60 sm:p-8 lg:col-span-7">
+          <div
+            ref={cardRef}
+            className="flex flex-col justify-between rounded-3xl border border-[#E8E2D9] bg-white p-6 shadow-2xs transition-all hover:border-[#B89B72]/60 sm:p-8 lg:col-span-7"
+          >
             <div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold tracking-wider text-[#B89B72] uppercase">
@@ -116,7 +159,10 @@ export function InteractiveFeatureBento() {
                   <input
                     type="text"
                     value={guestName}
-                    onChange={(e) => setGuestName(e.target.value)}
+                    onChange={(e) => {
+                      setHasUserInteracted(true);
+                      setGuestName(e.target.value);
+                    }}
                     maxLength={35}
                     className="mt-1.5 h-10 w-full max-w-xs rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] px-3.5 text-sm text-[#1F1D1A] outline-none transition-colors focus:border-[#7A1C24] focus:bg-white focus:ring-1 focus:ring-[#7A1C24]"
                     placeholder="Nhập tên khách..."
@@ -138,7 +184,13 @@ export function InteractiveFeatureBento() {
               </div>
 
               <div className="mt-3.5 space-y-2">
-                <div className="rounded-xl bg-white p-3.5 border border-[#E8E2D9] shadow-2xs">
+                <div
+                  className={`rounded-xl border p-3.5 shadow-2xs transition-colors duration-500 ${
+                    isFlashing
+                      ? "border-[#B89B72] bg-[#B89B72]/15"
+                      : "border-[#E8E2D9] bg-white"
+                  }`}
+                >
                   <p className="text-xs font-semibold text-[#7A1C24]">
                     {salutation.invitePrefix}: {salutation.guestLabel}
                   </p>
