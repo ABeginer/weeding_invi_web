@@ -1,5 +1,5 @@
 export const PLAN_PRICES: Record<"pro" | "vip", number> = {
-  pro: 499000,
+  pro: 159000,
   vip: 399000,
 };
 

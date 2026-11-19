@@ -49,7 +49,7 @@ export default function HomePage() {
       "@type": "AggregateOffer",
       priceCurrency: "VND",
       lowPrice: "0",
-      highPrice: "499000",
+      highPrice: "399000",
       offerCount: "3",
     },
   };

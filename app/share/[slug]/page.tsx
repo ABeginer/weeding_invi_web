@@ -36,12 +36,52 @@ export default async function FamilySharePage({ params }: PageProps) {
 
   const { data: weddingRow, error } = await client
     .from("weddings")
-    .select("id, slug, owner_id, content")
+    .select("id, slug, owner_id, plan, content")
     .eq("slug", slug)
     .maybeSingle();
 
   if (error || !weddingRow) {
     notFound();
+  }
+
+  // Khóa tính năng Cổng trợ lý PIN 4 số nếu thiệp chưa nâng cấp VIP
+  if (weddingRow.plan !== "vip") {
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center bg-[#FAF8F5] px-4 py-12 text-[#1F1D1A]">
+        <div className="w-full max-w-md rounded-2xl border border-[#E8E2D9] bg-white p-8 text-center shadow-xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#7A1C24]/10 text-[#7A1C24]">
+            <Lock className="h-7 w-7" />
+          </div>
+
+          <span className="mt-4 inline-block rounded-full bg-[#1F1D1A] px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-[#B89B72] uppercase">
+            VIP ONLY
+          </span>
+
+          <h1 className="mt-3 font-serif text-2xl font-bold text-[#1F1D1A]">
+            Cổng trợ lý chỉ dành cho gói VIP
+          </h1>
+
+          <p className="mt-3 text-xs leading-relaxed text-[#6B655E]">
+            Tính năng cấp link mã PIN 4 số cho người nhà duyệt ảnh và check-in khách chỉ khả dụng với thiệp cưới gói VIP.
+          </p>
+
+          <div className="mt-6 flex flex-col gap-2.5">
+            <Link
+              href="/#bang-gia"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#7A1C24] bg-[#7A1C24] px-6 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#5E141B] active:scale-95"
+            >
+              Nâng cấp gói VIP ngay →
+            </Link>
+            <Link
+              href={`/w/${slug}`}
+              className="inline-flex h-10 items-center justify-center rounded-full border border-[#E8E2D9] bg-white px-5 text-xs font-medium text-[#1F1D1A] transition-colors hover:bg-[#FAF8F5]"
+            >
+              Xem thiệp mời online
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   const content = normalizeWeddingContent(weddingRow.content);

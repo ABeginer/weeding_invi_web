@@ -39,29 +39,33 @@ export const PRICING_TIERS: PricingTier[] = [
     id: "free",
     name: "Gói Miễn phí",
     price: "0đ",
-    tagline: "Dùng thử và đám cưới nhỏ.",
+    tagline: "Trải nghiệm đầy đủ trước khi quyết định.",
     ctaLabel: "Dùng miễn phí",
   },
   {
     id: "pro",
-    name: "Gói Tiêu chuẩn (Pro)",
-    price: "499.000đ",
-    tagline: "Đầy đủ tính năng cho ngày trọng đại.",
-    badge: "Giá tạm thời",
+    name: "Gói Pro",
+    price: "159.000đ",
+    originalPrice: "199.000đ",
+    promoNote: "Ưu đãi giai đoạn ra mắt",
+    tagline: "Trọn vẹn cho khâu mời cưới & chốt mâm tiệc.",
+    badge: "PHỔ BIẾN NHẤT",
     ctaLabel: "Chọn gói Pro",
     highlighted: true,
   },
   {
     id: "vip",
-    name: "Gói Cao cấp (VIP)",
+    name: "Gói VIP",
     price: "399.000đ",
-    tagline: "Trọn bộ đặc quyền và trải nghiệm cao cấp.",
+    originalPrice: "499.000đ",
+    promoNote: "Ưu đãi giai đoạn ra mắt",
+    tagline: "Đẳng cấp & tương tác trực tiếp tại nhà hàng.",
+    badge: "TRẢI NGHIỆM SẢNH TIỆC",
     ctaLabel: "Chọn gói VIP",
-    hidden: true,
   },
 ];
 
-export const VIP_SALES_ENABLED = false;
+export const VIP_SALES_ENABLED = true;
 
 export const PRICING_ROWS: PricingRow[] = [
   {

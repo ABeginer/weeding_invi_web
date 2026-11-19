@@ -4,6 +4,7 @@ import * as React from "react";
 import QRCode from "qrcode";
 import { Download, HeartHandshake, Loader2, X } from "lucide-react";
 import type { GuestDiet, TemplateData, WeddingPlan } from "@/lib/types";
+import { canUseFeature } from "@/lib/plans";
 import {
   downloadBoardingPass,
   type BoardingPassData,
@@ -131,6 +132,10 @@ export function GuestBoardingPass({
       ? rawTable.toUpperCase()
       : `BÀN ${rawTable.toUpperCase()}`
     : null;
+
+  if (!canUseFeature(plan, "boardingPass")) {
+    return null;
+  }
 
   return (
     <section

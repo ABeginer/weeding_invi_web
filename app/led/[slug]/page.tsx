@@ -73,8 +73,8 @@ export default async function LedPhotoWallPage({ params, searchParams }: PagePro
     );
   }
 
-  // KHÓA TUYỆT ĐỐI GÓI FREE: Không render slideshow, hiển thị màn hình thông báo nâng cấp Pro
-  if (wedding.plan === "free") {
+  // KHÓA TUYỆT ĐỐI NẾU KHÔNG PHẢI VIP: Không render slideshow, hiển thị màn hình thông báo nâng cấp VIP
+  if (wedding.plan !== "vip") {
     return (
       <main className="flex min-h-[100dvh] items-center justify-center bg-[#FAF8F5] px-4 py-12 text-[#1F1D1A]">
         <div className="w-full max-w-md rounded-2xl border border-[#E8E2D9] bg-white p-8 text-center shadow-xl">
@@ -84,16 +84,16 @@ export default async function LedPhotoWallPage({ params, searchParams }: PagePro
 
           <div className="mt-4 flex items-center justify-center gap-1.5">
             <span className="rounded-full bg-[#1F1D1A] px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-[#B89B72] uppercase">
-              PRO ONLY
+              VIP ONLY
             </span>
           </div>
 
           <h1 className="mt-3 font-serif text-2xl font-bold text-[#1F1D1A]">
-            Màn hình LED chỉ dành cho gói Pro
+            Màn hình LED chỉ dành cho gói VIP
           </h1>
 
           <p className="mt-3 text-xs leading-relaxed text-[#6B655E]">
-            Tính năng trình chiếu ảnh trực tiếp lên màn hình LED / TV sảnh tiệc cưới thời gian thực (Live Photo Wall) chỉ khả dụng với các thiệp đã nâng cấp gói Pro.
+            Tính năng trình chiếu ảnh trực tiếp lên màn hình LED / TV sảnh tiệc cưới thời gian thực (Live Photo Wall) chỉ khả dụng với các thiệp đã nâng cấp gói VIP.
           </p>
 
           <div className="mt-6 flex flex-col gap-2.5">
@@ -102,7 +102,7 @@ export default async function LedPhotoWallPage({ params, searchParams }: PagePro
               className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#7A1C24] bg-[#7A1C24] px-6 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#5E141B] active:scale-95"
             >
               <Sparkles className="h-3.5 w-3.5 text-[#B89B72]" />
-              <span>Nâng cấp gói Pro ngay →</span>
+              <span>Nâng cấp gói VIP ngay →</span>
             </Link>
 
             <Link

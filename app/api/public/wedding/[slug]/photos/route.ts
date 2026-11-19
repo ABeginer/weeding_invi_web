@@ -37,9 +37,9 @@ export const POST = route(async (req: Request, { params }: Ctx) => {
     return fail("Thiệp cưới hiện đang tạm ngưng.", 403);
   }
 
-  // Khóa tính năng album/LED nếu thiệp chưa kích hoạt hoặc bị khóa
-  if (wedding.plan === "free") {
-    return fail("Tính năng gửi ảnh lên màn hình LED chỉ khả dụng cho thiệp gói Pro trở lên.", 403);
+  // Khóa tính năng album/LED nếu thiệp chưa nâng cấp gói VIP
+  if (wedding.plan !== "vip") {
+    return fail("Tính năng gửi ảnh lên màn hình LED chỉ khả dụng cho thiệp gói VIP.", 403);
   }
 
   let formData: FormData;

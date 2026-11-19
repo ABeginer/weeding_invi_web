@@ -1534,7 +1534,7 @@ export function PhotosManager({
                   Màn hình chiếu LED tiệc cưới (Live Photo Wall)
                 </h3>
                 <span className="rounded-full bg-[#1F1D1A] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#B89B72] uppercase">
-                  PRO
+                  VIP
                 </span>
               </div>
               <p className="mt-0.5 text-xs text-fg-muted">
@@ -1544,7 +1544,7 @@ export function PhotosManager({
           </div>
         </div>
 
-        {plan === "free" ? (
+        {plan !== "vip" ? (
           <div
             onClick={() => setLedUpgradeOpen(true)}
             className="mt-4 flex cursor-pointer flex-col gap-3 rounded-xl border border-dashed border-border bg-bg p-4 transition-colors hover:border-accent/40"
@@ -1555,7 +1555,7 @@ export function PhotosManager({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-[#8A6D3B]">
                 <Lock className="h-4 w-4 shrink-0" />
-                <span>Tính năng trình chiếu màn hình LED chỉ khả dụng ở gói Pro.</span>
+                <span>Tính năng trình chiếu màn hình LED chỉ khả dụng ở gói VIP.</span>
               </div>
               <span className="text-xs font-semibold text-accent-text underline">
                 Tìm hiểu &amp; Nâng cấp →
@@ -1613,7 +1613,10 @@ export function PhotosManager({
               <h3 className="font-sans text-base font-semibold text-fg">
                 Cổng trợ lý tiệc cưới &amp; Duyệt ảnh gia đình
               </h3>
-              <span className="rounded-full bg-[#FAF8F5] border border-[#E8E2D9] px-2.5 py-0.5 text-[10px] font-bold text-[#B89B72] uppercase">
+              <span className="rounded-full bg-[#1F1D1A] px-2.5 py-0.5 text-[10px] font-bold text-[#B89B72] uppercase">
+                VIP
+              </span>
+              <span className="rounded-full bg-[#FAF8F5] border border-[#E8E2D9] px-2 py-0.5 text-[10px] font-bold text-[#6B655E] uppercase">
                 4-DIGIT PIN
               </span>
             </div>
@@ -1622,74 +1625,96 @@ export function PhotosManager({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleTogglePinEnabled}
-              disabled={pinBusy}
-              className={cn(
-                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
-                pinEnabled
-                  ? "bg-[#2F6F4E] text-white shadow-xs"
-                  : "border border-border bg-surface-alt text-fg-muted hover:text-fg",
-              )}
-            >
-              {pinEnabled ? "Đang bật chia sẻ PIN" : "Đang tắt"}
-            </button>
-          </div>
-        </div>
-
-        {pinEnabled && (
-          <div className="mt-4 pt-4 border-t border-border/70 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {plan === "vip" && (
             <div className="flex items-center gap-2">
-              <label htmlFor="share-pin-input" className="text-xs font-medium text-fg whitespace-nowrap">
-                Mã PIN 4 số:
-              </label>
-              <input
-                id="share-pin-input"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={pinValue}
-                onChange={(e) => setPinValue(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="Ví dụ: 1234"
-                className="h-8 w-24 rounded-lg border border-border bg-bg px-2.5 text-center font-mono text-sm font-bold tracking-widest text-fg focus:border-accent focus:outline-none"
-              />
               <button
                 type="button"
-                onClick={handleSavePin}
-                disabled={pinBusy || pinValue.length !== 4 || pinValue === content.sharePin}
-                className="h-8 cursor-pointer rounded-lg border border-accent bg-accent px-3 text-xs font-semibold text-accent-fg disabled:opacity-50 transition-colors hover:bg-accent-hover"
+                onClick={handleTogglePinEnabled}
+                disabled={pinBusy}
+                className={cn(
+                  "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
+                  pinEnabled
+                    ? "bg-[#2F6F4E] text-white shadow-xs"
+                    : "border border-border bg-surface-alt text-fg-muted hover:text-fg",
+                )}
               >
-                {pinBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Lưu PIN"}
+                {pinEnabled ? "Đang bật chia sẻ PIN" : "Đang tắt"}
               </button>
             </div>
+          )}
+        </div>
 
-            <button
-              type="button"
-              onClick={handleCopyShareLink}
-              className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 text-xs font-medium text-fg transition-colors hover:bg-surface-alt active:scale-95"
-            >
-              {copiedShareLink ? (
-                <Check className="h-3.5 w-3.5 text-success-fg" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-              <span>
-                {copiedShareLink ? "Đã copy link trợ lý" : "Copy link Cổng trợ lý (/share)"}
+        {plan !== "vip" ? (
+          <div
+            onClick={() => setLedUpgradeOpen(true)}
+            className="mt-4 flex cursor-pointer flex-col gap-2 rounded-xl border border-dashed border-border bg-bg p-4 transition-colors hover:border-accent/40"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#8A6D3B]">
+                <Lock className="h-4 w-4 shrink-0" />
+                <span>Tính năng Cổng trợ lý PIN 4 số chỉ khả dụng ở gói VIP.</span>
+              </div>
+              <span className="text-xs font-semibold text-accent-text underline">
+                Tìm hiểu &amp; Nâng cấp →
               </span>
-            </button>
+            </div>
+            <p className="text-[11px] leading-relaxed text-fg-muted">
+              Tạo mã PIN 4 số để phụ dâu / người nhà duyệt ảnh và check-in khách mà không cần chia sẻ tài khoản.
+            </p>
           </div>
+        ) : (
+          pinEnabled && (
+            <div className="mt-4 pt-4 border-t border-border/70 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <label htmlFor="share-pin-input" className="text-xs font-medium text-fg whitespace-nowrap">
+                  Mã PIN 4 số:
+                </label>
+                <input
+                  id="share-pin-input"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  value={pinValue}
+                  onChange={(e) => setPinValue(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="Ví dụ: 1234"
+                  className="h-8 w-24 rounded-lg border border-border bg-bg px-2.5 text-center font-mono text-sm font-bold tracking-widest text-fg focus:border-accent focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSavePin}
+                  disabled={pinBusy || pinValue.length !== 4 || pinValue === content.sharePin}
+                  className="h-8 cursor-pointer rounded-lg border border-accent bg-accent px-3 text-xs font-semibold text-accent-fg disabled:opacity-50 transition-colors hover:bg-accent-hover"
+                >
+                  {pinBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Lưu PIN"}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCopyShareLink}
+                className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 text-xs font-medium text-fg transition-colors hover:bg-surface-alt active:scale-95"
+              >
+                {copiedShareLink ? (
+                  <Check className="h-3.5 w-3.5 text-success-fg" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+                <span>
+                  {copiedShareLink ? "Đã copy link trợ lý" : "Copy link Cổng trợ lý (/share)"}
+                </span>
+              </button>
+            </div>
+          )
         )}
       </div>
 
-      {/* Modal giới thiệu & nâng cấp gói Pro cho Màn hình LED */}
+      {/* Modal giới thiệu & nâng cấp gói VIP */}
       <Dialog
         open={ledUpgradeOpen}
         onClose={() => setLedUpgradeOpen(false)}
-        title="Màn hình chiếu LED tiệc cưới (Live Photo Wall)"
-        description="Tính năng cao cấp dành riêng cho gói Pro và VIP của Inviwedd."
+        title="Đặc quyền sảnh tiệc tiệc cưới (Gói VIP)"
+        description="Tính năng cao cấp dành riêng cho gói VIP của Inviwedd."
         className="max-w-md"
       >
         <div className="space-y-4">
@@ -1697,13 +1722,13 @@ export function PhotosManager({
           <div className="rounded-xl border border-border bg-bg p-4 text-xs text-fg space-y-2">
             <div className="flex items-center gap-2 font-semibold text-accent-text">
               <Sparkles className="h-4 w-4" />
-              <span>Trải nghiệm sân khấu tiệc cưới tương tác</span>
+              <span>Trải nghiệm sân khấu &amp; sảnh tiệc tương tác</span>
             </div>
             <ul className="list-disc pl-4 space-y-1 text-fg-muted">
-              <li>Khách mời quét mã QR ở góc màn hình để tải ảnh chụp tại tiệc cưới lên tức thì.</li>
-              <li>Tự động chiếu slideshow ảnh tỉ lệ 16:9 mượt mà, tối ưu cho màn hình LED sân khấu và TV 4K.</li>
-              <li>Chủ tiệc kiểm soát duyệt ảnh, không sợ nội dung không phù hợp.</li>
-              <li>Cung cấp link riêng cho kỹ thuật viên âm thanh/ánh sáng cắm trực tiếp vào máy phóng.</li>
+              <li>Màn hình LED tiệc cưới (Live Photo Wall) trình chiếu ảnh trực tiếp thời gian thực.</li>
+              <li>Thẻ mời &amp; Số bàn (Boarding Pass) điện tử kèm QR check-in cho lễ tân.</li>
+              <li>Cổng trợ lý bảo mật bằng mã PIN 4 số cho người nhà duyệt ảnh và điểm danh khách.</li>
+              <li>Xuất file in bảng QR để bàn (A5/A6) chuẩn 300 DPI và Tải trọn bộ ảnh (.ZIP).</li>
             </ul>
           </div>
 
@@ -1715,7 +1740,7 @@ export function PhotosManager({
               href="/#bang-gia"
               className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-accent bg-accent px-4 text-xs font-semibold text-accent-fg shadow-xs transition-colors hover:bg-accent-hover"
             >
-              <span>Nâng cấp gói Pro ngay →</span>
+              <span>Nâng cấp gói VIP ngay →</span>
             </Link>
           </div>
         </div>
