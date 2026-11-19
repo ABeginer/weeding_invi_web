@@ -111,6 +111,7 @@ export function PricingTable({
                   <div className="flex items-center gap-1.5">
                     <span>Tự đổi xưng hô &amp; Preview Zalo</span>
                     <FeatureInfoPopover
+                      title="Tự đổi xưng hô & Preview Zalo"
                       content={INFO_POPOVER_TEXTS.salutation}
                       variant="light"
                     />
@@ -194,6 +195,7 @@ export function PricingTable({
                   <div className="flex items-center gap-1.5">
                     <span>Upload nhạc nền riêng</span>
                     <FeatureInfoPopover
+                      title="Upload nhạc nền riêng"
                       content={INFO_POPOVER_TEXTS.music}
                       variant="light"
                     />
@@ -208,6 +210,7 @@ export function PricingTable({
                   <div className="flex items-center gap-1.5 font-medium text-[#1F1D1A]">
                     <span>QR Online Album</span>
                     <FeatureInfoPopover
+                      title="QR Online Album"
                       content={INFO_POPOVER_TEXTS.qrOnlineAlbum}
                       variant="light"
                     />
@@ -218,6 +221,7 @@ export function PricingTable({
                   <div className="flex items-center gap-1.5">
                     <span>Xuất danh sách Excel</span>
                     <FeatureInfoPopover
+                      title="Xuất danh sách Excel"
                       content={INFO_POPOVER_TEXTS.excel}
                       variant="light"
                     />
@@ -288,6 +292,7 @@ export function PricingTable({
                   <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
                     <span>Thẻ mời &amp; Số bàn (Boarding Pass)</span>
                     <FeatureInfoPopover
+                      title="Thẻ mời & Số bàn (Boarding Pass)"
                       content={INFO_POPOVER_TEXTS.boardingPass}
                       variant="dark"
                     />
@@ -298,6 +303,7 @@ export function PricingTable({
                   <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
                     <span>Live QR Photo Wall &amp; Chiếu màn hình LED</span>
                     <FeatureInfoPopover
+                      title="Live QR Photo Wall & Chiếu màn hình LED"
                       content={INFO_POPOVER_TEXTS.livePhotoWall}
                       variant="dark"
                     />
@@ -308,6 +314,7 @@ export function PricingTable({
                   <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
                     <span>Link mã PIN cho người nhà &amp; Quét Check-in</span>
                     <FeatureInfoPopover
+                      title="Cổng trợ lý gia đình & Quét Check-in"
                       content={INFO_POPOVER_TEXTS.familyPin}
                       variant="dark"
                     />
