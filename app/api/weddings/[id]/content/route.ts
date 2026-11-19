@@ -1,6 +1,10 @@
 import { getTemplateLockedMessage, isTemplateAllowedForPlan } from "@/config/plans";
 import { authRoute, fail, json, readBody } from "@/lib/server/http";
 import { toWedding, type WeddingRow } from "@/lib/server/mappers";
+import {
+  diffOrphanedStorageKeys,
+  safeRemoveStorageObjects,
+} from "@/lib/server/storage-cleanup";
 import { db } from "@/lib/server/supabase";
 import { getOwnedWedding } from "@/lib/server/weddings";
 import { normalizeWeddingContent } from "@/lib/wedding-data";
@@ -130,6 +134,14 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
 
   if (error) throw error;
   if (!data) return fail("Không tìm thấy thiệp cưới.", 404);
+
+  // Storage Hygiene: Tự động dọn dẹp các ảnh bị xóa/thay thế
+  const orphanedKeys = diffOrphanedStorageKeys(previousContent, content, wedding.id);
+  if (orphanedKeys.length > 0) {
+    void safeRemoveStorageObjects(orphanedKeys).catch((cleanupErr) => {
+      console.warn("[Storage Hygiene] Lỗi dọn dẹp ảnh mồ côi:", cleanupErr);
+    });
+  }
 
   return json(toWedding(data as WeddingRow));
 });

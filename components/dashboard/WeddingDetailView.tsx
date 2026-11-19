@@ -761,6 +761,13 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
           {activeTab === "moderation" && (
             <PhotoModerator
               weddingSlug={wedding.slug}
+              weddingId={wedding.id}
+              coupleTitle={
+                [draftContent.couple?.groomName, draftContent.couple?.brideName]
+                  .filter(Boolean)
+                  .join(" & ") || "Tiệc Cưới"
+              }
+              weddingDate={draftContent.date}
               photos={photos}
               initialApprovalMode={draftContent.photoApprovalMode}
               initialModeration={draftContent.photoModeration}
@@ -771,6 +778,9 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                   ...(nextMode ? { photoApprovalMode: nextMode } : {}),
                 };
                 setDraftContent(next);
+              }}
+              onPhotoDeleted={(photoId) => {
+                setPhotos((prev) => prev.filter((p) => p.id !== photoId));
               }}
             />
           )}

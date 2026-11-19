@@ -15,6 +15,7 @@ import {
   ImagePlus,
   Loader2,
   Lock,
+  Printer,
   RefreshCw,
   Sparkles,
   Trash2,
@@ -59,6 +60,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/Toast";
 import { ImageCropDialog } from "./ImageCropDialog";
 import { LedMiniDemo } from "./LedMiniDemo";
+import { TableStandeeModal } from "./TableStandeeModal";
 
 interface PhotosManagerProps {
   templateId?: string | null;
@@ -155,6 +157,7 @@ export function PhotosManager({
   const [albumQr, setAlbumQr] = React.useState<string | null>(null);
   const [qrPreviewOpen, setQrPreviewOpen] = React.useState(false);
   const [ledUpgradeOpen, setLedUpgradeOpen] = React.useState(false);
+  const [standeeModalOpen, setStandeeModalOpen] = React.useState(false);
   const [copiedLedLink, setCopiedLedLink] = React.useState(false);
   const [failedAlbumUploads, setFailedAlbumUploads] = React.useState<FailedUploadItem[]>([]);
   const albumInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -1589,6 +1592,15 @@ export function PhotosManager({
                 {copiedLedLink ? "Đã sao chép link LED" : "Copy link cho kỹ thuật viên âm thanh / ánh sáng"}
               </span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setStandeeModalOpen(true)}
+              className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[#B89B72]/60 bg-white px-4 text-xs font-semibold text-[#1F1D1A] shadow-xs transition-colors hover:bg-[#FAF8F5] active:scale-95"
+            >
+              <Printer className="h-3.5 w-3.5 text-[#B89B72]" />
+              <span>Tải bảng QR để bàn (In A5/A6)</span>
+            </button>
           </div>
         )}
       </div>
@@ -1770,6 +1782,18 @@ export function PhotosManager({
           </a>
         </div>
       </Dialog>
+
+      <TableStandeeModal
+        open={standeeModalOpen}
+        onClose={() => setStandeeModalOpen(false)}
+        weddingSlug={weddingSlug}
+        coupleTitle={
+          [content.couple?.groomName, content.couple?.brideName]
+            .filter(Boolean)
+            .join(" & ") || "Tiệc Cưới"
+        }
+        weddingDate={content.date}
+      />
 
       <ImageCropDialog
         file={cropRequest?.file ?? null}

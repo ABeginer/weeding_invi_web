@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GuestAlbumGallery } from "@/components/album/GuestAlbumGallery";
+import { GuestUploadPortal } from "@/components/album/GuestUploadPortal";
 import { getPublicWeddingBySlug } from "@/lib/server/public-wedding";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +11,18 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const wedding = await getPublicWeddingBySlug(slug);
+  const couple = wedding
+    ? [wedding.content.couple.groomName, wedding.content.couple.brideName]
+        .filter(Boolean)
+        .join(" & ")
+    : "Album ảnh cưới";
+
   return {
-    title: "Album ảnh cưới",
+    title: `Gửi ảnh cưới & Album — ${couple}`,
+    description: "Gửi ảnh chụp tại tiệc cưới để cùng lưu giữ kỷ niệm và trình chiếu trực tiếp lên màn hình LED sân khấu.",
     robots: { index: false, follow: false },
   };
 }
@@ -23,51 +33,74 @@ export default async function GuestAlbumPage({ params }: PageProps) {
 
   if (!wedding) notFound();
 
-  const album = wedding.photos
-    .filter((photo) => photo.kind === "album")
+  // Lọc các ảnh album đã được duyệt (hoặc auto-approved)
+  const moderation = wedding.content.photoModeration || {};
+  const isAutoApprove = wedding.content.photoApprovalMode === "auto";
+
+  const approvedAlbum = wedding.photos
+    .filter((photo) => {
+      if (photo.kind !== "album") return false;
+      const status = moderation[photo.id];
+      if (isAutoApprove) return status !== "hidden";
+      return status === "approved";
+    })
     .sort((a, b) => a.position - b.position);
 
   const { groomName, brideName } = wedding.content.couple;
   const couple = [groomName, brideName].filter(Boolean).join(" & ");
 
   return (
-    <main className="min-h-screen-dvh bg-bg px-4 py-8 text-text sm:px-6 sm:py-12">
-      <div className="mx-auto max-w-4xl">
-        <header className="text-center">
-          <p className="text-[11px] font-semibold tracking-[0.24em] text-accent-text uppercase">
-            Album ảnh cưới
-          </p>
-          <h1 className="mt-2 font-display text-2xl font-semibold text-text sm:text-3xl">
-            {couple || "Album ảnh cưới"}
-          </h1>
-          <p className="mt-2 text-sm text-text-muted">
-            {album.length > 0
-              ? `${album.length} khoảnh khắc được chia sẻ từ ngày trọng đại.`
-              : "Album chưa có ảnh nào."}
-          </p>
-        </header>
-
-        {album.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-border bg-surface p-10 text-center text-sm text-text-muted">
-            Cô dâu chú rể sẽ sớm bổ sung ảnh cưới vào album này.
-          </div>
-        ) : (
-          <GuestAlbumGallery
-            photos={album.map((photo, index) => ({
-              id: photo.id,
-              url: photo.url,
-              alt: `Ảnh cưới ${index + 1}`,
-              position: index,
-            }))}
+    <main className="min-h-screen-dvh bg-[#FAF8F5] px-4 py-8 text-[#1F1D1A] sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-2xl space-y-10">
+        {/* Guest Photo Upload Portal */}
+        {wedding.plan !== "free" ? (
+          <GuestUploadPortal
+            weddingSlug={wedding.slug}
+            coupleTitle={couple}
+            isAutoApprove={isAutoApprove}
           />
+        ) : (
+          <header className="text-center">
+            <p className="text-[11px] font-semibold tracking-[0.24em] text-[#7A1C24] uppercase">
+              Album ảnh cưới
+            </p>
+            <h1 className="mt-2 font-serif text-3xl font-bold text-[#1F1D1A]">
+              {couple || "Album ảnh cưới"}
+            </h1>
+          </header>
         )}
 
-        <div className="mt-10 text-center">
+        {/* Existing Approved Photos Gallery */}
+        <section className="pt-6 border-t border-[#E8E2D9]">
+          <div className="text-center">
+            <h2 className="font-serif text-xl font-bold text-[#1F1D1A]">
+              Khoảnh khắc đã chia sẻ ({approvedAlbum.length})
+            </h2>
+            <p className="mt-1 text-xs text-[#6B655E]">
+              {approvedAlbum.length > 0
+                ? "Những bức ảnh đẹp được chụp và chia sẻ trực tiếp từ buổi tiệc."
+                : "Chưa có ảnh nào được gửi lên. Hãy là người đầu tiên gửi ảnh nhé!"}
+            </p>
+          </div>
+
+          {approvedAlbum.length > 0 && (
+            <GuestAlbumGallery
+              photos={approvedAlbum.map((photo, index) => ({
+                id: photo.id,
+                url: photo.url,
+                alt: `Ảnh tiệc cưới #${index + 1}`,
+                position: index,
+              }))}
+            />
+          )}
+        </section>
+
+        <div className="pt-2 text-center">
           <Link
             href={`/w/${wedding.slug}`}
-            className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-surface px-6 text-sm font-medium text-text transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-[#E8E2D9] bg-white px-6 text-xs font-semibold text-[#1F1D1A] shadow-2xs transition-colors hover:bg-[#F4EFEA]"
           >
-            Xem thiệp mời
+            Quay lại thiệp mời cưới
           </Link>
         </div>
       </div>

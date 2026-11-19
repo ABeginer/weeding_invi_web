@@ -11,12 +11,14 @@ import {
   Filter,
   Image as ImageIcon,
   Loader2,
+  Printer,
   RefreshCw,
   ShieldCheck,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
-import { moderatePhoto, setPhotoApprovalMode } from "@/lib/api";
+import { deletePhoto, moderatePhoto, setPhotoApprovalMode } from "@/lib/api";
 import {
   exportPhotoWallZip,
   type ExportPhotoWallZipProgress,
@@ -25,12 +27,17 @@ import {
 import type { WeddingPhoto } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/Toast";
+import { TableStandeeModal } from "./TableStandeeModal";
 
 type ModerationStatus = "pending" | "approved" | "hidden";
 
 interface PhotoModeratorProps {
   weddingSlug: string;
+  weddingId?: string;
+  coupleTitle?: string;
+  weddingDate?: string;
   photos: WeddingPhoto[];
   initialApprovalMode?: "manual" | "auto";
   initialModeration?: Record<string, ModerationStatus>;
@@ -38,15 +45,20 @@ interface PhotoModeratorProps {
     nextModeration: Record<string, ModerationStatus>,
     nextMode?: "manual" | "auto",
   ) => void;
+  onPhotoDeleted?: (photoId: string) => void;
   className?: string;
 }
 
 export function PhotoModerator({
   weddingSlug,
+  weddingId,
+  coupleTitle,
+  weddingDate,
   photos,
   initialApprovalMode = "manual",
   initialModeration = {},
   onModerationChange,
+  onPhotoDeleted,
   className,
 }: PhotoModeratorProps) {
   const { showToast } = useToast();
@@ -67,6 +79,33 @@ export function PhotoModerator({
   const [isDownloadingZip, setIsDownloadingZip] = React.useState(false);
   const [zipProgress, setZipProgress] = React.useState<ExportPhotoWallZipProgress | null>(null);
   const [showScopeDropdown, setShowScopeDropdown] = React.useState(false);
+  const [standeeModalOpen, setStandeeModalOpen] = React.useState(false);
+  const [deletingPhotoTarget, setDeletingPhotoTarget] = React.useState<WeddingPhoto | null>(null);
+  const [isDeletingPhoto, setIsDeletingPhoto] = React.useState(false);
+
+  const handleConfirmPermanentDelete = async () => {
+    if (!deletingPhotoTarget) return;
+    setIsDeletingPhoto(true);
+    try {
+      if (weddingId) {
+        await deletePhoto(weddingId, deletingPhotoTarget.id);
+      }
+      const nextMod = { ...moderation };
+      delete nextMod[deletingPhotoTarget.id];
+      setModeration(nextMod);
+      onModerationChange?.(nextMod, approvalMode);
+      onPhotoDeleted?.(deletingPhotoTarget.id);
+      showToast("Đã xóa vĩnh viễn ảnh khỏi bộ nhớ và hàng chờ duyệt.", "success");
+      setDeletingPhotoTarget(null);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : "Không thể xóa ảnh lúc này.",
+        "error",
+      );
+    } finally {
+      setIsDeletingPhoto(false);
+    }
+  };
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const dropdownRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -431,6 +470,16 @@ export function PhotoModerator({
             )}
           </div>
 
+          {/* Tải bảng QR để bàn */}
+          <button
+            type="button"
+            onClick={() => setStandeeModalOpen(true)}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#B89B72]/60 bg-white px-3 py-2 text-xs font-semibold text-[#1F1D1A] shadow-xs transition-colors hover:bg-[#FAF8F5] active:scale-95"
+          >
+            <Printer className="h-3.5 w-3.5 text-[#B89B72]" />
+            <span>Tải bảng QR để bàn (In A5/A6)</span>
+          </button>
+
           {/* Mode Pill Toggle */}
           <div className="flex items-center gap-1 rounded-full border border-[#E8E2D9] bg-[#FAF8F5] p-1 text-xs">
             <button
@@ -632,12 +681,68 @@ export function PhotoModerator({
                     <X className="h-3.5 w-3.5" />
                     <span>Ẩn</span>
                   </button>
+
+                  {/* Nút xóa vĩnh viễn khi ảnh ở trạng thái Ẩn */}
+                  {status === "hidden" && (
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => setDeletingPhotoTarget(photo)}
+                      className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[#ECCFCF] bg-[#FBEFEF] p-2 text-[#9E3B3B] hover:bg-[#f6dfdf] transition-all active:scale-95"
+                      title="Xóa vĩnh viễn ảnh khỏi hệ thống & bộ nhớ lưu trữ"
+                      aria-label="Xóa vĩnh viễn"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Modal xác nhận xóa vĩnh viễn ảnh */}
+      <Dialog
+        open={Boolean(deletingPhotoTarget)}
+        onClose={() => !isDeletingPhoto && setDeletingPhotoTarget(null)}
+        title="Xác nhận xóa vĩnh viễn ảnh"
+        description="Bạn có chắc muốn xóa vĩnh viễn ảnh này? Ảnh sẽ bị xóa hoàn toàn khỏi cơ sở dữ liệu và bộ nhớ lưu trữ Cloudflare R2 / Storage."
+        className="max-w-sm"
+      >
+        <div className="flex justify-end gap-2 pt-2">
+          <Button
+            variant="outline"
+            disabled={isDeletingPhoto}
+            onClick={() => setDeletingPhotoTarget(null)}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="danger"
+            disabled={isDeletingPhoto}
+            onClick={handleConfirmPermanentDelete}
+            className="bg-[#9E3B3B] text-white hover:bg-[#7E2E2E]"
+          >
+            {isDeletingPhoto ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Đang xóa...</span>
+              </>
+            ) : (
+              <span>Xóa vĩnh viễn</span>
+            )}
+          </Button>
+        </div>
+      </Dialog>
+
+      <TableStandeeModal
+        open={standeeModalOpen}
+        onClose={() => setStandeeModalOpen(false)}
+        weddingSlug={weddingSlug}
+        coupleTitle={coupleTitle || "Tiệc Cưới"}
+        weddingDate={weddingDate}
+      />
     </div>
   );
 }
