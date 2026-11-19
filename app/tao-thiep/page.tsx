@@ -12,13 +12,17 @@ export const metadata: Metadata = {
 };
 
 interface CreateWeddingPageProps {
-  searchParams: Promise<{ template?: string; designerTemplate?: string }>;
+  searchParams: Promise<{
+    template?: string;
+    designerTemplate?: string;
+    date?: string;
+  }>;
 }
 
 export default async function CreateWeddingPage({
   searchParams,
 }: CreateWeddingPageProps) {
-  const { template, designerTemplate } = await searchParams;
+  const { template, designerTemplate, date } = await searchParams;
 
   let isAuthenticated = false;
   let userEmail: string | null = null;
@@ -44,6 +48,7 @@ export default async function CreateWeddingPage({
       userEmail={userEmail}
       initialTemplateId={template}
       initialDesignerTemplateId={designerTemplate}
+      initialDate={date}
     />
   );
 }

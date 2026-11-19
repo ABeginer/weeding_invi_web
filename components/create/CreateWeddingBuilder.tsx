@@ -71,6 +71,7 @@ interface CreateWeddingBuilderProps {
   userEmail: string | null;
   initialTemplateId?: string;
   initialDesignerTemplateId?: string;
+  initialDate?: string;
 }
 
 const DEFAULT_WEDDING_DATE_ISO = "2027-03-20T10:00:00+07:00";
@@ -132,6 +133,7 @@ export function CreateWeddingBuilder({
   userEmail,
   initialTemplateId,
   initialDesignerTemplateId,
+  initialDate,
 }: CreateWeddingBuilderProps) {
   const router = useRouter();
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
@@ -159,8 +161,18 @@ export function CreateWeddingBuilder({
   const [slug, setSlug] = React.useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = React.useState(false);
 
+  // Parse initialDate param if provided (YYYY-MM-DD)
+  const parsedInitialDateIso = React.useMemo(() => {
+    if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
+      return toIsoPlus07(`${initialDate}T10:00:00+07:00`) || null;
+    }
+    return null;
+  }, [initialDate]);
+
   // Tab 2: Event inputs
-  const [date, setDate] = React.useState(DEFAULT_WEDDING_DATE_ISO);
+  const [date, setDate] = React.useState(
+    () => parsedInitialDateIso || DEFAULT_WEDDING_DATE_ISO,
+  );
   const [eventLocation, setEventLocation] = React.useState("");
   const [eventAddress, setEventAddress] = React.useState("");
   const [mapUrl, setMapUrl] = React.useState("");
@@ -257,7 +269,11 @@ export function CreateWeddingBuilder({
     }
     if (saved.groomName) setGroomName(saved.groomName);
     if (saved.brideName) setBrideName(saved.brideName);
-    if (saved.date) setDate(toIsoPlus07(saved.date) || DEFAULT_WEDDING_DATE_ISO);
+    if (saved.date) {
+      setDate(toIsoPlus07(saved.date) || parsedInitialDateIso || DEFAULT_WEDDING_DATE_ISO);
+    } else if (parsedInitialDateIso) {
+      setDate(parsedInitialDateIso);
+    }
     if (saved.quote) setQuote(saved.quote);
     if (saved.slug) {
       setSlug(saved.slug);
@@ -272,7 +288,7 @@ export function CreateWeddingBuilder({
     if (saved.bank) setBank(saved.bank);
     if (saved.accountNumber) setAccountNumber(saved.accountNumber);
     if (saved.accountName) setAccountName(saved.accountName);
-  }, [initialTemplateId]);
+  }, [initialTemplateId, parsedInitialDateIso]);
 
   // Auto-save debounce (800ms) to localStorage
   React.useEffect(() => {

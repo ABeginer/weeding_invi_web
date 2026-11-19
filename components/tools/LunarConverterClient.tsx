@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ArrowLeftRight, Calendar } from "lucide-react";
+import { SmartToolCta } from "@/components/tools/SmartToolCta";
 import { Input } from "@/components/ui/Input";
 import { LUNAR_CONVERTER_COPY } from "@/config/tools-copy";
 import {
@@ -96,45 +97,63 @@ export function LunarConverterClient() {
     return { result: lunarOut.result, error: null };
   }, [dayInput, isLeapMonth, mode, monthInput, yearInput]);
 
-  return (
-    <div className="mt-7 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
-      <section className="min-w-0 rounded-2xl border border-border bg-surface p-4 sm:p-6 lg:col-span-7">
-        <div
-          role="tablist"
-          aria-label="Chọn chiều quy đổi"
-          className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-bg p-1.5 sm:grid-cols-2"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "solar-to-lunar"}
-            onClick={() => setMode("solar-to-lunar")}
-            className={cn(
-              "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-sm",
-              mode === "solar-to-lunar"
-                ? "bg-accent text-accent-fg shadow-xs"
-                : "text-text hover:bg-surface-alt",
-            )}
-          >
-            <Calendar className="h-4 w-4" aria-hidden="true" />
-            <span>{LUNAR_CONVERTER_COPY.modes.solarToLunar}</span>
-          </button>
+  const solarDayFormatted = evaluation.result
+    ? String(evaluation.result.solar.day).padStart(2, "0")
+    : "";
+  const solarMonthFormatted = evaluation.result
+    ? String(evaluation.result.solar.month).padStart(2, "0")
+    : "";
+  const solarYearFormatted = evaluation.result
+    ? String(evaluation.result.solar.year)
+    : "";
+  const targetDateParam = evaluation.result
+    ? `${solarYearFormatted}-${solarMonthFormatted}-${solarDayFormatted}`
+    : "";
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "lunar-to-solar"}
-            onClick={() => setMode("lunar-to-solar")}
-            className={cn(
-              "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:text-sm",
-              mode === "lunar-to-solar"
-                ? "bg-accent text-accent-fg shadow-xs"
-                : "text-text hover:bg-surface-alt",
-            )}
+  return (
+    <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
+      <section className="min-w-0 rounded-2xl border border-[#E8E2D9] bg-white p-5 sm:p-6 shadow-xs lg:col-span-7">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-[10px] font-semibold tracking-[0.16em] uppercase text-[#B89B72]">
+            CHỌN CHIỀU QUY ĐỔI
+          </p>
+          <div
+            role="tablist"
+            aria-label="Chọn chiều quy đổi"
+            className="mt-2 grid grid-cols-1 gap-2 rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] p-1.5 sm:grid-cols-2"
           >
-            <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
-            <span>{LUNAR_CONVERTER_COPY.modes.lunarToSolar}</span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "solar-to-lunar"}
+              onClick={() => setMode("solar-to-lunar")}
+              className={cn(
+                "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24] sm:text-sm",
+                mode === "solar-to-lunar"
+                  ? "bg-[#7A1C24] text-white shadow-xs"
+                  : "text-[#1F1D1A] hover:bg-white",
+              )}
+            >
+              <Calendar className="h-4 w-4" aria-hidden="true" />
+              <span>{LUNAR_CONVERTER_COPY.modes.solarToLunar}</span>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "lunar-to-solar"}
+              onClick={() => setMode("lunar-to-solar")}
+              className={cn(
+                "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24] sm:text-sm",
+                mode === "lunar-to-solar"
+                  ? "bg-[#7A1C24] text-white shadow-xs"
+                  : "text-[#1F1D1A] hover:bg-white",
+              )}
+            >
+              <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+              <span>{LUNAR_CONVERTER_COPY.modes.lunarToSolar}</span>
+            </button>
+          </div>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -165,103 +184,131 @@ export function LunarConverterClient() {
         </div>
 
         {mode === "lunar-to-solar" && (
-          <label className="mt-4 inline-flex cursor-pointer items-center gap-2.5 text-sm text-text">
+          <label className="mt-4 inline-flex cursor-pointer items-center gap-2.5 text-sm text-[#1F1D1A]">
             <input
               type="checkbox"
               checked={isLeapMonth}
               onChange={(e) => setIsLeapMonth(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-accent"
+              className="h-4 w-4 rounded border-[#E8E2D9] accent-[#7A1C24]"
             />
             <span>Đây là tháng nhuận</span>
           </label>
         )}
 
         {evaluation.error && (
-          <p className="mt-4 rounded-xl border border-danger-border bg-danger-bg px-3.5 py-2.5 text-xs text-danger-fg" role="alert">
+          <p
+            className="mt-4 rounded-xl border border-[#9E3B3B]/30 bg-[#FBEFEF] px-3.5 py-2.5 text-xs text-[#9E3B3B]"
+            role="alert"
+          >
             {evaluation.error}
           </p>
         )}
 
-        <p className="mt-4 text-xs leading-relaxed text-text-muted">
+        <p className="mt-5 text-xs leading-relaxed text-[#6B655E]">
           {LUNAR_CONVERTER_COPY.timezoneNote}
         </p>
       </section>
 
-      <aside className="min-w-0 rounded-2xl border border-border bg-surface p-4 sm:p-6 lg:col-span-5">
-        <h2 className="font-display text-2xl font-semibold text-text">
-          Kết quả quy đổi
-        </h2>
-
-        {!evaluation.result ? (
-          <div className="mt-4 rounded-xl border border-dashed border-border bg-bg p-5 text-center text-sm text-text-muted">
-            Vui lòng nhập ngày hợp lệ trong khoảng 1900–2100 để xem kết quả.
+      <aside className="min-w-0 space-y-5 lg:sticky lg:top-20 lg:col-span-5">
+        <div className="rounded-2xl border border-[#E8E2D9] bg-[#F4EFEA] p-5 sm:p-6 shadow-xs">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-[10px] font-semibold tracking-[0.16em] uppercase text-[#B89B72]">
+              KẾT QUẢ TRA CỨU
+            </p>
+            <h2 className="font-serif text-2xl font-medium text-[#1F1D1A]">
+              Kết quả quy đổi
+            </h2>
           </div>
-        ) : (
-          <div className="mt-4 space-y-4">
-            <div className="rounded-xl border border-border bg-bg p-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
-                Dương lịch
-              </p>
-              <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-text">
-                {String(evaluation.result.solar.day).padStart(2, "0")}/
-                {String(evaluation.result.solar.month).padStart(2, "0")}/
-                {evaluation.result.solar.year}
-              </p>
-            </div>
 
-            <div className="rounded-xl border border-accent/40 bg-accent-soft/45 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-medium uppercase tracking-wider text-text-muted">
-                  Âm lịch
+          {!evaluation.result ? (
+            <div className="mt-4 rounded-xl border border-dashed border-[#E8E2D9] bg-white p-5 text-center text-sm text-[#6B655E]">
+              Vui lòng nhập ngày hợp lệ trong khoảng 1900–2100 để xem kết quả.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3.5">
+              <div className="rounded-xl border border-[#E8E2D9] bg-white p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6B655E]">
+                  Dương lịch
                 </p>
-                {evaluation.result.isLeapMonth && (
-                  <span className="rounded-full border border-accent bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-accent-fg">
-                    Tháng nhuận
-                  </span>
-                )}
+                <p className="mt-1 font-serif text-2xl font-medium tabular-nums text-[#1F1D1A]">
+                  {solarDayFormatted}/{solarMonthFormatted}/{solarYearFormatted}
+                </p>
               </div>
-              <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-accent-text">
-                Ngày {String(evaluation.result.lunarDay).padStart(2, "0")} tháng{" "}
-                {String(evaluation.result.lunarMonth).padStart(2, "0")}
-                {evaluation.result.isLeapMonth ? " (nhuận)" : ""}, năm{" "}
-                {evaluation.result.lunarYear}
-              </p>
+
+              <div className="rounded-xl border border-[#7A1C24]/30 bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6B655E]">
+                    Âm lịch
+                  </p>
+                  {evaluation.result.isLeapMonth && (
+                    <span className="rounded-full bg-[#7A1C24] px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                      Tháng nhuận
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 font-serif text-2xl font-normal tabular-nums text-[#7A1C24]">
+                  Ngày {String(evaluation.result.lunarDay).padStart(2, "0")} tháng{" "}
+                  {String(evaluation.result.lunarMonth).padStart(2, "0")}
+                  {evaluation.result.isLeapMonth ? " (nhuận)" : ""}, năm{" "}
+                  {evaluation.result.lunarYear}
+                </p>
+              </div>
+
+              <dl className="grid grid-cols-1 gap-2.5 rounded-xl border border-[#E8E2D9] bg-white p-4 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs text-[#6B655E]">Năm Can Chi</dt>
+                  <dd className="font-serif text-base font-semibold text-[#1F1D1A]">
+                    {evaluation.result.yearCanChi}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-[#6B655E]">Con giáp</dt>
+                  <dd className="font-serif text-base font-semibold text-[#1F1D1A]">
+                    {evaluation.result.zodiacAnimal}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-[#6B655E]">Tháng Can Chi</dt>
+                  <dd className="font-serif text-base font-semibold text-[#1F1D1A]">
+                    {evaluation.result.monthCanChi}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-[#6B655E]">Ngày Can Chi</dt>
+                  <dd className="font-serif text-base font-semibold text-[#1F1D1A]">
+                    {evaluation.result.dayCanChi}
+                  </dd>
+                </div>
+              </dl>
             </div>
+          )}
 
-            <dl className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-bg p-4 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-xs text-text-muted">Năm Can Chi</dt>
-                <dd className="font-semibold text-text">
-                  {evaluation.result.yearCanChi}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-text-muted">Con giáp</dt>
-                <dd className="font-semibold text-text">
-                  {evaluation.result.zodiacAnimal}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-text-muted">Tháng Can Chi</dt>
-                <dd className="font-semibold text-text">
-                  {evaluation.result.monthCanChi}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-text-muted">Ngày Can Chi</dt>
-                <dd className="font-semibold text-text">
-                  {evaluation.result.dayCanChi}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        )}
+          <p className="mt-4 rounded-xl border border-[#E8E2D9] bg-white px-3.5 py-2.5 text-xs leading-relaxed text-[#6B655E]">
+            {LUNAR_CONVERTER_COPY.referenceNote}
+          </p>
+        </div>
 
-        <p className="mt-4 rounded-xl border border-border bg-bg px-3.5 py-2.5 text-xs leading-relaxed text-text-muted">
-          {LUNAR_CONVERTER_COPY.referenceNote}
-        </p>
+        {/* Smart Contextual CTA: Lưu ngày trọng đại */}
+        <div>
+          {evaluation.result ? (
+            <SmartToolCta
+              eyebrow="LƯU NGÀY TRỌNG ĐẠI"
+              title={`Đã chọn được ngày đẹp ${solarDayFormatted}/${solarMonthFormatted}/${solarYearFormatted}?`}
+              description="Xem thử ngày cưới này hiển thị trên thiệp cưới online kèm đồng hồ đếm ngược và bản đồ chỉ đường sẽ tinh tế như thế nào."
+              buttonText={`Thử tạo thiệp với ngày ${solarDayFormatted}/${solarMonthFormatted}/${solarYearFormatted} →`}
+              buttonHref={`/tao-thiep?date=${targetDateParam}`}
+            />
+          ) : (
+            <SmartToolCta
+              eyebrow="LƯU NGÀY TRỌNG ĐẠI"
+              title="Chọn ngày lành tháng tốt cho ngày cưới?"
+              description="Khởi tạo thiệp cưới online miễn phí để gửi thiệp sớm cho bạn bè, người thân kèm đồng hồ đếm ngược đến ngày trọng đại."
+              buttonText="Tạo thiệp cưới online miễn phí →"
+              buttonHref="/tao-thiep"
+            />
+          )}
+        </div>
       </aside>
     </div>
   );
 }
-
