@@ -106,6 +106,9 @@ export type WeddingPhoto = {
   kind: PhotoKind;
   url: string;
   position: number;
+  guestName?: string | null;
+  caption?: string | null;
+  createdAt?: string | null;
 };
 
 export type TemplatePhotoItem = {

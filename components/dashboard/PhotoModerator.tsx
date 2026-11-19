@@ -4,7 +4,9 @@ import * as React from "react";
 import {
   Check,
   CheckCircle2,
+  ChevronDown,
   Clock,
+  Download,
   EyeOff,
   Filter,
   Image as ImageIcon,
@@ -15,6 +17,11 @@ import {
   X,
 } from "lucide-react";
 import { moderatePhoto, setPhotoApprovalMode } from "@/lib/api";
+import {
+  exportPhotoWallZip,
+  type ExportPhotoWallZipProgress,
+  type PhotoWallZipItem,
+} from "@/lib/export-photo-wall-zip";
 import type { WeddingPhoto } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -55,6 +62,35 @@ export function PhotoModerator({
     "all" | "pending" | "approved" | "hidden"
   >("pending");
   const [actionBusyId, setActionBusyId] = React.useState<string | null>(null);
+
+  const [downloadScope, setDownloadScope] = React.useState<"approved" | "all">("approved");
+  const [isDownloadingZip, setIsDownloadingZip] = React.useState(false);
+  const [zipProgress, setZipProgress] = React.useState<ExportPhotoWallZipProgress | null>(null);
+  const [showScopeDropdown, setShowScopeDropdown] = React.useState(false);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+  const dropdownRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Đóng dropdown scope khi click ra ngoài
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowScopeDropdown(false);
+      }
+    };
+    if (showScopeDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showScopeDropdown]);
+
+  // Hủy tải nếu unmount component
+  React.useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Đồng bộ props nếu có thay đổi từ ngoài
   React.useEffect(() => {
@@ -170,6 +206,93 @@ export function PhotoModerator({
     }
   };
 
+  // Danh sách ảnh đã duyệt
+  const approvedPhotos = React.useMemo(() => {
+    return albumPhotos.filter((p) => getEffectiveStatus(p) === "approved");
+  }, [albumPhotos, getEffectiveStatus]);
+
+  // Danh sách ảnh mục tiêu theo phạm vi tải (chỉ đã duyệt hoặc tất cả)
+  const targetDownloadPhotos = React.useMemo(() => {
+    if (downloadScope === "approved") {
+      return approvedPhotos;
+    }
+    return albumPhotos;
+  }, [albumPhotos, approvedPhotos, downloadScope]);
+
+  // Xử lý tải toàn bộ ảnh dạng file ZIP 100% Client-Side
+  const handleDownloadZip = async () => {
+    if (isDownloadingZip) return;
+    if (targetDownloadPhotos.length === 0) {
+      showToast(
+        downloadScope === "approved"
+          ? "Chưa có ảnh nào được duyệt để tải về."
+          : "Chưa có ảnh nào trong Photo Wall.",
+        "info",
+      );
+      return;
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    setIsDownloadingZip(true);
+    setZipProgress({
+      loaded: 0,
+      total: targetDownloadPhotos.length,
+      percent: 0,
+    });
+
+    const zipItems: PhotoWallZipItem[] = targetDownloadPhotos.map((p) => ({
+      id: p.id,
+      url: p.url,
+      guestName: p.guestName ?? null,
+      caption: p.caption ?? null,
+      createdAt: p.createdAt ?? null,
+    }));
+
+    try {
+      const result = await exportPhotoWallZip({
+        weddingSlug,
+        photos: zipItems,
+        signal: controller.signal,
+        concurrency: 4,
+        onProgress: (progress) => {
+          setZipProgress(progress);
+        },
+      });
+
+      if (result.cancelled) {
+        showToast("Đã hủy quá trình tải file ZIP.", "info");
+      } else if (result.failedCount > 0) {
+        showToast(
+          `Đã tải ${result.downloadedCount}/${result.totalPhotos} ảnh (${result.failedCount} ảnh bị lỗi kết nối).`,
+          "info",
+        );
+      } else {
+        showToast(`Đã tải xong trọn bộ ${result.downloadedCount} ảnh (.ZIP)`, "success");
+      }
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        showToast("Đã hủy quá trình tải file ZIP.", "info");
+      } else {
+        showToast(
+          error instanceof Error ? error.message : "Có lỗi xảy ra khi đóng gói ảnh.",
+          "error",
+        );
+      }
+    } finally {
+      abortControllerRef.current = null;
+      setIsDownloadingZip(false);
+      setZipProgress(null);
+    }
+  };
+
+  const handleCancelDownload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
+
   const filteredPhotos = React.useMemo(() => {
     return albumPhotos.filter((p) => {
       const status = getEffectiveStatus(p);
@@ -180,7 +303,7 @@ export function PhotoModerator({
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Header bar & Mode Toggle */}
+      {/* Header bar: Title, Actions (ZIP Export & Mode Toggle) */}
       <div className="flex flex-col gap-4 rounded-2xl border border-[#E8E2D9] bg-white p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -196,39 +319,181 @@ export function PhotoModerator({
           </p>
         </div>
 
-        {/* Mode Pill Toggle */}
-        <div className="flex items-center gap-1 rounded-full border border-[#E8E2D9] bg-[#FAF8F5] p-1 text-xs">
-          <button
-            type="button"
-            disabled={modeBusy}
-            onClick={() => handleToggleMode("manual")}
-            className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-all",
-              approvalMode === "manual"
-                ? "bg-[#7A1C24] text-white shadow-xs font-semibold"
-                : "text-[#6B655E] hover:text-[#1F1D1A]",
-            )}
-          >
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Duyệt thủ công</span>
-          </button>
+        {/* Action Controls: ZIP Export Button + Mode Toggle */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* ZIP Export Button + Scope Dropdown */}
+          <div className="relative inline-flex items-center" ref={dropdownRef}>
+            <div className="inline-flex rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] p-0.5 shadow-xs">
+              <button
+                type="button"
+                disabled={isDownloadingZip || targetDownloadPhotos.length === 0}
+                onClick={handleDownloadZip}
+                className={cn(
+                  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                  isDownloadingZip
+                    ? "bg-[#7A1C24]/10 text-[#7A1C24] cursor-not-allowed"
+                    : targetDownloadPhotos.length === 0
+                      ? "text-[#6B655E]/60 cursor-not-allowed"
+                      : "bg-[#7A1C24] text-white hover:bg-[#60161C] active:scale-95 shadow-xs",
+                )}
+                title={
+                  downloadScope === "approved"
+                    ? `Tải ${approvedPhotos.length} ảnh đã duyệt`
+                    : `Tải tất cả ${albumPhotos.length} ảnh`
+                }
+              >
+                {isDownloadingZip ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                <span>
+                  {isDownloadingZip
+                    ? "Đang đóng gói..."
+                    : downloadScope === "approved"
+                      ? `Tải trọn bộ ảnh (.ZIP) (${approvedPhotos.length})`
+                      : `Tải tất cả ảnh (.ZIP) (${albumPhotos.length})`}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            disabled={modeBusy}
-            onClick={() => handleToggleMode("auto")}
-            className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-all",
-              approvalMode === "auto"
-                ? "bg-[#7A1C24] text-white shadow-xs font-semibold"
-                : "text-[#6B655E] hover:text-[#1F1D1A]",
+              {/* Scope toggle arrow */}
+              <button
+                type="button"
+                disabled={isDownloadingZip}
+                onClick={() => setShowScopeDropdown((prev) => !prev)}
+                aria-label="Chọn phạm vi tải ảnh ZIP"
+                className={cn(
+                  "cursor-pointer rounded-r-lg px-1.5 py-1.5 text-xs transition-colors border-l border-[#E8E2D9]",
+                  isDownloadingZip
+                    ? "text-[#6B655E]/50 cursor-not-allowed"
+                    : "text-[#6B655E] hover:text-[#1F1D1A] hover:bg-white/50",
+                )}
+              >
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-200",
+                    showScopeDropdown && "rotate-180",
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Scope Dropdown Menu */}
+            {showScopeDropdown && (
+              <div className="absolute right-0 top-full z-30 mt-1.5 w-60 rounded-2xl border border-[#E8E2D9] bg-white p-1.5 shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#6B655E]">
+                  Phạm vi tải ZIP
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDownloadScope("approved");
+                    setShowScopeDropdown(false);
+                  }}
+                  className={cn(
+                    "flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium transition-colors text-left",
+                    downloadScope === "approved"
+                      ? "bg-[#FAF8F5] text-[#7A1C24] font-semibold"
+                      : "text-[#1F1D1A] hover:bg-[#FAF8F5]",
+                  )}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {downloadScope === "approved" && <Check className="h-3 w-3 text-[#7A1C24]" />}
+                    <span>Chỉ tải ảnh đã duyệt</span>
+                  </div>
+                  <span className="rounded-full bg-[#E8E2D9]/60 px-2 py-0.5 font-mono text-[11px] text-[#1F1D1A]">
+                    {approvedPhotos.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDownloadScope("all");
+                    setShowScopeDropdown(false);
+                  }}
+                  className={cn(
+                    "flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-xs font-medium transition-colors text-left",
+                    downloadScope === "all"
+                      ? "bg-[#FAF8F5] text-[#7A1C24] font-semibold"
+                      : "text-[#1F1D1A] hover:bg-[#FAF8F5]",
+                  )}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {downloadScope === "all" && <Check className="h-3 w-3 text-[#7A1C24]" />}
+                    <span>Tải tất cả ảnh Photo Wall</span>
+                  </div>
+                  <span className="rounded-full bg-[#E8E2D9]/60 px-2 py-0.5 font-mono text-[11px] text-[#1F1D1A]">
+                    {albumPhotos.length}
+                  </span>
+                </button>
+              </div>
             )}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Tự động duyệt</span>
-          </button>
+          </div>
+
+          {/* Mode Pill Toggle */}
+          <div className="flex items-center gap-1 rounded-full border border-[#E8E2D9] bg-[#FAF8F5] p-1 text-xs">
+            <button
+              type="button"
+              disabled={modeBusy}
+              onClick={() => handleToggleMode("manual")}
+              className={cn(
+                "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-all",
+                approvalMode === "manual"
+                  ? "bg-[#7A1C24] text-white shadow-xs font-semibold"
+                  : "text-[#6B655E] hover:text-[#1F1D1A]",
+              )}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Duyệt thủ công</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={modeBusy}
+              onClick={() => handleToggleMode("auto")}
+              className={cn(
+                "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-all",
+                approvalMode === "auto"
+                  ? "bg-[#7A1C24] text-white shadow-xs font-semibold"
+                  : "text-[#6B655E] hover:text-[#1F1D1A]",
+              )}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Tự động duyệt</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Live Progress State Bar */}
+      {isDownloadingZip && zipProgress && (
+        <div className="rounded-2xl border border-[#E8E2D9] bg-[#F4EFEA] p-4 shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 font-medium text-[#1F1D1A]">
+              <Loader2 className="h-4 w-4 animate-spin text-[#7A1C24]" />
+              <span>
+                Đang tải và đóng gói <strong>{zipProgress.loaded}</strong> /{" "}
+                <strong>{zipProgress.total}</strong> ảnh ({zipProgress.percent}%)...
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleCancelDownload}
+              className="cursor-pointer rounded-lg border border-[#E8E2D9] bg-white px-2.5 py-1 text-xs font-semibold text-[#9E3B3B] hover:bg-[#FAF8F5] active:scale-95 transition-all shadow-2xs"
+            >
+              Hủy
+            </button>
+          </div>
+          {/* Smooth progress bar in brand burgundy */}
+          <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-[#E8E2D9]">
+            <div
+              className="h-full bg-[#7A1C24] transition-all duration-200 ease-out"
+              style={{ width: `${zipProgress.percent}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
