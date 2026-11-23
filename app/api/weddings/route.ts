@@ -103,7 +103,7 @@ export const POST = authRoute(async (req, user) => {
     return fail(slugCheck.error ?? "Đường dẫn thiệp không hợp lệ.");
   }
 
-  let templateId = "basic-1";
+  let templateId = "vuon-o-liu";
   if (body?.templateId !== undefined) {
     const parsed = text(body.templateId, 40);
     if (!parsed || !TEMPLATE_ID_RE.test(parsed)) {

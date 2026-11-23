@@ -301,7 +301,7 @@ export function GiftBookView() {
       }
       if (err instanceof ApiError && err.code === "PLAN_LIMIT") {
         setFieldErrors({
-          _form: "Tính năng Sổ mừng yêu cầu gói Pro hoặc VIP. Vui lòng nâng cấp gói.",
+          _form: "Tính năng Sổ mừng yêu cầu gói Standard hoặc Pro. Vui lòng nâng cấp gói.",
         });
         return;
       }
@@ -451,7 +451,7 @@ export function GiftBookView() {
             <Lock className="h-7 w-7" aria-hidden="true" />
           </div>
           <h2 className="mt-4 font-display text-2xl font-semibold text-fg">
-            Tính năng dành cho gói Pro và VIP
+            Tính năng dành cho gói Standard và Pro
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-fg-muted">
             Sổ mừng cưới giúp bạn ghi chép mọi khoản mừng quà từ bạn bè, người thân, phân
@@ -460,7 +460,7 @@ export function GiftBookView() {
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href="/#bang-gia">
               <Button variant="primary" size="lg">
-                Nâng cấp Pro
+                Nâng cấp Standard
               </Button>
             </Link>
           </div>

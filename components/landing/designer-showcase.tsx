@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { DesignerTemplateCard } from "./designer-template-card";
 import type { PublicDesignerTemplate } from "./designer-types";
 
@@ -81,8 +81,7 @@ export function DesignerShowcase({
             href="/mau-thiep"
             className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-semibold text-text"
           >
-            <Sparkles className="h-3.5 w-3.5 text-accent-text" aria-hidden="true" />
-            Xem tất cả mẫu thiết kế
+            <span>Xem tất cả mẫu thiết kế</span>
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </header>

@@ -10,12 +10,12 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Dữ liệu được lưu bao lâu?",
     answer:
-      "Gói Free lưu 6 tháng. Gói Pro lưu 1 năm. Nâng cấp bất cứ lúc nào để giữ thiệp lâu hơn.",
+      "Gói Miễn phí lưu 6 tháng, gói Standard lưu 1 năm và gói Pro lưu 2 năm. Bạn có thể nâng cấp bất cứ lúc nào để giữ thiệp lâu hơn.",
   },
   {
     question: "Thiệp có giới hạn lượt xem không?",
     answer:
-      "Không. Cả 2 gói đều cho khách mở thiệp không giới hạn lượt xem, không tính phí theo lượt.",
+      "Không. Tất cả các gói (Miễn phí, Standard và Pro) đều cho khách mở thiệp không giới hạn lượt xem, không tính phí theo lượt.",
   },
   {
     question: "Thanh toán như thế nào?",
@@ -35,7 +35,22 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Có xuất được danh sách khách ra Excel không?",
     answer:
-      "Có. Gói Pro xuất file CSV có UTF-8 BOM, mở trực tiếp bằng Excel trên Windows không lỗi font.",
+      "Có. Gói Standard và Pro hỗ trợ xuất danh sách khách ra file mở trực tiếp bằng Excel trên máy tính, hiển thị chuẩn tiếng Việt không lỗi font.",
+  },
+  {
+    question: "Có sửa được thiệp hoặc đổi ngày cưới sau khi đã gửi link không?",
+    answer:
+      "Có. Bạn có thể chỉnh sửa thông tin, đổi ngày giờ, địa điểm hoặc đổi mẫu thiệp không giới hạn; toàn bộ đường link đã gửi cho khách qua Zalo sẽ tự động cập nhật ngay lập tức mà không cần gửi lại.",
+  },
+  {
+    question: "Hết thời hạn lưu trữ thì thiệp và dữ liệu có bị mất không?",
+    answer:
+      "Trước khi hết hạn lưu trữ (6 tháng / 1 năm / 2 năm), bạn có thể xuất toàn bộ danh sách khách mời ra file Excel và tải trọn bộ ảnh kỷ niệm về máy. Sau thời hạn, thiệp sẽ tạm ẩn và bạn có thể gia hạn bất cứ lúc nào nếu muốn giữ lâu hơn.",
+  },
+  {
+    question: "Dùng thử gói Miễn phí (20 khách) rồi nâng cấp có phải tạo lại thiệp không?",
+    answer:
+      "Không. Toàn bộ nội dung thiệp, danh sách khách đã nhập, phản hồi RSVP và các đường link đã gửi đều được giữ nguyên 100% khi bạn nâng cấp lên Standard hoặc Pro.",
   },
 ];
 

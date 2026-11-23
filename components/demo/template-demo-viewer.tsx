@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Crown, Diamond, Monitor, Music2 } from "lucide-react";
 import { PhoneFrame } from "@/components/landing/phone-frame";
-import { PaymentTransferModal, PlanUpgradeModal } from "@/components/landing/pricing-modals";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
 import { LANDING_COPY } from "@/config/landing";
 import { SITE_LINKS } from "@/config/site";
@@ -18,6 +18,15 @@ import { TemplatePreviewRenderer } from "@/templates/TemplatePreviewRenderer";
 import type { WeddingTemplateMeta } from "@/templates/types";
 import { DemoToolbar } from "./demo-toolbar";
 import type { DemoViewportMode } from "./view-switcher";
+
+const PaymentTransferModal = dynamic(
+  () => import("@/components/landing/pricing-modals").then((m) => m.PaymentTransferModal),
+  { ssr: false },
+);
+const PlanUpgradeModal = dynamic(
+  () => import("@/components/landing/pricing-modals").then((m) => m.PlanUpgradeModal),
+  { ssr: false },
+);
 
 interface TemplateDemoViewerProps {
   template: WeddingTemplateMeta;
@@ -55,19 +64,51 @@ export function TemplateDemoViewer({
   const [paymentPlan, setPaymentPlan] = React.useState<Exclude<WeddingPlan, "free"> | null>(null);
 
   const phoneScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const embedScrollRef = React.useRef<HTMLDivElement | null>(null);
   const pendingRatioRef = React.useRef<number | null>(null);
+  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
 
   const demoData = React.useMemo(
     () => getDemoTemplateData(template.id),
     [template.id],
   );
 
+  const iframeSrc = React.useMemo(
+    () => `/mau/${encodeURIComponent(template.id)}?embed=1${initialOpened ? "&opened=1" : ""}`,
+    [template.id, initialOpened],
+  );
+
+  // Nhận thông điệp mở thiệp từ iframe gửi lên
   React.useEffect(() => {
-    setSessionInfo({ isAuthenticated, email: userEmail });
-  }, [isAuthenticated, setSessionInfo, userEmail]);
+    if (embed) return;
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === "inviwedd:demo:opened") {
+        setIsOpened(Boolean(e.data.opened));
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [embed]);
+
+  // Trong chế độ embed (chạy trong iframe), lắng nghe lệnh từ trang cha nếu có
+  React.useEffect(() => {
+    if (!embed) return;
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === "inviwedd:demo:set-opened") {
+        setIsOpened(Boolean(e.data.opened));
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [embed]);
 
   React.useEffect(() => {
-    if (!isAuthenticated) {
+    if (embed) return;
+    setSessionInfo({ isAuthenticated, email: userEmail });
+  }, [embed, isAuthenticated, setSessionInfo, userEmail]);
+
+  React.useEffect(() => {
+    if (embed || !isAuthenticated) {
       setUserPlan("free");
       return;
     }
@@ -85,7 +126,7 @@ export function TemplateDemoViewer({
           adoptAccountTheme(profile.theme);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     listWeddings()
       .then((weddings) => {
@@ -185,17 +226,51 @@ export function TemplateDemoViewer({
 
   if (embed) {
     return (
-      <div className="landing-theme min-h-screen-dvh w-full bg-bg text-text">
-        <style>{`html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}`}</style>
+      <div
+        ref={embedScrollRef}
+        className="landing-theme relative h-full w-full overflow-x-hidden overflow-y-auto bg-bg text-text [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <style>{`
+          html,
+          body,
+          * {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+          }
+          html::-webkit-scrollbar,
+          body::-webkit-scrollbar,
+          *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+          }
+          html, body {
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+          }
+        `}</style>
         <TemplatePreviewRenderer
           key={`${template.id}-embed`}
           templateId={template.id}
           data={demoData}
           mode="demo"
-          contained
+          contained={true}
           viewport="phone"
-          isOpened
-          onOpenedChange={() => undefined}
+          experienceMode="standalone-preview"
+          scrollContainerRef={embedScrollRef}
+          isOpened={isOpened}
+          onOpenedChange={(nextOpened) => {
+            setIsOpened(nextOpened);
+            try {
+              window.parent?.postMessage(
+                { type: "inviwedd:demo:opened", opened: nextOpened },
+                "*",
+              );
+            } catch { }
+          }}
           externalMusicControl
         />
       </div>
@@ -349,19 +424,14 @@ export function TemplateDemoViewer({
                 <PhoneFrame
                   scrollRef={phoneScrollRef}
                   enableFloat={false}
-                  lockedScroll={!isOpened}
+                  lockedScroll={false}
                   desktopOffsetPx={104}
                 >
-                  <TemplatePreviewRenderer
-                    key={`${template.id}-phone`}
-                    templateId={template.id}
-                    data={demoData}
-                    mode="demo"
-                    contained
-                    viewport="phone"
-                    isOpened={isOpened}
-                    onOpenedChange={setIsOpened}
-                    externalMusicControl
+                  <iframe
+                    ref={iframeRef}
+                    src={iframeSrc}
+                    title={`Xem trước mẫu ${template.name}`}
+                    className="h-full w-full border-0 select-auto block bg-bg"
                   />
                 </PhoneFrame>
               </div>
@@ -385,7 +455,15 @@ export function TemplateDemoViewer({
               contained={false}
               viewport="desktop"
               isOpened={isOpened}
-              onOpenedChange={setIsOpened}
+              onOpenedChange={(nextOpened) => {
+                setIsOpened(nextOpened);
+                try {
+                  iframeRef.current?.contentWindow?.postMessage(
+                    { type: "inviwedd:demo:set-opened", opened: nextOpened },
+                    "*",
+                  );
+                } catch { }
+              }}
               externalMusicControl
             />
           </div>

@@ -19,6 +19,7 @@
 /.open-next/
 /.wrangler/
 .dev.vars
+worker-configuration.d.ts
 
 # local scratch scripts (không phải mã sản phẩm)
 /scratch/

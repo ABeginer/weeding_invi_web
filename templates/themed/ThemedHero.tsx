@@ -48,7 +48,7 @@ export function ThemedHero({
           style={{
             fontFamily: theme.coupleFontFamily,
             color: theme.textColor,
-            fontStyle: theme.id === "hoa-anh-dao-v2" ? "italic" : "normal",
+            fontStyle: "normal",
           }}
           className="break-words text-2xl font-semibold leading-[1.08] tracking-wide sm:text-3xl md:text-4xl"
         >
@@ -90,6 +90,8 @@ export function ThemedHero({
                     alt={photos.heroAlt || "Ảnh cưới"}
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                     loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 ) : (
                   <TemplatePhotoPlaceholder label="Ảnh cặp đôi" className="aspect-[4/5]" />
@@ -122,6 +124,8 @@ export function ThemedHero({
                     alt={photos.heroAlt || "Ảnh cưới"}
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                     loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 ) : (
                   <TemplatePhotoPlaceholder label="Ảnh cặp đôi" className="aspect-[4/5]" />
@@ -142,6 +146,8 @@ export function ThemedHero({
                     alt={photos.heroAlt || "Ảnh cưới"}
                     className="h-full w-full object-cover contrast-105 filter transition-transform duration-500 hover:scale-105"
                     loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 ) : (
                   <TemplatePhotoPlaceholder label="Ảnh cặp đôi" className="aspect-[4/5]" />
@@ -165,6 +171,8 @@ export function ThemedHero({
                     alt={photos.heroAlt || "Ảnh cưới"}
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                     loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 ) : (
                   <TemplatePhotoPlaceholder label="Ảnh cặp đôi" className="aspect-[4/5]" />
@@ -196,6 +204,8 @@ export function ThemedHero({
                     alt={photos.heroAlt || "Ảnh cưới"}
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                     loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 ) : (
                   <TemplatePhotoPlaceholder label="Ảnh cặp đôi" className="aspect-[4/5]" />
@@ -221,6 +231,8 @@ export function ThemedHero({
                     alt={photos.heroAlt || "Ảnh cưới"}
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                     loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 ) : (
                   <TemplatePhotoPlaceholder label="Ảnh cặp đôi" className="aspect-[4/5]" />
@@ -228,7 +240,7 @@ export function ThemedHero({
               </div>
             </div>
             <div className="mt-2 text-center text-xs font-semibold text-rose-300">
-              ✨ Trăm Năm Hạnh Phúc ✨
+              Trăm Năm Hạnh Phúc
             </div>
           </div>
         )}
@@ -243,6 +255,8 @@ export function ThemedHero({
                   alt={photos.heroAlt || "Ảnh cưới"}
                   className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                   loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
               ) : (
                 <TemplatePhotoPlaceholder label="Ảnh cặp đôi" className="aspect-[4/5]" />

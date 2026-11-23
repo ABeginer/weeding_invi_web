@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { playOpenCardSound } from "@/lib/sound-effects";
 import { invitationThemeCssVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Envelope } from "./Envelope";
@@ -127,6 +128,7 @@ export function InvitationShell({
 
   const handleOpenEnvelope = React.useCallback(() => {
     setIsOpened(true);
+    playOpenCardSound();
     onOpenedChange?.(true);
     if (!externalMusicControl) {
       playAudio();

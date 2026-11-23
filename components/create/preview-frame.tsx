@@ -22,6 +22,7 @@ interface PreviewState {
   bank?: string;
   accountNumber?: string;
   accountName?: string;
+  musicTrack?: string;
 }
 
 interface PreviewFrameProps extends Omit<PreviewState, "opened"> {
@@ -61,12 +62,29 @@ export function PreviewFrame({
     bank: "",
     accountNumber: "",
     accountName: "",
+    musicTrack: "default",
   });
 
   React.useEffect(() => {
     const style = document.createElement("style");
-    style.textContent =
-      "html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}";
+    style.textContent = `
+      html, body, * {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      html, body {
+        height: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+    `;
     document.head.appendChild(style);
     return () => style.remove();
   }, []);
@@ -106,11 +124,14 @@ export function PreviewFrame({
           typeof payload.accountNumber === "string" ? payload.accountNumber : previous.accountNumber,
         accountName:
           typeof payload.accountName === "string" ? payload.accountName : previous.accountName,
+        musicTrack:
+          typeof payload.musicTrack === "string" ? payload.musicTrack : previous.musicTrack,
       }));
     };
 
     window.addEventListener("message", onMessage);
     window.parent.postMessage({ type: READY_TYPE }, window.location.origin);
+    window.parent.postMessage({ type: "PREVIEW_READY" }, window.location.origin);
 
     return () => window.removeEventListener("message", onMessage);
   }, []);
@@ -132,6 +153,22 @@ export function PreviewFrame({
           },
           date: state.date,
           quote: state.quote,
+          musicPreset:
+            state.musicTrack && state.musicTrack !== "custom"
+              ? (state.musicTrack as
+                | "default"
+                | "priority1"
+                | "prio2"
+                | "classic"
+                | "garden"
+                | "cheerful"
+                | "moonlight"
+                | "calm"
+                | "beginning"
+                | "sweet")
+              : state.musicTrack === "custom"
+                ? "custom"
+                : "priority1",
           heroPhotoId: null,
           groomPhotoId: null,
           bridePhotoId: null,
@@ -144,18 +181,18 @@ export function PreviewFrame({
         },
         events: state.eventLocation
           ? [
-              {
-                id: "preview-event-1",
-                title: "Lễ Thành Hôn & Tiệc Cưới",
-                startsAt: state.date,
-                lunarDate: "",
-                venueName: state.eventLocation,
-                venueAddress: state.eventAddress || "",
-                mapEmbedUrl: null,
-                mapDirectionsUrl: state.mapUrl || null,
-                position: 0,
-              },
-            ]
+            {
+              id: "preview-event-1",
+              title: "Lễ Thành Hôn & Tiệc Cưới",
+              startsAt: state.date,
+              lunarDate: "",
+              venueName: state.eventLocation,
+              venueAddress: state.eventAddress || "",
+              mapEmbedUrl: null,
+              mapDirectionsUrl: state.mapUrl || null,
+              position: 0,
+            },
+          ]
           : [],
         photos: [],
       }),
@@ -171,27 +208,30 @@ export function PreviewFrame({
       state.groom,
       state.groomParents,
       state.mapUrl,
+      state.musicTrack,
       state.quote,
       state.templateId,
     ],
   );
 
   return (
-    <TemplatePreviewRenderer
-      key={state.templateId}
-      templateId={state.templateId}
-      data={data}
-      mode="preview"
-      contained
-      viewport="phone"
-      isOpened={state.opened}
-      onOpenedChange={(opened) =>
-        setState((previous) => ({ ...previous, opened }))
-      }
-      guestName={state.guestName || null}
-      invitationMode={state.guestName ? "personal" : "public"}
-      isMusicPlaying={!state.audioMuted}
-      externalMusicControl={true}
-    />
+    <div className="relative h-full w-full overflow-x-hidden overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <TemplatePreviewRenderer
+        key={state.templateId}
+        templateId={state.templateId}
+        data={data}
+        mode="preview"
+        contained={true}
+        viewport="phone"
+        isOpened={state.opened}
+        onOpenedChange={(opened) =>
+          setState((previous) => ({ ...previous, opened }))
+        }
+        guestName={state.guestName || null}
+        invitationMode={state.guestName ? "personal" : "public"}
+        isMusicPlaying={!state.audioMuted}
+        externalMusicControl={true}
+      />
+    </div>
   );
 }

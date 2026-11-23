@@ -3,20 +3,31 @@
 import * as React from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { useUser } from "@auth0/nextjs-auth0";
 import { ProfileMenu } from "@/components/theme/ProfileMenu";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LANDING_COPY } from "@/config/landing";
 import { SITE_LINKS, SITE_NAME } from "@/config/site";
 
 interface LandingNavbarProps {
-  isAuthenticated: boolean;
+  isAuthenticated?: boolean;
   userEmail?: string | null;
 }
 
 export function LandingNavbar({
-  isAuthenticated,
-  userEmail,
-}: LandingNavbarProps) {
+  isAuthenticated: propIsAuthenticated,
+  userEmail: propUserEmail,
+}: LandingNavbarProps = {}) {
+  const { user } = useUser();
+  const sessionEmail = React.useMemo(() => {
+    const record = user as Record<string, unknown> | null | undefined;
+    const raw = record?.email ?? record?.["https://thiepcuoi/email"];
+    return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  }, [user]);
+
+  const isAuthenticated =
+    propIsAuthenticated !== undefined ? propIsAuthenticated : Boolean(user);
+  const userEmail = propUserEmail !== undefined ? propUserEmail : sessionEmail;
   const [menuOpen, setMenuOpen] = React.useState(false);
 
   React.useEffect(() => {

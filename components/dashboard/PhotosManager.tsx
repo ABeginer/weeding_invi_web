@@ -17,7 +17,6 @@ import {
   Lock,
   Printer,
   RefreshCw,
-  Sparkles,
   Trash2,
   Tv,
   Upload,
@@ -61,6 +60,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ImageCropDialog } from "./ImageCropDialog";
 import { LedMiniDemo } from "./LedMiniDemo";
 import { TableStandeeModal } from "./TableStandeeModal";
+import { VipFeatureModal } from "./VipFeatureModal";
 
 interface PhotosManagerProps {
   templateId?: string | null;
@@ -568,7 +568,7 @@ export function PhotosManager({
     if (currentCount >= albumLimit) {
       const limitMsg =
         plan === "pro"
-          ? "Nâng cấp VIP để thêm ảnh"
+          ? "Nâng cấp Pro để thêm ảnh"
           : "Đã đạt giới hạn 300 ảnh";
       return {
         success: false,
@@ -610,7 +610,7 @@ export function PhotosManager({
       ) {
         const limitMsg =
           plan === "pro"
-            ? "Nâng cấp VIP để thêm ảnh"
+            ? "Nâng cấp Pro để thêm ảnh"
             : "Đã đạt giới hạn 300 ảnh";
         return { success: false, error: limitMsg, retryable: false };
       }
@@ -1175,7 +1175,7 @@ export function PhotosManager({
               </h3>
               {plan === "free" ? (
                 <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-fg">
-                  Pro &amp; VIP
+                  Standard &amp; Pro
                 </span>
               ) : (
                 <span className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-text">
@@ -1218,7 +1218,7 @@ export function PhotosManager({
                       href="/#bang-gia"
                       className="inline-flex h-8 items-center justify-center rounded-full bg-accent px-3.5 text-xs font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
                     >
-                      Nâng cấp VIP để thêm ảnh
+                      Nâng cấp Pro để thêm ảnh
                     </Link>
                   )}
                   {reachedAlbumLimit && plan === "vip" && (
@@ -1238,7 +1238,7 @@ export function PhotosManager({
                         ? "Tính năng đang hoàn thiện"
                         : reachedAlbumLimit
                           ? plan === "pro"
-                            ? "Nâng cấp VIP để thêm ảnh"
+                            ? "Nâng cấp Pro để thêm ảnh"
                             : "Đã đạt giới hạn 300 ảnh"
                           : undefined
                     }
@@ -1310,10 +1310,10 @@ export function PhotosManager({
               <Lock className="h-6 w-6" aria-hidden="true" />
             </div>
             <p className="mt-3 text-sm font-semibold text-fg">
-              Album cho khách dành riêng cho gói Pro và VIP
+              Album cho khách dành riêng cho gói Standard và Pro
             </p>
             <p className="mt-1 max-w-md text-xs text-fg-muted">
-              Gói Pro hỗ trợ 30 ảnh, gói VIP hỗ trợ đến 300 ảnh sắc nét để chia sẻ với người thân và khách mời qua mã QR.
+              Gói Standard hỗ trợ 30 ảnh, gói Pro hỗ trợ đến 300 ảnh sắc nét để chia sẻ với người thân và khách mời qua mã QR.
             </p>
             <Link
               href="/#bang-gia"
@@ -1446,8 +1446,8 @@ export function PhotosManager({
                 <h3 className="text-sm font-semibold text-fg">
                   Màn hình chiếu LED tiệc cưới (Live Photo Wall)
                 </h3>
-                <span className="rounded-full bg-[#1F1D1A] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#B89B72] uppercase">
-                  VIP
+                <span className="rounded-full bg-[#141210] border border-[#D8B15B]/70 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#D8B15B] uppercase">
+                  Pro
                 </span>
               </div>
               <p className="mt-0.5 text-xs text-fg-muted">
@@ -1468,7 +1468,7 @@ export function PhotosManager({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-[#8A6D3B]">
                 <Lock className="h-4 w-4 shrink-0" />
-                <span>Tính năng trình chiếu màn hình LED chỉ khả dụng ở gói VIP.</span>
+                <span>Tính năng trình chiếu màn hình LED chỉ khả dụng ở gói Pro.</span>
               </div>
               <span className="text-xs font-semibold text-accent-text underline">
                 Tìm hiểu &amp; Nâng cấp →
@@ -1520,42 +1520,11 @@ export function PhotosManager({
 
 
 
-      {/* Modal giới thiệu & nâng cấp gói VIP */}
-      <Dialog
+      {/* Modal giới thiệu & nâng cấp gói Pro */}
+      <VipFeatureModal
         open={ledUpgradeOpen}
         onClose={() => setLedUpgradeOpen(false)}
-        title="Đặc quyền sảnh tiệc tiệc cưới (Gói VIP)"
-        description="Tính năng cao cấp dành riêng cho gói VIP của Inviwedd."
-        className="max-w-md"
-      >
-        <div className="space-y-4">
-          <LedMiniDemo />
-          <div className="rounded-xl border border-border bg-bg p-4 text-xs text-fg space-y-2">
-            <div className="flex items-center gap-2 font-semibold text-accent-text">
-              <Sparkles className="h-4 w-4" />
-              <span>Trải nghiệm sân khấu &amp; sảnh tiệc tương tác</span>
-            </div>
-            <ul className="list-disc pl-4 space-y-1 text-fg-muted">
-              <li>Màn hình LED tiệc cưới (Live Photo Wall) trình chiếu ảnh trực tiếp thời gian thực.</li>
-              <li>Thẻ mời &amp; Số bàn (Boarding Pass) điện tử kèm QR check-in cho lễ tân.</li>
-              <li>Cổng trợ lý bảo mật bằng mã PIN 4 số cho người nhà duyệt ảnh và điểm danh khách.</li>
-              <li>Xuất file in bảng QR để bàn (A5/A6) chuẩn 300 DPI và Tải trọn bộ ảnh (.ZIP).</li>
-            </ul>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setLedUpgradeOpen(false)}>
-              Để sau
-            </Button>
-            <Link
-              href="/#bang-gia"
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-accent bg-accent px-4 text-xs font-semibold text-accent-fg shadow-xs transition-colors hover:bg-accent-hover"
-            >
-              <span>Nâng cấp gói VIP ngay →</span>
-            </Link>
-          </div>
-        </div>
-      </Dialog>
+      />
 
       <TemplateLightboxModal
         photos={lightboxPhotos}

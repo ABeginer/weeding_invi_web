@@ -14,6 +14,7 @@ import {
   type WeddingPhoto,
   type WeddingPlan,
   type WeddingTimelineItem,
+  type WeddingStoryMilestone,
 } from "./wedding-types";
 
 const DEFAULT_ISO_DATE = "2027-01-01T10:00:00+07:00";
@@ -50,7 +51,23 @@ function normalizeTimeline(raw: unknown): WeddingTimelineItem[] {
     .slice(0, 6);
 }
 
-function normalizeGiftInfo(rawGift: unknown): WeddingGiftInfo {  if (!isRecord(rawGift)) return emptyGiftInfo();
+function normalizeStory(raw: unknown): WeddingStoryMilestone[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const items = raw
+    .filter((item): item is Record<string, unknown> => isRecord(item))
+    .map((item) => ({
+      id: typeof item.id === "string" ? item.id : undefined,
+      year: clampString(item.year, 30),
+      title: clampString(item.title, 120),
+      content: clampString(item.content, 1000),
+    }))
+    .filter((item) => item.title || item.content)
+    .slice(0, 10);
+  return items.length > 0 ? items : undefined;
+}
+
+function normalizeGiftInfo(rawGift: unknown): WeddingGiftInfo {
+  if (!isRecord(rawGift)) return emptyGiftInfo();
   return {
     groomAccountLabel: clampString(rawGift.groomAccountLabel, 40),
     brideAccountLabel: clampString(rawGift.brideAccountLabel, 40),
@@ -105,7 +122,8 @@ function normalizeDesignerFields(raw: unknown): Record<string, string> | undefin
 
 function normalizeDesignerOverrides(
   raw: unknown,
-): Record<string, DesignerElementOverride> | undefined {  if (!isRecord(raw)) return undefined;
+): Record<string, DesignerElementOverride> | undefined {
+  if (!isRecord(raw)) return undefined;
   const entries: [string, DesignerElementOverride][] = [];
   for (const [id, value] of Object.entries(raw)) {
     if (!isRecord(value)) continue;
@@ -184,7 +202,20 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
       hideCouplePhotos: raw.hideCouplePhotos === true,
       hostFirst: raw.hostFirst === "bride" ? "bride" : "groom",
       timeline: normalizeTimeline(raw.timeline),
-      musicPreset: raw.musicPreset === "calm" || raw.musicPreset === "beginning" || raw.musicPreset === "custom" ? raw.musicPreset : "default",
+      story: normalizeStory(raw.story),
+      musicPreset:
+        raw.musicPreset === "priority1" ||
+          raw.musicPreset === "prio2" ||
+          raw.musicPreset === "classic" ||
+          raw.musicPreset === "garden" ||
+          raw.musicPreset === "cheerful" ||
+          raw.musicPreset === "moonlight" ||
+          raw.musicPreset === "calm" ||
+          raw.musicPreset === "beginning" ||
+          raw.musicPreset === "sweet" ||
+          raw.musicPreset === "custom"
+          ? raw.musicPreset
+          : "default",
       musicUrl: clampString(raw.musicUrl, 500),
       musicTitle: clampString(raw.musicTitle, 120),
       mealMode: raw.mealMode === "veg" || raw.mealMode === "both" ? raw.mealMode : "meat",
@@ -245,6 +276,7 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
     hideCouplePhotos: raw.hideCouplePhotos === true,
     hostFirst: raw.hostFirst === "bride" ? "bride" : "groom",
     timeline: normalizeTimeline(raw.timeline),
+    story: normalizeStory(raw.story),
     mealMode: "meat",
     photoApprovalMode: raw.photoApprovalMode === "auto" ? "auto" : "manual",
     photoModeration: normalizePhotoModeration(raw.photoModeration),
@@ -286,7 +318,7 @@ export function toTemplateData({
   content,
   events,
   photos,
-  templateId = "basic-1",
+  templateId = "vuon-o-liu",
   plan = "free",
   weddingSlug,
   uiOverrides,
@@ -372,19 +404,54 @@ export function toTemplateData({
     hideCouplePhotos: content.hideCouplePhotos === true,
     hostFirst: content.hostFirst === "bride" ? "bride" : "groom",
     timeline: content.timeline ?? [],
+    story: content.story,
     mealMode: content.mealMode === "veg" || content.mealMode === "both" ? content.mealMode : "meat",
     music: {
       src:
         content.musicPreset === "custom" && content.musicUrl
           ? content.musicUrl
-          : musicOverrides?.src ?? "/media/wedding.mp3",
+          : content.musicPreset === "priority1"
+            ? "/media/priority1.mp3"
+            : content.musicPreset === "prio2"
+              ? "/media/prio2.mp3"
+              : content.musicPreset === "classic"
+                ? "/media/co-dien.mp3"
+                : content.musicPreset === "garden"
+                  ? "/media/san-vuon.mp3"
+                  : content.musicPreset === "cheerful"
+                    ? "/media/well-be-okay.mp3"
+                    : content.musicPreset === "moonlight"
+                      ? "/media/moonlight.mp3"
+                      : content.musicPreset === "calm"
+                        ? "/media/audio-2.mp3"
+                        : content.musicPreset === "beginning"
+                          ? "/media/audio-3.mp3"
+                          : content.musicPreset === "sweet"
+                            ? "/media/audio-4.mp3"
+                            : content.musicPreset === "default"
+                              ? "/media/priority1.mp3"
+                              : musicOverrides?.src ?? "/media/priority1.mp3",
       title:
         content.musicTitle?.trim() ||
-        (content.musicPreset === "calm"
-          ? "Bình yên bên nhau"
-          : content.musicPreset === "beginning"
-            ? "Khởi đầu dịu dàng"
-            : musicOverrides?.title ?? "Giai điệu ngày cưới"),
+        (content.musicPreset === "priority1"
+          ? "Giai điệu tình yêu"
+          : content.musicPreset === "prio2"
+            ? "Khúc ca ngọt ngào"
+            : content.musicPreset === "classic"
+              ? "Giai điệu cổ điển trang trọng"
+              : content.musicPreset === "garden"
+                ? "Acoustic sân vườn tự nhiên"
+                : content.musicPreset === "cheerful"
+                  ? "Ngày mới bình yên (We'll Be Okay)"
+                  : content.musicPreset === "moonlight"
+                    ? "Dạ khúc ánh trăng lãng mạn"
+                    : content.musicPreset === "calm"
+                      ? "Bình yên bên nhau"
+                      : content.musicPreset === "beginning"
+                        ? "Khởi đầu dịu dàng"
+                        : content.musicPreset === "sweet"
+                          ? "Ngày chung đôi"
+                          : musicOverrides?.title ?? "Giai điệu ngày cưới"),
     },
     ui: {
       eyebrow: uiOverrides?.eyebrow ?? "Save The Date",
@@ -416,7 +483,7 @@ export function toTemplateData({
         uiOverrides?.signature ??
         `${groomName} ♥ ${brideName}${dotDate ? ` · ${dotDate}` : ""}`,
       autoScroll: uiOverrides?.autoScroll ?? {
-        enabled: templateId === "basic-1",
+        enabled: templateId === "vuon-o-liu" || templateId === "basic-1",
         speedPxPerSec: 100,
         startDelayMs: 1200,
       },
@@ -429,3 +496,12 @@ export function toTemplateData({
     },
   };
 }
+
+export {
+  getVisibleEventsForGuest,
+  getVisibleEvents,
+  getNearestUpcomingEvent,
+  getEventDirectionsUrl,
+  createFallbackEvent,
+} from "./events";
+

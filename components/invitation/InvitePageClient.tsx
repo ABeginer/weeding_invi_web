@@ -33,7 +33,7 @@ interface InvitePageClientProps {
 export function InvitePageClient({
   slug,
   weddingSlug,
-  templateId = "basic-1",
+  templateId = "vuon-o-liu",
   plan = "free",
   initialData,
   rawContent,

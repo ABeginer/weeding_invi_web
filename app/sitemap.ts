@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next";
+import { LEGAL_POLICIES } from "@/lib/legal-config";
 import { TEMPLATE_REGISTRY } from "@/templates/registry";
 
 const SITE_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://wedding-invitation.inviwedd.workers.dev";
+  process.env.APP_BASE_URL ||
+  "https://inviwedd.date";
 
 function makeUrl(path: string): string {
   const base = SITE_URL.replace(/\/+$/, "");
@@ -24,6 +27,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: makeUrl("/thiep-cuoi"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: makeUrl("/mau-thiep"),
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
@@ -52,18 +61,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.85,
     },
-    {
-      url: makeUrl("/chinh-sach-bao-mat"),
+    ...LEGAL_POLICIES.map((p) => ({
+      url: makeUrl(p.href),
       lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: makeUrl("/dieu-khoan-su-dung"),
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    })),
   ];
 
   // 2. All 27 template preview routes

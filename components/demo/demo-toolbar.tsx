@@ -81,6 +81,7 @@ export function DemoToolbar({
               src={template.defaultMusic.src}
               title={template.defaultMusic.title}
               resetKey={template.id}
+              autoPlay={true}
               compact
             />
             {isAuthenticated ? (
@@ -96,6 +97,7 @@ export function DemoToolbar({
               src={template.defaultMusic.src}
               title={template.defaultMusic.title}
               resetKey={template.id}
+              autoPlay={true}
               compact
             />
             {isAuthenticated ? (

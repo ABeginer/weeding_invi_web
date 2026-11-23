@@ -9,7 +9,7 @@ import {
   Lock,
   QrCode,
   ShieldCheck,
-  Sparkles,
+  Tv,
   Users,
   Loader2,
 } from "lucide-react";
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/Toast";
+import { VipFeatureModal } from "./VipFeatureModal";
 
 interface AssistantPinManagerProps {
   weddingId: string;
@@ -148,8 +149,8 @@ export function AssistantPinManager({
               <h3 className="font-serif text-lg sm:text-xl font-semibold text-[#1F1D1A]">
                 Cổng trợ lý tiệc cưới &amp; Điểm danh check-in
               </h3>
-              <span className="rounded-full bg-[#1F1D1A] px-2.5 py-0.5 text-[10px] font-bold text-[#B89B72] uppercase tracking-wider">
-                VIP
+              <span className="rounded-full bg-[#141210] border border-[#D8B15B]/70 px-2.5 py-0.5 text-[10px] font-bold text-[#D8B15B] uppercase tracking-wider">
+                Pro
               </span>
               <span className="rounded-full bg-[#FAF8F5] border border-[#E8E2D9] px-2 py-0.5 text-[10px] font-bold text-[#6B655E] uppercase">
                 4-DIGIT PIN
@@ -185,7 +186,7 @@ export function AssistantPinManager({
               />
               <span>
                 {plan !== "vip"
-                  ? "Khóa tính năng (VIP)"
+                  ? "Khóa tính năng (Pro)"
                   : pinEnabled
                     ? "Đang bật cổng trợ lý"
                     : "Đang tắt"}
@@ -194,7 +195,7 @@ export function AssistantPinManager({
           </div>
         </div>
 
-        {/* Khóa tính năng nếu không phải VIP */}
+        {/* Khóa tính năng nếu không phải Pro */}
         {plan !== "vip" ? (
           <div
             onClick={() => setUpgradeDialogOpen(true)}
@@ -203,10 +204,10 @@ export function AssistantPinManager({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-[#8A6D3B]">
                 <Lock className="h-4 w-4 shrink-0 text-[#B89B72]" />
-                <span>Tính năng Cổng trợ lý PIN 4 số chỉ khả dụng ở gói VIP.</span>
+                <span>Tính năng Cổng trợ lý PIN 4 số chỉ khả dụng ở gói Pro.</span>
               </div>
               <span className="text-xs font-semibold text-[#7A1C24] underline underline-offset-2">
-                Tìm hiểu đặc quyền VIP &amp; Nâng cấp →
+                Tìm hiểu đặc quyền Pro &amp; Nâng cấp →
               </span>
             </div>
             <p className="text-[11px] leading-relaxed text-[#6B655E]">
@@ -317,7 +318,7 @@ export function AssistantPinManager({
         {/* Feature 2 */}
         <div className="rounded-2xl border border-[#E8E2D9] bg-white p-4 sm:p-5 shadow-2xs space-y-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FAF8F5] text-[#7A1C24] border border-[#E8E2D9]">
-            <Sparkles className="h-5 w-5" />
+            <Tv className="h-5 w-5" />
           </div>
           <h4 className="font-semibold text-sm text-[#1F1D1A]">
             1-Chạm duyệt ảnh Photo Wall
@@ -341,42 +342,11 @@ export function AssistantPinManager({
         </div>
       </div>
 
-      {/* Modal giới thiệu & nâng cấp gói VIP */}
-      <Dialog
+      {/* Modal giới thiệu & nâng cấp gói Pro */}
+      <VipFeatureModal
         open={upgradeDialogOpen}
         onClose={() => setUpgradeDialogOpen(false)}
-        title="Đặc quyền Cổng trợ lý & Check-in (Gói VIP)"
-        description="Tính năng cao cấp dành riêng cho gói VIP của Inviwedd."
-        className="max-w-md"
-      >
-        <div className="space-y-4">
-          <div className="rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] p-4 text-xs text-[#1F1D1A] space-y-2">
-            <div className="flex items-center gap-2 font-semibold text-[#7A1C24]">
-              <Sparkles className="h-4 w-4" />
-              <span>Trải nghiệm vận hành đám cưới chuyên nghiệp</span>
-            </div>
-            <ul className="list-disc pl-4 space-y-1 text-[#6B655E]">
-              <li>Quét mã QR Check-in trên thẻ Boarding Pass của khách mời.</li>
-              <li>Tra cứu số bàn tiệc và khẩu phần ăn (Mặn/Chay) tức thì.</li>
-              <li>Cổng trợ lý bảo mật bằng mã PIN 4 số không cần chia sẻ mật khẩu dâu rể.</li>
-              <li>Duyệt ảnh Photo Wall trình chiếu màn hình LED trực tiếp.</li>
-            </ul>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setUpgradeDialogOpen(false)}>
-              Để sau
-            </Button>
-            <Link
-              href="/#bang-gia"
-              onClick={() => setUpgradeDialogOpen(false)}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#7A1C24] bg-[#7A1C24] px-4 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#5E141B]"
-            >
-              <span>Nâng cấp gói VIP ngay →</span>
-            </Link>
-          </div>
-        </div>
-      </Dialog>
+      />
     </div>
   );
 }

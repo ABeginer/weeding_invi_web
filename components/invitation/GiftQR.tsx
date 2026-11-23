@@ -12,7 +12,7 @@ interface GiftQRProps {
 export function GiftQR({ onOpenGift }: GiftQRProps) {
   const isContained = useInvitationContained();
   const data = useWeddingContent();
-  const isOliveGarden = data.templateId === "basic-1";
+  const isOliveGarden = data.templateId === "vuon-o-liu" || data.templateId === "basic-1";
 
   if (!onOpenGift) return null;
 

@@ -183,7 +183,7 @@ export async function renderTableQrPosterToCanvas(
     options.customUrl ||
     (typeof window !== "undefined"
       ? `${window.location.origin}/a/${options.slug}`
-      : `https://inviwedd.com/a/${options.slug}`);
+      : `https://inviwedd.date/a/${options.slug}`);
 
   const qrBoxSize = 580 * scaleRatio;
   const qrBoxX = (width - qrBoxSize) / 2;
@@ -283,7 +283,7 @@ export async function renderTableQrPosterToCanvas(
   const footerY = height - innerMargin - 20 * scaleRatio;
   ctx.fillStyle = isBurgundy ? "rgba(250, 248, 245, 0.55)" : "#8E8880";
   ctx.font = `400 ${Math.round(15 * scaleRatio)}px -apple-system, BlinkMacSystemFont, sans-serif`;
-  ctx.fillText("inviwedd.com · Nền tảng thiệp cưới điện tử tinh tế", width / 2, footerY);
+  ctx.fillText("inviwedd.date · Nền tảng thiệp cưới điện tử tinh tế", width / 2, footerY);
 
   return canvas;
 }

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { m, useReducedMotion } from "motion/react";
+import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn } from "@/lib/utils";
 import {
   useInvitationContained,
@@ -46,6 +47,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
 
   const handleOpen = () => {
     if (opening) return;
+    playOpenCardSound();
     if (prefersReducedMotion) {
       onOpen();
       return;

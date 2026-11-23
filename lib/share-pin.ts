@@ -1,9 +1,21 @@
+import { safeEqual } from "./safe-equal.ts";
+
 /**
  * Quản lý xác thực mã PIN cho link chia sẻ trợ lý / người thân (/share/[slug])
  * Sử dụng HMAC-SHA256 chuẩn Web Crypto API (100% Edge / Cloudflare Workers safe).
  */
-const SHARE_SECRET =
-  process.env.SHARE_TOKEN_SECRET || "inviwedd-family-share-secret-2026";
+function getShareSecret(): string {
+  const secret = process.env.SHARE_TOKEN_SECRET?.trim();
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SHARE_TOKEN_SECRET must be configured in production.");
+    }
+    return "dev-inviwedd-family-share-secret-2026";
+  }
+  return secret;
+}
+
+export { safeEqual };
 
 export async function createShareCookieValue(slug: string): Promise<string> {
   const enc = new TextEncoder();
@@ -11,7 +23,7 @@ export async function createShareCookieValue(slug: string): Promise<string> {
   const payload = `${slug}:${timestamp}`;
   const key = await crypto.subtle.importKey(
     "raw",
-    enc.encode(SHARE_SECRET),
+    enc.encode(getShareSecret()),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -41,7 +53,7 @@ export async function verifyShareCookieValue(
   const payload = `${slug}:${timestampStr}`;
   const key = await crypto.subtle.importKey(
     "raw",
-    enc.encode(SHARE_SECRET),
+    enc.encode(getShareSecret()),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -51,5 +63,5 @@ export async function verifyShareCookieValue(
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  return expectedHex === providedHex;
+  return safeEqual(expectedHex, providedHex);
 }

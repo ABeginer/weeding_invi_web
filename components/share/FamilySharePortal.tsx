@@ -19,6 +19,7 @@ import {
   Utensils,
   XCircle,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { PhotoModerator } from "@/components/dashboard/PhotoModerator";
 import type { PublicWeddingData } from "@/lib/server/public-wedding";
 import type { GuestDiet, GuestStatus, WeddingPhoto } from "@/lib/types";
@@ -27,7 +28,21 @@ import {
   calculateTableOccupancy,
   formatCheckInTime,
 } from "@/lib/checkin-utils";
-import { QrCheckInScanner } from "./QrCheckInScanner";
+
+const QrCheckInScanner = dynamic(
+  () => import("./QrCheckInScanner").then((mod) => mod.QrCheckInScanner),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-[#E8E2D9] bg-white p-6">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7A1C24] border-t-transparent" />
+          <p className="text-xs text-[#6B655E]">Đang tải camera quét mã...</p>
+        </div>
+      </div>
+    ),
+  },
+);
 
 export interface FamilyShareGuest {
   id: string;
@@ -86,13 +101,26 @@ export function FamilySharePortal({
         if (!cancelled && Array.isArray(data.guests)) {
           setLiveGuests(data.guests);
         }
-      } catch {}
+      } catch { }
     };
 
     const interval = setInterval(syncGuests, 10000);
+
+    const onVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void syncGuests();
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
     return () => {
       cancelled = true;
       clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
     };
   }, [slug]);
 

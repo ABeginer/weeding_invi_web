@@ -46,7 +46,7 @@ export function RsvpWishBlock({
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const isReadOnlyPreview = useInvitationReadOnly();
-  const isOliveGarden = data.templateId === "basic-1";
+  const isOliveGarden = data.templateId === "vuon-o-liu" || data.templateId === "basic-1";
   const mealMode = data.mealMode ?? "meat";
   const dietOptions =
     mealMode === "both"
@@ -361,12 +361,13 @@ export function RsvpWishBlock({
   if (isPublicMode) {
     return (
       <RevealSection
-        id="rsvp-wishes"
+        id="rsvp"
         className={cn(
           "scroll-mt-10 bg-inv-bg pb-6",
           isContained ? "px-3.5 pt-8" : "px-5 pt-10",
         )}
       >
+        <span id="rsvp-wishes" className="sr-only" aria-hidden="true" />
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
             <h2
@@ -531,12 +532,13 @@ export function RsvpWishBlock({
 
   return (
     <RevealSection
-      id="rsvp-wishes"
+      id="rsvp"
       className={cn(
         "scroll-mt-10 bg-inv-bg pb-6",
         isContained ? "px-3.5 pt-8" : "px-5 pt-10",
       )}
     >
+      <span id="rsvp-wishes" className="sr-only" aria-hidden="true" />
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
           <h2
@@ -763,10 +765,15 @@ export function RsvpWishBlock({
                     value={plusOnes + 1}
                     onChange={(e) => setPlusOnes(Math.max(0, Number(e.target.value) - 1))}
                     disabled={submitting !== null}
+                    style={{ colorScheme: "light" }}
                     className="mt-1.5 h-10 w-full rounded-xl border border-inv-olive/45 bg-inv-bg px-3 font-inv-serif text-sm text-inv-ink focus:border-inv-olive-deep focus:outline-none focus:ring-2 focus:ring-inv-olive"
                   >
                     {ATTENDEE_OPTIONS.map((count) => (
-                      <option key={count} value={count}>
+                      <option
+                        key={count}
+                        value={count}
+                        style={{ backgroundColor: "#FFFFFF", color: "#30451C" }}
+                      >
                         {count === 1
                           ? "1 người (chỉ mình tôi)"
                           : `${count} người`}

@@ -14,6 +14,7 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const wedding = await getPublicWeddingBySlug(slug);
+  const isVip = wedding?.plan === "vip";
   const couple = wedding
     ? [wedding.content.couple.groomName, wedding.content.couple.brideName]
         .filter(Boolean)
@@ -21,8 +22,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : "Album ảnh cưới";
 
   return {
-    title: `Gửi ảnh cưới & Album — ${couple}`,
-    description: "Gửi ảnh chụp tại tiệc cưới để cùng lưu giữ kỷ niệm và trình chiếu trực tiếp lên màn hình LED sân khấu.",
+    title: isVip ? `Gửi ảnh cưới & Album — ${couple}` : `Album ảnh cưới — ${couple}`,
+    description: isVip
+      ? "Gửi ảnh chụp tại tiệc cưới để cùng lưu giữ kỷ niệm và trình chiếu trực tiếp lên màn hình LED sân khấu."
+      : "Xem album ảnh cưới kỷ niệm của cô dâu và chú rể.",
     robots: { index: false, follow: false },
   };
 }
@@ -52,8 +55,8 @@ export default async function GuestAlbumPage({ params }: PageProps) {
   return (
     <main className="min-h-screen-dvh bg-[#FAF8F5] px-4 py-8 text-[#1F1D1A] sm:px-6 sm:py-12">
       <div className="mx-auto max-w-2xl space-y-10">
-        {/* Guest Photo Upload Portal */}
-        {wedding.plan !== "free" ? (
+        {/* Guest Photo Upload Portal: Chỉ hiển thị cho gói VIP */}
+        {wedding.plan === "vip" ? (
           <GuestUploadPortal
             weddingSlug={wedding.slug}
             coupleTitle={couple}
@@ -67,6 +70,9 @@ export default async function GuestAlbumPage({ params }: PageProps) {
             <h1 className="mt-2 font-serif text-3xl font-bold text-[#1F1D1A]">
               {couple || "Album ảnh cưới"}
             </h1>
+            <p className="mx-auto mt-2 max-w-md text-xs text-[#6B655E]">
+              Lưu giữ những khoảnh khắc ngọt ngào và đáng nhớ nhất trong ngày chung đôi.
+            </p>
           </header>
         )}
 
@@ -78,8 +84,8 @@ export default async function GuestAlbumPage({ params }: PageProps) {
             </h2>
             <p className="mt-1 text-xs text-[#6B655E]">
               {approvedAlbum.length > 0
-                ? "Những bức ảnh đẹp được chụp và chia sẻ trực tiếp từ buổi tiệc."
-                : "Chưa có ảnh nào được gửi lên. Hãy là người đầu tiên gửi ảnh nhé!"}
+                ? "Những bức ảnh đẹp được lưu giữ từ ngày vui của chúng mình."
+                : "Chưa có ảnh nào trong album."}
             </p>
           </div>
 

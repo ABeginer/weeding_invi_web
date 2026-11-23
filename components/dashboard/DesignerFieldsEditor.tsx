@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { FileText, Sparkles } from "lucide-react";
+import { FileText } from "lucide-react";
 import type { DesignerField } from "@/lib/designer-fields";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ export function DesignerFieldsEditor({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="flex items-center gap-2 font-sans text-base font-semibold text-fg">
-            <Sparkles className="h-4 w-4 text-accent-text" aria-hidden="true" />
+            <FileText className="h-4 w-4 text-accent-text" aria-hidden="true" />
             <span>Nội dung tùy chỉnh theo mẫu thiết kế</span>
           </h3>
           <p className="mt-0.5 text-xs text-fg-muted">

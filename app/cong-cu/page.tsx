@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Calculator, Calendar, MessageSquare, Sparkles } from "lucide-react";
+import { ArrowRight, Calculator, Calendar, MessageSquare } from "lucide-react";
 import { JsonLd } from "@/components/tools/JsonLd";
 import { ToolsPageShell } from "@/components/tools/ToolsPageShell";
 import { SITE_LINKS, SITE_NAME, toAbsoluteSiteUrl } from "@/config/site";
 import { TOOLS_HUB_COPY } from "@/config/tools-copy";
 
 const canonicalUrl = toAbsoluteSiteUrl(SITE_LINKS.tools);
-const ogImageUrl = toAbsoluteSiteUrl("/templates/basic-1/cover.webp");
+const ogImageUrl = toAbsoluteSiteUrl("/templates/vuon-o-liu/cover.webp");
 
 export const dynamic = "force-static";
 
@@ -151,7 +151,7 @@ export default function ToolsHubPage() {
         <div className="relative z-10 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.16em] uppercase text-[#B89B72]">
-              <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B89B72]" aria-hidden="true" />
               <span>CÁ NHÂN HÓA LỜI MỜI</span>
             </div>
             <h2 className="mt-1 font-serif text-2xl font-normal text-white sm:text-3xl">

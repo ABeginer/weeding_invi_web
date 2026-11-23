@@ -68,7 +68,7 @@ const GUEST_BASE_COLUMNS = "id, wedding_id, name";
 const GUEST_SALUTATION_COLUMNS =
   `${GUEST_BASE_COLUMNS}, relationship_group, custom_pronoun_host, custom_pronoun_guest`;
 const GUEST_FULL_COLUMNS =
-  `${GUEST_SALUTATION_COLUMNS}, status, plus_ones, diet, song_request, ride_needed`;
+  `${GUEST_SALUTATION_COLUMNS}, status, plus_ones, diet, song_request, ride_needed, view_count`;
 
 interface GuestLookupRow {
   id: string;
@@ -82,6 +82,7 @@ interface GuestLookupRow {
   diet?: GuestDiet | null;
   song_request?: string | null;
   ride_needed?: boolean | null;
+  view_count?: number | null;
 }
 
 const RELATIONSHIP_GROUPS = [
@@ -150,6 +151,7 @@ export interface PublicGuestWeddingData extends PublicWeddingData {
   diet: GuestDiet | null;
   songRequest: string | null;
   rideNeeded: boolean;
+  viewCount: number;
 }
 
 async function loadDesignerTemplate(
@@ -161,6 +163,14 @@ async function loadDesignerTemplate(
   });
   if (!pinned) return null;
   return { id: pinned.id, version: pinned.version, canvas: pinned.canvas };
+}
+
+function sanitizePublicContent(rawContent: unknown): WeddingContent {
+  const content = normalizeWeddingContent(rawContent);
+  delete (content as Record<string, unknown>).sharePin;
+  delete (content as Record<string, unknown>).sharePinEnabled;
+  delete (content as Record<string, unknown>).photoModeration;
+  return content;
 }
 
 export async function getPublicWeddingBySlug(
@@ -195,7 +205,7 @@ export async function getPublicWeddingBySlug(
     slug: row.slug,
     templateId: row.template_id,
     plan: (row.plan as WeddingPlan) ?? "free",
-    content: normalizeWeddingContent(row.content),
+    content: sanitizePublicContent(row.content),
     events,
     photos,
     designerTemplate,
@@ -239,7 +249,7 @@ export async function getPublicWeddingByGuestSlug(
     slug: wedding.slug,
     templateId: wedding.template_id,
     plan: (wedding.plan as WeddingPlan) ?? "free",
-    content: normalizeWeddingContent(wedding.content),
+    content: sanitizePublicContent(wedding.content),
     events,
     photos,
     designerTemplate,
@@ -255,5 +265,6 @@ export async function getPublicWeddingByGuestSlug(
     diet: (guest.diet as GuestDiet) ?? null,
     songRequest: guest.song_request ?? null,
     rideNeeded: Boolean(guest.ride_needed),
+    viewCount: typeof guest.view_count === "number" ? guest.view_count : 0,
   };
 }

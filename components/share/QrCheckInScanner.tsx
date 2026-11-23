@@ -13,7 +13,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Sparkles,
   Undo2,
   UserCheck,
   Utensils,

@@ -74,9 +74,13 @@ export function PhoneFrame({
             ref={scrollRef}
             tabIndex={0}
             aria-label={LANDING_COPY.hero.phoneHelperHint}
-            style={{ transform: "translate3d(0,0,0)" }}
+            style={{
+              transform: "translate3d(0,0,0)",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            }}
             className={cn(
-              "lnd-phone-scroll relative aspect-[390/844] w-full overflow-x-hidden overscroll-contain pt-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring",
+              "lnd-phone-scroll no-scrollbar relative aspect-[390/844] w-full overflow-x-hidden overscroll-contain pt-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
               lockedScroll ? "overflow-y-hidden" : "overflow-y-auto",
             )}
           >

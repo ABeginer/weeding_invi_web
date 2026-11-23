@@ -70,7 +70,7 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
     wedding_id: wedding.id,
     name: item.name,
     ...(item.relationshipGroup ? { relationship_group: item.relationshipGroup } : {}),
-    ...(item.tableNumber ? { table_number: item.tableNumber } : {}),
+    ...(wedding.plan === "vip" && item.tableNumber ? { table_number: item.tableNumber } : {}),
   }));
 
   const { data, error } = await client
@@ -150,10 +150,14 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
 
   const patch: Record<string, unknown> = {};
   if (body?.tableNumber !== undefined) {
-    patch.table_number =
+    const rawTable =
       typeof body.tableNumber === "string" && body.tableNumber.trim()
         ? text(body.tableNumber, 50)
         : null;
+    if (rawTable !== null && wedding.plan !== "vip") {
+      return fail("Tính năng xếp bàn và thẻ check-in chỉ khả dụng trên gói VIP.", 403);
+    }
+    patch.table_number = rawTable;
   }
 
   if (Object.keys(patch).length === 0) {

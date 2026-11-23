@@ -8,7 +8,7 @@ import { SITE_LINKS, toAbsoluteSiteUrl } from "@/config/site";
 import { WEDDING_CALC_COPY } from "@/config/tools-copy";
 
 const canonicalUrl = toAbsoluteSiteUrl(SITE_LINKS.toolWeddingCalc);
-const ogImageUrl = toAbsoluteSiteUrl("/templates/basic-2/cover.webp");
+const ogImageUrl = toAbsoluteSiteUrl("/templates/bach-lan-lua-nga/cover.webp");
 
 export const dynamic = "force-static";
 

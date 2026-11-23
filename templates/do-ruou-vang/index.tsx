@@ -3,9 +3,15 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { m, useReducedMotion } from "motion/react";import { GiftModal } from "@/components/invitation/GiftModal";
+import { m, useReducedMotion } from "motion/react"; import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
-import { cn, formatWeddingDateParts } from "@/lib/utils";
+import { playOpenCardSound } from "@/lib/sound-effects";
+import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import {
+  getVisibleEvents,
+  getNearestUpcomingEvent,
+  getEventDirectionsUrl,
+} from "@/lib/events";
 import type { TemplateData, WeddingEvent } from "@/lib/wedding-types";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -63,10 +69,6 @@ function getTimeline(data: TemplateData) {
   return items && items.length > 0 ? items : DEFAULT_TIMELINE;
 }
 
-function getPrimaryEvent(data: TemplateData): WeddingEvent | undefined {
-  return data.events[0];
-}
-
 function eventStart(event: WeddingEvent | undefined, fallback: string): string {
   return event?.startsAt ?? fallback;
 }
@@ -76,38 +78,7 @@ function eventStart(event: WeddingEvent | undefined, fallback: string): string {
  * và không phụ thuộc mạng. Nếu trình duyệt chặn audio thì bỏ qua im lặng.
  */
 function playOpenChime() {
-  try {
-    const AudioCtor =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtor) return;
-
-    const ctx = new AudioCtor();
-    const now = ctx.currentTime;
-
-    const master = ctx.createGain();
-    master.gain.setValueAtTime(0.0001, now);
-    master.gain.exponentialRampToValueAtTime(0.22, now + 0.012);
-    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.85);
-    master.connect(ctx.destination);
-
-    // E6 + B6: quãng năm, nghe như chuông thuỷ tinh rất nhẹ.
-    [1318.5, 1975.5].forEach((freq, index) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, now);
-      gain.gain.value = index === 0 ? 1 : 0.32;
-      osc.connect(gain);
-      gain.connect(master);
-      osc.start(now);
-      osc.stop(now + (index === 0 ? 0.9 : 0.55));
-    });
-
-    window.setTimeout(() => void ctx.close(), 1300);
-  } catch {
-    // Không có audio thì bỏ qua.
-  }
+  playOpenCardSound();
 }
 
 /* ------------------------------------------------------------
@@ -248,7 +219,8 @@ function Cover({
   onDoorsClosed: () => void;
 }) {
   const reduce = useReducedMotion();
-  const primary = getPrimaryEvent(data);
+  const visibleEvents = getVisibleEvents(data);
+  const primary = getNearestUpcomingEvent(visibleEvents, data.date);
   const date = formatWeddingDateParts(eventStart(primary, data.date));
 
   // 12 ngôi sao 4 cánh rải ở hậu cảnh, mỗi ngôi lệch chu kỳ
@@ -290,36 +262,34 @@ function Cover({
         {stars.map((star) => (
           <m.span
             key={star.id}
-            className="absolute select-none leading-none"
+            className="absolute rounded-full"
             style={{
               left: `${star.left}%`,
               top: `${star.top}%`,
-              fontSize: star.size,
-              color: GOLD_LIGHT,
+              width: Math.max(2, Math.round(star.size / 4)),
+              height: Math.max(2, Math.round(star.size / 4)),
+              backgroundColor: GOLD_LIGHT,
               opacity: star.opacity,
             }}
             animate={
               reduce
                 ? undefined
                 : {
-                    opacity: [star.opacity * 0.45, star.opacity, star.opacity * 0.45],
-                    rotate: [0, 18, 0],
-                    scale: [0.94, 1.06, 0.94],
-                  }
+                  opacity: [star.opacity * 0.45, star.opacity, star.opacity * 0.45],
+                  scale: [0.94, 1.06, 0.94],
+                }
             }
             transition={
               reduce
                 ? undefined
                 : {
-                    duration: star.duration,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: star.delay,
-                  }
+                  duration: star.duration,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: star.delay,
+                }
             }
-          >
-            ✦
-          </m.span>
+          />
         ))}
       </div>
 
@@ -333,15 +303,10 @@ function Cover({
       )}
 
       <div
-        className={cn(
-          "absolute inset-0 z-30 flex justify-center px-6",
-          // Trong preview (contained) bìa phủ toàn trang dài nên phải neo lên đỉnh
-          // (card_exp §22.3).
-          contained ? "items-start pt-[7vh]" : "items-center",
-        )}
+        className="absolute inset-0 z-30 w-full max-w-full overflow-hidden flex flex-col items-center justify-center px-4"
       >
         <m.div
-          className="pointer-events-none relative w-full max-w-[360px]"
+          className="pointer-events-none relative w-full max-w-[328px] sm:max-w-[380px] mx-auto"
           initial={reduce ? false : { opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, ease: EASE }}
@@ -379,6 +344,9 @@ function Cover({
                 src="/templates/do-ruou-vang/rose.webp"
                 alt=""
                 aria-hidden="true"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 className="block w-full"
                 style={{ transform: "rotate(-12deg)" }}
               />
@@ -396,6 +364,9 @@ function Cover({
                 src="/templates/do-ruou-vang/rose.webp"
                 alt=""
                 aria-hidden="true"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 className="block w-full"
                 style={{ transform: "scaleX(-1) rotate(14deg)" }}
               />
@@ -612,64 +583,75 @@ function FamilySection({ data }: { data: TemplateData }) {
    Sự kiện — mỗi lễ một thẻ, theo theme đỏ/vàng
    ------------------------------------------------------------ */
 function EventsSection({ data }: { data: TemplateData }) {
-  if (data.events.length === 0) return null;
+  const visibleEvents = getVisibleEvents(data);
+  if (visibleEvents.length === 0) return null;
 
   return (
     <section className="px-4 py-6" style={{ backgroundColor: "transparent" }}>
       <div className="mx-auto max-w-[560px]">
         <GoldTitle>Sự kiện</GoldTitle>
 
-        <div className="mt-5 space-y-4">
-          {data.events.map((event) => {
+        <div
+          className={cn(
+            "mt-5 grid gap-4",
+            visibleEvents.length === 1
+              ? "max-w-[480px] mx-auto"
+              : "grid-cols-1 sm:grid-cols-2 max-w-4xl mx-auto"
+          )}
+        >
+          {visibleEvents.map((event) => {
             const date = formatWeddingDateParts(event.startsAt);
+            const directionsUrl = getEventDirectionsUrl(event);
             return (
               <article
                 key={event.id}
-                className="relative px-5 py-5 text-center"
+                className="relative px-5 py-5 text-center flex flex-col justify-between"
                 style={{ border: `1px solid ${GOLD}`, borderRadius: 12, backgroundColor: "rgba(96,14,14,0.55)" }}
               >
                 <GoldCorners />
-                <h3
-                  className="text-[12px] font-semibold uppercase tracking-[0.18em]"
-                  style={{ color: GOLD }}
-                >
-                  {event.title}
-                </h3>
+                <div>
+                  <h3
+                    className="text-[12px] font-semibold uppercase tracking-[0.18em]"
+                    style={{ color: GOLD }}
+                  >
+                    {event.title}
+                  </h3>
 
-                <p className="mt-3 text-[22px]" style={{ fontFamily: SERIF, color: GOLD }}>
-                  {date.time}
-                </p>
+                  <p className="mt-3 text-[22px]" style={{ fontFamily: SERIF, color: GOLD }}>
+                    {date.time}
+                  </p>
 
-                <div className="mt-1 flex items-center justify-center gap-2 text-[12px]" style={{ color: INK }}>
-                  <span className="capitalize">{date.weekday}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{date.dotDate}</span>
+                  <div className="mt-1 flex items-center justify-center gap-2 text-[12px]" style={{ color: INK }}>
+                    <span className="capitalize">{date.weekday}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{date.dotDate}</span>
+                  </div>
+
+                  {event.lunarDate && (
+                    <p className="mt-1 text-[11px]" style={{ color: MUTED }}>
+                      (Tức ngày {formatLunarDateClean(event.lunarDate)})
+                    </p>
+                  )}
+
+                  <p className="mt-3 text-[14px] font-semibold" style={{ color: INK }}>
+                    {event.venueName}
+                  </p>
+                  <p className="mt-0.5 text-[12px] leading-relaxed" style={{ color: MUTED }}>
+                    {event.venueAddress}
+                  </p>
                 </div>
 
-                {event.lunarDate && (
-                  <p className="mt-1 text-[11px]" style={{ color: MUTED }}>
-                    (Tức ngày {event.lunarDate})
-                  </p>
-                )}
-
-                <p className="mt-3 text-[14px] font-semibold" style={{ color: INK }}>
-                  {event.venueName}
-                </p>
-                <p className="mt-0.5 text-[12px] leading-relaxed" style={{ color: MUTED }}>
-                  {event.venueAddress}
-                </p>
-
-                {event.mapDirectionsUrl && (
+                <div className="mt-4">
                   <a
-                    href={event.mapDirectionsUrl}
+                    href={directionsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 inline-flex h-9 items-center justify-center rounded-full px-5 text-[12px] font-medium"
+                    className="inline-flex h-9 items-center justify-center rounded-full px-5 text-[12px] font-medium"
                     style={{ border: `1px solid ${GOLD}`, color: GOLD, backgroundColor: "rgba(233,206,145,0.08)" }}
                   >
                     {data.ui.directionsButtonLabel || "Chỉ đường"}
                   </a>
-                )}
+                </div>
               </article>
             );
           })}
@@ -682,7 +664,7 @@ function EventsSection({ data }: { data: TemplateData }) {
 /* ------------------------------------------------------------
    Lịch tháng có trái tim ở ngày cưới
    ------------------------------------------------------------ */
-function MonthGrid({ iso }: { iso: string }) {
+function MonthGrid({ iso, eventDays }: { iso: string; eventDays?: Set<number> }) {
   const reduce = useReducedMotion();
   const cells = React.useMemo(() => {
     const parsed = new Date(iso);
@@ -714,17 +696,19 @@ function MonthGrid({ iso }: { iso: string }) {
         ))}
       </div>
       <div className="grid grid-cols-7 gap-y-1 pb-2 text-center text-[12px]" style={{ color: INK }}>
-        {cells.list.map((day, index) => (
-          <span key={index} className="flex h-7 items-center justify-center">
-            {day === null ? null : day === cells.day ? (
-              <m.span
-                className="relative flex h-7 w-7 items-center justify-center"
-                aria-label={`Ngày cưới ${day}`}
-                initial={reduce ? false : { scale: 0.9, filter: "drop-shadow(0 0 0 rgba(233,206,145,0))" }}
-                whileInView={
-                  reduce
-                    ? undefined
-                    : {
+        {cells.list.map((day, index) => {
+          const isEventDay = day !== null && (eventDays ? eventDays.has(day) : day === cells.day);
+          return (
+            <span key={index} className="flex h-7 items-center justify-center">
+              {day === null ? null : isEventDay ? (
+                <m.span
+                  className="relative flex h-7 w-7 items-center justify-center"
+                  aria-label={`Ngày cưới ${day}`}
+                  initial={reduce ? false : { scale: 0.9, filter: "drop-shadow(0 0 0 rgba(233,206,145,0))" }}
+                  whileInView={
+                    reduce
+                      ? undefined
+                      : {
                         scale: [0.9, 1.1, 1],
                         filter: [
                           "drop-shadow(0 0 0 rgba(233,206,145,0))",
@@ -732,29 +716,30 @@ function MonthGrid({ iso }: { iso: string }) {
                           "drop-shadow(0 0 4px rgba(233,206,145,0.45))",
                         ],
                       }
-                }
-                viewport={{ once: true, amount: 0.6 }}
-                transition={{ duration: 1.3, ease: "easeOut" }}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="absolute inset-0 h-full w-full"
-                  aria-hidden="true"
+                  }
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 1.3, ease: "easeOut" }}
                 >
-                  <path
-                    d="M12 21.2c-.3 0-.6-.1-.9-.3C7.5 18.4 2 14.2 2 8.9 2 5.6 4.4 3.4 7.3 3.4c1.8 0 3.4 1 4.7 2.6 1.3-1.6 2.9-2.6 4.7-2.6C19.6 3.4 22 5.6 22 8.9c0 5.3-5.5 9.5-9.1 12-.3.2-.6.3-.9.3Z"
-                    fill={GOLD}
-                  />
-                </svg>
-                <span className="relative mt-[2px] text-[10px] font-semibold" style={{ color: RED_DEEP }}>
-                  {day}
-                </span>
-              </m.span>
-            ) : (
-              day
-            )}
-          </span>
-        ))}
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="absolute inset-0 h-full w-full"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12 21.2c-.3 0-.6-.1-.9-.3C7.5 18.4 2 14.2 2 8.9 2 5.6 4.4 3.4 7.3 3.4c1.8 0 3.4 1 4.7 2.6 1.3-1.6 2.9-2.6 4.7-2.6C19.6 3.4 22 5.6 22 8.9c0 5.3-5.5 9.5-9.1 12-.3.2-.6.3-.9.3Z"
+                      fill={GOLD}
+                    />
+                  </svg>
+                  <span className="relative mt-[2px] text-[10px] font-semibold" style={{ color: RED_DEEP }}>
+                    {day}
+                  </span>
+                </m.span>
+              ) : (
+                day
+              )}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -800,9 +785,28 @@ function Countdown({ iso }: { iso: string }) {
    Thông tin tiệc + CTA xác nhận
    ------------------------------------------------------------ */
 function PartySection({ data }: { data: TemplateData }) {
-  const primary = getPrimaryEvent(data);
+  const visibleEvents = getVisibleEvents(data);
+  const primary = getNearestUpcomingEvent(visibleEvents, data.date);
   const iso = eventStart(primary, data.date);
   const date = formatWeddingDateParts(iso);
+
+  const eventDays = React.useMemo(() => {
+    const d = new Date(iso);
+    const yr = d.getFullYear();
+    const mo = d.getMonth();
+    const days = new Set(
+      visibleEvents
+        .map((evt) => {
+          const dt = new Date(eventStart(evt, data.date));
+          return dt.getFullYear() === yr && dt.getMonth() === mo ? dt.getDate() : null;
+        })
+        .filter((val): val is number => val !== null)
+    );
+    if (days.size === 0 && !isNaN(d.getDate())) {
+      days.add(d.getDate());
+    }
+    return days;
+  }, [iso, visibleEvents, data.date]);
 
   const calendarUrl = React.useMemo(() => {
     const start = new Date(iso);
@@ -840,69 +844,45 @@ function PartySection({ data }: { data: TemplateData }) {
           </div>
           <p className="mt-1 text-[13px]" style={{ color: INK }}>{date.year}</p>
           {primary?.lunarDate && (
-            <p className="mt-1 text-[11px]" style={{ color: MUTED }}>(Tức ngày {primary.lunarDate})</p>
+            <p className="mt-1 text-[11px]" style={{ color: MUTED }}>(Tức ngày {formatLunarDateClean(primary.lunarDate)})</p>
           )}
         </div>
 
-        {/* Đón khách / Khai tiệc + đếm ngược (theo mockup pic4) */}
-        {(() => {
-          const timeline = getTimeline(data);
-          const arrival = timeline[0];
-          const start = timeline[1] ?? timeline[0];
-          return (
-            <div className="mt-5 text-center">
-              {arrival && start && (
-                <div className="flex items-center justify-center gap-8">
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.22em]" style={{ color: MUTED }}>
-                      Đón khách
-                    </p>
-                    <p className="mt-1 text-[17px]" style={{ fontFamily: SERIF, color: GOLD }}>
-                      {arrival.time}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.22em]" style={{ color: MUTED }}>
-                      Khai tiệc
-                    </p>
-                    <p className="mt-1 text-[17px]" style={{ fontFamily: SERIF, color: GOLD }}>
-                      {start.time}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <p className="mt-5 text-[11px] uppercase tracking-[0.24em]" style={{ color: GOLD }}>
-                Cùng đếm ngược
-              </p>
-              <Countdown iso={iso} />
-            </div>
-          );
-        })()}
-
-        <MonthGrid iso={iso} />
-
+        {/* Đếm ngược ngày cưới */}
         <div className="mt-5 text-center">
+          <p className="text-[11px] uppercase tracking-[0.24em]" style={{ color: GOLD }}>
+            Cùng đếm ngược
+          </p>
+          <Countdown iso={iso} />
+        </div>
+
+        <MonthGrid iso={iso} eventDays={eventDays} />
+
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           {calendarUrl && (
             <a
               href={calendarUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[12px] underline underline-offset-4"
-              style={{ color: GOLD }}
+              className="inline-flex h-11 items-center justify-center rounded-full border px-6 text-[12px] font-semibold uppercase tracking-[0.14em]"
+              style={{ borderColor: GOLD_SOFT, color: GOLD }}
             >
               Thêm vào lịch
             </a>
           )}
-          <div className="mt-4">
-            <a
-              href="#rsvp-wishes"
-              className="inline-flex h-11 items-center justify-center rounded-full px-8 text-[12px] font-semibold uppercase tracking-[0.14em]"
-              style={{ backgroundColor: GOLD, color: RED_DEEP }}
-            >
-              Xác nhận tham dự
-            </a>
-          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              const doc = e.currentTarget.ownerDocument;
+              const targetEl = doc.getElementById("rsvp") || doc.getElementById("rsvp-wishes") || doc.getElementById("rsvp-section");
+              targetEl?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="inline-flex h-11 cursor-pointer items-center justify-center rounded-full px-8 text-[12px] font-semibold uppercase tracking-[0.14em] transition-transform hover:scale-[1.02]"
+            style={{ backgroundColor: GOLD, color: RED_DEEP }}
+          >
+            Xác nhận tham dự
+          </button>
         </div>
       </div>
     </section>
@@ -1280,6 +1260,9 @@ export default function DoTruyenThongTemplate({
     setClosing(true);
     setOpened(true);
     onOpenedChange?.(true);
+    try {
+      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+    } catch {}
     // Dự phòng: nếu animation không bắn callback (reduced-motion, tab ẩn)
     // thì vẫn phải gỡ bìa sau khi hiệu ứng mở chạy xong.
     window.setTimeout(() => setCoverGone(true), 1100);
@@ -1403,6 +1386,8 @@ export default function DoTruyenThongTemplate({
                 <img
                   src="/templates/do-ruou-vang/garland.webp"
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-x-0 bottom-0 mx-auto w-[118%] max-w-none opacity-75"
                 />
               </div>
@@ -1410,7 +1395,7 @@ export default function DoTruyenThongTemplate({
                 <TemplateRsvpSection
                   data={data}
                   mode={mode}
-                tone="ruby"
+                  tone="ruby"
                   contained={contained}
                   inviteSlug={inviteSlug}
                   weddingSlug={weddingSlug ?? data.weddingSlug}
@@ -1453,7 +1438,7 @@ export default function DoTruyenThongTemplate({
         plan={data.plan}
         coupleName={`${data.couple.groomName} & ${data.couple.brideName}`}
         guestName={guestName ?? null}
-                tone="ruby"
+        tone="ruby"
         wishAnchorId="rsvp-wishes"
       />
 

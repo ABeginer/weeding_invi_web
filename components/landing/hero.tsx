@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ChevronUp, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronUp } from "lucide-react";
 import { MusicToggle } from "@/components/demo/music-toggle";
 import { SITE_LINKS } from "@/config/site";
 import { getDemoTemplateData } from "@/content/demo";
 import { HERO_PREVIEW_TEMPLATES } from "@/templates/registry";
 import { TemplatePreviewRenderer } from "@/templates/TemplatePreviewRenderer";
+import { MobilePreviewFrame } from "@/components/MobilePreviewFrame";
 import { PhoneFrame } from "./phone-frame";
 
 export function HeroSection() {
@@ -40,7 +41,9 @@ export function HeroSection() {
     return () => clearTimeout(timer);
   }, [isOpened, hasScrolledPhone]);
 
-  const activeTemplate = HERO_PREVIEW_TEMPLATES[0];
+  const activeTemplate =
+    HERO_PREVIEW_TEMPLATES.find((tpl) => tpl.id === "long-phung") ??
+    HERO_PREVIEW_TEMPLATES[0];
   const demoData = React.useMemo(
     () => getDemoTemplateData(activeTemplate.id),
     [activeTemplate.id],
@@ -66,19 +69,19 @@ export function HeroSection() {
           {/* Left Column: Editorial Copy */}
           <div className="space-y-6 text-center lg:col-span-7 lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#E8E2D9] bg-white/80 px-4 py-1.5 shadow-2xs backdrop-blur-xs">
-              <Sparkles className="h-3.5 w-3.5 text-[#B89B72]" aria-hidden="true" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B89B72]" aria-hidden="true" />
               <span className="text-[12px] font-medium tracking-wide text-[#7A1C24] sm:text-[13px]">
                 Nền tảng thiệp cưới điện tử tinh tế
               </span>
             </div>
 
             <h1 className="font-serif text-4xl leading-[1.12] font-normal tracking-tight text-[#1F1D1A] sm:text-5xl lg:text-[3.5rem]">
-              Thiệp cưới online <span className="font-serif italic font-normal text-[#7A1C24]">tinh tế</span> —{" "}
-              Chạm đúng <span className="font-serif italic font-normal text-[#B89B72]">lễ nghĩa</span> từng vị khách
+              Thiệp cưới Online <span className="font-serif italic font-normal text-[#7A1C24]">tinh tế</span> -{" "}
+              Chạm đúng <span className="font-serif italic font-normal text-[#B89B72]">lễ nghĩa</span>
             </h1>
 
             <p className="mx-auto max-w-xl text-base leading-relaxed text-[#6B655E] sm:text-lg lg:mx-0">
-              Tự động cá nhân hóa xưng hô theo từng vai vế gia đình, tối ưu hiển thị tin nhắn xem trước trên Zalo và theo dõi phản hồi tham dự tức thì.
+              Tạo thiệp trong 5 phút, tự động xưng hô đúng vai vế gia đình, hiển thị tên riêng từng khách ngay khi gửi qua Zalo và theo dõi phản hồi tham dự tức thì.
             </p>
 
             {/* CTAs */}
@@ -111,56 +114,32 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right Column: Phone Frame + Floating Editorial Cards */}
+          {/* Right Column: Phone Frame */}
           <div className="relative flex flex-col items-center lg:col-span-5 lg:items-end">
             <div className="relative flex w-full max-w-[340px] flex-col items-center sm:max-w-[360px]">
-              {/* Floating Card 1: Top-Left (Zalo Message Preview) */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -top-4 -left-12 z-20 hidden md:flex items-center gap-3 rounded-2xl border border-[#E8E2D9] bg-white/95 p-3.5 shadow-sm backdrop-blur-md transition-transform hover:-translate-y-0.5 duration-300"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0068FF]/10 text-[#0068FF]">
-                  <MessageCircle className="h-4 w-4" />
-                </div>
-                <div className="text-left text-xs">
-                  <p className="font-semibold text-[#1F1D1A]">Trân trọng kính mời:</p>
-                  <p className="text-[#6B655E]">Chú Bảy cùng Gia đình</p>
-                </div>
-              </div>
-
-              {/* Floating Card 2: Bottom-Right (RSVP Toast) */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-12 -right-6 z-20 hidden md:flex items-center gap-3 rounded-2xl border border-[#E8E2D9] bg-white/95 p-3.5 shadow-sm backdrop-blur-md transition-transform hover:-translate-y-0.5 duration-300"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <div className="text-left text-xs">
-                  <p className="font-semibold text-[#1F1D1A]">Bạn Thanh Mai đã xác nhận</p>
-                  <p className="text-[#6B655E]">2 người · Ăn mặn</p>
-                </div>
-              </div>
-
               {/* Interactive Phone Frame */}
               <div className="relative w-full">
                 <PhoneFrame
-                  scrollRef={phoneScrollRef}
                   enableFloat
-                  lockedScroll={!isOpened}
+                  lockedScroll={true}
                   desktopOffsetPx={60}
                 >
-                  <TemplatePreviewRenderer
-                    key={activeTemplate.id}
-                    templateId={activeTemplate.id}
-                    data={demoData}
-                    mode="demo"
-                    contained
-                    viewport="phone"
-                    isOpened={isOpened}
-                    onOpenedChange={setIsOpened}
-                    externalMusicControl
-                  />
+                  <MobilePreviewFrame
+                    scrollRef={phoneScrollRef}
+                    lockedScroll={!isOpened}
+                  >
+                    <TemplatePreviewRenderer
+                      key={activeTemplate.id}
+                      templateId={activeTemplate.id}
+                      data={demoData}
+                      mode="demo"
+                      contained
+                      viewport="phone"
+                      isOpened={isOpened}
+                      onOpenedChange={setIsOpened}
+                      externalMusicControl
+                    />
+                  </MobilePreviewFrame>
                 </PhoneFrame>
 
                 {/* Pre-open Touch Ripple & Hint */}

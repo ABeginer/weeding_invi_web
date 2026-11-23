@@ -10,7 +10,8 @@ metadata:
 # Inviwedd project map
 
 ## When to Use
-Load this skill at the start of every task in this repository, and again after any major change (see Update protocol). Read `references/open-items.md` first: it holds the handoff block, known blockers and owner-blocked questions. Use this map instead of re-exploring the tree; open the pointed file only when you need detail.
+Load this skill at the start of every task in this repository, and again after any major change (see Update protocol).
+> ⚠️ **LƯU Ý:** File [AGENT.md](../../../AGENT.md) ở thư mục gốc là bản đồ kiến trúc cập nhật thời gian thực mới nhất cho toàn bộ AI Agent. BẮT BUỘC đọc và cập nhật `AGENT.md` sau mỗi thay đổi file/route/schema quan trọng.
 
 ## Project in one paragraph
 Inviwedd is a Vietnamese-only SaaS that sells personalised online wedding invitations. A couple creates a wedding on a slug, picks one of the built-in templates, edits content, uploads photos and events, then shares a public link (`/w/<slug>`) or per-guest links (`/m/<guestSlug>`) that show the guest's name and let them RSVP and leave a wish. Access is per-wedding (`weddings.plan` = free | pro | vip) and is upgraded by a bank-transfer order. There is also a Vietnamese-utility section (`/cong-cu`) and an internal operations console (`/ops`).

@@ -10,6 +10,7 @@ import {
   Copy,
   CreditCard,
   Crown,
+  ExternalLink,
   Loader2,
   RotateCw,
   X,
@@ -18,8 +19,8 @@ import QRCode from "qrcode";
 import { LANDING_COPY } from "@/config/landing";
 import { VIP_SALES_ENABLED } from "@/config/pricing";
 import { SITE_LINKS } from "@/config/site";
-import { ApiError, createOrder, getOrder, listWeddings } from "@/lib/api";
-import type { CreatedOrder, Wedding, WeddingPlan } from "@/lib/types";
+import { ApiError, createPayosOrder, getOrder, listWeddings } from "@/lib/api";
+import type { PayosOrderResponse, Wedding, WeddingPlan } from "@/lib/types";
 import type { WeddingTemplateMeta } from "@/templates/types";
 
 function formatVnd(amount: number): string {
@@ -73,7 +74,7 @@ export function PaymentTransferModal({
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [order, setOrder] = React.useState<CreatedOrder | null>(null);
+  const [order, setOrder] = React.useState<PayosOrderResponse | null>(null);
   const [isPaid, setIsPaid] = React.useState(false);
   const [isTimedOut, setIsTimedOut] = React.useState(false);
 
@@ -167,7 +168,7 @@ export function PaymentTransferModal({
       setIsTimedOut(false);
 
       try {
-        const res = await createOrder({
+        const res = await createPayosOrder({
           weddingId: targetWeddingId,
           plan: targetPlan,
         });
@@ -208,14 +209,14 @@ export function PaymentTransferModal({
 
   // Draw QR code onto canvas
   React.useEffect(() => {
-    if (!order?.qrPayload || !canvasRef.current) return;
+    if (!order?.qrCode || !canvasRef.current) return;
     let cancelled = false;
 
     // Desktop: 280-320px, Mobile: 240-280px
     const isMobile = window.innerWidth < 640;
     const qrWidth = isMobile ? 260 : 300;
 
-    QRCode.toCanvas(canvasRef.current, order.qrPayload, {
+    QRCode.toCanvas(canvasRef.current, order.qrCode, {
       errorCorrectionLevel: "M",
       margin: 2,
       width: qrWidth,
@@ -232,14 +233,14 @@ export function PaymentTransferModal({
     return () => {
       cancelled = true;
     };
-  }, [order?.qrPayload]);
+  }, [order?.qrCode]);
 
-  // Poll GET /api/orders/:id every 5 seconds for up to 10 minutes (120 polls)
+  // Poll GET /api/orders/:id every 3 seconds for up to 10 minutes (200 polls)
   React.useEffect(() => {
-    if (!order?.id || isPaid || isTimedOut) return;
+    if (!order?.orderId || isPaid || isTimedOut) return;
 
     let pollCount = 0;
-    const maxPolls = 120; // 120 * 5s = 600s = 10 minutes
+    const maxPolls = 200; // 200 * 3s = 600s = 10 minutes
 
     const intervalId = window.setInterval(async () => {
       pollCount += 1;
@@ -250,7 +251,7 @@ export function PaymentTransferModal({
       }
 
       try {
-        const check = await getOrder(order.id);
+        const check = await getOrder(order.orderId);
         if (check.status === "paid") {
           window.clearInterval(intervalId);
           setIsPaid(true);
@@ -262,20 +263,20 @@ export function PaymentTransferModal({
       } catch {
         // Continue polling on transient errors
       }
-    }, 5000);
+    }, 3000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [order?.id, isPaid, isTimedOut, onSuccess]);
+  }, [order?.orderId, isPaid, isTimedOut, onSuccess]);
 
   if (!plan) return null;
 
-  const planTitle = plan === "vip" ? "Thanh toán gói VIP" : "Thanh toán gói Pro";
+  const planTitle = plan === "vip" ? "Thanh toán gói Pro" : "Thanh toán gói Standard";
 
   const handleCopyAccountNo = async () => {
-    if (!order?.bank?.accountNo) return;
-    const ok = await copyText(order.bank.accountNo);
+    if (!order?.accountNumber) return;
+    const ok = await copyText(order.accountNumber);
     if (ok) {
       setCopiedAccountNo(true);
       window.setTimeout(() => setCopiedAccountNo(false), 2000);
@@ -283,8 +284,8 @@ export function PaymentTransferModal({
   };
 
   const handleCopyContent = async () => {
-    if (!order?.transferContent) return;
-    const ok = await copyText(order.transferContent);
+    if (!order?.description) return;
+    const ok = await copyText(order.description);
     if (ok) {
       setCopiedContent(true);
       window.setTimeout(() => setCopiedContent(false), 2000);
@@ -436,8 +437,8 @@ export function PaymentTransferModal({
               </div>
               <h3 className="mt-4 font-display text-xl font-semibold text-text sm:text-2xl">
                 {plan === "vip"
-                  ? "Đã kích hoạt gói VIP cho thiệp của bạn."
-                  : "Đã kích hoạt gói Pro cho thiệp của bạn."}
+                  ? "Đã kích hoạt gói Pro cho thiệp của bạn."
+                  : "Đã kích hoạt gói Standard cho thiệp của bạn."}
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-text-muted sm:text-sm">
                 Cảm ơn bạn đã tin tưởng dịch vụ. Mọi tính năng cao cấp đã sẵn sàng trên thiệp cưới của bạn.
@@ -466,7 +467,7 @@ export function PaymentTransferModal({
               <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5">
                 <span className="text-xs text-text-muted">Mã đơn hàng:</span>
                 <span className="font-mono text-sm font-bold text-accent-text">
-                  {order.code}
+                  {order.orderCode}
                 </span>
               </div>
               <div className="pt-2">
@@ -490,7 +491,7 @@ export function PaymentTransferModal({
                   <canvas
                     ref={canvasRef}
                     role="img"
-                    aria-label={`Mã QR chuyển khoản cho đơn ${order.code}`}
+                    aria-label={`Mã QR chuyển khoản cho đơn ${order.orderCode}`}
                     className="mx-auto block aspect-square max-w-full rounded-lg"
                   />
                 </div>
@@ -503,8 +504,8 @@ export function PaymentTransferModal({
               <div className="rounded-xl border border-border bg-bg p-3.5 space-y-2.5 sm:p-4">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs text-text-muted sm:text-sm">Số tiền:</span>
-                  <span className="font-display text-xl font-bold tracking-tight text-accent-text sm:text-2xl">
-                    {formatVnd(order.amountVnd)}
+                  <span className="font-sans text-xl font-bold tracking-tight text-accent-text sm:text-2xl tabular-nums lining-nums">
+                    {formatVnd(order.amount)}
                   </span>
                 </div>
 
@@ -514,7 +515,7 @@ export function PaymentTransferModal({
                   </span>
                   <div className="flex items-center gap-1.5">
                     <code className="rounded bg-surface px-2.5 py-1 font-mono text-xs font-bold text-accent-text sm:text-sm">
-                      {order.transferContent}
+                      {order.description}
                     </code>
                     <button
                       type="button"
@@ -550,13 +551,13 @@ export function PaymentTransferModal({
                 </p>
                 <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
                   <span className="text-text-muted">Ngân hàng:</span>
-                  <span className="font-medium text-text text-right">{order.bank.name}</span>
+                  <span className="font-medium text-text text-right">{order.bin || "VietQR (payOS)"}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs sm:text-sm border-t border-border/60 pt-1.5">
                   <span className="text-text-muted">Số tài khoản:</span>
                   <div className="flex items-center gap-1.5">
                     <span className="font-mono font-bold text-text">
-                      {order.bank.accountNo}
+                      {order.accountNumber}
                     </span>
                     <button
                       type="button"
@@ -581,10 +582,25 @@ export function PaymentTransferModal({
                 <div className="flex items-center justify-between gap-2 text-xs sm:text-sm border-t border-border/60 pt-1.5">
                   <span className="text-text-muted">Chủ tài khoản:</span>
                   <span className="font-medium text-text text-right uppercase">
-                    {order.bank.accountName}
+                    {order.accountName}
                   </span>
                 </div>
               </div>
+
+              {/* payOS Checkout Link */}
+              {order.checkoutUrl && (
+                <div className="text-center pt-1">
+                  <a
+                    href={order.checkoutUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent-text transition-colors hover:underline"
+                  >
+                    <span>Mở trang thanh toán bảo mật payOS</span>
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  </a>
+                </div>
+              )}
 
               {/* Instructions 1 - 4 */}
               <div className="rounded-xl border border-border bg-bg p-3.5 text-xs leading-relaxed text-text-muted sm:p-4">

@@ -11,8 +11,6 @@ import {
   MapPin,
   Music,
   QrCode,
-  Sparkles,
-  Star,
   type LucideIcon,
 } from "lucide-react";
 import type {
@@ -31,14 +29,14 @@ export type DesignerPreviewValues = Record<string, string>;
 
 const ICON_MAP: Record<DesignerIconName, LucideIcon> = {
   Heart,
-  Star,
+  Star: Flower2,
   MapPin,
   CalendarDays,
   Music,
   QrCode,
   Camera,
   Flower2,
-  Sparkles,
+  Sparkles: Flower2,
   Mail,
 };
 
@@ -616,7 +614,7 @@ export function DesignerTemplateRenderer({
         }
 
         if (element.type === "icon") {
-          const Icon = ICON_MAP[element.icon] ?? Star;
+          const Icon = ICON_MAP[element.icon] ?? Flower2;
           return (
             <div key={element.id} className="absolute" style={baseStyle}>
               <ElementAnimator

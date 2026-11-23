@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useUser } from "@auth0/nextjs-auth0";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
 import { listWeddings, syncMe } from "@/lib/api";
@@ -11,11 +12,15 @@ import { HeroSection } from "./hero";
 import { HowItWorks } from "./how-it-works";
 import { InteractiveFeatureBento } from "./interactive-feature-bento";
 import { LandingNavbar } from "./navbar";
-import { PaymentTransferModal } from "./pricing-modals";
 import { PricingTable } from "./pricing-table";
 import { VIP_SALES_ENABLED } from "@/config/pricing";
 import { TemplateShowcase } from "./template-showcase";
 import { ToolsPreviewSection } from "./tools-preview";
+
+const PaymentTransferModal = dynamic(
+  () => import("./pricing-modals").then((m) => m.PaymentTransferModal),
+  { ssr: false },
+);
 
 interface LandingPageClientProps {
   isAuthenticated?: boolean;
@@ -62,7 +67,7 @@ export function LandingPageClient({
     try {
       const weddings = await listWeddings();
       setUserWeddings(weddings);
-    } catch {}
+    } catch { }
   }, []);
 
   React.useEffect(() => {
@@ -87,7 +92,7 @@ export function LandingPageClient({
           adoptAccountTheme(profile.theme);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     listWeddings()
       .then((weddings) => {

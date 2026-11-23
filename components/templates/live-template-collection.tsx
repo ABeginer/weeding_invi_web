@@ -9,6 +9,8 @@ interface LiveTemplateCollectionProps {
   initialTemplates: CollectionTemplate[];
   variant: "carousel" | "grid";
   initialStyle?: string;
+  initialCategory?: string;
+  initialColor?: string;
 }
 
 interface PublicDesignerTemplate {
@@ -21,7 +23,7 @@ interface PublicDesignerTemplate {
   coverUrl: string | null;
 }
 
-const FALLBACK_COVER = "/templates/basic-1/cover.webp";
+const FALLBACK_COVER = "/templates/vuon-o-liu/cover.webp";
 
 /**
  * Gộp 25 mẫu code với các mẫu designer đã publish vào cùng một bộ sưu tập.
@@ -31,6 +33,8 @@ export function LiveTemplateCollection({
   initialTemplates,
   variant,
   initialStyle,
+  initialCategory,
+  initialColor,
 }: LiveTemplateCollectionProps) {
   const [items, setItems] = React.useState<CollectionTemplate[]>(initialTemplates);
 
@@ -77,7 +81,14 @@ export function LiveTemplateCollection({
   }, [initialTemplates]);
 
   if (variant === "grid") {
-    return <TemplateGridBrowser templates={items} initialStyle={initialStyle} />;
+    return (
+      <TemplateGridBrowser
+        templates={items}
+        initialStyle={initialStyle}
+        initialCategory={initialCategory}
+        initialColor={initialColor}
+      />
+    );
   }
 
   return (

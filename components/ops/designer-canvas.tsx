@@ -18,8 +18,7 @@ import {
   RotateCw,
   Save,
   Snowflake,
-  Sparkles,
-  Star,
+  Flower2,
   Type,
   Undo2,
   Upload,
@@ -1132,7 +1131,7 @@ export function DesignerCanvas({
             onClick={applyAutoAnimations}
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-xs font-medium text-text"
           >
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            <Play className="h-3.5 w-3.5" aria-hidden="true" />
             Tự động áp dụng
           </button>
           <button
@@ -1469,7 +1468,7 @@ export function DesignerCanvas({
                         />
                       ) : element.type === "icon" ? (
                         <span className="block" style={{ color: element.color }}>
-                          <Star className="h-10 w-10" aria-hidden="true" />
+                          <Flower2 className="h-10 w-10" aria-hidden="true" />
                         </span>
                       ) : element.type === "fallingEffect" ? (
                         <FallingEffectCanvas
@@ -1527,7 +1526,7 @@ export function DesignerCanvas({
                           : "border border-accent/40 bg-surface/90 text-accent-text",
                       )}
                     >
-                      <Sparkles className="h-2.5 w-2.5" aria-hidden="true" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
                       {isSelected ? "Hiệu ứng" : "Anim"}
                     </span>
                   )}

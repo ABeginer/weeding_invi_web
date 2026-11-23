@@ -434,7 +434,7 @@ export function BulkImportDialog({
             >
               {getGuestLimitMessage(plan, remainingSlots)}{" "}
               <Link href="/#bang-gia" className="font-semibold underline">
-                Nâng cấp gói Pro
+                Nâng cấp gói Standard
               </Link>{" "}
               để thêm không giới hạn khách mời.
             </div>

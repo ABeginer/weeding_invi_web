@@ -15,10 +15,12 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  Lock,
   MapPin,
   Music,
   Palette,
-  Sparkles,
+  Pause,
+  Play,
   Trash2,
   Upload,
   Volume2,
@@ -93,30 +95,67 @@ const ROLE_PREVIEWS = [
 ] as const;
 
 const MUSIC_TRACKS = [
-  { id: "default", name: "Nhạc nền du dương (Mặc định)", genre: "Acoustic Romantic" },
-  { id: "beautiful-in-white", name: "Beautiful in White (Piano Solo)", genre: "Piano Wedding" },
-  { id: "until-i-found-you", name: "Until I Found You (Vintage String)", genre: "Classical Strings" },
-  { id: "anh-nang-cua-anh", name: "Ánh Nắng Của Anh (Lofi Chill)", genre: "Lofi Wedding" },
+  {
+    id: "priority1",
+    name: "Giai điệu tình yêu",
+    genre: "Wedding Romance · Sang trọng",
+    src: "/media/priority1.mp3",
+  },
+  {
+    id: "prio2",
+    name: "Khúc ca ngọt ngào",
+    genre: "Acoustic Pop · Lãng mạn",
+    src: "/media/prio2.mp3",
+  },
+  {
+    id: "classic",
+    name: "Giai điệu cổ điển",
+    genre: "Classical · Trang nghiêm",
+    src: "/media/co-dien.mp3",
+  },
+  {
+    id: "garden",
+    name: "Sân vườn tự nhiên",
+    genre: "Acoustic Guitar · Mộc mạc",
+    src: "/media/san-vuon.mp3",
+  },
+  {
+    id: "cheerful",
+    name: "Ngày mới bình yên",
+    genre: "Pop Acoustic · We'll Be Okay",
+    src: "/media/well-be-okay.mp3",
+  },
+  {
+    id: "moonlight",
+    name: "Dạ khúc ánh trăng",
+    genre: "Piano Romance · Sâu lắng",
+    src: "/media/moonlight.mp3",
+  },
+  {
+    id: "default",
+    name: "Giai điệu ngày cưới",
+    genre: "Acoustic Romantic",
+    src: "/media/audio-1.mp3",
+  },
+  {
+    id: "calm",
+    name: "Bình yên bên nhau",
+    genre: "Piano Wedding",
+    src: "/media/audio-2.mp3",
+  },
+  {
+    id: "beginning",
+    name: "Khởi đầu dịu dàng",
+    genre: "Classical Strings",
+    src: "/media/audio-3.mp3",
+  },
+  {
+    id: "sweet",
+    name: "Ngày chung đôi",
+    genre: "Sweet Romance",
+    src: "/media/audio-4.mp3",
+  },
 ] as const;
-
-function buildPreviewUrl(params: {
-  templateId: string;
-  groom: string;
-  bride: string;
-  date: string;
-  quote: string;
-  opened: boolean;
-}): string {
-  const search = new URLSearchParams({
-    template: params.templateId,
-    groom: params.groom,
-    bride: params.bride,
-    date: params.date,
-    quote: params.quote,
-    opened: params.opened ? "1" : "0",
-  });
-  return `/tao-thiep/preview?${search.toString()}`;
-}
 
 function resolveFreeTemplateId(candidate?: string): string {
   if (candidate) {
@@ -125,7 +164,7 @@ function resolveFreeTemplateId(candidate?: string): string {
     );
     if (matched) return matched.id;
   }
-  return "basic-1";
+  return "nau-toi-gian";
 }
 
 export function CreateWeddingBuilder({
@@ -184,7 +223,38 @@ export function CreateWeddingBuilder({
   const [compressionToast, setCompressionToast] = React.useState<string | null>(null);
 
   // Tab 4: Style & Music & QR gift info
-  const [selectedMusic, setSelectedMusic] = React.useState("default");
+  const [selectedMusic, setSelectedMusic] = React.useState("priority1");
+  const [playingTrackId, setPlayingTrackId] = React.useState<string | null>(null);
+  const audioPreviewRef = React.useRef<HTMLAudioElement | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      audioPreviewRef.current?.pause();
+    };
+  }, []);
+
+  const toggleAudioPreview = React.useCallback(
+    (track: (typeof MUSIC_TRACKS)[number], e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (playingTrackId === track.id) {
+        audioPreviewRef.current?.pause();
+        setPlayingTrackId(null);
+      } else {
+        if (audioPreviewRef.current) {
+          audioPreviewRef.current.pause();
+        }
+        const audio = new Audio(track.src);
+        audio.onended = () => setPlayingTrackId(null);
+        audio.onerror = () => setPlayingTrackId(null);
+        audio.play().catch(() => setPlayingTrackId(null));
+        audioPreviewRef.current = audio;
+        setPlayingTrackId(track.id);
+      }
+    },
+    [playingTrackId],
+  );
+
   const [bank, setBank] = React.useState("");
   const [accountNumber, setAccountNumber] = React.useState("");
   const [accountName, setAccountName] = React.useState("");
@@ -426,33 +496,22 @@ export function CreateWeddingBuilder({
     return () => window.clearTimeout(timer);
   }, [slug]);
 
-  // Iframe URL
+  // Iframe URL: Chỉ thay đổi khi chọn mẫu thiệp mới (templateId hoặc designerTemplateId).
+  // Toàn bộ nội dung chữ (tên, ngày, lời tựa) được đồng bộ thời gian thực qua postMessage, KHÔNG reload iframe.
   const previewKey = designerTemplateId ?? templateId;
   const [iframeSrc, setIframeSrc] = React.useState(() =>
-    buildPreviewUrl({
-      templateId,
-      groom: groomName.trim(),
-      bride: brideName.trim(),
-      date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
-      quote: quote.trim(),
-      opened: previewOpened,
-    }),
+    designerTemplateId
+      ? `/ops/designer/${designerTemplateId}/preview`
+      : `/tao-thiep/preview?template=${encodeURIComponent(templateId)}`,
   );
 
   React.useEffect(() => {
     setIframeSrc(
       designerTemplateId
         ? `/ops/designer/${designerTemplateId}/preview`
-        : buildPreviewUrl({
-            templateId,
-            groom: groomName.trim(),
-            bride: brideName.trim(),
-            date: toIsoPlus07(date) || DEFAULT_WEDDING_DATE_ISO,
-            quote: quote.trim(),
-            opened: previewOpened,
-          }),
+        : `/tao-thiep/preview?template=${encodeURIComponent(templateId)}`,
     );
-  }, [previewKey]);
+  }, [previewKey, designerTemplateId, templateId]);
 
   const sendPreview = React.useCallback(() => {
     iframeRef.current?.contentWindow?.postMessage(
@@ -475,6 +534,7 @@ export function CreateWeddingBuilder({
           bank: bank.trim(),
           accountNumber: accountNumber.trim(),
           accountName: accountName.trim(),
+          musicTrack: selectedMusic,
         },
       },
       window.location.origin,
@@ -494,6 +554,7 @@ export function CreateWeddingBuilder({
     mapUrl,
     previewOpened,
     quote,
+    selectedMusic,
     selectedRole.name,
     templateId,
   ]);
@@ -507,7 +568,12 @@ export function CreateWeddingBuilder({
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       const data = event.data as { type?: string } | null;
-      if (data?.type === "inviwedd:preview:ready") sendPreview();
+      if (
+        data?.type === "inviwedd:preview:ready" ||
+        data?.type === "PREVIEW_READY"
+      ) {
+        sendPreview();
+      }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
@@ -665,6 +731,20 @@ export function CreateWeddingBuilder({
           },
           date: draft.date,
           quote: draft.quote,
+          musicPreset:
+            draft.musicTrack && draft.musicTrack !== "custom"
+              ? (draft.musicTrack as
+                  | "default"
+                  | "priority1"
+                  | "prio2"
+                  | "classic"
+                  | "garden"
+                  | "cheerful"
+                  | "moonlight"
+                  | "calm"
+                  | "beginning"
+                  | "sweet")
+              : "priority1",
           heroPhotoId: null,
           groomPhotoId: null,
           bridePhotoId: null,
@@ -993,7 +1073,7 @@ export function CreateWeddingBuilder({
                     </label>
                     <div className="mt-1.5 flex rounded-xl border border-[#E8E2D9] bg-white px-3 text-sm focus-within:border-[#7A1C24] focus-within:ring-1 focus-within:ring-[#7A1C24]">
                       <span className="flex select-none items-center text-xs text-[#6B655E]">
-                        inviwedd.com/w/
+                        inviwedd.date/w/
                       </span>
                       <input
                         type="text"
@@ -1337,17 +1417,24 @@ export function CreateWeddingBuilder({
 
                   {/* Section 4.2: Wedding Music */}
                   <div className="space-y-3 rounded-2xl border border-[#E8E2D9] bg-white p-4">
-                    <div className="flex items-center gap-2">
-                      <Music className="h-4 w-4 text-[#7A1C24]" />
-                      <label className="text-xs font-semibold text-[#1F1D1A]">
-                        Nhạc nền tiệc cưới
-                      </label>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Music className="h-4 w-4 text-[#7A1C24]" />
+                        <label className="text-xs font-semibold text-[#1F1D1A]">
+                          Nhạc nền tiệc cưới (10 bản miễn phí)
+                        </label>
+                      </div>
+                      <span className="text-[11px] text-[#6B655E]">
+                        {MUSIC_TRACKS.find((t) => t.id === selectedMusic)?.name ??
+                          "Giai điệu ngày cưới"}
+                      </span>
                     </div>
 
                     <div className="space-y-2">
                       {MUSIC_TRACKS.map((track) => (
-                        <label
+                        <div
                           key={track.id}
+                          onClick={() => setSelectedMusic(track.id)}
                           className={cn(
                             "flex cursor-pointer items-center justify-between rounded-xl border p-3 text-xs transition-colors",
                             selectedMusic === track.id
@@ -1365,13 +1452,61 @@ export function CreateWeddingBuilder({
                               className="text-[#7A1C24] focus:ring-[#7A1C24]"
                             />
                             <div>
-                              <p className="font-medium">{track.name}</p>
+                              <p className="font-medium text-[#1F1D1A]">{track.name}</p>
                               <p className="text-[10px] text-[#6B655E]">{track.genre}</p>
                             </div>
                           </div>
-                          <Volume2 className="h-3.5 w-3.5 text-[#B89B72]" />
-                        </label>
+
+                          <button
+                            type="button"
+                            onClick={(e) => toggleAudioPreview(track, e)}
+                            className={cn(
+                              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors",
+                              playingTrackId === track.id
+                                ? "border-[#7A1C24] bg-[#7A1C24] text-white shadow-xs"
+                                : "border-[#E8E2D9] bg-white text-[#B89B72] hover:border-[#7A1C24] hover:text-[#7A1C24]",
+                            )}
+                            title={
+                              playingTrackId === track.id
+                                ? "Tạm dừng nghe thử"
+                                : `Nghe thử: ${track.name}`
+                            }
+                            aria-label={
+                              playingTrackId === track.id
+                                ? "Tạm dừng nghe thử"
+                                : `Nghe thử: ${track.name}`
+                            }
+                          >
+                            {playingTrackId === track.id ? (
+                              <Pause className="h-3.5 w-3.5" />
+                            ) : (
+                              <Play className="h-3.5 w-3.5 translate-x-0.5" />
+                            )}
+                          </button>
+                        </div>
                       ))}
+
+                      {/* Locked Pro/VIP custom music upload */}
+                      <div className="mt-2 flex items-center justify-between rounded-xl border border-dashed border-[#E8E2D9] bg-[#FAF8F5]/80 p-3 text-xs">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E8E2D9]/60 text-[#8C827A]">
+                            <Lock className="h-3.5 w-3.5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-[#1F1D1A]">
+                                Chọn file nhạc riêng (.mp3)
+                              </p>
+                              <span className="rounded bg-[#B89B72]/15 px-1.5 py-0.5 text-[9px] font-semibold text-[#8C704B]">
+                                Gói Standard &amp; Pro
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-[#6B655E]">
+                              Tải lên bài hát kỷ niệm riêng của hai bạn trong Dashboard quản lý thiệp
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1489,6 +1624,9 @@ export function CreateWeddingBuilder({
             <iframe
               ref={iframeRef}
               src={iframeSrc}
+              onLoad={() => {
+                sendPreview();
+              }}
               title="Xem trước thiệp cưới trực tiếp"
               className="h-full w-full border-0"
             />

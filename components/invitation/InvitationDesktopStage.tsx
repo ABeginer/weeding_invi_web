@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Disc3, Heart, MapPin, Music, VolumeX } from "lucide-react";
+import { ChevronsDown, Disc3, Heart, MapPin, Music, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InvitationDesktopStageProps {
@@ -22,6 +22,7 @@ export function InvitationDesktopStage({
   className,
 }: InvitationDesktopStageProps) {
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isAutoScrolling, setIsAutoScrolling] = React.useState(false);
 
   // Lắng nghe trạng thái phát nhạc từ audio player đang active
   React.useEffect(() => {
@@ -32,15 +33,32 @@ export function InvitationDesktopStage({
       }
     };
 
+    const handleAutoScrollState = (e: Event) => {
+      const customEvent = e as CustomEvent<{ isAutoScrolling: boolean }>;
+      if (customEvent.detail && typeof customEvent.detail.isAutoScrolling === "boolean") {
+        setIsAutoScrolling(customEvent.detail.isAutoScrolling);
+      }
+    };
+
     window.addEventListener("inviwedd:music-state-change", handleMusicState);
+    window.addEventListener("inviwedd:autoscroll-state-change", handleAutoScrollState);
     return () => {
       window.removeEventListener("inviwedd:music-state-change", handleMusicState);
+      window.removeEventListener("inviwedd:autoscroll-state-change", handleAutoScrollState);
     };
   }, []);
 
   const handleToggleMusic = () => {
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:toggle-music"));
+    } catch {
+      // Bỏ qua nếu môi trường không hỗ trợ
+    }
+  };
+
+  const handleToggleAutoScroll = () => {
+    try {
+      window.dispatchEvent(new CustomEvent("inviwedd:toggle-autoscroll"));
     } catch {
       // Bỏ qua nếu môi trường không hỗ trợ
     }
@@ -126,6 +144,26 @@ export function InvitationDesktopStage({
             </span>
           </button>
         )}
+
+        {/* Nút Bật/Tạm dừng Auto-Scroll */}
+        <button
+          type="button"
+          onClick={handleToggleAutoScroll}
+          aria-label={isAutoScrolling ? "Tạm dừng cuộn tự động" : "Bật cuộn tự động"}
+          title={isAutoScrolling ? "Tạm dừng cuộn" : "Cuộn tự động"}
+          className={cn(
+            "group relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-[#E8E2D9] bg-white/95 text-[#1F1D1A] shadow-md backdrop-blur-sm transition-all duration-200 hover:border-[#7A1C24] hover:text-[#7A1C24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24]",
+            isAutoScrolling && "border-amber-500/50 text-amber-700 shadow-amber-200/50",
+          )}
+        >
+          <ChevronsDown
+            className={cn("h-5 w-5 transition-transform duration-200", isAutoScrolling && "animate-bounce motion-reduce:animate-none text-amber-600")}
+            aria-hidden="true"
+          />
+          <span className="pointer-events-none absolute right-full mr-3 whitespace-nowrap rounded-lg bg-[#1F1D1A] px-2.5 py-1 text-xs text-[#FAF8F5] opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+            {isAutoScrolling ? "Tạm dừng cuộn" : "Cuộn tự động"}
+          </span>
+        </button>
 
         {/* Nút Cuộn nhanh tới phần RSVP */}
         <button

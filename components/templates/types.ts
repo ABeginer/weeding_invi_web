@@ -1,4 +1,5 @@
 import type { WeddingPlan } from "@/lib/types";
+import type { TemplateCategory, TemplateColorGroup } from "@/templates/types";
 
 /** Dữ liệu mẫu thiệp được truyền từ server page xuống carousel/popup. */
 export interface CollectionTemplate {
@@ -7,6 +8,8 @@ export interface CollectionTemplate {
   subtitle: string;
   description: string;
   plan: WeddingPlan;
+  category?: TemplateCategory;
+  color?: TemplateColorGroup;
   previewImage: string;
   snapshotImage: string;
   demoUrl?: string;

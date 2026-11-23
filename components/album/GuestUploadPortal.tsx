@@ -11,7 +11,7 @@ import {
   ImagePlus,
   Loader2,
   PenLine,
-  Sparkles,
+  Tv,
   Upload,
   X,
 } from "lucide-react";
@@ -150,7 +150,7 @@ export function GuestUploadPortal({
       {/* Zero-Login, Instant-Clarity Header */}
       <div className="text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-[#E8E2D9] bg-white/80 px-3.5 py-1 text-xs font-semibold text-[#7A1C24] shadow-2xs backdrop-blur-xs">
-          <Sparkles className="h-3.5 w-3.5 text-[#B89B72]" aria-hidden="true" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#B89B72]" aria-hidden="true" />
           <span>Live Photo Wall · Không cần đăng nhập</span>
         </div>
         <h1 className="mt-3 font-serif text-2xl font-bold tracking-tight text-[#1F1D1A] sm:text-3xl">
@@ -182,7 +182,7 @@ export function GuestUploadPortal({
 
           <div className="flex flex-col items-center gap-1">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#2F6F4E] shadow-2xs">
-              <Sparkles className="h-4 w-4" />
+              <Tv className="h-4 w-4" />
             </div>
             <span className="text-[11px] font-bold text-[#1F1D1A]">3. Gửi lên màn hình</span>
             <span className="text-[10px] text-[#6B655E] hidden sm:inline">Tức thì &amp; sắc nét</span>
@@ -210,7 +210,7 @@ export function GuestUploadPortal({
                 📸 Bấm nút <strong>&quot;Chụp ảnh hoặc Chọn từ máy&quot;</strong>, chọn camera để chụp ảnh cùng cô dâu chú rể hoặc chọn ảnh đẹp vừa chụp trong máy.
               </p>
               <p>
-                ✨ Sau khi gửi, ảnh của bạn sẽ lập tức xuất hiện trong slideshow trên màn hình LED tiệc cưới!
+                📺 Sau khi gửi, ảnh của bạn sẽ lập tức xuất hiện trong slideshow trên màn hình LED tiệc cưới!
               </p>
             </div>
           )}

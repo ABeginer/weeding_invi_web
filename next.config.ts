@@ -42,16 +42,18 @@ if (process.env.NODE_ENV === "development" && process.env.CLOUDFLARE_DEV_BINDING
     const reason = error instanceof Error ? error.message.split("\n")[0] : String(error);
     console.warn(
       `[cloudflare] Bỏ qua binding dev vì Miniflare/workerd không khởi động được: ${reason}\n` +
-        "  → /media/[...key] sẽ trả 404 trong dev (ảnh trên thiệp không hiển thị).\n" +
-        "  → Trên Windows: chuyển project ra khỏi Desktop/OneDrive, hoặc thêm workerd.exe vào\n" +
-        "    Windows Security → Ransomware protection → Allow an app.\n" +
-        "  → Hoặc đặt CLOUDFLARE_DEV_BINDINGS=0 để tắt hẳn và không hiện cảnh báo này.",
+      "  → /media/[...key] sẽ trả 404 trong dev (ảnh trên thiệp không hiển thị).\n" +
+      "  → Trên Windows: chuyển project ra khỏi Desktop/OneDrive, hoặc thêm workerd.exe vào\n" +
+      "    Windows Security → Ransomware protection → Allow an app.\n" +
+      "  → Hoặc đặt CLOUDFLARE_DEV_BINDINGS=0 để tắt hẳn và không hiện cảnh báo này.",
     );
   });
 }
 
 const nextConfig: NextConfig = {
+  compress: true,
   images: {
+    formats: ["image/avif", "image/webp"],
     unoptimized: true,
   },
   async redirects() {
@@ -59,6 +61,11 @@ const nextConfig: NextConfig = {
       {
         source: "/cong-cu/du-tru-chi-phi",
         destination: "/cong-cu/bang-tinh-dam-cuoi",
+        statusCode: 301,
+      },
+      {
+        source: "/mau/basic-1",
+        destination: "/mau/vuon-o-liu",
         statusCode: 301,
       },
     ];
@@ -88,7 +95,7 @@ const nextConfig: NextConfig = {
       "connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com",
       "frame-src 'self' https://www.google.com https://maps.google.com https://challenges.cloudflare.com",
       "worker-src 'self' blob:",
-      "media-src 'self'",
+      "media-src 'self' blob:",
     ].join("; ");
 
     return [
@@ -109,7 +116,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            value: "camera=(self), microphone=(), geolocation=()",
           },
           {
             key: "Strict-Transport-Security",
@@ -131,11 +138,29 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/(templates|photos|images)/:path*",
+        source: "/(templates|photos|images|sfx)/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=86400, stale-while-revalidate=604800",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/w/:slug*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=60, stale-while-revalidate=300",
+          },
+        ],
+      },
+      {
+        source: "/m/:slug*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=60, stale-while-revalidate=300",
           },
         ],
       },

@@ -9,9 +9,10 @@ import type { ThemeConfig } from "./theme-configs";
 interface ThemedCalendarProps {
   theme: ThemeConfig;
   targetDate: string;
+  eventDays?: Set<number>;
 }
 
-export function ThemedCalendar({ theme, targetDate }: ThemedCalendarProps) {
+export function ThemedCalendar({ theme, targetDate, eventDays }: ThemedCalendarProps) {
   const parts = React.useMemo(() => formatWeddingDateParts(targetDate), [targetDate]);
   const countdown = useWeddingCountdown(targetDate);
 
@@ -42,10 +43,10 @@ export function ThemedCalendar({ theme, targetDate }: ThemedCalendarProps) {
       days.push({ dayNum: null, isWeddingDay: false });
     }
     for (let d = 1; d <= totalDays; d++) {
-      days.push({ dayNum: d, isWeddingDay: d === day });
+      days.push({ dayNum: d, isWeddingDay: eventDays ? eventDays.has(d) : d === day });
     }
     return days;
-  }, [year, month, day]);
+  }, [year, month, day, eventDays]);
 
   return (
     <div

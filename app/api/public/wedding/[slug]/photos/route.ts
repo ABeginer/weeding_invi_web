@@ -38,9 +38,9 @@ export const POST = route(async (req: Request, { params }: Ctx) => {
     return fail("Thiệp cưới hiện đang tạm ngưng.", 403);
   }
 
-  // Khóa tính năng gửi ảnh vào Online Album nếu thiệp là gói free
-  if (!canUseFeature(wedding.plan, "qrOnlineAlbum")) {
-    return fail("Tính năng gửi ảnh vào Online Album chỉ khả dụng từ gói Pro trở lên.", 403);
+  // Khóa tính năng gửi ảnh khách: chỉ khả dụng riêng cho gói VIP (Live Photo Wall)
+  if (wedding.plan !== "vip") {
+    return fail("Tính năng gửi ảnh lên Live Photo Wall chỉ dành riêng cho gói VIP.", 403);
   }
 
   let formData: FormData;

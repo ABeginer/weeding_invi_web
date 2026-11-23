@@ -1,710 +1,738 @@
-# card_exp.md — Kinh nghiệm làm thiệp cưới Inviwedd
+# card_exp.md — Chuẩn Kiến Trúc & Kinh Nghiệm Xây Dựng Thiệp Cưới Inviwedd
 
-Tài liệu này tổng hợp các bài học thực tế khi làm template thiệp cưới, đặc biệt là
-`Hoa Anh Đào V2`. Đọc trước khi làm template mới để tránh lặp lại lỗi.
-
----
-
-## 1. Có hai hệ template, đừng trộn
-
-### Code template (React)
-- Nằm trong `templates/<id>/index.tsx`.
-- Render bằng `TemplatePreviewRenderer`.
-- Dùng `ThemedTemplate` hoặc component riêng.
-- Có responsive thật, animation thật, logic thật.
-- Không sửa được từng element trong `/ops/designer`.
-- Phù hợp khi cần:
-  - thiết kế phức tạp
-  - hiệu ứng mở thiệp
-  - layout responsive
-  - can thiệp CSS sâu
-
-### Designer template (canvas JSON)
-- Nằm trong DB `designer_templates` + `designer_template_versions`.
-- Sửa được trong `/ops/designer`.
-- Chỉ gồm page + element absolute theo %.
-- Không biểu diễn được React/CSS phức tạp.
-- Phù hợp khi cần khách tự kéo thả, đổi màu, đổi ảnh.
-
-**Kết luận:** nếu khách cần “y hệt design” thì làm code template. Nếu cần
-“tự chỉnh mọi thứ” thì làm Designer template. Đừng hứa cả hai.
+> **Mục đích:** Đây là tài liệu chuẩn bắt buộc dành cho AI/Developer khi tạo mới, nâng cấp hoặc bảo trì các mẫu thiệp cưới trên Inviwedd. Đọc kỹ tài liệu này **kết hợp với `AGENTS.md`, `lib/wedding-types.ts` và `config/template-sections.ts`** trước khi viết code.
 
 ---
 
-## 2. Ảnh design ≠ asset
+## PHẦN I: KIẾN TRÚC HỆ THỐNG & HỢP ĐỒNG DỮ LIỆU
 
-- Ảnh mockup thường có chữ, photo, watermark baked-in.
-- Không dùng nguyên ảnh mockup làm thiệp thật.
-- Tách asset:
-  - nền giấy
-  - cành hoa
-  - khung ảnh
-  - QR
-  - photo cưới
-- Nếu thiếu asset:
-  - dùng SVG/CSS thay thế
-  - dùng placeholder
-  - nói rõ với owner
-- Không tự bịa là “giống 100%”.
+### 1. Hai hệ thống template (Tuyệt đối không trộn lẫn)
+* **Code Template (`templates/<id>/index.tsx`):**
+  * Render thông qua `TemplatePreviewRenderer` (dùng `ThemedTemplate` hoặc custom React component).
+  * Hỗ trợ responsive thực, animation phức tạp (Framer Motion / CSS), hiệu ứng mở phong bì, Web Audio, và logic tương tác sâu.
+  * **Giới hạn:** Không thể chỉnh sửa từng element bằng kéo-thả trong `/ops/designer`.
+* **Designer Template (Canvas JSON trong DB `designer_templates` & `designer_template_versions`):**
+  * Chỉnh sửa trực quan trong `/ops/designer` (tọa độ phần trăm `%`).
+  * **Giới hạn:** Không biểu diễn được hiệu ứng React/CSS phức tạp.
+* **Nguyên tắc:** Khách yêu cầu thiết kế độc bản & hiệu ứng cao cấp $\rightarrow$ làm **Code Template**. Khách cần tự kéo-thả bố cục $\rightarrow$ làm **Designer Template**.
 
----
+### 2. Kiến trúc Khung Xem Trước (`PhoneFrame` & Iframe Sandbox)
+* Trang xem thử (`/mau/[templateId]`) và trình chỉnh sửa dùng **Iframe Sandbox Viewport** cho chế độ điện thoại:
+  * Iframe tải `/mau/<id>?embed=1` với chiều rộng mobile thực ($\approx 360\text{px} - 390\text{px}$), giúp các breakpoint `sm:`, `md:` hoạt động chuẩn như trên điện thoại thật mà không bị dính độ phân giải desktop.
+  * Giao tiếp trạng thái mở/đóng bìa giữa trang cha và iframe qua `postMessage` (`inviwedd:demo:opened`) và prop điều khiển `isOpened` / `onOpenedChange`.
+* **Các tham số URL hỗ trợ QA:**
+  * `/mau/<id>?opened=1`: Bỏ qua màn hình bìa, mở thẳng ruột thiệp để test nhanh.
+  * `/mau/<id>?embed=1`: Chế độ nhúng preview.
 
-## 3. Font tiếng Việt
+### 3. Quy tắc Tiêu thụ Dữ liệu & Zero Fallback Shims
+* **Không tổng hợp fallback object giả tạo trong component:** Nếu dữ liệu từ CMS/API thiếu hoặc `null`, component xử lý bằng điều kiện render sạch (`if (!data.button?.link) return null;`), tuyệt đối không tự bịa text/link mẫu hardcode trong JSX.
+* **Đồng bộ trạng thái mở/đóng (`isOpened`):** Phải xử lý hai chiều. Dùng `useRef` lưu giá trị `isOpened` trước đó của trang cha để chỉ reset trạng thái bìa khi trang cha **thực sự chuyển từ `true` sang `false`** (tránh lỗi re-render làm mất animation mở thiệp và khóa cuộn trang).
+* **Khi thêm trường dữ liệu mới:** Cập nhật đồng bộ 3 nơi:
+  1. `lib/wedding-types.ts` (`WeddingContent` & Zod schema).
+  2. `lib/wedding-data.ts` (giá trị mặc định, hàm normalize, và mapper sang `TemplateData`).
+  3. Dashboard editor & Template component.
 
-### Lỗi thường gặp
-- Font script như Nautigal, Pinyon, Carattere thiếu glyph tiếng Việt.
-- Dấu bị rơi, chữ bị lệch, dấu câu lộn.
-
-### Cách xử lý
-- Chỉ dùng font có Vietnamese subset:
-  - Playfair Display
-  - Cormorant Garamond
-  - Lora
-  - EB Garamond
-  - Be Vietnam Pro
-- Fallback cho canvas cũ:
-  ```css
-  .invitation-theme,
-  .themed-invitation {
-    --font-nautigal: var(--font-playfair);
-    --font-pinyon: var(--font-playfair);
-    --font-carattere: var(--font-playfair);
-  }
-  ```
-- Quote/lời dẫn dùng `font-inv-quote`, italic, không dùng `font-serif` mặc định.
-
----
-
-## 4. Tên cô dâu chú rể trên cover/hero
-
-- Chia **3 dòng**:
-  ```text
-  Tên chú rể
-  &
-  Tên cô dâu
-  ```
-- Không để cùng một dòng vì tên dài sẽ gãy chữ.
-- Dùng `display: block` cho từng span.
-- Font nhỏ hơn, italic/flowing.
-- Không dùng `overflow-wrap: anywhere` cho tên.
-- Dùng `break-word` + `min-width: 0`.
+### 4. Khai báo Capabilities của Từng Template (`config/template-sections.ts`)
+Mỗi template có cấu trúc section và slot ảnh khác nhau. Dashboard **chỉ hiển thị nút điều khiển cho những phần template thực sự hỗ trợ**:
+1. **Section & Thứ tự (`getTemplateSections(templateId)`):**
+   * Bộ key chuẩn: `family`, `calendar`, `map`, `dresscode`, `album`, `albumQr`, `gift`, `rsvp`, `music`, `story`.
+   * Template đọc `data.hiddenSections` và `data.sectionOrder` theo đúng bộ key này.
+   * **Lưu ý Flexbox `order`:** Đưa `<footer>` ra ngoài container flex có thuộc tính `order`, nếu không footer có `order: 0` sẽ nhảy lên đầu trang.
+   * **Kéo-thả sắp xếp trên mobile:** Dùng Pointer Events (`touch-action: none`, vùng chạm $\ge 32\text{px}$), không dùng HTML5 `draggable`.
+2. **Slot Ảnh Cưới (`getTemplatePhotos(templateId)` & `PHOTO_OVERRIDES`):**
+   * Phân biệt rõ:
+     * `TemplatePhotoSlots` (`{ hero: boolean; couple: boolean; gallery: boolean }`): Quyết định tab "Ảnh cưới" trong Dashboard hiện ô upload nào. Mẫu không có ảnh bìa hoặc không có ảnh chân dung cô dâu/chú rể **bắt buộc** khai báo trong `PHOTO_OVERRIDES` để ẩn ô upload thừa.
+     * `TemplateSections.couplePhotos`: Quyết định có hiển thị khối ảnh chân dung trong phần thông tin gia đình hay không.
+3. **Phân quyền Gói Dịch Vụ (Free / Pro / VIP):**
+   * **Album ảnh:** Free tối đa 5 ảnh, Pro/VIP tối đa 30 ảnh.
+   * **QR chia sẻ album khách chụp (`albumQr`):** Chỉ kích hoạt từ gói Pro trở lên; ẩn khỏi UI và dashboard ở gói Free.
+   * **Chuyện chúng mình (`story` / `loveStory`):** Chỉ dành riêng cho gói Standard (`pro`) và Pro (`vip`). Gói Free tuyệt đối không có section này (công tắc bị disabled kèm badge "Standard" trong Dashboard Editor, và thiệp/preview Free tuyệt đối không render). Dữ liệu mốc kỷ niệm (`data.story`) tách biệt độc lập 100% khỏi lịch trình ngày cưới (`data.timeline`).
+   * **Mừng cưới & VietQR:** Component render QR tự động chỉ kích hoạt khi `plan !== "free"` **và** bên nhận chưa tải lên ảnh QR cá nhân riêng.
 
 ---
 
-## 5. Card gia đình 2 bên
+## PHẦN II: QUY TẮC GIAO DIỆN, TRẢI NGHIỆM & ASSET (UI/UX)
 
-- Hai card phải **cao bằng nhau**:
-  - grid `items-stretch`
-  - card `h-full flex flex-col`
-- Tên dài:
-  - font nhỏ hơn trên mobile
-  - `min-h` cố định cho vùng tên
-  - `break-words`
-  - không bẻ từng ký tự
-- Danh xưng:
-  - không hardcode “Trưởng nam” / “Ái nữ”
-  - thêm field `groomTitle`, `brideTitle`
-  - hiển thị `Nhà Trai · {groomTitle}`
-  - dashboard cho khách tự nhập trước tên
+### 5. Trang Bìa (Cover) & Chống Trôi Layout
+* **CẤM VĨNH VIỄN ICON HÌNH NGÔI SAO / SPARKLES:**
+  * **TUYỆT ĐỐI KHÔNG** sử dụng icon hình ngôi sao / sparkles (`Sparkles`, `Star`, `Sparkle` từ `lucide-react`, ký tự `✨`, `✦`, SVG ngôi sao trang trí) trong giao diện web, badge, nút bấm hay template thiệp cưới.
+  * Thay bằng: Chấm tròn mảnh (`h-1.5 w-1.5 rounded-full`), đường kẻ tối giản, hoặc bỏ hẳn icon để badge/nút bấm tinh tế, sang trọng.
+* **Khóa chiều cao thẻ gốc khi bìa chưa mở (`!coverGone`):**
+  * Nếu ruột thiệp dài $4000\text{px}$ vẫn chiếm không gian trong DOM lúc chưa mở thiệp, lớp phủ bìa (`absolute inset-0`) sẽ căn giữa ở tọa độ $Y \approx 2000\text{px}$, khiến thẻ bìa trôi tuột khỏi khung nhìn và auto-scroll của preview bị kẹt ở đáy trang trống.
+  * **Giải pháp bắt buộc:**
+    * Khi `!coverGone`: Áp dụng `h-full overflow-hidden` (nếu `contained`) hoặc `h-screen-dvh max-h-full overflow-hidden` (trên thiết bị thật), đồng thời ẩn hoàn toàn khối ruột thiệp bằng `hidden` cho đến khi bắt đầu hiệu ứng mở.
+    * Khi mở thiệp trên thiết bị thật (`!contained`): Gọi `window.scrollTo({ top: 0, behavior: "auto" })` để đảm bảo bắt đầu từ đỉnh Hero.
+* **Tách riêng nền Mobile & Desktop:** Chuẩn bị `background-mobile.webp` ($720 \times 1280\text{px}$, tỉ lệ 9:16) và `background.webp` ($1440\text{px}$ ngang) để tránh vỡ hạt hoặc cắt lệch kiến trúc nền.
+* **Khung viền hoa văn:** Dùng `bg-[length:100%_100%] bg-center` cho ảnh khung viền thẻ. Không vẽ cứng pill xưng hô hay nút bấm vào file ảnh tĩnh — phải render bằng HTML/CSS động để tự co giãn khi tên khách mời dài.
 
----
+### 5.1 Quy chuẩn Chụp Ảnh Bìa Catalog (cover.webp) Chống Lệch & Sạch UI
+Nhằm đảm bảo ảnh bìa catalog trên toàn hệ thống hiển thị sắc nét, cân đối hoàn hảo và không bị lỗi cắt mép hay dính công cụ lập trình, mọi template bắt buộc tuân thủ 4 nguyên tắc sau:
 
-## 6. Responsive thật
+1. **Kích thước & Tỉ lệ chuẩn:**
+   * **Tỉ lệ khung nhìn chuẩn:** Viewport thiết bị di động chuẩn $360 \times 590\text{px}$ (tỉ lệ chuẩn thiệp dọc mobile $\approx 1:1.639$).
+   * **Độ phân giải xuất ảnh:** Đặt `deviceScaleFactor: 2` để sinh ảnh nét căng đúng kích thước **$720 \times 1180\text{px}$**.
+   * **Định dạng & Dung lượng:** Lưu file định dạng `.webp`, nén lossy chất lượng cao (quality 80–82, giảm dần nếu cần) đảm bảo **dung lượng $< 60\text{ KB}$**, lưu trực tiếp tại `public/templates/<slug>/cover.webp`.
+   * **CẤM:** Tuyệt đối không chụp từ viewport lớn (như desktop $1280\text{px}$ hoặc tablet/mobile lớn $430\text{px}$) rồi crop/clip sang $360\text{px}$, vì sẽ làm lệch tọa độ tâm và cắt cụt mép phải của thiệp.
 
-### Mobile
-- 390px là chuẩn chính.
-- Không dùng ảnh full-width không giới hạn chiều cao.
-- `aspect-[3/4]` + `object-cover`.
-- Text dài phải wrap.
-- Không đặt `overflow-x: hidden` rồi coi như đã fix.
+2. **CSS Responsive Bắt Buộc cho Màn Bìa:**
+   * **Container bao bọc màn bìa ngoài cùng:** Phải luôn có `w-full max-w-full overflow-hidden flex items-center justify-center px-4 py-4 sm:px-6`.
+   * **Khung thẻ bìa chính (Card):** Bắt buộc dùng `w-full max-w-[328px] sm:max-w-[380px] mx-auto` kèm `overflow-hidden`.
+     * *Công thức căn giữa 360px:* Màn hình rộng $360\text{px}$, trừ đi $32\text{px}$ lề 2 bên (`px-4`) $\rightarrow$ chiều rộng khả dụng là $328\text{px}$. Thiết lập `max-w-[328px]` giúp thẻ cách đều 2 lề đúng $16\text{px}$, căn giữa tuyệt đối $\text{abs}(\text{left} - (360 - \text{right})) \le 2\text{px}$.
+     * **CẤM:** Không bao giờ gán cứng `w-[360px]`, `w-[390px]`, `max-w-[420px]` ở màn mobile nhỏ.
+   * **Họa tiết trang trí (Ornaments/Decorations/Butterflies):** Nếu dùng `absolute` căn lề âm (như `-left-3`, `-right-3`) phải nằm trọn trong container cha có `overflow-hidden` để không bao giờ làm tràn chiều rộng trang (`document.documentElement.scrollWidth` luôn bằng đúng $360\text{px}$, cấm xuất hiện thanh cuộn ngang).
 
-### Desktop
-- Không kéo giãn thiệp thành 1440px.
-- Dùng max-width 760–840px.
-- Hero ảnh có thể 2 cột.
-- Card gia đình 2 cột.
-- Test 390 / 768 / 1440.
+3. **Kỹ thuật Chụp Chống Dính Dev Tools (Icon "N" Next.js):**
+   * **Nguyên nhân dính icon N đen ở góc dưới trái:** Chụp khi chạy `next dev` (Next.js Dev Server tự động tiêm component `nextjs-portal` chứa `[data-next-badge-root]`).
+   * **Biện pháp xử lý triệt để:**
+     * Chạy chụp trên **Production Build** (`next build` kết hợp `next start -p 3005`), môi trường production hoàn toàn không render dev indicator.
+     * Đồng thời tiêm CSS cưỡng chế và dọn dẹp DOM trước khi chụp:
+       ```css
+       nextjs-portal, #__next-build-watcher, [data-next-badge-root], [data-nextjs-toast], [data-nextjs-dialog] {
+         display: none !important;
+         visibility: hidden !important;
+         opacity: 0 !important;
+         pointer-events: none !important;
+       }
+       ::-webkit-scrollbar { display: none !important; width: 0 !important; }
+       html, body { scrollbar-width: none !important; overflow-x: hidden !important; }
+       ```
+     * Chờ `document.fonts.ready` + tất cả ảnh `<img>` tải xong (kèm timeout an toàn) + đệm thời gian $600\text{ms}$ để animation ổn định hoàn toàn trước khi bấm máy.
 
-### Lưu ý khi screenshot
-- Headless Chrome có thể có layout viewport rộng hơn ảnh chụp.
-- Ảnh 390px có thể bị cắt giả do `innerWidth` lớn hơn.
-- Phải dùng DevTools device emulation thật hoặc kiểm tra `innerWidth`.
+4. **Checklist Tự Động Nghiệm Thu Sau Khi Chụp:**
+   * [ ] `document.documentElement.scrollWidth <= 360` (không có thanh cuộn ngang).
+   * [ ] Căn giữa đối xứng hoàn hảo: `Math.abs(cardRect.left - (360 - cardRect.right)) <= 2px`.
+   * [ ] Kích thước ảnh xuất: Đúng chính xác $720 \times 1180\text{px}$.
+   * [ ] Dung lượng file WebP: Nghiêm ngặt $< 60\text{ KB}$.
+   * [ ] Góc dưới trái sạch sẽ: 0% dính icon "N" Next.js Dev Badge.
+   * [ ] Nội dung hiển thị: Tên cặp đôi, tiêu đề thiệp, nút "Mở thiệp" sắc nét 100%, không bị cắt cụt mép hoặc che mờ.
 
----
+### 6. Quy tắc Xử lý Asset, Tách Nền & Nén WebP
+* **Không dùng ảnh mockup phẳng làm nền thiệp:** Phải tách riêng nền giấy, khung, hoa văn, linh vật và nén **100% sang `.webp`** (giữ mục tiêu mỗi họa tiết $< 50\text{ KB}$, nền $< 120\text{ KB}$). Không để file `.png`/`.jpg` thô nặng trong `public/`.
+* **Tách nền caro giả (Flattened Checkerboard) & Nền trắng:**
+  * Nền caro do AI xuất thường là pixel RGB xám/trắng ($alpha = 255$). Xử lý bằng thuật toán lọc độ vô sắc kết hợp **flood-fill từ toàn bộ viền** và khử viền trắng (de-whiten RGB) để giữ nguyên các chi tiết hoa trắng bên trong.
+* **Hoa văn 4 góc & Khung viền (Bo góc & Chống vệt viền thừa):**
+  * **Tách nền alpha trong suốt 100%:** Tuyệt đối không để file góc dạng RGB có nền trắng (`alpha: false`). Phải loại bỏ hoàn toàn các dải viền nối bị cắt gãy mép (cut border tails) để góc chỉ còn họa tiết hoa văn thuần túy, ôm sát đỉnh bo góc.
+  * **Căn tọa độ ôm sát 4 đỉnh khung:** Khi đặt hoa văn trong khung viền (như `EnvelopeCover`), lồng các thẻ ảnh góc trực tiếp bên trong container viền (`inset-4`) với tọa độ đỉnh `left-0 top-0`, `right-0 top-0`, `bottom-0 left-0`, `bottom-0 right-0` để hoa văn nằm chính xác tại 4 góc nhọn/bo của khung, không bị xô lệch hay trôi ra ngoài viền.
+  * **Kích thước tinh gọn trên Mobile:** Kích thước hoa văn góc trên mobile chỉ từ `w-10` đến `w-12` ($\approx 40\text{px} - 48\text{px}$), desktop từ `w-14` đến `w-16`, tránh lấn vào vùng tên khách mời, con dấu hay nội dung thiệp. Cả 4 góc phải xuất hiện đồng bộ, đối xứng.
+* **Linh vật (Rồng/Phụng) & Tránh Va Chạm Nội Dung:**
+  * **Tách xa & Thu nhỏ footprint mobile:** Trên màn hình mobile/preview ($\approx 360\text{px} - 390\text{px}$), kích thước linh vật chỉ để `w-20` ($\approx 80\text{px}$), ghim sát đáy góc (`bottom-0 left-0` và `bottom-0 right-0`), chừa khoảng trống thoáng $\ge 200\text{px}$ ở giữa để Rồng và Phụng không bao giờ đè lên nhau.
+  * **Tầng hiển thị (z-index) & Đệm an toàn:** Đặt linh vật ở lớp nền (`z-0`, `pointer-events-none`, `aria-hidden="true"`), nội dung chữ (ngày cưới, ngày âm, pill địa điểm/bản đồ) ở lớp trước (`relative z-10`), tăng padding đáy `pb-16 sm:pb-20 md:pb-24` và thêm backdrop bán trong suốt cho pill địa điểm để linh vật không bao giờ che khuất chữ hay chặn tương tác nút bấm.
+* **Ảnh đại diện Catalog (`public/templates/<id>/cover.webp`):**
+  * Bắt buộc là ảnh dọc tỉ lệ chuẩn **$720 \times 1180\text{px}$** ($\approx 0.610$, nén $< 60\text{ KB}$), thể hiện đầy đủ họa tiết bìa và tên cặp đôi minh họa (không dùng SVG vì crawler mạng xã hội không render `og:image` dạng SVG).
 
-## 7. Ảnh: upload, crop, zoom, pan
+### 6.1 Quy chuẩn Căn tâm Asset Hộp Quà 3 Trạng Thái (Chống lệch Preview)
+Nhằm triệt tiêu hiện tượng icon hộp quà / túi gấm / vali / hộp thiếc bị xô lệch tâm ngang trong khung xem trước Preview (hoặc bị nhảy giật vị trí khi hover/click đổi trạng thái):
+1. **Xử lý Asset WebP 3 trạng thái (Normal, Hover/Glow, Active/Open):**
+   * **CẤM:** Tuyệt đối không cắt cứng lưới 16:9 theo `width / 3` rồi lưu thẳng nếu vật thể trong ô chia nằm lệch tâm.
+   * **Auto-crop & Căn tâm theo Bounding Box thực:**
+     * Quét bounding box của các pixel thực thể ($\text{alpha} > 20$): xác định $\text{boxCenterX} = (\text{minX} + \text{maxX}) / 2$.
+     * Căn chỉnh tâm ngang thân hộp khớp chính xác vào $50\%$ chiều rộng canvas: $\text{canvasCenterX} = \text{width} / 2$ ($\text{offset} \le 0.5\text{px}$).
+     * **Đồng bộ cao độ đáy (Bottom Alignment):** Đáy hộp ($\text{maxY}$) trên cả 3 file `.webp` phải nằm ở cùng 1 cao độ baseline để hộp luôn đứng vững chãi, chính giữa tuyệt đối và không bao giờ bị nhảy/giật vị trí khi chuyển đổi trạng thái tương tác.
+2. **Quy chuẩn CSS trong JSX:**
+   * Container bao bọc toàn bộ khối hộp quà: Bắt buộc dùng `w-full flex flex-col items-center justify-center`.
+   * Nút/thẻ bấm bọc ảnh: Bắt buộc dùng `mx-auto flex items-center justify-center`.
+   * Thẻ `<img>`: Bắt buộc dùng `mx-auto block object-contain` kèm kích thước rõ ràng (`w-full h-full` trong khung cha), tuyệt đối không dựa vào căn lề thủ công (`pl-*`, `pr-*`) hay `inline-block`.
 
-- Ảnh phải được nén trước khi upload.
-- Khung ảnh phải có tỉ lệ cố định.
-- Cho khách:
-  - kéo ảnh
-  - zoom
-  - căn tâm
-  - cắt một phần
-- Crop phải trả ra file mới, không chỉ đổi CSS.
-- Ảnh cuối vẫn giữ đúng tỉ lệ khung template.
-- `ImageCropDialog` là component dùng chung:
-  - nhận file + aspect
-  - kéo/zoom
-  - xuất JPEG
-- Nếu chưa tích hợp crop cho mọi luồng, ghi rõ luồng nào đã có.
+### 6.2 Quy chuẩn Âm thanh Tương tác (SFX) & Delay Mở Modal Quà Mừng (700ms)
+Nhằm mang đến trải nghiệm mở thiệp cưới và trao quà mừng chân thực, tinh tế và cao cấp, mọi mẫu thiệp bắt buộc tích hợp hệ thống SFX (`lib/sfx.ts`) kết hợp hook tương tác hộp quà chuẩn (`hooks/useGiftBoxInteraction.ts`):
 
----
+1. **Danh sách tệp SFX có sẵn trong `public/sfx/` & Bảng mapping chuẩn:**
+   * **Nhóm SFX Mở Thiệp (`CoverSfxType`):**
+     * `open-envelope.mp3` (`envelope`): Phong bì / Mật thư giấy cotton (*Mật Thư Hổ Phách, Mộc Hương Nắng Thu, Minimal Red, Đỏ Rượu Vang...*) — Tiếng tách nhẹ con dấu sáp và giấy trượt êm.
+     * `open-silk.mp3` (`silk`): Rèm lụa / Thanh tao / Hoa cỏ (*Tơ Hồng Lụa Thắm, Bạch Lan Lụa Ngà, Anh Đào Phấn Tuyết, Thanh Mai Ngọc Lan, Ráng Hồng Hoàng Hôn, Vườn Kính Xanh...*) — Tiếng lụa rẽ nhẹ hòa nốt harp/chime dịu.
+     * `open-royal.mp3` (`royal`): Hoàng gia / Sơn mài / Long Phụng (*Chu Sa Long Phụng, Bích Ngọc Hoàng Triều, Phượng Loan Gấm Đỏ, Song Hạc Kim Vân, Hạc Vũ Lưu Ly, Song Phụng Bích Đào, Huyền Kim Long Phụng, Long Phụng...*) — Tiếng khánh ngọc / đàn tranh rải nốt thanh thoát.
+     * `open-crystal.mp3` (`crystal`): Dạ yến / Tối giản cao cấp (*Dạ Yến Pha Lê, Hắc Kim Nhật Thực, Mặc Lam Kim Tuyến, Tử Đằng Dạ Khúc, Yên Chi Mẫu Đơn, Diễm Phấn Kim Tơ, Phỉ Thúy Đông Dương...*) — Tiếng chuông pha lê / thủy tinh chạm trong trẻo.
+     * `open-vhs-shutter.mp3` (`vhs-shutter`): Hồng Kông 80s–90s VHS / Noir (*Hương Cảng Đêm Neon, Bản Sắc Hương Cảng*) — Tiếng băng từ chạy ngắn + tiếng trập máy ảnh cơ 35mm.
+     * `open-mahjong.mp3` (`mahjong`): Hồng Kông Mạt Chược (*Cửu Long Hỷ Yến*) — Tiếng va giòn gọn của quân mạt chược.
+     * `open-ticket-tear.mp3` (`ticket-tear`): Vé rạp phim (*Dạ Ảnh Hương Cảng*) — Tiếng xé cuống vé giấy gọn sắc.
+   * **Nhóm SFX Mở Quà Mừng (`GiftSfxType`):**
+     * `gift-envelope.mp3` (`envelope`): Bao lì xì cưới truyền thống (*Minimal Red, Đỏ Truyền Thống, Long Phụng...*) — Tiếng giấy cứng trượt mở + lách cách nhẹ lá kim/đồng xu.
+     * `gift-box.mp3` (`box`): Hộp quà nhung / Hộp sơn mài / Hộp Art Deco (hầu hết các mẫu hộp quà) — Tiếng bật nắp hộp nhẹ + chuông sparkle lấp lánh.
+     * `gift-briefcase.mp3` (`briefcase`): Vali đen khóa vàng (*Cửu Long Hỷ Yến*) — Tiếng "tách — tách" giòn của 2 chốt khóa kim loại bật mở.
+     * `gift-pouch.mp3` (`pouch`): Túi gấm / Túi rút dây (*Tơ Hồng Lụa Thắm*) — Tiếng dây lụa kéo mở + chuông gió nhẹ.
+     * `gift-tin-vhs.mp3` (`tin-vhs`): Hộp thiếc / Hộp băng VHS (*Dạ Ảnh Hương Cảng, Hương Cảng Đêm Neon*) — Tiếng nắp kim loại bật mở / eject băng cassette.
 
-## 8. Album ảnh
+2. **Quy tắc Bắt Buộc cho Mọi Mẫu Thiệp Hiện Tại & Tương Lai:**
+   * **Mở thiệp:** Luôn gọi `playCoverSfx(style)` đúng phong cách khi khách bấm nút mở thiệp (không tự phát khi tải trang).
+   * **Tương tác Quà Mừng:** Bắt buộc sử dụng hook `useGiftBoxInteraction({ sfxType: "..." })` quản lý 3 trạng thái (`normal`, `glow`, `open`).
+   * **Quy chuẩn Delay 700ms mở Modal QR:**
+     * Khi khách bấm vào hộp quà, phát SFX ngay tại $0\text{ms}$ và chuyển ngay sang trạng thái `open`.
+     * **Trì hoãn đúng $700\text{ms}$** ($150\text{ms}$ nếu bật `prefers-reduced-motion: reduce`) trước khi `GiftModal` hiển thị, giúp khách nhìn trọn vẹn khoảnh khắc nắp hộp bật mở / túi gấm rút dây tỏa sáng.
+     * Khóa thao tác (`disabled={isGiftOpening}` hoặc `pointer-events-none`) trong đúng khoảng thời gian $700\text{ms}$ để chống double-click chồng chéo.
+   * **Preload ảnh trạng thái Open:** Luôn đặt thẻ `<img src="..." className="hidden" aria-hidden="true" alt="" />` cho ảnh trạng thái mở để khi khách bấm không bao giờ bị chớp trắng hoặc trễ tải ảnh.
+   * **Tôn trọng trạng thái Mute:** Nếu khách tắt âm thanh trên thiệp (`muted === true`), SFX không được tự ý phát tiếng.
+   * **Đóng Modal Reset Hộp Quà:** Khi khách đóng `GiftModal` (`onClose={handleCloseModal}`), hộp quà tự động quay về trạng thái `normal` ban đầu để có thể bấm xem lại.
 
-- Dạng card trung tâm + loop ngang.
-- Free 5 ảnh / Pro 30 ảnh.
-- Có dummy card khi chưa có ảnh.
-- Không hiển thị badge “5 ảnh” nếu khách không cần.
-- Ảnh gallery lấy từ `photos.kind === "gallery"`.
-- `DesignerAlbum` dùng animation marquee; tôn trọng reduced-motion.
+### 7. Typography, Văn phong Tiếng Việt & Bố cục Nội dung
+* **Font hỗ trợ tiếng Việt 100% (Latin + Vietnamese Subsets):**
+  * Toàn bộ Google Fonts sử dụng trong template bắt buộc phải khai báo đầy đủ `subsets: ["latin", "vietnamese"]` trong `app/layout.tsx` và gọi qua biến CSS (`var(--font-...)`).
+  * **Hand-script / Viết tay:** Dùng `Dancing Script` (`var(--font-dancing-script)` weights: 500, 600, 700). Tuyệt đối không dùng các font script thiếu glyph tiếng Việt khiến ký tự có dấu (Mạnh, Bà, đ, ệ, ủ, ỹ, ả, ợ) bị vỡ hoặc nhảy sang font sans-serif hệ thống.
+  * **Serif / Display:** Dùng `Cormorant Garamond` (`var(--font-cormorant)`), `Playfair Display` (`var(--font-playfair)`), `EB Garamond` (`var(--font-eb-garamond)`).
+  * **Body / Thân bài:** Dùng `Lora` (`var(--font-lora)`) hoặc `Be Vietnam Pro` (`var(--font-be-vietnam)`).
+  * **CẤM:** Định nghĩa tên font trần dạng chuỗi mà không kèm biến CSS (ví dụ: cấm viết `"Dancing Script", cursive` đơn độc vì browser không tải được font Google tối ưu từ Next.js).
+* **Tên Cô Dâu & Chú Rể trên Cover/Hero:**
+  * Luôn chia **3 dòng** (`display: block`): Tên chú rể / `&` (cùng font serif với tên) / Tên cô dâu. Dùng `break-words`, cấm `overflow-wrap: anywhere`.
+* **Thông tin Hai Bên Gia Đình:**
+  * Hai card gia đình dùng grid `items-stretch` và `h-full flex flex-col` để cao bằng nhau.
+  * Tên phụ huynh có dấu `&` (ví dụ: `"Ông Lê Văn Lậu & Bà Nguyễn Giang Mai"`) phải tách thành 2 dòng sạch sẽ và lược bỏ ký tự `&`.
+  * Danh xưng (`groomTitle`, `brideTitle`) lấy từ dữ liệu động, không hardcode "Trưởng nam / Ái nữ".
+* **Tần suất hiển thị Ngày Cưới:** Chỉ hiển thị ngày cưới tại **2 vị trí**: khối **Sự kiện** (chi tiết từng lễ) và khối **Thông tin tiệc cưới / Lịch tháng**. Tránh lặp lại ở Hero hoặc Footer.
+* **Văn phong & Độ tương phản:**
+  * Dùng từ ngữ trang trọng, tự nhiên (`"Album Ảnh Cưới"`, `"Lịch Ngày Vui"`, `"Thư Mời Tiệc Cưới"`, `"Hộp Mừng Cưới"`), tránh từ ngữ sến hoặc dịch máy móc; kiểm tra format ngày âm lịch để không bị lặp chữ `"ngày"`.
+  * Đảm bảo độ tương phản cao: nền tối dùng chữ kem/vàng champagne; nền sáng dùng chữ đậm.
 
----
+### 8. Các Module Chức năng Bắt Buộc & Portal
+1. **Modal & Popup (`createPortal`):**
+   * Mọi modal (Hộp quà VietQR, Lightbox phóng to ảnh, Overlay lời chúc nổi) **bắt buộc** render qua `createPortal(..., document.body)` khi ở chế độ trang thật (`!contained`) để tránh bị thuộc tính `transform` của ancestor phá vỡ `position: fixed`.
+   * Vì portal thoát khỏi cây CSS của thiệp, phải truyền trực tiếp màu nền/chữ bằng inline style hoặc class màu cứng (không dùng biến CSS cục bộ `--inv-*` bên trong portal).
+2. **Mừng Cưới (`GiftModal`):**
+   * Bấm trực tiếp vào minh họa hộp quà/bao lì xì để mở popup chứa số tài khoản, nút copy và mã QR; truyền đúng `tone` theo bảng màu thiệp.
+3. **Xác Nhận Tham Dự & Sổ Lưu Bút (`RsvpWishBlock` / `TemplateRsvpSection`):**
+   * Không bọc thêm khung viền trắng dày lạc tông bên ngoài component form.
+   * Chống spam lời chúc bằng định danh `author_key` (`guest:<id>` hoặc `anon:<uuid>`), hỗ trợ cập nhật lại lời chúc cũ và chỉ hiển thị các lời chúc đã duyệt (`approved = true`).
+   * Sổ lưu bút đặt bên ngoài form gửi (để không biến mất sau khi khách bấm gửi RSVP), chạy cuộn dọc vô tận bằng cách nhân đôi 2 nhóm thẻ giống hệt nhau (`translateY(0)` $\rightarrow$ `translateY(-50%)`).
+4. **Hiệu năng Animation & Accessibility:**
+   * Dùng `LazyMotion(domAnimation)` + `m.div` thay vì import toàn bộ `framer-motion`.
+   * Không gắn `whileInView` lên phần tử con đang bị cắt ẩn (`translateY(100%)`) bên trong `overflow-hidden` — luôn đặt `whileInView` ở khung cha luôn nhìn thấy.
+   * Mọi hiệu ứng CSS/JS tự viết đều phải hỗ trợ `@media (prefers-reduced-motion: reduce)` / `useReducedMotion()`.
 
-## 9. Hộp quà
-
-- Không dùng nút “Gửi quà mừng” kiểu trung gian.
-- Hộp quà là một illustration.
-- Bấm vào hộp quà mở **popup** QR/thông tin tài khoản.
-- Popup phải render bằng `createPortal` ra `document.body`:
-  - tránh bị `transform` của PhoneFrame làm containing block
-  - tránh popup xuất hiện ở đầu preview desktop
-- Không dùng slide-down inline nếu khách muốn popup.
-- QR chỉ hiện với gói Pro/VIP nếu có cấu hình.
-
----
-
-## 10. RSVP và lời chúc
-
-- Không tạo form mới nếu `RsvpWishBlock` đã có.
-- Form thật phải nằm đúng vị trí trang RSVP, không qua nút trung gian.
-- Theme RSVP theo nền thiệp:
-  - nền tối → chữ kem
-  - nền sáng → chữ đậm
-- Set cả `--inv-*` và `--color-inv-*`.
-- Nếu form nằm ngoài `WeddingContentProvider`, bọc provider lại.
-- Không duplicate RSVP section: nếu canvas có page `kind: "rsvp"`, bỏ appended block.
-
----
-
-## 11. Section hiện/ẩn
-
-- Lưu `hiddenSections: string[]` trong `content`.
-- Các key thống nhất:
-  - `album`
-  - `gift`
-  - `calendar`
-  - `map`
-  - `family`
-  - `dresscode`
-  - `rsvp`
-  - `music`
-- Template đọc `data.hiddenSections`.
-- Dashboard có toggle.
-- Preview cũng có toggle để thấy ngay.
-- Không xoá dữ liệu khi ẩn; chỉ không render.
-
----
-
-## 12. Dress code
-
-- Lưu `dressCode: string[]` (3 màu).
-- Dashboard cho chọn 3 màu.
-- Template dùng màu đó thay vì hardcode.
-- Không hardcode tên màu nếu khách tự nhập.
-
----
-
-## 13. Contrast
-
-- Không dùng chữ đen trên nền đỏ đậm.
-- Nền tối → chữ kem/gold/trắng.
-- Nền sáng → chữ nâu/đỏ đậm.
-- Kiểm tra:
-  - tiêu đề
-  - body
-  - nút
-  - placeholder
-  - disabled
-- Dùng palette có độ tương phản rõ, không chỉ đẹp trên mockup.
-
----
-
-## 14. Icon và hiệu ứng
-
-- Icon Lucide dễ làm thiệp trông “app”.
-- Với thiệp lãng mạn, hạn chế icon.
-- Có thể ẩn toàn bộ `.lucide` theo template:
-  ```css
-  [data-template-id="hoa-anh-dao-v2"] svg.lucide { display: none; }
-  ```
-- Hiệu ứng cánh hoa:
-  - dùng CSS/SVG, không emoji
-  - rơi chậm, có drift, xoay
-  - tôn trọng `prefers-reduced-motion`
-- Không lạm dụng particle.
-
----
-
-## 15. Modal/Portal
-
-- Modal trong container có `transform` sẽ bị định vị sai.
-- Luôn dùng `createPortal(..., document.body)`.
-- Khoá scroll body khi mở.
-- Click backdrop đóng.
-- Nút đóng rõ ràng.
-- Không dùng `position: fixed` bên trong PhoneFrame nếu không portal.
-
----
-
-## 16. DB và deploy
-
-- Designer templates:
-  - `designer_templates`
-  - `designer_template_versions`
-- Published template cần:
-  - status `published`
-  - version
-  - row trong versions
-- Dùng marker `created_by` để rollback batch.
-- Không sửa template đang được wedding thật dùng nếu không có backup.
-- Backup trước khi seed.
-- App deploy không làm thay đổi DB; DB seed không cần deploy app.
-- Cloudflare/OpenNext build cần full access trên Windows sandbox.
+### 8.1. Quy chuẩn Hiển thị Khung Preview Điện Thoại (contained & Mobile Breakpoint)
+1. **Kiến trúc IframePortal cho Khung Điện Thoại (375px):**
+   * Khung Preview điện thoại ở trang Quản lý/Chỉnh sửa thiệp (`WeddingDetailView`), trang Landing Hero (`HeroSection`) và Catalog Preview Modal luôn phải chạy trong viewport mobile thật (375px logic qua component `MobilePreviewFrame` / `IframePortal`).
+   * Sử dụng React `createPortal` render trực tiếp vào `iframe.contentDocument.body` cùng origin. Toàn bộ stylesheet (`<link rel="stylesheet">`, `<style>`, Google Fonts, brand theme) được đồng bộ từ `document.head` qua `MutationObserver`.
+   * Nhờ đó, toàn bộ media queries (`sm: 640px`, `md: 768px`, `lg: 1024px`) tự động đánh giá chính xác theo 375px mobile, triệt tiêu hoàn toàn lỗi nhận nhầm breakpoint desktop gây ép dẹt cột gia đình hay tràn ngày cưới.
+   * Đồng thời giữ nguyên 100% tương tác thời gian thực của Editor ("Chạm vào tên hoặc ảnh trên thiệp để chỉnh nhanh", live state update, undo/redo, nút Đóng/Mở bì thư).
+2. **Quy tắc Bìa & Ảnh nền khi `contained === true`:**
+   * **Ưu tiên ảnh nền dọc:** Khi `contained === true` (đang nằm trong khung điện thoại), luôn render ảnh nền dọc (`bg_mobile.webp` hoặc `background-mobile.webp`), tuyệt đối không kích hoạt thẻ `<source media="(min-width: ...)" srcSet="...bg_desktop.webp" />`.
+   * **Căn giữa dọc & ngang bìa thiệp:** Khối bìa ngoài khi `contained === true` bắt buộc dùng `h-full w-full flex flex-col items-center justify-center overflow-hidden px-4 py-6` (không dùng `my-auto` gây lệch trọng tâm), đảm bảo thẻ bìa luôn nằm cân đối tuyệt đối chính giữa khung điện thoại.
+3. **Chống Bóp Chữ trên Viewport 360–390px:**
+   * **Khối Gia Đình & Cặp đôi:** Khối 2 bên Nhà Trai & Nhà Gái trên mobile 375px phải xếp 1 cột (`grid-cols-1 md:grid-cols-2`), có padding và cỡ chữ thoáng, không bị bóp thành 1 từ mỗi dòng hay chồng viền ảnh tròn.
+   * **Khối Ngày Giờ:** Thanh ngày tháng (Thứ / Ngày / Tháng / Năm) phải co giãn linh hoạt (`flex flex-wrap items-center justify-center gap-2 sm:gap-6 text-xs sm:text-base`), gọn trong chiều rộng thẻ, không tràn lề.
+4. **Quy định Nghiệm Thu Mẫu Mới:**
+   * Mọi template mới bắt buộc phải test trực quan cả trong khung Preview điện thoại của trang Editor lẫn trang mở toàn màn hình trước khi bàn giao.
+5. **Quy chuẩn Ẩn Thanh Cuộn (Scrollbar) Xuyên Trình Duyệt:**
+   * Trên Windows/Chrome, các container cuộn (`overflow-y: auto`) mặc định hiển thị thanh cuộn xám rộng ~15px ở mép phải, bóp méo tỷ lệ và thẩm mỹ của khung điện thoại Preview.
+   * **Bắt buộc tiêm CSS ẩn scrollbar vào `<head>` của iframe / IframePortal / embed routes:**
+     ```css
+     html,
+     body,
+     * {
+       scrollbar-width: none !important;
+       -ms-overflow-style: none !important;
+     }
+     html::-webkit-scrollbar,
+     body::-webkit-scrollbar,
+     *::-webkit-scrollbar {
+       display: none !important;
+       width: 0 !important;
+       height: 0 !important;
+     }
+     ```
+   * **Áp dụng utility classes trên container cuộn preview:** Gắn `[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden` (hoặc class `.no-scrollbar` / `.lnd-phone-scroll`) lên mọi thẻ bọc `overflow-y-auto` ở trang Xem thử mẫu (`/mau/...`), Modal Preview Catalog/Landing và Khung Preview Editor (`/tao-thiep`).
+   * **Bảo toàn khả năng cuộn:** Giữ nguyên `overflow-y: auto` (khi thiệp đã mở) và `overflow-x: hidden` để người dùng vẫn lăn chuột, kéo trackpad và vuốt cảm ứng mượt mà 100%.
 
 ---
 
-## 17. QA checklist
+## PHẦN III: QUY TRÌNH DEPLOY, VẬN HÀNH & QA CHECKLIST
 
+### 9. Quy tắc Môi trường & Bảo toàn Tài liệu
+* **Build & Deploy (Windows / Cloudflare OpenNext):**
+  * Nếu chạy `npm install` trong môi trường hạn chế quyền khiến `esbuild.exe` / `next-swc` bị hạ mức integrity, chạy `icacls node_modules /setintegritylevel Medium /T` trước khi deploy.
+  * Không dùng `Get-Content | Set-Content` của PowerShell 5.1 để sửa file chứa tiếng Việt (gây lỗi encoding mojibake); luôn đọc/ghi bằng UTF-8 không BOM (`UTF8Encoding($false)`).
+* **Bảo toàn `card_exp.md`:** Khi cập nhật tài liệu này, luôn kiểm tra lại số lượng mục, encoding tiếng Việt và phần cuối file sau khi ghi để tránh mất dữ liệu do lỗi I/O.
+
+### 10. Checklist Nghiệm Thu Bắt Buộc (QA Checklist)
 ```text
-[ ] 390px không tràn ngang
-[ ] 768px không vỡ layout
-[ ] 1440px không kéo giãn quá mức
-[ ] tên dài không bẻ ký tự
-[ ] 2 card gia đình cao bằng nhau
-[ ] ảnh không tràn khung
-[ ] quote tiếng Việt đúng dấu
-[ ] RSVP submit được
-[ ] gift popup đúng vị trí
-[ ] album loop mượt
-[ ] section toggle hoạt động
-[ ] dress code lưu đúng
-[ ] không icon thừa
-[ ] không console error
-[ ] build/lint/test pass
+[ ] Khả năng hiển thị (390px / 768px / 1440px): Không tràn ngang (innerWidth === scrollWidth), không kéo giãn quá 840px trên desktop.
+[ ] Khung Preview Điện Thoại (375px IframePortal): Chạy đúng breakpoint mobile 375px, mọi sm:/md: không bị kích hoạt nhầm trên màn hình Desktop; ảnh bìa dùng bg_mobile.webp và căn giữa dọc-ngang hoàn hảo; tên phụ huynh/ngày cưới thoáng đẹp, không ép dẹt 2 cột; thanh cuộn xám mép phải ẩn 100% trên Windows/Chrome nhưng vẫn cuộn/vuốt mượt mà.
+[ ] Bìa & Preview: Bìa nằm chính giữa khung điện thoại ở cả /mau/[id], /tao-thiep, /dashboard; đóng/mở bìa hoạt động đủ 2 chiều và cuộn mượt sau khi mở.
+[ ] Capabilities: Dashboard chỉ hiện nút bật/tắt section và ô upload ảnh mà template thực sự sử dụng; gói Free không lộ tính năng Pro/VIP.
+[ ] Asset & Tốc độ: 100% asset là .webp nhẹ, tách nền sạch không dính caro/viền trắng; hoa văn góc đối xứng, không che chữ/nút; cover.webp đúng chuẩn 720x1180px (< 60KB), căn giữa 100% tại viewport 360px và 0% dính Dev Tool icon N.
+[ ] Nội dung & Font: Tiếng Việt hiển thị đủ dấu sắc nét; tên cặp đôi 3 dòng; tên phụ huynh tách dòng sạch tại '&'; không lặp ngày cưới thừa.
+[ ] Chức năng tương tác: RSVP gửi và cập nhật được; Sổ lưu bút cuộn dọc mượt; Hộp quà mở popup qua Portal đúng vị trí; Album & Lightbox hoạt động tốt; Nhạc nền phát/tạm dừng ổn định.
+[ ] SFX & Trải nghiệm Quà Mừng: Mở thiệp phát đúng SFX phong cách; Bấm hộp quà thấy rõ trạng thái open trọn vẹn 700ms + phát đúng SFX vật thể rồi GiftModal mới hiện; đóng modal hộp trở về bình thường.
+[ ] Build & Quality: Tôn trọng prefers-reduced-motion; 0 lỗi console; npx tsc --noEmit và lệnh build pass 100%.
 ```
 
 ---
 
-## 18. Bài học lớn nhất
+## PHẦN IV: BÀI HỌC KỸ THUẬT & QUY CHUẨN ĐỒNG BỘ 10 BUG QA THỰC TẾ (QA ĐỢT 1)
 
-1. Không hứa “y hệt 100%” khi chuyển React → canvas.
-2. Không dùng ảnh mockup làm asset cuối.
-3. Không hardcode danh xưng.
-4. Không dùng font script thiếu tiếng Việt.
-5. Modal phải portal.
-6. Không để preview và thiệp thật dùng hai logic khác nhau.
-7. Luôn kiểm tra mobile thật, không chỉ screenshot headless.
-8. Ghi lại giới hạn thay vì che.
+> **Bắt buộc áp dụng đồng bộ:** Toàn bộ 10 quy chuẩn dưới đây được đúc kết từ đợt kiểm thử QA thực tế trên hệ thống đa thiết bị và iframe preview. Mọi template mới hoặc refactor đều phải tuân thủ nghiêm ngặt để không tái diễn lỗi.
 
-
----
-
-## 19. Đỏ may mắn — case study 2026-11-16
-
-### Asset thực tế
-- Bộ asset gồm: mockup bìa desktop, mockup các section, cành mẫu đơn, phong bao lì xì.
-- Mockup có chữ/watermark baked-in → **không dùng làm ảnh phẳng cho thiệp thật**.
-- Đã tách:
-  - `floral.webp` từ asset1 (xóa nền trắng, crop);
-  - `envelope.webp` từ phong bao (xóa nền trắng);
-  - `cover.jpg` từ mockup bìa để làm catalog.
-- Ảnh phong bao vẫn còn watermark Vecteezy/Freepik; cần asset sạch nếu muốn production hoàn hảo.
-
-### Bài học riêng
-- Cover dùng **card kem + 2 cành hoa 2 bên + tim đỏ**, không dùng ảnh mockup làm nền.
-- Hero dùng **phong bì đỏ dựng CSS + photo polaroid + cành hoa**, không dùng ảnh flat.
-- Info dùng panel đỏ + calendar kem.
-- Album dùng carousel snap, không dùng grid 3 cột.
-- Gift dùng 2 phong bao asset2; popup portal.
-- RSVP dùng form thật.
-- **Không được nói “giống 100%”** nếu asset gốc là mockup phẳng: chỉ có thể giống về bố cục/màu/font, không giống pixel.
-- Nếu khách yêu cầu “100%”, phải:
-  1. có file thiết kế tách layer;
-  2. có font gốc;
-  3. có ảnh gốc không watermark;
-  4. chấp nhận sai khác do responsive.
-
-### Checklist riêng
-- [ ] cover không bị cành hoa che tên
-- [ ] cover dùng đúng #4D1217 / #F8F1EA
-- [ ] hero photo giữ tỉ lệ 4:5
-- [ ] calendar đúng tháng/năm
-- [ ] timeline đúng giờ
-- [ ] album snap + dots
-- [ ] gift portal
-- [ ] RSVP thật
-
----
-
-## 20. Quy ước tên & ngày (2026-11-18)
-
-### Dấu `&`
-- Tên cô dâu chú rể luôn **3 dòng**: tên chú rể / `&` / tên cô dâu. Không viết cùng dòng.
-- Với dòng phụ huynh ("Ông A & Bà B"), dấu `&` phải **mở đầu dòng dưới**, render tách tại `&` và xóa luôn kí hiệu `&`:
-
-  ```text
-  Ông Lê Văn Lậu
-  Bà Nguyễn Giang Mai
-  ```
-
-  Không để `&` nằm cuối dòng (dễ bị đọc thành "A &").
-- `&` dùng **cùng font** với tên (serif của theme), không để font sans mặc định.
-  Lỗi đã gặp: đổi font tên nhưng quên `&` nên nó vẫn là sans, trông lệch hẳn.
-
-### Ngày cưới
-- Một thiệp chỉ hiện ngày ở **2 chỗ**: khối **Sự kiện** và khối **Thông tin tiệc cưới**.
-- Không lặp ngày ở hero, ở khối thông tin gia đình, hay footer (đã gặp: 3 lần cùng một ngày).
-- "Sự kiện" liệt kê từng lễ; "Thông tin tiệc cưới" là tiệc chính + lịch tháng.
-
-### Ảnh hero
-- Ảnh cưới phải **trọn người** trong màn hình đầu sau khi mở thiệp — không để khung cắt ngang.
-- Nếu chữ trang trí ("LOVE NEVER FAILS") chiếm một dòng riêng, hãy đặt đè lên đỉnh vòm để tiết kiệm chiều cao.
-
----
-
-## 21. Mỗi template có bộ thành phần riêng (2026-11-18)
-
-- Dashboard **chỉ được hiện nút điều khiển cho phần mà template đó thực sự render**. Hiện nút cho phần không có thì khách bật/tắt mà thiệp không đổi gì — mất niềm tin và rối.
-- Nguồn duy nhất: `config/template-sections.ts` → `getTemplateSections(templateId)`, gồm:
-  - `sections`: những key `hiddenSections` / `sectionOrder` mà template có.
-  - `couplePhotos`: có khối ảnh cô dâu/chú rể riêng trong phần gia đình hay không.
-  - `hostFirst`: có hai cột hai họ để chọn nhà nào đứng trước hay không.
-- Template mới: **khai báo ngoại lệ trong `TEMPLATE_OVERRIDES`**, không sửa dashboard.
-- Key phải **khớp chính xác** giữa dashboard và template. Lỗi đã gặp: template dùng `"events"` còn dashboard dùng `"map"` → phần "Sự kiện" luôn bị đẩy xuống cuối trang, và nút ẩn/hiện không có tác dụng.
-- Bảng key chuẩn: `family` · `calendar` · `map` · `dresscode` · `album` · `albumQr` · `gift` · `rsvp` · `music`.
-- `map` hiển thị là **"Sự kiện và chỉ đường"** (không còn "Sự kiện & bản đồ").
-- Ví dụ: `do-truyen-thong` không có ảnh cặp đôi riêng trong phần gia đình → `couplePhotos: false`, dashboard ẩn nút "Hiện ảnh cô dâu & chú rể".
-- **Phần phụ thuộc gói** khai báo cùng chỗ (`PLAN_GATED_SECTIONS`): `albumQr` chỉ có từ Pro trở lên. Thiệp Free không render phần đó nên dashboard cũng **không được hiện nút**; nếu vẫn hiện thì khách bật/tắt mà không có gì xảy ra. Khi nâng gói, nút tự xuất hiện vì danh sách tính lại theo `wedding.plan`.
-- Danh sách **thứ tự các phần** lấy từ cùng danh sách đã lọc đó, nên phần bị ẩn theo gói cũng không nằm trong danh sách kéo thả (giá trị cũ trong `sectionOrder` vẫn giữ nguyên trong DB, nâng gói là hiện lại đúng chỗ).
-- Nút "Nâng cấp lên Pro" chỉ đặt **một chỗ** trong mỗi khối (dưới cùng), không lặp ở header; không thêm dòng "Chỉ gói Pro/VIP" khi đã có nút nâng cấp.
-- **Kéo thả thứ tự phải dùng Pointer Events**, không dùng HTML5 `draggable` — HTML5 drag không chạy trên cảm ứng nên mobile không kéo được. Tay nắm cần `touch-action: none`, kích thước ≥ 32px, có viền/nền để nhìn thấy rõ.
-- Nút điều hướng đặt trong overlay có cùng `max-width` với khung nội dung, nếu không sẽ trôi ra sát mép khi màn hình rộng.
-
----
-
-## 22. Nhật ký lỗi & cách tránh (2026-11-18)
-
-Ghi lại toàn bộ bug đã gặp khi làm `do-truyen-thong` và các mẫu trước, dạng **triệu chứng → nguyên nhân → cách fix** để lần sau không lặp.
-
-### 22.1 Key giữa dashboard và template lệch nhau
-- **Triệu chứng:** kéo "Sự kiện" lên đầu nhưng thiệp vẫn để ở cuối; nút ẩn/hiện không có tác dụng.
-- **Nguyên nhân:** template dùng key `"events"`, dashboard dùng `"map"`; `orderOf()` không tìm thấy nên trả 99.
-- **Fix:** dùng đúng bộ key chuẩn (§21), gate `!hidden.has("map")`.
-- **Bài học:** template mới phải copy nguyên bộ key từ `config/template-sections.ts`, không tự đặt tên mới.
-
-### 22.2 `order` trong flex nuốt footer
-- **Triệu chứng:** footer chen ngay sau "Thông tin gia đình", các section còn lại nằm dưới footer.
-- **Nguyên nhân:** mọi section có `style={{ order }}`, footer không có nên mặc định `0`; các section khác ≥ 2.
-- **Fix:** đưa footer ra ngoài flex container.
-- **Bài học:** phần tử không tham gia sắp xếp thì đừng để chung container flex có `order`.
-
-### 22.3 Bìa `absolute` trong trang dài
-- **Triệu chứng:** bìa trong preview chỉ thấy hai cánh đỏ, khối tên/biểu tượng biến mất.
-- **Nguyên nhân:** bìa `absolute inset-0` phủ toàn bộ trang dài, `items-center` đặt khối chữ ở giữa trang (ngoài khung điện thoại).
-- **Fix:** khi `contained` dùng `items-start pt-[12vh]`; trang thật dùng `fixed inset-0`.
-- **Bài học:** overlay trong preview phải neo theo đỉnh khung, không căn giữa container dài.
-
-### 22.4 Ảnh lazy không có kích thước
-- **Triệu chứng:** khung hộp quà chiếm chỗ nhưng trống; layout nhảy khi ảnh tải xong.
-- **Nguyên nhân:** `loading="lazy"` dưới màn hình đầu có `naturalHeight = 0`, `clientHeight = 0`.
-- **Fix:** khai báo `width`/`height` (hoặc `aspect-ratio`) để trình duyệt giữ chỗ.
-- **Bài học:** mọi ảnh lazy phải có khung kích thước trước khi tải.
-
-### 22.5 Bảng quá rộng trên desktop nhỏ
-- **Triệu chứng:** phải kéo ngang mới thấy nút Sửa/Xoá.
-- **Nguyên nhân:** 7 cột + nút chữ ("Chép link", "Chép lời mời") + `whitespace-nowrap`.
-- **Fix:** nút icon; cột Thao tác `sticky right-0`; giảm padding; ẩn cột phụ dưới `xl`; chặn nội dung dài bằng `max-w` + `truncate`.
-- **Bài học:** `max-width` đặt lên `<td>` gần như không tác dụng với `table-layout: auto` — phải đặt lên **phần tử con bên trong**.
-
-### 22.6 Tiếng Việt hỏng khi sửa file bằng PowerShell
-- **Triệu chứng:** file TSX đầy `Cá»­a má»Ÿ…` sau khi sửa.
-- **Nguyên nhân:** `Get-Content`/`Set-Content` của Windows PowerShell 5.1 đọc UTF-8 bằng bảng mã ANSI rồi ghi lại.
-- **Fix:** dùng `[System.IO.File]::ReadAllText/WriteAllText` với `UTF8Encoding($false)`, hoặc công cụ edit của agent.
-- **Bài học:** tuyệt đối không round-trip file có tiếng Việt qua `Get-Content | Set-Content`.
-
-### 22.7 Backtick trong here-string PowerShell
-- **Triệu chứng:** code fence trong markdown bị biến thành tab.
-- **Nguyên nhân:** trong `@"…"@`, dấu backtick là ký tự escape.
-- **Fix:** dùng here-string đơn `@'…'@` hoặc ghi file bằng công cụ edit.
-
-### 22.8 Chụp ảnh mobile bằng Chrome headless bị cắt
-- **Triệu chứng:** ảnh 390px bị cắt, nội dung lệch phải.
-- **Nguyên nhân:** Chrome kẹp chiều rộng cửa sổ (~500px) và dùng layout viewport lớn hơn.
-- **Fix:** dùng CDP `Emulation.setDeviceMetricsOverride` (`mobile: true`), rồi log `innerWidth` / `scrollWidth` để xác nhận.
-- **Bài học:** không tin ảnh chụp bằng `--window-size`; luôn kiểm tra `innerWidth === scrollWidth`.
-
-### 22.9 Kéo thả thứ tự trên mobile
-- HTML5 `draggable/onDragStart` **không chạy** trên cảm ứng → mobile không kéo được.
-- Fix: Pointer Events + `elementFromPoint`, tay nắm `touch-action: none`, ≥ 32px.
-
-### 22.10 Prefetch làm tăng lượt xem
-- **Triệu chứng:** `view_count` tăng dù chưa ai mở thiệp.
-- **Nguyên nhân:** `<Link href="/m/…">` prefetch RSC → server render chạy `trackGuestView`.
-- **Fix:** `prefetch={false}`; link mở tab mới thì dùng `<a target="_blank">`.
-
-### 22.11 VietQR lộ ở gói Free
-- **Triệu chứng:** khách Free vẫn có QR chuyển khoản → mất giá trị Pro.
-- **Nguyên nhân:** `VietQRGiftBox` render cho mọi gói.
-- **Fix:** chỉ render khi `plan !== "free"` **và** chỉ cho bên chưa có ảnh QR riêng; bên đã tự tải ảnh thì ẩn VietQR.
-- **Bài học:** tính năng "tự sinh" phải gate ngay ở **component render**, không chỉ ở dashboard.
-
-### 22.12 Motion: bundle và LazyMotion
-- `motion` chỉ là wrapper của `framer-motion`; `motion.div` → `m.div` + `LazyMotion(domAnimation)` giảm ~31% engine (48,9 → 33,6 KB gzip).
-- Provider đặt ở **biên render template**, không đặt root layout (tránh tải animation cho landing/ops).
-- `strict` giúp lỗi thiếu provider lộ ra lúc prerender thay vì animation im lặng.
-
-### 22.13 Animation "nhão" do hai lớp
-- **Triệu chứng:** section vừa trượt cả khối vừa trượt từng phần tử, trông mờ nhòe.
-- **Nguyên nhân:** wrapper Motion + CSS children cùng animate một vùng.
-- **Fix:** chọn một lớp — khối chỉ mờ, con trượt; hoặc chỉ con trượt.
-- **Bài học:** không animate cùng một vùng bằng hai engine.
-
-### 22.14 Góc xoay bị cộng dồn
-- **Triệu chứng:** polaroid nghiêng quá nhiều.
-- **Nguyên nhân:** `-rotate-[3.5deg]` ở class + `rotate: -3.5` trong variant.
-- **Fix:** chỉ giữ một chỗ (variant), bỏ class.
-
-### 22.15 Reduced-motion và no-JS
-- `.olive-reveal` thiếu override `prefers-reduced-motion` và không có fallback `<noscript>` → nội dung có thể kẹt `opacity: 0`.
-- **Fix:** luôn thêm `@media (prefers-reduced-motion: reduce)` cho mọi hiệu ứng CSS tự viết; component dùng `useReducedMotion`.
-
-### 22.16 Ref cập nhật trong render
-- **Triệu chứng:** lint báo `react-hooks/refs: Cannot update ref during render`.
-- **Fix:** đồng bộ ref trong `useEffect`, không gán `ref.current = x` ngay trong thân component.
-
-### 22.17 Test nhanh một mình thiệp
-- `/mau/<id>?opened=1` để bỏ bìa khi QA/chụp ảnh.
-- `/mau/<id>?embed=1` **luôn mở sẵn** thiệp (dùng cho landing) → đừng dùng `embed` để test trạng thái bìa.
-
-### 22.18 Checklist khi thêm section mới
-1. Khai báo key trong `config/template-sections.ts` (nếu template chưa có).
-2. Template đọc `hiddenSections` + `sectionOrder` với **đúng key**.
-3. Dashboard hiện toggle + kéo thả tương ứng.
-4. Thêm vào `ALL_SECTION_KEYS` + `SECTION_LABELS` trong `config/template-sections.ts` nếu là section mặc định.
-5. Chụp ảnh 390 + 1280; kiểm tra `innerWidth === scrollWidth`.
-6. Kiểm tra gói Free có bị lộ tính năng Pro không.
-
-### 22.19 Môi trường build/deploy
-- Next.js type-check và Chrome headless đều `spawn` tiến trình con có pipe → sandbox chặn `EPERM`; build/verify cần quyền đầy đủ.
-- Agent chạy `npm install` trong sandbox để lại **nhãn Low integrity** cho `esbuild.exe` / `next-swc` → `npm run deploy` lỗi `Access is denied` ở `%TEMP%`. Fix: `icacls node_modules /setintegritylevel Medium /T`.
-- `npx wrangler login` là lệnh cục bộ, không chạy được trong sandbox; cần owner đăng nhập hoặc set `CLOUDFLARE_API_TOKEN`.
-
-### 22.20 `whileInView` đặt trên phần tử bị clip kín thì không bao giờ chạy
-- **Triệu chứng:** ảnh trong khung vòm không hiện; kiểm tra thì `transform` vẫn là `translateY(100%)` (trạng thái `initial`), tức `whileInView` chưa từng bắn.
-- **Nguyên nhân:** phần tử được đặt `initial={{ y: "100%" }}` **bên trong** khung `overflow-hidden` → ở trạng thái đầu nó bị cắt kín nên `IntersectionObserver` trả 0 giao điểm.
-- **Fix:** đặt `whileInView` trên **khung ngoài** (luôn nhìn thấy), cho phần tử con chạy theo `variants`.
-- **Bài học:** phần tử được quan sát phải luôn nằm trong khung nhìn; chỉ cho **con** của nó bị dịch/che.
-
-### 22.21 `useEffect` theo `isOpened` giết hiệu ứng mở thiệp
-- **Triệu chứng:** bấm "Mở thiệp" là bìa biến mất ngay, không thấy cảnh rồng/phượng tách sang hai bên.
-- **Nguyên nhân:** `handleOpen` gọi `onOpenedChange(true)` → prop `isOpened` đổi → effect `setCoverGone(true)` ngay, unmount bìa trước khi animation kịp chạy.
-- **Fix:** trong effect chỉ gỡ bìa khi **không** phải do chính thiệp mở (`if (!closing) setCoverGone(true)`), thêm timer dự phòng 1,1s.
-
-### 22.22 Breakpoint `sm:` sai trong khung preview có bề rộng cố định
-- **Triệu chứng:** trên desktop, khung điện thoại 390px vẫn hiện gạch trang trí hai bên tiêu đề và tiêu đề bị xuống dòng.
-- **Nguyên nhân:** `sm:` tính theo **viewport trình duyệt** (1280), không theo bề rộng khung preview (390).
-- **Fix:** đừng đặt gạch hai bên tiêu đề; dùng gạch trên/dưới hoặc container query.
-
-### 22.23 Ảnh khách gửi bị "flatten" nền caro thay vì có alpha
-- **Triệu chứng:** file `.png` mở ra thấy nền caro xám nhưng `alpha` toàn 255 → caro được vẽ vào RGB.
-- **Cách xử lý:** key theo độ "vô sắc" (`max-min <= 6`, sáng ≥ 150) + **flood-fill từ toàn bộ viền** + **bít lỗ bên trong**.
-- **Ba cái bẫy:** `Image.fromarray` trả buffer read-only → `floodfill` im lặng không chạy (phải `.copy()`); chỉ seed 4 góc sẽ sót "túi" nền bị hoa chặn; nới ngưỡng để bắt hết caro thì nước tràn vào cánh hoa chạm viền (dùng mirror-pad rồi cắt lại).
-
-### 22.24 `coverImage` vừa là thumbnail vừa là `og:image`
-- **Triệu chứng:** thẻ mẫu trong `/thiep-cuoi` không có hoạ tiết của bìa thật; chia sẻ link không ra ảnh.
-- **Nguyên nhân:** `coverImage` dùng cho cả thumbnail catalog và `og:image`; tôi để file **SVG vẽ tay**, mà SVG không được crawler xã hội render.
-- **Fix:** render chính bìa thật bằng CDP, xuất **JPG**, trỏ `coverImage` vào đó.
-
-### 22.25 Nút "Đóng bì thư" không có tác dụng
-- **Nguyên nhân:** effect đồng bộ prop chỉ xử lý một chiều (`if (!isOpened) return;`) nên khi cha đặt `isOpened = false` thì `coverGone` vẫn `true`.
-- **Fix:** xử lý cả hai chiều, nhánh đóng reset `closing`, `opened`, `coverGone`.
-- **Bài học:** prop điều khiển trạng thái mở/đóng phải xử lý **cả hai giá trị**.
-
----
-
-## 23. Mẫu "Long Phụng" (2026-11-18)
-
-- Nguồn: thư mục `card_design/long_phung/` (mô tả + mockup + 2 asset).
-- **Mã màu chính thức (khách cung cấp):** `main #69100F`, `text #E9CE91`. Suy ra: nền `#2A0605`, card đậm `#4A0B0A`, vàng đậm `#C6A45E`, kem `#FAF3E8`, mực `#3B0A0D`.
-- **Font:** Charm/Srisakdi không có glyph tiếng Việt → dùng Cormorant Garamond italic cho tên, Playfair cho tiêu đề, Lora cho nội dung.
-- **Ruột thiệp nền đỏ trầm**, không phải kem — cả 4 mockup đều nền tối.
-- **Asset rồng/phượng:** file gốc là một ảnh đen chứa cả hai, có viền khung. Tách đôi theo khe giữa, dò đường viền để cắt khung, rồi **luminance → alpha** được line-art vàng trong suốt (~85KB mỗi file).
-- Album dùng **lưới editorial**: cứ 3 ảnh thì 1 ảnh ngang 3:2 + 2 ảnh dọc 3:4, hiện so le 0,15s.
-- Lịch tháng: ngày cưới là **trái tim vàng có glow pulse một lần**.
-
----
-
-## 24. Mẫu "Đỏ Rượu Vang" (2026-11-18)
-
-- Nguồn: `card_design/Đỏ_rượu_vang/` (mô tả, `color_code.txt`, bìa + 4 mockup, 4 asset).
-- **Mã màu khách đưa:** `theme main #390202`, `text #E5E4D0`. Dòng `golder outline: #390202` là **lỗi copy** nên viền vàng dùng champagne `#E5C787` theo mô tả; phụ: burgundy `#6E0B14`/`#8F111D`.
-- **Font tên:** Playfair italic (mockup là serif, có dấu tiếng Việt) — không dùng Pattaya.
-- **Ruột nền rượu vang trầm**, không phải kem như mô tả.
-- **Asset:** 4 file đều flatten nền caro (xem §22.23). Dùng `rose.webp` cho cả hai góc bìa, `garland.webp` làm dải hoa trước phần lời chúc.
-- **Album:** coverflow theo mockup (mô tả ghi "editorial grid" nhưng mockup thể hiện rõ coverflow).
-- **Đếm ngược:** cập nhật mỗi giây, chỉ render sau khi mount để không lệch hydration.
-- **Tone `ruby`** cho RSVP/gift/nút nhạc.
-
----
-
-## 25. Lời chúc: một người một lời, duyệt, và chạy ngang trên thiệp (2026-11-18)
-
-### 25.1 Lỗ hổng: một người gửi được vô hạn lời chúc
-- **Triệu chứng:** khách thoát ra vào lại rồi gửi tiếp → mỗi lần một bản ghi mới, có thể spam 1000 lời chúc.
-- **Nguyên nhân:** `POST /api/wishes` và phần lời chúc trong `POST /api/rsvp` đều `insert` mù, không có khoá định danh người gửi.
-- **Fix 2 lớp:**
-  1. **DB:** cột `wishes.author_key` + unique index `(wedding_id, author_key)` (migration `v18_wish_once.sql`). Khoá: `guest:<guest_id>` cho link riêng, `anon:<uuid>` cho link chung (uuid sinh một lần, lưu localStorage).
-  2. **API:** `saveWishOnce()` trong `lib/server/wishes.ts` — tìm bản ghi theo khoá rồi **update**, chưa có mới insert; bắt lỗi 23505 để xử lý race.
-- **Chưa chạy migration thì vẫn chặn được** link cá nhân: helper tự lùi về tra theo `guest_id`.
-- **UI:** khi mở form, gọi `GET /api/wishes?...&authorKey=` để **điền sẵn lời chúc cũ** và hiện dòng nhắc "Bạn đã gửi lời chúc trước đó — sửa lại rồi gửi để cập nhật".
-- **Bài học:** mọi form gửi công khai đều cần một khoá định danh ổn định **ở server**; localStorage chỉ giúp tìm lại bản ghi, không phải lớp bảo vệ.
-
-### 25.2 Duyệt lời chúc (moderation)
-- `wishes.approved boolean` + `content.showWishesOnCard` + `content.wishApprovalMode: "manual" | "auto"`.
-- **Phụ thuộc:** ẩn section "Lời chúc / Xác nhận" (`hiddenSections` có `rsvp`) thì coi như tắt luôn hiển thị — chặn ở cả API (`wishesHidden`), component, và nút trong dashboard (xám, không bấm được).
-- **Duyệt tự động** phải có **popup cảnh báo** trước khi bật; khi bật thì duyệt toàn bộ lời chúc hiện có + lời chúc mới tự duyệt.
-- Nút tick từng lời chúc chỉ hoạt động khi tính năng bật; có hover scale + tooltip "Hiển thị lời chúc trên thiệp".
-- **Xoá lời chúc ác ý:** mỗi lời chúc có checkbox + nút thùng rác; chọn nhiều thì hiện thanh "Đã chọn N" với `Chọn tất cả` / `Bỏ chọn` / `Xoá đã chọn`. Luôn có **popup xác nhận** vì xoá là vĩnh viễn. API `DELETE /api/weddings/[id]/wishes` nhận `{ ids }`, lọc UUID và luôn kèm `wedding_id` để không xoá chéo thiệp.
-- **Hai kiểu hiển thị** (`wishDisplayStyle`):
-  - `box` (mặc định): sổ lưu bút cuộn dọc ở cuối thiệp — an toàn, dễ đọc, không che gì.
-  - `overlay`: **từng ô lời chúc** nổi ở góc dưới-trái (không có khung lớn bao ngoài), nền **màu chủ đạo của theme** (ô liu với mẫu sáng, đen mờ với mẫu tối) + **chữ trắng**, **cuộn dọc vô tận**, rộng 360–400px, sát đáy, có nút × để ẩn. Chỉ hiện lời chúc đã duyệt.
-  - Cả hai dùng chung `usePublicWishes()` — một chỗ fetch, một chỗ kiểm tra điều kiện bật/ẩn section, tránh lệch hành vi.
-
-### 25.3 Sổ lưu bút **cuộn dọc** vô tận (seamless)
-- **Đúng ý khách là cuộn DỌC**, không phải chạy ngang như marquee quảng cáo. Khung cuộn cao **bằng ô xác nhận tham dự** (`h-[250px] sm:h-[270px]`), rộng bằng khung chứa.
-- **Công thức chuẩn:** render **hai nhóm giống hệt nhau** xếp dọc, mỗi nhóm cùng `gap`/`padding`, rồi `@keyframes` dịch `translateY(0) → translateY(-50%)` (phần trăm tính theo chiều cao của chính phần tử = đúng một nhóm). Nếu chỉ nhân đôi phần tử trong **một** flex có `gap`, dịch -50% sẽ lệch nửa gap và thấy mối nối.
-- Pause khi hover/focus; `prefers-reduced-motion` thì tắt animation; 1 lời chúc thì căn giữa, không chạy.
-- Đặt component ở **block lời chúc dùng chung** (`RsvpWishBlock`, `TemplateRsvpSection`) để mọi mẫu có cùng hành vi thay vì sửa từng template.
-- **Phải đặt NGOÀI form và NGOÀI nhánh "đã xác nhận"**: sau khi khách gửi RSVP/lời chúc, form bị thay bằng thẻ xác nhận — nếu khối lời chúc nằm trong form thì nó biến mất, khách không còn thấy lời chúc của người khác. Vị trí đúng: cuối block, ngay dưới nút "Thay đổi lựa chọn hoặc gửi thêm lời chúc".
-- Mỗi lời chúc là một thẻ **full width** (dễ đọc hơn thẻ hẹp), tiêu đề "Sổ lưu bút - nơi lưu giữ lời yêu thương" ở trên; **tên người gửi in đậm**.
-
-### 25.4 Checklist khi thêm cờ nội dung mới
-1. `lib/wedding-types.ts`: thêm field vào `WeddingContent` **và** zod schema.
-2. `lib/wedding-data.ts`: thêm default, normalize ở **cả hai** hàm (dễ sót hàm thứ hai), map sang `TemplateData` nếu thiệp cần đọc.
-3. Dashboard đọc/ghi qua `draftContent`; template đọc qua `TemplateData`.
-
-### 22.26 Reset trạng thái mở khi prop KHÔNG đổi — làm mất hiệu ứng mở và khoá cuộn
-- **Triệu chứng:** 3 mẫu mới (Đỏ Truyền Thống, Đỏ Rượu Vang, Long Phụng) bấm "Mở thiệp" **không có animation** và **mở xong không cuộn được**.
-- **Nguyên nhân:** effect đồng bộ prop có deps `[isOpened, closing]`. Trang thiệp công khai **không truyền `isOpened`** (luôn `false`) và không truyền `onOpenedChange`, nên khi `handleOpen` đổi `closing` → effect chạy lại → thấy `isOpened === false` → rơi vào nhánh "đóng" và **reset `closing`/`opened`/`coverGone`**. Kết quả: mất nhánh animation, và `opened = false` khiến effect khoá cuộn `body` → không lướt được. Timer 1,1s vẫn gỡ bìa nên thiệp trông như "mở nhưng đơ".
-- **Fix:** chỉ đóng khi **CHA thực sự chuyển từ mở → đóng**, dùng ref giữ giá trị trước:
+### 11.1. Điều Hướng Cuộn Nội Bộ Nút RSVP & Spacing Nút (Bug 1)
+* **CẤM:** Tuyệt đối không dùng thẻ `<a href="#rsvp">`, `<a href="#rsvp-section">`, hay `<a href="#rsvp-wishes">` cho nút "Xác nhận tham dự". Khi chạy bên trong `IframePortal` của Editor/Dashboard, hành vi mặc định của thẻ `<a>` khiến trình duyệt hiểu là điều hướng trang, làm reload hoặc đẩy URL iframe về trang Dashboard/Editor!
+* **GIẢI PHÁP BẮT BUỘC:** Mọi nút "Xác nhận tham dự" phải là `<button type="button">` thực hiện cuộn nội bộ an toàn:
   ```tsx
-  const parentOpenedRef = React.useRef(isOpened);
-  React.useEffect(() => {
-    const wasOpened = parentOpenedRef.current;
-    parentOpenedRef.current = isOpened;
-    if (isOpened) { setOpened(true); if (!closing) setCoverGone(true); return; }
-    if (!wasOpened) return;      // ← chưa từng được cha mở thì đừng reset
-    setClosing(false); setOpened(false); setCoverGone(false);
-  }, [isOpened, closing]);
+  <button
+    type="button"
+    onClick={(e) => {
+      e.preventDefault();
+      const doc = e.currentTarget.ownerDocument || document;
+      const targetEl = doc.getElementById("rsvp") || doc.getElementById("rsvp-wishes") || doc.getElementById("rsvp-section");
+      targetEl?.scrollIntoView({ behavior: "smooth" });
+    }}
+    className="..."
+  >
+    Xác nhận tham dự
+  </button>
   ```
-- **Bài học:** effect đồng bộ prop phải phân biệt "cha đổi giá trị" với "effect chạy lại vì dep khác". Chỉ reset khi giá trị **thực sự chuyển**.
+* **Spacing Hàng Nút:** Nút "Thêm vào lịch" và "Xác nhận tham dự" luôn đặt trong container `flex flex-wrap items-center justify-center gap-3` để luôn tách thoáng trên màn hình hẹp 360px–375px, không bao giờ dính sát nhau.
 
-### 22.27 `fixed` bị biến thành `absolute` vì tổ tiên có transform
-- **Triệu chứng:** overlay lời chúc chỉ hiện khi cuộn tới khu "Xác nhận tham dự".
-- **Nguyên nhân:** overlay đặt trong block RSVP; tổ tiên (`RevealSection` của Motion) có `transform` → theo spec, phần tử `fixed` bị neo vào **tổ tiên đó** thay vì viewport, nên nó nằm ở cuối trang.
-- **Fix:** `createPortal` ra `document.body` khi không ở khung preview (`!contained`), còn trong preview thì render tại chỗ để vẫn bám khung điện thoại. Cần `mounted` gate để không lệch hydration.
-- **Bài học:** muốn overlay "luôn nổi" thì phải portal ra body; đừng tin `fixed` khi tổ tiên có transform/filter/perspective.
+### 11.2. Phân Quyền Pro vs VIP ở QR "Album Ảnh Cưới" (Bug 2)
+* **Gói Pro (Read-Only):**
+  * Khách quét QR / truy cập trang album (`/a/[slug]`) chỉ được xem Album ảnh cưới của cô dâu chú rể (gallery + lightbox phóng to xem ảnh) và nút quay lại thiệp.
+  * **Ẩn hoàn toàn 100%:** Form upload ảnh của khách, hướng dẫn chiếu màn hình LED, và khu vực "Live Photo Wall".
+* **Gói VIP (Upload + Live Photo Wall):**
+  * Hiển thị đầy đủ form tải ảnh lên dành cho khách mời và liên kết tới màn hình chiếu LED Live Photo Wall.
+* **Khóa Chặt Server-Side (API Security):**
+  * Tại `app/api/public/wedding/[slug]/photos/route.ts`: Bắt buộc kiểm tra gói của thiệp từ DB. Nếu `wedding.plan !== "vip"`, trả về ngay mã lỗi `403 Forbidden` kèm thông báo `Chức năng tải ảnh khách chỉ dành cho gói VIP`. Tuyệt đối không chỉ ẩn nút ở frontend mà để hở API backend.
 
-### 22.28 Portal ra body làm mất biến CSS của theme
-- **Triệu chứng:** overlay lời chúc "nền trắng, chữ trắng" — không đọc được.
-- **Nguyên nhân:** overlay portal ra `document.body`, nhưng `--inv-*` / `--color-inv-*` chỉ được định nghĩa **trong cây thiệp** (hoặc trong `.designer-rsvp-theme`). Ra khỏi cây đó thì `var(--inv-olive-btn)` không còn giá trị → `background-color` không hợp lệ → nền trong suốt, chữ trắng trên nền trắng của trang.
-- **Fix:** phần tử portal phải dùng **màu cứng** (hoặc truyền màu qua props/inline style từ trong cây thiệp). Không dùng class `bg-inv-*` / `text-inv-*` cho nội dung portal.
-- **Bài học:** portal = ra khỏi ngữ cảnh CSS. Mọi biến theme phải được "mang theo" bằng inline style.
+### 11.3. Chuẩn Độ Tương Phản & Viền Form RSVP trên Mọi Nền (Bug 3)
+* **Ô nhập liệu (`<input>`, `<select>`, `<textarea>`):**
+  * Bắt buộc có viền tường minh với độ dày tối thiểu $1\text{px} - 1.5\text{px}$ (`border border-[#C9BFA9]` hoặc `border border-[#D5C8BA]`).
+  * Nền của ô nhập phải hơi khác sắc độ với nền thẻ trắng (ví dụ card màu trắng `#FFFFFF` thì nền input dùng `#FAF8F5`, `#FAF7F2`, `#FFFBF5` hoặc `#FFFDFB`) để không bị "hòa tan" vào nền thẻ trên các màn hình độ sáng cao.
+* **Hai nút chọn tham dự ("Tôi sẽ tham dự" / "Tiếc quá, mình bận mất rồi"):**
+  * Trạng thái chưa chọn: Có viền rõ ràng (`border border-[#XXXXXX]`), nền sáng nhẹ, chữ đọc rõ.
+  * Trạng thái đang chọn: Tô nền màu nhấn chủ đạo của mẫu, chữ tương phản cao đạt chuẩn WCAG AA ($4.5:1$).
 
-### 25.5 Bài học UI/UX khi làm tính năng lời chúc
-- **Nút chỉ có icon thì người dùng phổ thông không hiểu.** Con mắt trần để "duyệt lời chúc" là ví dụ: khách không biết bấm để làm gì. Với hành động quan trọng hoặc khó đảo ngược, dùng **button có chữ**: "Hiện trên thiệp", "Đang hiện trên thiệp", "Xoá đã chọn".
-- **Xoá là vĩnh viễn → luôn có popup xác nhận** nêu rõ số lượng và hậu quả ("Xoá N lời chúc? … không thể hoàn tác"). Không dùng `confirm()` của trình duyệt.
-- **Chọn nhiều phải có "Chọn tất cả" và "Bỏ chọn"** ngay trên thanh công cụ, thanh chỉ hiện khi đã chọn ≥ 1, và xoá xong phải cập nhật danh sách ngay (không bắt tải lại).
-- **Chữ trắng trên nền trong suốt = không đọc được.** Nền overlay phải là **màu đặc hoặc độ đục cao (≈85–90%)** của màu chủ đạo + chữ trắng. Để 100% trên nền sáng thì thành "nền trắng chữ trắng" (đã gặp thật).
-- **Không bọc khung lớn cho overlay**: chỉ từng ô lời chúc, sát mép, rộng 360–400px. Khung lớn chiếm chỗ và trông như một khối UI lạc vào thiệp.
-- **Cuộn dọc liên tục dễ chịu hơn "hiện rồi mờ đổi"** với nội dung dài; kiểu đổi theo nhịp chỉ hợp khi mỗi mục rất ngắn.
-- **Ưu tiên "an toàn trước, đẹp sau"**: overlay phải nằm ở góc, không phủ QR/nút, chỉ hiện lời chúc đã duyệt.
+### 11.4. Đa Lễ Động & Lặp Mảng `events` (Bug 4)
+* **CẤM:** Không bao giờ hardcode tiêu đề cứng "LỄ THÀNH HÔN" hoặc chỉ lấy phần tử đầu tiên `data.events?.[0]` trong khối Sự kiện & Chỉ đường.
+* **GIẢI PHÁP BẮT BUỘC:** Lặp qua toàn bộ mảng `data.events` (đã được lọc theo phân bổ lễ của khách mời):
+  * Render động tên lễ thật từ dữ liệu: `{evt.title || "Lễ Cưới"}` (ví dụ: Lễ Vu Quy, Lễ Thành Hôn, Lễ Báo Hỷ, Tiệc Rượu, Tiệc Cưới Nhà Gái...).
+  * Hiển thị đầy đủ: giờ bắt đầu, thứ, ngày dương lịch, ngày âm lịch (`evt.lunarDate`), tên địa điểm (`evt.venueName`), địa chỉ (`evt.venueAddress`), và nút chỉ đường Google Maps (`evt.mapDirectionsUrl`).
+
+### 11.5. Tách Độc Lập Giữa Album và QR Album Khách (`album` vs `albumQr`) (Bug 5)
+* Hai tính năng `album` và `albumQr` là hai section độc lập hoàn toàn trong hệ thống toggle:
+  * Khi người dùng bật `albumQr` (gói Pro/VIP) nhưng tắt `album`, khối QR Album khách vẫn phải hiển thị độc lập và đầy đủ chức năng.
+  * **CẤM:** Lồng component `<GuestAlbumQr />` bên trong điều kiện `gallery.length > 0` hoặc bên trong container của section `album`. Phải tách thành một block riêng với `orderOf("albumQr", 6)` và bọc điều kiện `!hiddenSections.has("albumQr") && data.plan !== "free" && Boolean(weddingSlug)`.
+
+### 11.6. Dữ Liệu Thật cho Lịch Trình Ngày Cưới (Zero Dummy Timeline) (Bug 6)
+* **CẤM:** Tuyệt đối không hardcode mảng timeline dummy/mặc định trong code template (ví dụ: `[{ time: "17:30", title: "Đón Tiếp Khách Quý" }]`).
+* **GIẢI PHÁP BẮT BUỘC:** Bind trực tiếp 100% từ `data.timeline` (theo chuẩn type `WeddingTimelineItem = { id?: string; time: string; label: string }`, dùng `item.label`). Nếu người dùng xóa hết các mốc lịch trình (`data.timeline` rỗng hoặc không có), ẩn hoàn toàn khối lịch trình, không bao giờ tự ý bịa dữ liệu giả để hiển thị.
+
+### 11.7. Bộ 9 Key Chuẩn Section & Toggle Ẩn/Hiện Toàn Diện (Bug 7 & Bug 8)
+* **9 Key chuẩn duy nhất:**
+  1. `family` $\rightarrow$ Thông tin gia đình hai bên (& ảnh chân dung cặp đôi nếu có).
+  2. `calendar` $\rightarrow$ Lịch cưới & đếm ngược ngày chung đôi.
+  3. `map` $\rightarrow$ Sự kiện và chỉ đường (danh sách toàn bộ các lễ).
+  4. `dresscode` $\rightarrow$ Trang phục gợi ý & lịch trình ngày cưới (`data.timeline`).
+  5. `album` $\rightarrow$ Album ảnh cưới của cô dâu chú rể.
+  6. `albumQr` $\rightarrow$ QR chia sẻ album ảnh khách chụp (Pro/VIP).
+  7. `gift` $\rightarrow$ Hộp quà chúc phúc mừng cưới.
+  8. `rsvp` $\rightarrow$ Xác nhận tham dự & sổ lưu bút.
+  9. `music` $\rightarrow$ Nhạc nền thiệp cưới.
+* **Toggle Nhạc Nền (`music`):** Nút phát nhạc `LiveMusicFloatingButton` bắt buộc phải kiểm tra điều kiện `!data.hiddenSections?.includes("music")`. Khi người dùng tắt toggle Nhạc nền, nút nhạc phải ẩn ngay lập tức và ngừng phát âm thanh.
+
+### 11.8. Tùy Chọn "Nhà Xuất Hiện Trước" (`hostFirst`) & Ẩn/Hiện Ảnh Chân Dung (Bug 9)
+* **Nhà xuất hiện trước:** Đọc cấu hình `isBrideFirst = data.hostFirst === "bride"`. Khi `isBrideFirst` là `true`:
+  * Cột thông tin Nhà Gái và tên Cô Dâu phải hiển thị trước / bên trái cột Nhà Trai.
+  * Áp dụng đồng bộ cho cả 2 thẻ ảnh chân dung riêng của Cô Dâu & Chú Rể (ảnh Cô Dâu nằm trước ảnh Chú Rể).
+* **Ẩn/Hiện ảnh chân dung:** Đọc cờ `!data.hideCouplePhotos`. Khi cờ này là `true` (người dùng tắt hiện ảnh), ẩn toàn bộ khung ảnh chân dung riêng trong phần gia đình, chỉ hiển thị họ tên trang nhã.
+
+### 11.9. Flex Container, Order CSS & Đóng Gói Couple Photos trong Family (Bug 10)
+* **Flexbox Container:** Toàn bộ các section có thể kéo thả sắp xếp (8 keys từ `family` đến `rsvp`) phải nằm trong một container `flex flex-col`.
+* **Thuộc tính Order:** Mọi section trong danh sách sắp xếp bắt buộc phải gán `style={{ order: orderOf(key) }}`.
+* **Đóng gói Couple Photos:** Khối ảnh chân dung riêng của cặp đôi (nếu mẫu có hỗ trợ `couplePhotos`) bắt buộc phải đặt **bên trong** wrapper của khối `family`, nằm ngay dưới phần thông tin song thân hai bên. Tuyệt đối không để khối ảnh cặp đôi nằm tách rời làm section con độc lập của flex container vì khi đó CSS `order: 0` mặc định sẽ làm khối này nhảy lộn xộn lên đầu trang.
+* **Vị trí của Footer:** Thẻ `<footer>` luôn đặt **bên ngoài** flex container có thuộc tính `order` để bảo đảm luôn luôn nằm ở đáy trang.
 
 ---
 
-## 26. Giữ `card_exp.md` không bị hỏng (bài học rất đắt)
+## 12. BÀI HỌC KINH NGHIỆM SỬA TRỌN BỘ 7 BUG QA ĐỢT 2 (KHUNG ẢNH HERO, TOGGLE ẨN/HIỆN, CHU SA LONG PHỤNG, DRESS CODE KHÔNG TEXT)
 
-- **Đã từng mất §23 và §24** (mẫu Long Phụng, Đỏ Rượu Vang) chỉ vì một lần `edit` báo `ReplaceFileW EIO`, sau đó đọc lại file rồi ghi đè — mà bản đọc được đã bị cắt cụt từ trước.
-- **Nguyên nhân phụ:** ghi tiếng Việt qua here-string của PowerShell rồi để Node đọc lại → **mojibake** (`Ä‘áº·t`, `má»‡nh`) do encoding bị đổi giữa chừng.
-- **Quy tắc an toàn khi sửa file này:**
-  1. Soạn nội dung tiếng Việt bằng công cụ `write` (UTF-8 chuẩn) ra file tạm, rồi dùng Node **chỉ để nối file** — không nhúng tiếng Việt vào script.
-  2. Trước khi ghi đè: **kiểm tra số mục** (`^## `, `^### 22\.`, `^### 25\.`) để phát hiện file đã bị cắt.
-  3. Sau khi ghi: **grep mojibake** (`Ã`, `áº`, `á»`) và đọc lại ~20 dòng cuối.
-  4. Nếu `edit` báo EIO hoặc không ghi được: **đọc lại toàn bộ file** rồi mới quyết định, đừng append mù.
-  5. Nội dung dài soạn ở file tạm; `card_exp.md` chỉ là nơi ráp lại.
-- **Bài học chung:** file tài liệu quan trọng cũng cần "kiểm chứng sau khi ghi" giống như code — số mục, encoding, và nội dung cuối.
+### 12.1. Quy Chuẩn Khung Vòm Hero & Tính Trong Suốt Của Asset (Bug 1, Bug 2, Bug 3)
+* **Kênh Alpha Khung Vòm / Khung Phim:**
+  * Toàn bộ các file `*arch*.webp` và `*frame*.webp` trong `public/templates/<id>/` BẮT BUỘC phải có vùng lõi trung tâm hoàn toàn trong suốt (`Alpha === 0`).
+  * Tuyệt đối không để sót mảng màu trắng đục `#FFFFFF` ở lòng vòm (điển hình từng xảy ra ở `mai_lan_arch_frame.webp`). Quy trình xuất asset hoặc tách nền bằng `sharp` phải flood-fill làm rỗng cả 4 góc bên ngoài lẫn lòng vòm bên trong.
+* **Tỷ Lệ Khung (Aspect Ratio) & Inset Khớp Lòng Trong Thực Tế:**
+  * Container bọc vòm phải khai báo đúng tỷ lệ gốc của file ảnh khung (ví dụ `aspect-[440/575]` cho `sunset-arch.webp`, `aspect-[680/917]` cho `dragon_phoenix_arch.webp`), không dùng `aspect-[3/4]` tùy tiện gây co méo hoặc lệch tỷ lệ.
+  * Inset của thẻ bọc ảnh cặp đôi phải căn chuẩn theo vùng rỗng thực tế được đo đạc qua ray-tracing:
+    * `rang-hong-hoang-hon`: Lòng vòm rộng $58.9\%$ $\rightarrow$ dùng `left-[18%] right-[18%] top-[2.5%] bottom-[16%] rounded-t-full overflow-hidden`.
+    * `phuong-loan-gam-do`: Lỗ vòm sâu xuống tận $2\%$ chân đáy $\rightarrow$ dùng `inset-x-[10%] top-[11.5%] bottom-[2%] rounded-t-full overflow-hidden` để ảnh lấp đầy trọn vẹn, không để lộ viền đỏ trống hở đáy làm ảnh lọt thỏm.
+* **Cấu Trúc Lớp (Z-Index Layering):**
+  * Lớp ảnh cặp đôi đặt ở `z-0` hoặc `z-[1]`.
+  * Lớp khung họa tiết/vòm hoa `.webp` luôn đặt ở `z-10` hoặc `z-20` kèm thuộc tính `pointer-events-none absolute inset-0 w-full h-full object-contain` để ôm khít mép viền ảnh phía trước mà không cản trở thao tác người dùng.
+
+### 12.2. Kiểm Soát Toggle Ẩn/Hiện Chặt Chẽ & Đúng Key Chuẩn (Bug 4)
+* **Khối Đếm Ngược (Countdown):** Bắt buộc phải bọc trong điều kiện `{!hiddenSections.has("calendar") && mounted && (...)}`. Không bao giờ để khối đếm ngược nằm trần ngoài flex container chỉ với `{mounted && (...)}`, khiến người dùng tắt mục "Lịch cưới & đếm ngược" mà khối vẫn hiển thị.
+* **Khối Lịch Trình (Timeline):** Bắt buộc bọc với điều kiện của key `"dresscode"` (`!hiddenSections.has("dresscode") && data.timeline && data.timeline.length > 0 && (...)`) và gán `orderOf("dresscode")`. Tuyệt đối không tự ý dùng key lạ như `"timeline"` vì Dashboard Editor chỉ truyền 9 key chuẩn (`family`, `calendar`, `map`, `dresscode`, `album`, `albumQr`, `gift`, `rsvp`, `music`).
+
+### 12.3. Cấm Tự Móc Dòng Lịch Trình Vào Khối Ngày Giờ (Bug 5)
+* Khối Ngày giờ & Đếm ngược chỉ hiển thị: ngày, thứ, tháng, năm dương lịch, ngày âm lịch và widget đếm ngược.
+* Tuyệt đối không tự móc `timeline[0]` và `timeline[1]` làm thành 2 cột "Đón khách" & "Khai tiệc" trong khối ngày giờ (từng xảy ra ở `do-ruou-vang`). Lịch trình chi tiết chỉ hiển thị duy nhất tại block Lịch trình (`dresscode`) để tránh gây hiểu nhầm giờ tiệc chính và tránh trùng lặp nội dung.
+
+### 12.4. Khắc Phục Kẹt Cuộn Preview & Thẩm Mỹ Hoàng Gia trên Chu Sa Long Phụng (Bug 6)
+* **Chống Kẹt Cuộn Container Trong Iframe Preview:**
+  * Thuộc tính khóa cuộn `overflow-hidden` chỉ được áp dụng khi màn hình bìa chưa mở (`!coverGone`).
+  * Cú pháp chuẩn xác:
+    ```tsx
+    !coverGone
+      ? contained
+        ? "h-full overflow-hidden"
+        : "h-screen-dvh max-h-full overflow-hidden"
+      : "min-h-screen"
+    ```
+  * CẤM viết `contained ? "h-full overflow-hidden" : ...` vì sẽ khiến khung Preview Dashboard bị khóa cứng không cuộn được ngay cả khi khách đã mở bìa.
+* **Xóa Bỏ Tiền Tố Lặp "Bố mẹ: Bố mẹ:":**
+  * Dữ liệu danh sách bố mẹ đã có tiêu đề cột "Nhà Trai / Nhà Gái" và "Thân sinh:".
+  * Render danh sách chỉ dùng `<p key={i}>{name}</p>`, tuyệt đối không chèn thêm chuỗi cứng `Bố mẹ: {name}` dẫn đến lỗi lặp hai lần.
+* **Độ Tương Phản RSVP Trên Nền Sáng / Nền Kem Hoàng Gia (`#FAF5EC`):**
+  * Khi `TemplateRsvpSection` được đặt trên thẻ nền sáng, `customTheme` bắt buộc phải override các biến text của tone `ruby`:
+    * `wrap: "bg-transparent text-[#3A2522]"`
+    * `eyebrow: "text-[#8C1D28] font-semibold tracking-wider"`
+    * `heading: "text-[#4A0A10] font-display font-bold"`
+    * `subtext: "text-[#6E5A57]"`
+  * Tuyệt đối không để chữ màu vàng kim nhạt `#E5C787` hay kem nhạt `#F7E7CE` hiển thị trên nền kem trắng gây mờ, khó đọc vi phạm WCAG AA.
+* **Bảo Vệ Vùng Linh Vật Hero:**
+  * Giới hạn `max-w-[260px] sm:max-w-[340px] md:max-w-[420px]` cho khối lời mời và tăng padding đáy `pb-24 sm:pb-28` để chữ nằm gọn ở trung tâm, không đè lấn lên cặp linh vật Long Phụng chầu ở 2 góc đáy.
+
+### 12.5. Dress Code: Tuyệt Đối Chỉ Hiển Thị Ô Màu (Color Swatches Only) (Bug 7)
+* Khối Dress Code trên **100% tất cả các template** TUYỆT ĐỐI CHỈ hiển thị các vòng tròn ô màu (Color Swatches).
+* **CẤM HIỂN THỊ:**
+  * Không in mã hex `#XXXXXX` bên dưới ô màu.
+  * Không in tên màu hardcode ("Đỏ Chu Sa", "Vàng 24K", "Kem Hoàng Gia", "Đỏ Mận", "Xanh Ngọc Bích"...) bên dưới ô màu.
+* Thiết kế thanh lịch, trang nhã, đúng tinh thần thiệp cưới cao cấp hiện đại: chỉ gồm tiêu đề khối + lời dẫn ngắn trang phục + hàng vòng tròn màu swatches viền nhẹ thanh thoát.
 
 ---
 
-## 27. Ảnh cưới: mỗi mẫu chỉ cho upload ô ảnh mà thiệp thật sự hiển thị (2026-11-18)
+## 13. CỔNG NGHIỆM THU BẮT BUỘC SAU KHI TẠO / SỬA TEMPLATE (ZERO-MANUAL-QA GATE)
 
-- **Vấn đề:** tab "Ảnh cưới" luôn hiện đủ 3 ô (ảnh bìa chính, ảnh chú rể, ảnh cô dâu) + album, bất kể template có dùng hay không → khách tải ảnh lên mà thiệp không hề hiển thị.
-- **Giải pháp:** thêm capability vào `config/template-sections.ts`:
+> **QUY TẮC CỨNG BẤT KHẢ XÂM PHẠM:**
+> Sau khi tạo mới hoặc chỉnh sửa bất kỳ template nào, AI Agent / Developer **TUYỆT ĐỐI KHÔNG ĐƯỢC PHÉP** báo cáo hoàn thành cho đến khi vượt qua 100% cả 3 bước nghiệm thu dưới đây — loại bỏ triệt để việc người dùng phải đi dò lỗi thủ công!
+
+### Bước 1: Build & Type Check Toàn Dự Án
+```bash
+# Bắt buộc đạt 0 lỗi kiểu TypeScript
+npx tsc --noEmit
+
+# Bắt buộc pass 100% bộ test suite hiện có (147/147 tests)
+npm test
+
+# Bắt buộc build production và sinh static pages thành công
+npm run build
+```
+
+### Bước 2: Tầng 1 — Chạy Script QA Tự Động (`scripts/qa-template.mjs`)
+Chạy script kiểm thử Playwright tự động cho template vừa tạo/sửa:
+```bash
+# Kiểm thử 1 template cụ thể (ví dụ: yen-chi-mau-don)
+node scripts/qa-template.mjs <slug>
+
+# Hoặc kiểm thử toàn bộ templates của hệ thống
+node scripts/qa-template.mjs --all
+```
+**Bắt buộc 100% PASS tất cả 15 hạng mục kiểm thử tự động:**
+1. **Asset WebP Clean:** 0 file `.png`, `.jpg`, `.jpeg` còn sót lại trong `public/templates/<slug>/`.
+2. **Ảnh Bìa Catalog (`cover.webp`):** Tồn tại, chuẩn kích thước $720 \times 1180\text{px}$, dung lượng $< 60\text{KB}$.
+3. **Trong Suốt Khung Vòm / Khung Phim:** Quét pixel tâm file `*arch*.webp` / `*frame*.webp` $\rightarrow$ `Alpha === 0` (chống che trắng ảnh cưới).
+4. **Căn Tâm & Baseline Hộp Quà:** Đo bounding box pixel thực $\rightarrow$ tâm ngang $50\% \pm 4\%$, cao độ đáy đồng bộ giữa các file trạng thái.
+5. **Không Tràn Ngang (Responsive):** `scrollWidth <= viewport.width` trên cả 3 kích thước $360 \times 590$, $390 \times 844$, $1440 \times 900$ (cả khi đóng bìa & đã mở thiệp).
+6. **Bìa Sắc Nét & Sạch Dev Tools (360×590):** Thẻ bìa căn giữa đối xứng lề trái - phải ($\le 4\text{px}$), không có backdrop-blur phủ mờ nội dung, 0 dính icon N (`nextjs-portal`, `[data-next-badge-root]`).
+7. **Khung Preview Điện Thoại (375px & 390px):** Ẩn hoàn toàn scrollbar mặc định, không nhận nhầm layout desktop đa cột.
+8. **Văn Phong & Cấm Từ Khóa Cấm:** 0 chứa "gia tộc", "đại diện gia tộc", "thân sinh:", "bố mẹ:", "sự kiện trọng đại", "gói free hiển thị"; không lặp "ngày ngày".
+9. **Dress Code Swatches Only:** 0 mã hex (`#XXXXXX`), 0 text tên màu hardcode dưới các ô màu.
+10. **Đa Lễ & Lịch Trình Thật:** Hiển thị đủ 2 lễ tùy chỉnh và 3 mốc lịch trình thật; khối ngày giờ không tự bốc mốc lịch trình lên.
+11. **Tắt 9 Toggle:** Khi tắt cả 9 toggle $\rightarrow$ trên thiệp chỉ còn Bìa + Hero + Footer, nút nhạc nền biến mất.
+12. **Bật Độc Lập Block Nhạy Cảm:** Bật riêng `albumQr` (gói Pro, tắt `album`) $\rightarrow$ khối QR Album hiển thị độc lập.
+13. **Đảo Nhà Gái Đứng Trước (`hostFirst: "bride"`):** Nhà Gái xuất hiện trước Nhà Trai theo đúng thiết lập.
+14. **Thứ Tự Kéo Thả `sectionOrder`:** Khối kéo lên trước có tọa độ `Y` nhỏ hơn, thẻ `<footer>` luôn luôn nằm ở đáy trang.
+15. **Tương Tác RSVP, Cuộn & Hộp Quà:** Click nút RSVP cuộn nội bộ an toàn (không reload/nhảy Dashboard); click hộp quà mở mượt mà; form RSVP có viền rõ ràng và tương phản chuẩn WCAG AA; 0 lỗi Console, 0 ảnh gãy.
+
+### Bước 3: Tầng 2 — Soi Trực Quan Bằng Thị Giác Máy Tính (`/browser`)
+Dùng slash command `/browser` hoặc browser subagent mở trình duyệt Chrome thật trên `http://localhost:3000/mau/<slug>` (hoặc `/qa/<slug>`) và tự quan sát trực quan đủ **6 góc nhìn bắt buộc**:
+1. **Góc 1 — Ảnh bìa Catalog ($360 \times 590\text{px}$ @2x):** Căn giữa tuyệt đối, sắc nét, không mờ, không dính icon `N`, lưu `cover.webp < 60KB`.
+2. **Góc 2 — Khung điện thoại trong Editor (375px — đóng bìa & đã mở):** Không có thanh scrollbar xám, không nhận nhầm layout Desktop, bìa thiệp cân đối dọc - ngang.
+3. **Góc 3 — Hero & Ảnh lồng khung:** Ảnh cặp đôi vừa khít lòng vòm/khung (không tràn góc vuông, không nhỏ lọt thỏm, không bị che trắng, không bị chữ đè lên họa tiết chính).
+4. **Góc 4 — Mobile thật ($390 \times 844\text{px}$ — cuộn từ đầu tới cuối):** Kiểm tra Gia đình (2 dòng sạch, không lặp "Bố mẹ:"), Đa lễ hiển thị đủ, Dress Code chỉ ô màu tròn, Lịch trình thật, Hộp quà mừng căn giữa (delay 700ms thấy rõ nắp bung mở) và Form RSVP (viền ô rõ nét, chữ tương phản dễ đọc).
+5. **Góc 5 — Desktop ($1440 \times 900\text{px}$):** Cột nội dung trung tâm không bị chia cột ép chữ, không tràn nút Chỉ đường Google Maps, bố cục cân đối.
+6. **Góc 6 — Modals (GiftModal & Lightbox):** Mở qua `createPortal`, màu nền và chữ rõ nét, đóng modal mượt mà.
+
+> ⚠️ **HÀNH ĐỘNG KHI PHÁT HIỆN LỖI:** Nếu ở bất kỳ góc nhìn nào phát hiện lỗi thẩm mỹ hay lệch bố cục $\rightarrow$ **BẮT BUỘC TỰ SỬA NGAY**, chạy lại `node scripts/qa-template.mjs <slug>` và soi lại bằng `/browser` cho đến khi sạch lỗi 100% mới được báo cáo hoàn thành kèm tóm tắt kết quả kiểm thử.
+
+---
+
+## 14. QUY CHUẨN ĐỒNG BỘ AUTO-SCROLL & MỞ KHÓA ÂM THANH (SYNCHRONOUS GESTURE UNLOCK)
+
+> **MỤC ĐÍCH:** Đảm bảo khi khách mời mở bất kỳ thiệp cưới nào trên Inviwedd, nhạc nền phát ngay lập tức và trang tự động cuộn nhẹ nhàng, đồng thời vượt qua 100% cơ chế chặn Autoplay ngặt nghèo của Safari iOS, Zalo WebView và Messenger In-App Browser mà không làm phiền người dùng ở chế độ Editor hay thẻ preview.
+
+### 14.1. Kiến Trúc Tập Trung Duy Nhất (`InvitationExperienceProvider`)
+* Mọi template (cả mới và cũ) đều được bọc tự động qua `InvitationExperienceProvider` tại `TemplatePreviewRenderer.tsx`.
+* **Cung cấp Hook `useInvitationExperience()`:**
+  * `{ isOpened, isMusicPlaying, toggleMusic, isAutoScrolling, toggleAutoScroll, startAutoScroll, stopAutoScroll, triggerInvitationOpened }`.
+* **Duy nhất 1 thẻ `<audio>` trung tâm:**
+  * Toàn bộ ứng dụng thiệp mời chỉ gắn duy nhất 1 thẻ `<audio ref={audioRef} loop preload="auto" playsInline />` tại Provider.
+  * **CẤM:** Tuyệt đối không tự nhúng thêm thẻ `<audio>` riêng lẻ bên trong từng template hay component con (tránh lỗi phát đè 2 bài nhạc cùng lúc). Component `LiveMusicFloatingButton` tự động trả về `null` khi nằm trong Provider.
+
+### 14.2. Mở Khóa Âm Thanh Đồng Bộ (Synchronous Gesture Unlock)
+* **Quy chuẩn gọi mở thiệp 0ms:**
+  * Đối với các template có màn mở bìa (phong bì, rèm lụa, ấn sáp, vali VIP, vé vintage...):
+    * BẮT BUỘC gọi `onOpenedChange?.(true)` và `window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"))` **đồng bộ ngay ở dòng đầu tiên** của hàm xử lý click (`handleOpenCover`, `handleOpenCard`, `open`...).
+    * **CẤM:** Không được bọc lệnh gọi mở thiệp bên trong `setTimeout` hay sau `await`. Trình duyệt WebKit/Blink sẽ thu hồi Token User-Gesture ngay khi sự kiện click kết thúc; gọi `audio.play()` sau $700\text{ms}$ sẽ bị ném lỗi `NotAllowedError` và chặn âm thanh vĩnh viễn!
+* **Template mở thẳng (không có màn bìa):**
+  * Thử `audio.play()`. Nếu trình duyệt chặn (`NotAllowedError`), tự động gắn listener 1 lần (`pointerdown`, `touchstart`, `click`, `keydown` với `{ capture: true, once: true }`) trên `window` để ngay cú chạm đầu tiên của khách vào bất kỳ đâu trên màn hình sẽ kích hoạt âm thanh tức thì.
+* **Quản lý vòng đời (`document.visibilitychange`):**
+  * Tự động tạm dừng nhạc khi khách chuyển tab hoặc ẩn ứng dụng Zalo/Messenger; tự động phát tiếp khi quay lại tab (trừ khi khách đã chủ động bấm Tắt thủ công).
+
+### 14.3. Động Cơ Auto-Scroll Mượt 60fps (~42px/s) với Float Accumulator
+* **Thời điểm kích hoạt:** Bắt đầu tự động cuộn sau **$1100\text{ms}$** tính từ khi mở thiệp (độ trễ vàng đủ để khách xem lướt ảnh bìa và tiêu đề chào mừng).
+* **Float Accumulator chống kẹt 120Hz:** Dùng `requestAnimationFrame` tích lũy phần thập phân `accumulator += 42 * deltaSec`. Khi phần nguyên $\ge 1\text{px}$ mới thực hiện cuộn và trừ bớt phần nguyên. Cơ chế này loại bỏ hoàn toàn lỗi làm tròn về $0\text{px}$ trên các màn hình ProMotion 120Hz.
+* **Tự động dừng thông minh — Tuyệt đối không tranh quyền cuộn với khách:**
+  * Dừng ngay lập tức khi khách lăn chuột (`wheel`), chạm kéo màn hình (`touchstart`, `touchmove`), hoặc bấm phím điều hướng (`ArrowUp`, `ArrowDown`, `PageUp`, `PageDown`, `Space`, `Home`, `End`).
+  * Dừng ngay lập tức khi khách focus vào bất kỳ trường nhập liệu nào (`input`, `textarea`, `select`, `contenteditable`).
+  * Dừng ngay lập tức khi mở bất kỳ Modal / Lightbox nào (`inviwedd:modal-state` có `isOpen: true`).
+  * Dừng sạch sẽ khi chạm đáy trang (`scrollTop + clientHeight >= scrollHeight - 4`).
+* **Bấm lại nút cuộn khi ở đáy:** Tự động cuộn mượt (`behavior: "smooth"`) lên đầu trang rồi tiếp tục chu trình tự động cuộn.
+
+### 14.4. Cụm Nút Nổi Kính Mờ (Floating Experience Controls)
+* **Vị trí chuẩn:** Đặt tại góc dưới phải `fixed right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40 sm:right-6 sm:bottom-6`.
+* **Thiết kế:** Kính mờ sang trọng, tối giản, thanh lịch, thích hợp với 100% tone màu thiệp (`bg-stone-900/80 backdrop-blur-md text-stone-100 border border-white/15 shadow-xl`).
+* **CẤM:** Tuyệt đối không dùng icon ngôi sao/sparkles (`Star`, `Sparkles`, `✨`, `✦`).
+* **Nút Nhạc nền:** Xoay đĩa than `Disc3` mượt mà khi phát / hiển thị biểu tượng tắt khi dừng.
+* **Nút Auto-Scroll:** Biểu tượng `ChevronsDown` nhịp nhàng khi cuộn / biểu tượng `Pause` khi dừng.
+
+---
+
+## 15. QUY CHUẨN ĐA LỄ BẮT BUỘC (MULTI-EVENT MANDATORY RULE)
+
+> **MỤC ĐÍCH:** Khắc phục triệt để lỗi chỉ hiển thị 1 lễ khi khách được mời 2+ lễ (ví dụ vừa dự Lễ Vu Quy/Thành Hôn vừa dự Tiệc Cưới). Đảm bảo 100% template trên Inviwedd hiển thị đầy đủ, chính xác, độc lập từng buổi lễ mà khách mời được phép xem.
+
+### 15.1. Nguyên Tắc Cốt Lõi: Cấm Hardcode `events[0]`
+* **CẤM TUYỆT ĐỐI:** Khai báo `const primaryEvent = events[0]` rồi chỉ render duy nhất thẻ đó trong khu vực "Thời Gian & Địa Điểm" / "Sự Kiện".
+* **BẮT BUỘC DÙNG LẶP DANH SÁCH:** Luôn dùng `visibleEvents.map((evt, idx) => ...)` để render linh hoạt từ 1 đến $N$ buổi lễ (`Lễ Vu Quy`, `Lễ Thành Hôn`, `Lễ Tân Hôn`, `Tiệc Cưới`, `Lễ Báo Hỷ`...).
+* Sử dụng helper chuẩn hóa `getVisibleEvents(data)` từ `@/lib/events` để luôn đảm bảo nhận danh sách `WeddingEvent[]` hợp lệ (kèm fallback 1 lễ an toàn khi dữ liệu trống).
+
+### 15.2. Nội Dung Độc Lập Cho Từng Thẻ Lễ
+Mỗi thẻ lễ trong danh sách bắt buộc phải hiển thị độc lập và đầy đủ:
+1. **Tên Lễ (`evt.title`):** Viết hoa hoặc in đậm trang trọng (ví dụ: `LỄ VU QUY`, `TIỆC CƯỚI CHUNG VUI`).
+2. **Thời Gian:**
+   * Giờ bắt đầu (`formatWeddingDateParts(evt.startsAt).time`, ví dụ: `11:00`).
+   * Thứ và ngày dương lịch (`formatWeddingDateParts(evt.startsAt)`: Thứ, Ngày, Tháng, Năm).
+   * Ngày âm lịch (`formatLunarDateClean(evt.lunarDate)`: ví dụ `Tức Ngày 18 Tháng 11 Năm Giáp Thìn`).
+3. **Địa Điểm:**
+   * Tên địa điểm (`evt.venueName`): In hoa hoặc font nhấn mạnh.
+   * Địa chỉ chi tiết (`evt.venueAddress`): Rõ ràng, dễ đọc.
+4. **Nút Chỉ Đường Google Maps Riêng:**
+   * Dùng helper `getEventDirectionsUrl(evt)` từ `@/lib/events`.
+   * Liên kết trỏ thẳng tới `evt.mapDirectionsUrl` (nếu có) hoặc tự động sinh URL tìm kiếm Google Maps:
+     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueName + " " + venueAddress)}`.
+
+### 15.3. Bố Cục Responsive & Cân Đối Thị Giác
+* **Khi chỉ có 1 lễ:** Căn giữa cân đối, thanh lịch (`w-full max-w-xl mx-auto`).
+* **Khi có 2+ lễ:**
+  * **Trên Mobile:** Xếp dọc theo thứ tự thời gian (`flex flex-col gap-4 sm:gap-6` hoặc `grid grid-cols-1 gap-4 sm:gap-6`), không để tràn mép màn hình hay co rút chữ (`scrollWidth === viewport.width`).
+  * **Trên Desktop:** Chia 2 cột cân xứng (`grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6`) hoặc xếp dọc sang trọng theo đúng ngôn ngữ thiết kế của template (phong cách vé xem phim, cuộn thư, thẻ VIP...).
+
+### 15.4. Đồng Bộ Đếm Ngược (Countdown) & Lịch Tháng (Calendar)
+* **Đồng Hồ Đếm Ngược:** Dùng helper `getNearestUpcomingEvent(visibleEvents, data.date)` để luôn đếm ngược đến buổi lễ gần nhất sắp diễn ra (hoặc buổi lễ đầu tiên nếu tất cả đều chưa tới).
+* **Lịch Tháng (Calendar Grid):**
+  * Đánh dấu (highlight) tất cả các ngày diễn ra lễ trong tháng đó thuộc danh sách `visibleEvents`:
+    ```tsx
+    const eventDays = new Set(
+      visibleEvents.map((evt) => parseInt(formatWeddingDateParts(evt.startsAt).day, 10))
+    );
+    const isEventDay = eventDays.has(dayNumber);
+    ```
+
+---
+
+## 16. QUY CHUẨN KHUNG ẢNH PHIM, TIÊU ĐỀ & NGÔN NGỮ ĐIỆN ẢNH (FILM FRAME & CINEMATIC STANDARDS)
+
+> **MỤC ĐÍCH:** Đảm bảo toàn bộ template mang phong cách điện ảnh (Hongkong 90s, Retro, Cinema...) không bị lỗi khung phim cắt ngang nhân vật, không lặp tiêu đề rườm rà, và không lạm dụng từ khóa chủ đề trong nội dung.
+
+### 16.1. Khung Ảnh Phim 35mm (Film Frame Viewport Bounded Rule)
+* **CẤM TUYỆT ĐỐI:** Đặt ảnh khung PNG lơ lửng đè lên giữa ảnh nhân vật, hoặc dùng `object-contain` khiến 2 dải lỗ phim đen cắt ngang qua mặt, đầu, tóc hay thân hình của cô dâu chú rể.
+* **BẮT BUỘC DỰNG BẰNG CSS/SVG HOẶC CONTAINER CÓ CỬA SỔ RIÊNG:**
+  * Ảnh nhân vật bắt buộc phải nằm gọn bên trong lòng khung (aperture/viewport riêng có `overflow-hidden` và `relative flex-1 aspect-[4/5]` hoặc `aspect-[3/4]`, `aspect-[16/10]`).
+  * 2 dải lỗ phim 35mm (sprockets) cùng các vạch thước phim phải nằm bao bọc độc lập ở hai mép ngoài (bên ngoài container ảnh).
+  * Ảnh nhân vật không bao giờ được tràn ra ngoài mép khung và không có bất kỳ vệt đen/lỗ phim nào đè lên người.
+  * Tái sử dụng component chuẩn hóa `FilmFrame35mm` từ `@/templates/shared/FilmFrame35mm`.
+
+### 16.2. Cấm Lặp Tiêu Đề Rườm Rà (Eyebrow & Heading De-duplication)
+* **CẤM TUYỆT ĐỐI:** Đặt eyebrow kiểu song ngữ "TIẾNG ANH · TIẾNG VIỆT" lặp lại y nguyên heading bên dưới (ví dụ: eyebrow `CONTACT SHEET · CUỘN PHIM 35MM` đè lên heading `CUỘN PHIM 35MM`, hay `GIFT BOX · HỘP QUÀ HỶ SỰ` đè lên `HỘP QUÀ HỶ SỰ`).
+* **CHUẨN HÓA CÁC ĐẦU MỤC:**
+  * Mục Album: Xóa bỏ hoàn toàn eyebrow lặp, rút gọn heading thành `THƯỚC PHIM`.
+  * Mục Hộp quà: Xóa bỏ eyebrow rườm rà, rút gọn heading thành `HỘP QUÀ`.
+  * Mục RSVP: Xóa bỏ eyebrow lặp, rút gọn heading thành `XÁC NHẬN THAM DỰ`.
+  * Mục Lịch trình: Xóa bỏ eyebrow `SHOWTIME · LỊCH CÔNG CHIẾU`, giữ heading gọn gàng `LỊCH CÔNG CHIẾU & TIỆC CƯỚI` hoặc `LỊCH TRÌNH NGÀY VUI`.
+
+### 16.3. Giảm Lạm Dụng Từ Khóa Chủ Đề (No Theme Keyword Stuffing)
+* Không nhồi nhét tên chủ đề (ví dụ "Hương Cảng", "Hồng Kông", "Hong Kong Night") vào mọi tiêu đề hay nhãn phụ.
+* Thay `BÁO HƯƠNG CẢNG · LỊCH THÁNG` thành `LỊCH THÁNG`.
+* Xóa bỏ badge `HONG KONG NIGHT` trên event cards.
+* Thay các phụ đề gượng ép như `HỒNG KÔNG RETRO · ART DECO` hay `PRESENTED IN 35MM · HONG KONG RETRO` bằng nhãn thiệp trang trọng như `THIỆP BÁO HỶ` hoặc thông điệp điện ảnh tinh tế như `A FILM BY LOVE · 35MM CINEMA`.
+* Để thiết kế thị giác, typography và bảng màu tự kể câu chuyện nghệ thuật mà không cần nhồi nhét chữ.
+
+---
+
+## 17. QUY CHUẨN KHÓA BÌA PREVIEW, 3D COVERFLOW SEAMLESS & AUTO-SCROLL
+
+> **MỤC ĐÍCH:** Đảm bảo toàn bộ 100% template có màn bìa mở thiệp hiển thị cân đối trong khung điện thoại Preview (Hero, Editor, Showcase), chống kẹt cuộn, và đảm bảo 3D Coverflow cùng Auto-Scroll hoạt động trơn tru.
+
+### 17.1. Chuẩn Hóa Khung Chứa Bìa & Ruột Thiệp Trong Chế Độ `contained`
+* **CỐT LÕI VẤN ĐỀ:** Khi hiển thị trong khung điện thoại (chế độ `contained = true`), nếu root container có `min-h-full` nhưng ruột thiệp (5000px) không bị ẩn, chiều cao container sẽ giãn ra 5000px. Lúc này bìa `Cover` (`absolute inset-0`) sẽ có chiều cao 5000px và `justify-center` sẽ đẩy thẻ thiệp xuống $Y = 2500\text{px}$, khiến màn hình chỉ còn mảng màu trống trơn và 1 ký tự trôi dạt mép trái.
+* **CẤM:** Không được để container cố định `h-full overflow-hidden` vĩnh viễn (khiến thiệp không thể cuộn sau khi mở, như lỗi ở Tử Đằng Dạ Khúc).
+* **CÔNG THỨC CHUẨN BẮT BUỘC:**
+  ```tsx
+  <div
+    data-template-id="template-id"
+    className={cn(
+      "relative w-full mx-auto select-text overflow-x-hidden antialiased",
+      contained
+        ? (!coverGone ? "h-full overflow-hidden" : "min-h-full")
+        : (!coverGone ? "h-screen-dvh max-h-full overflow-hidden" : "min-h-screen")
+    )}
+  >
+    {!coverGone && <Cover ... />}
+    <div
+      className={cn(
+        "mx-auto w-full",
+        !coverGone && !closing && "hidden pointer-events-none"
+      )}
+    >
+      {/* Ruột thiệp chính */}
+    </div>
+  </div>
+  ```
+* **Ý NGHĨA:** Khi thiệp chưa mở (`!coverGone`), chiều cao bị khóa chặt đúng 100% viewport (`h-full overflow-hidden`) và ruột thiệp ẩn hoàn toàn $\to$ Bìa thiệp căn giữa tuyệt đối. Khi người dùng bấm Mở thiệp $\to$ `closing = true` hiển thị ruột thiệp phía sau $\to$ `coverGone = true` chuyển sang `min-h-full` mở khóa cuộn mượt mà.
+
+### 17.2. 3D Coverflow Seamless Infinite Loop (Landing Page)
+* **Toán Học Vòng Tròn Có Dấu (Signed Circular Offset):**
   ```ts
-  type TemplatePhotoSlots = { hero: boolean; couple: boolean; gallery: boolean };
-  getTemplatePhotos(templateId)   // mặc định true hết, ngoại lệ ở PHOTO_OVERRIDES
+  const getCircularOffset = (index: number, active: number, total: number) => {
+    let diff = (index - active) % total;
+    if (diff > total / 2) diff -= total;
+    if (diff < -total / 2) diff += total;
+    return diff;
+  };
   ```
-- `PhotosManager` nhận thêm `templateId`, lọc `SINGLE_SLOTS` theo `hero`/`couple` và tắt album khi `gallery === false`.
-- Hiện tại: `minimal-red` = `{ hero: false, couple: false, gallery: true }`.
-- **Quy ước:** template mới **không có ảnh hero** hoặc **không có ảnh chân dung** thì khai báo trong `PHOTO_OVERRIDES`, **không sửa `PhotosManager`**.
-- **Phân biệt rất dễ lẫn:**
-  - `TemplateSections.couplePhotos` = có khối ảnh cô dâu/chú rể **trong phần gia đình** hay không.
-  - `TemplatePhotoSlots.couple` = có **ô upload** ảnh chân dung trong tab Ảnh cưới hay không.
-  - Hai thứ khác nhau; đừng dùng lẫn (mẫu có thể có ảnh hero mà vẫn không có ảnh chân dung, hoặc ngược lại).
+* **Hiển Thị Đối Xứng 2 Bên (-3, -2, -1, 0, +1, +2, +3):** Không bao giờ bắt đầu bằng 1 thẻ trơ trọi cụt bên trái. Dù ở `activeIndex = 0` hay bất kỳ vị trí nào, các thẻ phụ luôn trải đều 2 bên.
+* **Bỏ Viền Trắng Dày:** Thẻ thiệp sử dụng `border-0 p-0 bg-transparent rounded-[24px]` với đổ bóng sâu `shadow-[0_24px_60px_-15px_rgba(0,0,0,0.38)]`.
+* **Kích Thước Thẻ Thiệp:** Phóng to thẻ trung tâm trên Desktop (`w-[330px] h-[640px] sm:w-[340px] sm:h-[660px]`) và Mobile (`w-[270px] h-[500px]`).
+* **Auto-Scroll Thẻ Active:** Sau 800ms debounce khi mở bìa, tự động cuộn từ từ xuống dưới (tốc độ ~32px/giây theo `performance.now()`). Tự dừng ngay khi chuột hover hoặc ngón tay chạm vuốt. Tự reset về đầu trang khi chuyển thẻ.
+* **Nút Phát Nhạc Độc Lập:** Có nút loa/đĩa xoay ở góc thẻ active để nghe thử nhạc mẫu tương ứng mà không bị chồng tiếng khi chuyển thẻ.
+
+### 17.3. Đồng Bộ Container Cuộn Cho Auto-Scroll Trong Iframe & Preview
+* Trong `TemplatePreviewRenderer` và `InvitationExperienceProvider`, bắt buộc chuyển tiếp `scrollContainerRef` để khi chạy ở chế độ nhúng (`embed=true` hoặc sub-container `overflow-y-auto`), Auto-Scroll điều khiển trực tiếp container thay vì gọi `window.scrollBy` khi `html, body` bị `overflow: hidden`.
 
 ---
 
-## 28. Mẫu "Minimal Red" (2026-11-18)
+## 18. QUY CHUẨN CÔ LẬP VIEWPORT MOBILE (375PX), AUTO-SCROLL 120PX/S & PHÁT NHẠC THẬT TRÊN COVERFLOW
 
-- Nguồn: `card_design/đỏ_minimal/` (3 guide + `bìa` + 4 mockup + 3 asset).
-- **Màu:** main `#390102`, nút/nhãn vàng `#e1bc7c`. Trên nền đỏ dùng **chữ vàng**; `#390102` chỉ dùng cho chữ trên nền sáng/nút. (File `color_code` ghi `text #390102` — hiểu là màu chữ trên nền kem, không phải chữ trên bìa.)
-- **Không ảnh bìa, không ảnh chân dung**, chỉ có album → khai báo ở §27.
-- **Animation theo guide:**
-  - Khung chỉ vàng kép hiện bằng **scale + fade** (dùng `border` trên div).
-  - Chữ hiện dần kiểu **mask reveal** bằng CSS `clip-path` (`@keyframes minred-wipe`).
-  - Mở thiệp: **hai cánh cửa son trượt sang hai bên**, nội dung mờ dần; dấu **triện sáp vàng** thay cho nút thường.
-  - 12 ngôi sao ✦ nhấp nháy ở hậu cảnh.
-- **Bài học SVG:** KHÔNG dùng `preserveAspectRatio="none"` cho khung viền — nét ngang bị kéo giãn thành **vạch dày** cắt ngang chữ (đã gặp thật). Dùng `border` hoặc `vector-effect="non-scaling-stroke"`.
-- **Asset:** cả 3 file đều bị flatten nền caro (§22.23). Với hoa văn: key theo độ vô sắc + flood toàn viền, rồi **xoá hẳn pixel vô sắc còn sót** để thành line-art vàng sạch (nếu chỉ tô vàng sẽ còn vệt caro trong cánh hoa).
-- **Tone riêng `minred`:** khối RSVP/gift/nhạc của mẫu này phải dùng nền **transparent** + viền vàng, không dùng tone có nền đỏ khác (ví dụ `velvet` nền `#4A0808`) vì sẽ thành một dải lệch màu giữa thiệp.
-- **Ảnh bao lì xì:** khách gửi ảnh hai phong bì vàng (nền caro) → key thành `envelope.webp` và thay cho hộp quà ở mục "Hộp quà mừng".
+> **MỤC ĐÍCH:** Khắc phục triệt để lỗi rò rỉ media query Desktop vào thẻ thiệp dọc trên Coverflow, nâng tốc độ cuộn tự động lên chuẩn 120px/s mượt mà, và bảo đảm âm thanh phát thật đồng bộ khi người dùng xem thử.
+
+### 18.1. Cô Lập Viewport Mobile 375px Bằng `MobilePreviewFrame`
+* **VẤN ĐỀ GỐC RỄ:** Khi component template được render trực tiếp trong một thẻ `<div>` nằm trên trang Landing Desktop (màn hình 1440px+), CSS Media Query của trình duyệt (`@media (min-width: 640px)`) đánh giá theo kích thước cửa sổ trình duyệt thay vì kích thước thẻ `<div>` (~340px). Điều này kích hoạt các class `sm:` và `md:`, khiến khối thông tin song thân/Trưởng Nam/Ái Nữ bị chia làm 2 cột hẹp, bẻ từ xuống từng dòng ("Ông / Lê / Quang / Minh", "Đoàn / Ngọc / Hân").
+* **GIẢI PHÁP BẮT BUỘC:** Bọc Live Preview của thẻ Active trong `MobilePreviewFrame` (`targetWidth={375}`):
+  ```tsx
+  <MobilePreviewFrame
+    scrollRef={centerScrollRef}
+    lockedScroll={!previewOpened}
+    targetWidth={375}
+  >
+    <DynamicPreviewRenderer
+      templateId={template.id}
+      data={getDemoTemplateData(template.id)}
+      mode="demo"
+      contained
+      viewport="phone"
+      isOpened={previewOpened}
+      onOpenedChange={setPreviewOpened}
+      externalMusicControl
+    />
+  </MobilePreviewFrame>
+  ```
+* **LỢI ÍCH:**
+  1. Cửa sổ bên trong `iframe` có chiều rộng logic đúng 375px (< 640px), vô hiệu hóa hoàn toàn các breakpoint Desktop, buộc 100% template hiển thị chuẩn bố cục 1 cột mobile rộng rãi, chữ không bao giờ bị bẻ gãy hay cắt mép.
+  2. Tự động co tỉ lệ hiển thị theo kích thước container thực tế bằng `transform: scale(cardWidth / 375)` với `transform-origin: top left`.
+  3. Ẩn hoàn toàn scrollbar với `scrollbar-width: none` và `::-webkit-scrollbar { display: none }`.
+
+### 18.2. Chuẩn Hóa Tốc Độ Auto-Scroll 120px/s Bằng Tích Lũy Số Thực (Float Accumulator)
+* **Hằng Số Chuẩn:** `const LANDING_AUTO_SCROLL_SPEED = 120;` (120 px/giây).
+* **Thuật Toán Tích Lũy Phần Thập Phân (rAF Float Accumulator):**
+  ```ts
+  const safeDelta = Math.min(dt, 0.1);
+  accumulator += LANDING_AUTO_SCROLL_SPEED * safeDelta;
+  const pixelsToScroll = Math.floor(accumulator);
+  if (pixelsToScroll >= 1) {
+    accumulator -= pixelsToScroll;
+    const maxScroll = container.scrollHeight - container.clientHeight;
+    if (container.scrollTop < maxScroll) {
+      container.scrollTop += pixelsToScroll;
+    }
+  }
+  ```
+* **Bảo Đảm Độ Chính Xác Tuyệt Đối:** Cuộn mượt và đúng tốc độ 120px/s trên tất cả các màn hình tần số quét 60Hz, 120Hz hay ProMotion mà không bị giật lag hay tích lũy sai số làm tròn số nguyên.
+* **Tương Tác Người Dùng:**
+  * Tự động dừng cuộn ngay khi người dùng chạm vuốt hoặc lăn chuột (`wheel`, `touchstart`, `mouseenter`).
+  * Tự động reset `scrollTop = 0` và accumulator khi chuyển sang thẻ thiệp khác.
+
+### 18.3. Quản Lý Âm Thanh Thực Trên Coverflow & Trang Xem Thử (/mau/[templateId])
+* **Coverflow Landing:**
+  * Quản lý 1 thẻ `<audio ref={audioRef} loop preload="auto" />` duy nhất ở tầng component `TemplateShowcase`.
+  * Nút "Bật nhạc" trên thẻ thiệp kích hoạt `audio.play()` đồng bộ ngay trong sự kiện `onClick` (user gesture hợp lệ, không bao giờ bị trình duyệt chặn).
+  * Ghi nhận trạng thái ý định của người dùng qua `userWantsMusicRef.current = true`.
+  * Khi bấm `<` / `>`, chạm thẻ bên cạnh, vuốt cảm ứng hoặc bấm dots chuyển thẻ: nếu người dùng đang bật nhạc, tự động cập nhật `audio.src` sang bài nhạc mặc định của template mới và tiếp tục phát nhạc đồng bộ.
+* **Trang Xem Thử (/mau/[templateId]):**
+  * `MusicToggle` thiết lập `autoPlay={true}` kèm listener mở khóa 1 lần trên toàn window (`pointerdown`, `click`, `touchstart`, `keydown`) để tự động phát ngay khi người dùng chạm màn hình lần đầu nếu chính sách trình duyệt chặn phát tự động không tiếng.
 
 ---
 
-## 29. Mẫu "Minimal Brown" — Nâu Đất & Kem Gấm (2026-11-18)
+## 19. QUY CHUẨN THIẾT KẾ MẪU THIỆP "MỘT THỜI ĐỂ NHỚ – VINTAGE LOVE STORY" (`mot-thoi-de-nho`)
 
-- Nguồn: `card_design/nâu_minimal/` (`guide.md`, `animation.md`, `color_code.txt` **để trống**, `bìa` + 5 mockup, 3 asset).
-- **Palette sample từ `bìa.png`** (vì color_code rỗng): nền be `#F1E5D9`/`#EBDBCC`, thẻ kem `#FBF7F0`, nâu `#5A3A22`, nâu đậm `#3A2314`, vàng nhũ `#C9A25E`, chữ phụ `#8A7360`.
-- **Ô ảnh (khác minimal-red):** `{ hero: false, couple: true, gallery: true }` — **không có ảnh chung ở hero**, nhưng **có 2 ảnh chân dung riêng** (đúng như bìa thư + hai polaroid trong mockup).
-- **Hero "Save The Date":** phong bì nâu + con dấu sáp vàng, hai ảnh polaroid trượt ra khỏi phong bì (stagger 0.15s, nghiêng nhẹ, đung đưa chậm), tên hai người hiện dưới với chữ `&` mờ lớn phía sau.
-- **Bìa:** nền be + cành lá màu nước hai góc + bụi nhũ vàng, thẻ kem viền chỉ vàng, huy hiệu trái tim nâu, nút viên thuốc nâu chữ trắng.
-- **Bài học quan trọng:** khi đổi palette từ tối sang sáng, phải sửa **cả `backgroundImage` gradient của root**, không chỉ `backgroundColor`. Đã gặp lỗi: chữ nâu trên nền nâu vì root vẫn còn `radial-gradient` tối từ template cũ.
-- **Đổi tên hằng số:** copy template rồi đổi `RED → BROWN`, `RED_DEEP → BROWN_DEEP`, `BG_DARK → BEIGE`, `ON_RED → ON_BROWN` bằng regex `\b` để không sót chỗ dùng; nhớ **xoá khối font bị trùng** do splice palette đè lên.
+> **MỤC ĐÍCH:** Định hình chuẩn mực cho dòng thiệp Handmade Scrapbook & Vintage Journal mộc mạc, hoài niệm, bảo đảm trải nghiệm mở thư xúc động, tương thích 100% âm thanh và vượt qua bộ kiểm thử tự động QA.
 
----
+### 19.1. Thông Tin Đăng Ký & Định Vị Phân Hạng (Tiering)
+* **Mã định danh (Slug):** `mot-thoi-de-nho`
+* **Tên hiển thị:** Một Thời Để Nhớ
+* **Phụ đề / Concept:** Vintage Love Story
+* **Danh mục:** Lãng mạn (`romantic`)
+* **Phân hạng:** Gói Standard (`pro` — 159.000đ, hiển thị badge Standard)
+* **Tông màu lọc:** Kem / Nâu Vintage (`neutral`: `#F5EFE2`, `#B99976`, `#7C3629`)
+* **Nhạc nền mặc định:** `/media/co-dien.mp3` (*Giai Điệu Cổ Điển*)
+* **Ảnh bìa catalog:** `/templates/mot-thoi-de-nho/cover.webp` (kích thước chuẩn `720×1180px`, dung lượng < 60KB).
 
-## 30. Mẫu "Flowery White" — Xanh Rêu & Hoa Mộc Lan (2026-11-19)
+### 19.2. Bảng Màu, Typography & Phong Cách Handmade Scrapbook
+* **Bảng màu hoài niệm (Vintage Palette):**
+  * Nền giấy kem cũ ngả vàng: `#F5EFE2` (kết hợp họa tiết texture `bg-vintage-paper.webp`).
+  * Thẻ giấy & phong bì be sáng: `#FAF6EC` / `#EDE3CE`.
+  * Nâu giấy kraft mộc mạc: `#C4A484` / `#B99976`.
+  * Nâu đất chữ chính & mực viết tay: `#4A3728` (chữ phụ `#5E493A` tương phản tốt, dễ đọc).
+  * Nâu đỏ trầm dấu sáp & CTA: `#7C3629` (hover `#642A1F`).
+* **Hệ thống Font chữ:**
+  * Viết tay nghệ thuật: `var(--font-dancing-script), "Dancing Script", cursive`.
+  * Serif cổ điển: `var(--font-cormorant), "Cormorant Garamond", Georgia, serif`.
+  * Thân bài (Body): `var(--font-lora), var(--font-be-vietnam), "Lora", "Be Vietnam Pro", serif`.
+* **Nguyên tắc thẩm mỹ:** Không sử dụng màu sắc gắt công nghiệp, không dùng icon ngôi sao/sparkle (`Star`, `Sparkles`, `✨`), các chi tiết washi tape, hoa ép khô và tem thư sắp xếp bất đối xứng tự nhiên như dán thủ công.
 
-- Nguồn: `card_design/flowery_white/` (`guide.md` 88 dòng, `bìa` + 5 mockup, 5 asset). `color_code.md` **rỗng** → dùng mã khách cấp: theme `#464E25`, card `#FDFAF5`, text `#595638`.
-- **Ô ảnh:** `{ hero: false, couple: false, gallery: true }` — không ảnh hero, không ảnh chân dung, chỉ album.
-- **Bìa (làm kĩ theo guide):** nền xanh rêu đậm có radial sáng giữa, bokeh vàng kim trôi chậm, hai cụm hoa mộc lan đung đưa ở hai góc, thẻ kem `#FDFAF5` bo 10px đổ bóng mềm, **vương miện hoa (wreath)** trên tên, hoa ở bốn góc trong thẻ, tên Playfair xanh rêu, nút viên thuốc xanh rêu viền vàng.
-- **Animation mở thiệp:** thẻ **trượt lên + mờ dần**, hai cụm hoa góc **dạt ra hai mép** (vén màn vườn hoa) rồi mới gỡ bìa — đúng mô tả guide.
-- **Asset:** `asset1_khung_tên` và `asset2_vòng_hoa` đã có alpha thật → chỉ resize. `asset3/4/5` bị flatten nền caro → key theo "vô sắc + sáng" rồi flood từ viền; **hoa trắng nằm trong vùng kín vẫn giữ được** nhờ flood chỉ từ biên.
-- **Bài học asset trắng trên nền caro:** nếu key theo ngưỡng sáng hẹp (190–247) sẽ còn **nền trắng**; phải mở ngưỡng (`mx >= 185`) và flood từ viền để không ăn mất cánh hoa.
-- **ĐÃ SỬA (2026-11-19):** hai cụm hoa góc nền không hiện vì lớp `absolute inset-0` của bìa bị neo vào container cao hơn khung điện thoại. **Cách sửa đúng: gắn hoa vào chính khung thẻ** (`relative max-w-[368px]`) với offset âm + `-z-10` → hoa luôn nằm cạnh thẻ dù container cao bao nhiêu.
-  - **Bài học:** decoration phải neo vào **phần tử đã xác định được vị trí** (khung thẻ), không neo vào root overlay.
-- **Trang trí + animation ruột thiệp đã thêm:** hoa chìm (opacity 10%) ở hai góc **mọi section** qua `SectionReveal`; **vòm cung nét đôi tự vẽ** (SVG `pathLength`) + hoa ở chân vòm trong Hero; **đường nối timeline tự vẽ** (`scaleY` theo cuộn, lệch nhịp từng mốc); trái tim lịch nhịp đập + quầng sáng vàng kim.
-- **Sửa màu thẻ sự kiện:** đang dùng nền đỏ mờ `rgba(96,14,14,0.55)` (di sản từ mẫu đỏ) → đổi sang nền kem `#FDFAF5` + viền olive, chữ olive.
-- **Kết quả kiểm chứng:** ảnh chụp 390px xác nhận hoa hai góc nền đã hiện, thẻ sự kiện đúng tông, lịch + nút xác nhận đúng màu.
+### 19.3. Màn Bìa Phong Thư Mở Thiệp Chậm Rãi (1.45s 3-Stage State Machine)
+* **Giao diện đóng & Vị trí con dấu sáp:**
+  * Chiếc phong thư vintage màu kem căn giữa màn hình, nắp tam giác gấp chéo `clip-path: polygon(0 0, 100% 0, 50% 100%)`.
+  * Con dấu sáp nâu đỏ `wax-seal-terracotta.webp` đặt ở vị trí `top-[108px] sm:top-[118px]`.
+  * Ruột thư có padding trên `pt-24 sm:pt-28`, đảm bảo dòng chữ `VINTAGE LOVE STORY` và tên cặp đôi nằm thoáng phía dưới con dấu sáp, **tuyệt đối không bị con dấu sáp đè lên chữ**.
+* **Máy trạng thái 3 giai đoạn (State Machine) chống kẹt:**
+  * Khi click: Kích hoạt `triggerInvitationOpened()` đồng bộ, phát SFX `playCoverSfx("envelope")`, chuyển `stage = "opening-flap"`.
+  * **Stage 1 (0 -> 450ms):** Nắp thư lật 3D lên trên (`rotateX(-180deg)`), con dấu sáp thu nhỏ và mờ dần (`scale-75 opacity-0`).
+  * **Stage 2 (450ms -> 1050ms):** Ruột thư trượt nhô lên khỏi miệng phong bì (`-translate-y-16 scale-[1.03]`).
+  * **Stage 3 (1050ms -> 1450ms):** Toàn bộ overlay phong bì mờ dần (`opacity: 0`).
+  * **Hoàn tất (1450ms):** Chuyển `stage = "opened"`, unmount hoàn toàn overlay phong bì (`return null`), mở khóa cuộn và kích hoạt auto-scroll.
+* **Block Chuyện Chúng Mình (Love Story):**
+  * Đọc dữ liệu mộc mạc từ `data.story`, hoàn toàn độc lập khỏi `data.timeline`.
+  * Thẻ kỷ niệm dùng ảnh `kraft-note-card.webp` đã crop chuẩn mép giấy (720x526px, 0 margin thừa) với `backgroundSize: "100% 100%"`, không bị viền trắng hay hụt 2 bên.
+  * Phân quyền: Chỉ hiển thị trên gói Standard (`pro`) và Pro (`vip`); gói Miễn phí (`free`) ẩn hoàn toàn khỏi thiệp và preview.
+
+### 19.4. Bố Cục 4 Kiểu Khung Ảnh Scrapbook Đa Dạng
+1. **Khung Polaroid (2 ảnh):** Viền trắng dày đáy rộng, xoay nghiêng nhẹ -2deg / +1.5deg, dán góc bằng `washi-tape-beige.webp`, có chú thích chữ viết tay.
+2. **Khung Giấy Xé (1–2 ảnh):** Ảnh đặt trên nền giấy xé răng cưa tự nhiên, cố định bằng `washi-tape-kraft.webp`.
+3. **Khung Album Cổ 4 Góc (1–2 ảnh):** 4 góc tam giác da nâu cổ điển ôm lấy 4 góc bức ảnh.
+4. **Dải Thước Phim 35mm (2–3 ảnh):** Dải phim nâu đen vintage, hàng lỗ phim nằm hoàn toàn bên ngoài vùng ảnh, ảnh nằm gọn trong viewport không bị che mặt.
+* Toàn bộ ảnh tích hợp `TemplateLightboxModal` xem phóng to sắc nét.
+
+### 19.5. Tuân Thủ Đa Lễ & Bộ Kiểm Thử Tự Động QA
+* Dùng helper `getVisibleEvents(data)` hiển thị đầy đủ mọi lễ cưới khách được mời (1, 2, 3+ lễ) dưới dạng tấm bưu thiếp giấy kem kèm nút chỉ đường Google Maps độc lập.
+* Hộp quà 3 trạng thái (`gift-box-closed.webp` $\to$ `gift-box-opening.webp` $\to$ `gift-box-opened.webp`) đồng bộ đáy (baseline) tuyệt đối, mở trễ 700ms mở `GiftModal`.
+* Hỗ trợ đầy đủ `hiddenSections` (ẩn sạch 9 toggle khi cấu hình tắt), `hostFirst: "bride"` (đảo Nhà Gái lên trước) và `sectionOrder`.
+* Vượt qua 100% 15/15 tiêu chí trong `qa-template.mjs`.
+
+
+
+

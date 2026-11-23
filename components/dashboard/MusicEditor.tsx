@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Lock, Music2, Upload } from "lucide-react";
+import { Lock, Music2, Pause, Play, Upload, Volume2 } from "lucide-react";
 import { uploadWeddingMusic } from "@/lib/api";
 import type { WeddingContent, WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -11,22 +11,64 @@ import { useToast } from "@/components/ui/Toast";
 
 const PRESETS = [
   {
+    id: "priority1" as const,
+    title: "Giai điệu tình yêu",
+    subtitle: "Ngọt ngào · Sang trọng",
+    src: "/media/priority1.mp3",
+  },
+  {
+    id: "prio2" as const,
+    title: "Khúc ca ngọt ngào",
+    subtitle: "Lãng mạn · Tinh tế",
+    src: "/media/prio2.mp3",
+  },
+  {
+    id: "classic" as const,
+    title: "Giai điệu cổ điển",
+    subtitle: "Trang nghiêm · Cổ điển",
+    src: "/media/co-dien.mp3",
+  },
+  {
+    id: "garden" as const,
+    title: "Sân vườn tự nhiên",
+    subtitle: "Acoustic · Mộc mạc",
+    src: "/media/san-vuon.mp3",
+  },
+  {
+    id: "cheerful" as const,
+    title: "Ngày mới bình yên",
+    subtitle: "Tươi vui · We'll Be Okay",
+    src: "/media/well-be-okay.mp3",
+  },
+  {
+    id: "moonlight" as const,
+    title: "Dạ khúc ánh trăng",
+    subtitle: "Sâu lắng · Lãng mạn",
+    src: "/media/moonlight.mp3",
+  },
+  {
     id: "default" as const,
     title: "Giai điệu ngày cưới",
     subtitle: "Ấm áp · Cổ điển",
-    src: "/media/wedding.mp3",
+    src: "/media/audio-1.mp3",
   },
   {
     id: "calm" as const,
     title: "Bình yên bên nhau",
     subtitle: "Nhẹ nhàng · Sâu lắng",
-    src: "/media/wedding.mp3",
+    src: "/media/audio-2.mp3",
   },
   {
     id: "beginning" as const,
     title: "Khởi đầu dịu dàng",
     subtitle: "Tươi mới · Lãng mạn",
-    src: "/media/wedding.mp3",
+    src: "/media/audio-3.mp3",
+  },
+  {
+    id: "sweet" as const,
+    title: "Ngày chung đôi",
+    subtitle: "Rộn ràng · Ngọt ngào",
+    src: "/media/audio-4.mp3",
   },
 ];
 
@@ -45,10 +87,36 @@ export function MusicEditor({
 }: MusicEditorProps) {
   const { showToast } = useToast();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [playingId, setPlayingId] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const isPro = plan !== "free";
   const selected = content.musicPreset ?? "default";
+
+  React.useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+    };
+  }, []);
+
+  const togglePlay = (e: React.MouseEvent, src: string, id: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (playingId === id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const audio = new Audio(src);
+      audioRef.current = audio;
+      audio.play().catch(() => {});
+      audio.onended = () => setPlayingId(null);
+      setPlayingId(id);
+    }
+  };
 
   const choosePreset = (preset: (typeof PRESETS)[number]) => {
     onChange({
@@ -102,29 +170,43 @@ export function MusicEditor({
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {PRESETS.map((preset) => (
           <label
             key={preset.id}
             className={cn(
-              "cursor-pointer rounded-xl border p-3 transition-colors",
+              "group relative flex cursor-pointer flex-col justify-between rounded-xl border p-3 transition-colors",
               selected === preset.id
-                ? "border-accent bg-accent-soft/60"
+                ? "border-accent bg-accent-soft/60 ring-1 ring-accent"
                 : "border-border bg-bg hover:border-accent/50",
             )}
           >
-            <div className="flex items-start gap-2">
-              <input
-                type="radio"
-                name="musicPreset"
-                checked={selected === preset.id}
-                onChange={() => choosePreset(preset)}
-                className="mt-1"
-              />
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-fg">{preset.title}</p>
-                <p className="mt-0.5 text-[10px] text-fg-muted">{preset.subtitle}</p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2 min-w-0">
+                <input
+                  type="radio"
+                  name="musicPreset"
+                  checked={selected === preset.id}
+                  onChange={() => choosePreset(preset)}
+                  className="mt-0.5 text-accent focus:ring-accent"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-fg truncate">{preset.title}</p>
+                  <p className="mt-0.5 text-[10px] text-fg-muted truncate">{preset.subtitle}</p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={(e) => togglePlay(e, preset.src, preset.id)}
+                className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-accent hover:bg-accent hover:text-white transition-colors"
+                title={playingId === preset.id ? "Dừng nghe thử" : "Nghe thử bài hát"}
+              >
+                {playingId === preset.id ? (
+                  <Pause className="h-3 w-3" />
+                ) : (
+                  <Play className="h-3 w-3 ml-0.5" />
+                )}
+              </button>
             </div>
           </label>
         ))}
@@ -138,9 +220,14 @@ export function MusicEditor({
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold text-fg">Nhạc riêng của bạn</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs font-semibold text-fg">Chọn file nhạc riêng (.mp3)</p>
+              <span className="rounded-full bg-[#7A1C24] px-2 py-0.5 text-[9px] font-semibold text-white uppercase tracking-wider">
+                Gói Standard &amp; Pro
+              </span>
+            </div>
             <p className="mt-0.5 text-[10px] text-fg-muted">
-              MP3, tối đa 8 MB.
+              Tải lên bài hát kỷ niệm của hai bạn (MP3, tối đa 8 MB).
             </p>
           </div>
           {isPro ? (
@@ -160,13 +247,13 @@ export function MusicEditor({
                 onClick={() => inputRef.current?.click()}
               >
                 <Upload className="h-3.5 w-3.5" />
-                {busy ? "Đang tải…" : "Tải file MP3"}
+                {busy ? "Đang tải…" : "Chọn file nhạc"}
               </Button>
             </>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent-soft px-2.5 py-1 text-[10px] font-semibold text-accent-text">
               <Lock className="h-3 w-3" />
-              Nâng cấp lên Pro để upload file nhạc
+              Nâng cấp lên Pro để chọn file nhạc riêng
             </span>
           )}
         </div>

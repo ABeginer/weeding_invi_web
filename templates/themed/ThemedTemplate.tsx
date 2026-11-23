@@ -7,13 +7,14 @@ import {
   Heart,
   MailOpen,
   MapPin,
-  Sparkles,
 } from "lucide-react";
 import { DesignerGiftBox } from "@/components/designer/designer-gift-box";
 import { DesignerAlbum } from "@/components/designer/designer-album";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { SakuraPetals } from "@/components/designer/sakura-petals";
+import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
+import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import type { WeddingTemplateProps } from "../types";
@@ -74,12 +75,32 @@ export function ThemedTemplate({
     }
   }, [isOpenedProp]);
 
-  const primaryEvent = data.events[0];
-  const targetWeddingDate = primaryEvent?.startsAt ?? data.date;
+  const visibleEvents = getVisibleEvents(data);
+  const targetEvent = getNearestUpcomingEvent(visibleEvents, data.date);
+  const targetWeddingDate = targetEvent?.startsAt ?? data.date;
   const heroDate = React.useMemo(
     () => formatWeddingDateParts(targetWeddingDate),
     [targetWeddingDate],
   );
+
+  const eventDays = React.useMemo(() => {
+    const days = new Set<number>();
+    const dTarget = new Date(targetWeddingDate);
+    const year = dTarget.getFullYear();
+    const month = dTarget.getMonth();
+    visibleEvents.forEach((evt) => {
+      if (evt.startsAt) {
+        const d = new Date(evt.startsAt);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+          days.add(d.getDate());
+        }
+      }
+    });
+    if (days.size === 0 && !isNaN(dTarget.getTime())) {
+      days.add(dTarget.getDate());
+    }
+    return days;
+  }, [visibleEvents, targetWeddingDate]);
 
   const displayGuest =
     guestName && guestName.trim().length > 0
@@ -99,6 +120,7 @@ export function ThemedTemplate({
   };
 
   const handleOpen = () => {
+    playOpenCardSound();
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
     } catch {}
@@ -148,14 +170,13 @@ export function ThemedTemplate({
               "z-30 flex items-center justify-center overflow-hidden p-5 text-center",
               contained
                 ? "absolute inset-0"
-                : cn(
-                    "fixed inset-y-0 left-1/2 w-full -translate-x-1/2",
-                    isDesktopLayout ? "max-w-[840px]" : "max-w-[480px]",
-                  ),
+                : isDesktopLayout
+                  ? "fixed inset-y-0 left-1/2 w-full -translate-x-1/2 max-w-[840px]"
+                  : "fixed inset-0",
             )}
           >
             {/* Ambient Floating Falling Particles */}
-            {!prefersReducedMotion && theme.id !== "hoa-anh-dao-v2" && (
+            {!prefersReducedMotion && (
               <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 {AMBIENT_PARTICLES.map((p, idx) => (
                   <span
@@ -216,7 +237,11 @@ export function ThemedTemplate({
                 }}
                 className="mb-2 flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-semibold tracking-wider uppercase"
               >
-                <Sparkles className="h-3 w-3" />
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: theme.badgeTextColor }}
+                  aria-hidden="true"
+                />
                 <span>{theme.subtitle}</span>
               </div>
 
@@ -305,8 +330,6 @@ export function ThemedTemplate({
         )}
       </AnimatePresence>
 
-      {theme.id === "hoa-anh-dao-v2" && <SakuraPetals fixed={!contained} />}
-
       {/* ==================== MAIN INVITATION CONTENT ==================== */}
       <div
         className={cn(
@@ -354,12 +377,13 @@ export function ThemedTemplate({
             <ThemedCalendar
               theme={theme}
               targetDate={targetWeddingDate}
+              eventDays={eventDays}
             />
           </div>
         )}
 
         {/* 4. SỰ KIỆN CƯỚI (EVENTS TIMELINE) */}
-        {!hiddenSections.has("map") && data.events.length > 0 && (
+        {!hiddenSections.has("map") && visibleEvents.length > 0 && (
           <section className="py-2" style={{ order: orderOf("map") }}>
             <div className="mb-4 text-center">
               <MapPin
@@ -377,59 +401,67 @@ export function ThemedTemplate({
               </h3>
             </div>
 
-            <div className="flex flex-col gap-4">
-              {data.events.map((evt) => {
+            <div
+              className={cn(
+                "grid gap-4",
+                visibleEvents.length > 1 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
+              )}
+            >
+              {visibleEvents.map((evt, idx) => {
                 const parts = formatWeddingDateParts(evt.startsAt);
+                const directionsUrl = getEventDirectionsUrl(evt);
                 return (
                   <div
-                    key={evt.id}
+                    key={evt.id || idx}
                     style={{
                       backgroundColor: theme.cardBg,
                       borderColor: theme.borderColor,
                     }}
-                    className="flex min-w-0 flex-col rounded-2xl border p-5 text-center shadow-lg backdrop-blur-md"
+                    className="flex min-w-0 flex-col rounded-2xl border p-5 text-center shadow-lg backdrop-blur-md justify-between"
                   >
-                    <div
-                      className="flex flex-col items-center justify-center gap-1.5 border-b pb-3"
-                      style={{ borderColor: theme.borderColor }}
-                    >
-                      <span
-                        style={{
-                          color: theme.accentTextColor,
-                          fontFamily: theme.headingFontFamily,
-                        }}
-                        className="font-serif text-lg font-bold sm:text-xl"
+                    <div>
+                      <div
+                        className="flex flex-col items-center justify-center gap-1.5 border-b pb-3"
+                        style={{ borderColor: theme.borderColor }}
                       >
-                        {evt.title}
-                      </span>
-                      <span
-                        style={{
-                          backgroundColor: theme.badgeBg,
-                          color: theme.badgeTextColor,
-                        }}
-                        className="rounded-full px-3 py-0.5 text-xs font-semibold"
-                      >
-                        {parts.time}
-                      </span>
+                        <span
+                          style={{
+                            color: theme.accentTextColor,
+                            fontFamily: theme.headingFontFamily,
+                          }}
+                          className="font-serif text-lg font-bold sm:text-xl"
+                        >
+                          {evt.title}
+                        </span>
+                        <span
+                          style={{
+                            backgroundColor: theme.badgeBg,
+                            color: theme.badgeTextColor,
+                          }}
+                          className="rounded-full px-3 py-0.5 text-xs font-semibold"
+                        >
+                          {parts.time}
+                        </span>
+                      </div>
+
+                      <p style={{ color: theme.subtextColor }} className="mt-3 text-xs font-medium">
+                        {parts.weekday}, {parts.day} Tháng {parts.month} Năm {parts.year}
+                      </p>
+
+                      <h4 className="mt-1 text-base font-bold text-current">
+                        {evt.venueName}
+                      </h4>
+
+                      {evt.venueAddress && (
+                        <p style={{ color: theme.subtextColor }} className="mt-1 text-xs leading-relaxed">
+                          {evt.venueAddress}
+                        </p>
+                      )}
                     </div>
 
-                    <p style={{ color: theme.subtextColor }} className="mt-3 text-xs font-medium">
-                      {parts.weekday}, {parts.day} Tháng {parts.month} Năm {parts.year}
-                    </p>
-
-                    <h4 className="mt-1 text-base font-bold text-current">
-                      {evt.venueName}
-                    </h4>
-
-                    {evt.venueAddress && (
-                      <p style={{ color: theme.subtextColor }} className="mt-1 text-xs leading-relaxed">
-                        {evt.venueAddress}
-                      </p>
-                    )}
-
-                    {evt.mapDirectionsUrl && (
+                    {directionsUrl && (
                       <a
-                        href={evt.mapDirectionsUrl}
+                        href={directionsUrl}
                         target="_blank"
                         rel="noreferrer"
                         style={{

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Play, Sparkles, Trash2 } from "lucide-react";
+import { Play, Trash2 } from "lucide-react";
 import type {
   DesignerElement,
   DesignerElementAnimation,
@@ -183,7 +183,7 @@ export function DesignerAnimationPanel({
     <div className="space-y-3 border-t border-border pt-3">
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-xs font-semibold text-text">
-          <Sparkles className="h-3.5 w-3.5 text-accent-text" aria-hidden="true" />
+          <span className="h-1.5 w-1.5 rounded-full bg-accent-text" aria-hidden="true" />
           Hiệu ứng
         </p>
         {entrance && onPreview && (

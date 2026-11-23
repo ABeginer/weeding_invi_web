@@ -25,13 +25,17 @@ export const POST = route(async (req: Request) => {
   const client = db();
   const { data: wedding, error } = await client
     .from("weddings")
-    .select("id, slug, owner_id, content")
+    .select("id, slug, owner_id, plan, content")
     .eq("slug", slug)
     .maybeSingle();
 
   if (error) throw error;
   if (!wedding) {
     return fail("Không tìm thấy thiệp cưới.", 404);
+  }
+
+  if (wedding.plan !== "vip") {
+    return fail("Tính năng chỉ dành cho gói VIP.", 403);
   }
 
   // Kiểm tra quyền: Cookie mã PIN hợp lệ HOẶC chủ sở hữu đã đăng nhập Auth0
@@ -52,6 +56,19 @@ export const POST = route(async (req: Request) => {
 
   if (!isAuthorized) {
     return fail("Bạn không có quyền thực hiện thao tác này.", 401);
+  }
+
+  // Xác minh ảnh tồn tại và thuộc về thiệp cưới này (SEC-07)
+  const { data: photo, error: photoError } = await client
+    .from("photos")
+    .select("id")
+    .eq("id", photoId)
+    .eq("wedding_id", wedding.id)
+    .maybeSingle();
+
+  if (photoError) throw photoError;
+  if (!photo) {
+    return fail("Không tìm thấy ảnh hoặc ảnh không thuộc thiệp cưới này.", 404);
   }
 
   const content = normalizeWeddingContent(wedding.content);

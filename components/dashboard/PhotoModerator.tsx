@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Check,
   CheckCircle2,
@@ -14,15 +15,14 @@ import {
   Printer,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
+  Tv,
   Trash2,
   X,
 } from "lucide-react";
 import { deletePhoto, moderatePhoto, setPhotoApprovalMode } from "@/lib/api";
-import {
-  exportPhotoWallZip,
-  type ExportPhotoWallZipProgress,
-  type PhotoWallZipItem,
+import type {
+  ExportPhotoWallZipProgress,
+  PhotoWallZipItem,
 } from "@/lib/export-photo-wall-zip";
 import type { WeddingPhoto, WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,8 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/Toast";
 import { TableStandeeModal } from "./TableStandeeModal";
+import { LedMiniDemo } from "./LedMiniDemo";
+import { VipFeatureModal } from "./VipFeatureModal";
 
 type ModerationStatus = "pending" | "approved" | "hidden";
 
@@ -300,6 +302,7 @@ export function PhotoModerator({
     }));
 
     try {
+      const { exportPhotoWallZip } = await import("@/lib/export-photo-wall-zip");
       const result = await exportPhotoWallZip({
         weddingSlug,
         photos: zipItems,
@@ -350,6 +353,79 @@ export function PhotoModerator({
       return status === activeFilter;
     });
   }, [activeFilter, albumPhotos, getEffectiveStatus]);
+
+  if (plan && plan !== "vip") {
+    return (
+      <div className={cn("space-y-6", className)}>
+        <div className="rounded-2xl border border-[#B89B72]/40 bg-white p-6 sm:p-8 shadow-xs">
+          <div className="mx-auto max-w-xl text-center space-y-4">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-[#B89B72]/30 bg-[#FAF8F5] px-3 py-1 text-xs font-semibold text-[#8A6D3B]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B89B72]" />
+              <span>ĐẶC QUYỀN SẢNH TIỆC · GÓI PRO</span>
+            </div>
+
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#1F1D1A]">
+              Duyệt ảnh khách gửi lên màn hình LED
+            </h2>
+
+            <p className="text-xs sm:text-sm text-[#6B655E] leading-relaxed">
+              Khách đến dự chỉ cần quét mã QR đặt trên bàn tiệc để gửi ảnh chụp kỷ niệm — ảnh sẽ tự động hiện lên màn hình LED sân khấu theo thời gian thực. Bạn hoặc người thân có thể duyệt trước từng ảnh chỉ bằng 1 chạm.
+            </p>
+
+            <div className="pt-2">
+              <LedMiniDemo className="mx-auto max-w-md shadow-lg" />
+            </div>
+
+            <div className="rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] p-4 text-left text-xs text-[#3D3A36] space-y-2.5">
+              <div className="flex items-center gap-2 font-semibold text-[#7A1C24]">
+                <Tv className="h-4 w-4 text-[#B89B72]" />
+                <span>Quyền lợi khi kích hoạt gói Pro:</span>
+              </div>
+              <ul className="space-y-1.5 text-[#6B655E] pl-1">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7A1C24] font-bold">✓</span>
+                  <span><strong>Chiếu ảnh trực tiếp lên màn hình LED:</strong> Khách quét QR bàn tiệc gửi ảnh, có chế độ duyệt thủ công hoặc tự động.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7A1C24] font-bold">✓</span>
+                  <span><strong>Xếp bàn tiệc &amp; Check-in bằng mã QR:</strong> Lễ tân quét mã biết ngay khách ngồi bàn nào, không cần dò sổ.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7A1C24] font-bold">✓</span>
+                  <span><strong>Cấp quyền người nhà bằng mã PIN 4 số:</strong> Phụ dâu/người thân giúp duyệt ảnh và check-in không cần tài khoản chính.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7A1C24] font-bold">✓</span>
+                  <span><strong>In bảng QR để bàn &amp; Tải trọn bộ ảnh ZIP:</strong> Xuất bảng QR A5/A6 và tải toàn bộ ảnh kỷ niệm sau tiệc.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setVipUpgradeOpen(true)}
+                className="rounded-full px-5 text-xs font-medium"
+              >
+                Tìm hiểu đặc quyền Pro
+              </Button>
+              <Link
+                href="/#bang-gia"
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[#7A1C24] px-6 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#60161C]"
+              >
+                <span>Nâng cấp gói Pro ngay →</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <VipFeatureModal
+          open={vipUpgradeOpen}
+          onClose={() => setVipUpgradeOpen(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -525,7 +601,7 @@ export function PhotoModerator({
                   : "text-[#6B655E] hover:text-[#1F1D1A]",
               )}
             >
-              <Sparkles className="h-3.5 w-3.5" />
+              <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Tự động duyệt</span>
             </button>
           </div>
@@ -761,43 +837,11 @@ export function PhotoModerator({
         weddingDate={weddingDate}
       />
 
-      {/* Modal nâng cấp VIP cho tính năng tự động duyệt ảnh */}
-      <Dialog
+      {/* Modal nâng cấp Pro cho tính năng tự động duyệt ảnh */}
+      <VipFeatureModal
         open={vipUpgradeOpen}
         onClose={() => setVipUpgradeOpen(false)}
-        title="Tính năng sảnh tiệc Gói VIP"
-        description="Chế độ 'Tự động duyệt ảnh LED' chỉ khả dụng trên thiệp cưới gói VIP của Inviwedd."
-        className="max-w-md"
-      >
-        <div className="space-y-4 py-2">
-          <div className="rounded-xl border border-[#B89B72]/30 bg-[#FAF8F5] p-3.5 text-xs text-[#1F1D1A] space-y-2">
-            <p className="font-semibold text-[#7A1C24]">
-              Đặc quyền Gói VIP (399.000đ):
-            </p>
-            <ul className="list-disc pl-4 space-y-1 text-[#6B655E]">
-              <li>Tự động duyệt ảnh khách gửi lên màn hình LED sảnh tiệc.</li>
-              <li>Tải trọn bộ ảnh gốc chất lượng cao (.ZIP).</li>
-              <li>In bảng mã QR để bàn A5/A6 trang trọng.</li>
-              <li>Cổng trợ lý bảo mật mã PIN 4 số cho người nhà duyệt ảnh và check-in khách.</li>
-            </ul>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setVipUpgradeOpen(false)}>
-              Để sau
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setVipUpgradeOpen(false);
-                window.location.hash = "#bang-gia";
-              }}
-              className="bg-[#7A1C24] hover:bg-[#5E141B] text-white"
-            >
-              Nâng cấp VIP ngay →
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+      />
     </div>
   );
 }

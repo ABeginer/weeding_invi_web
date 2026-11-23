@@ -1,10 +1,22 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { MotionProvider } from "@/components/theme/MotionProvider";
+import { playOpenCardSound } from "@/lib/sound-effects";
 import type { GuestDiet, GuestStatus, TemplateData } from "@/lib/types";
-import Basic1Template from "./basic-1";
 import { TemplatePreviewRenderer } from "./TemplatePreviewRenderer";
+
+const DynamicBasic1 = dynamic(() => import("./basic-1"), {
+  loading: () => (
+    <div className="flex h-full min-h-[320px] w-full items-center justify-center bg-[#FAF8F5]/90 text-[#5C554E] backdrop-blur-xs">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#B89B72] border-t-transparent" />
+        <p className="font-serif text-sm tracking-wide">Đang tải giao diện thiệp...</p>
+      </div>
+    </div>
+  ),
+});
 
 interface LiveTemplateRendererProps {
   templateId?: string;
@@ -33,48 +45,33 @@ export function LiveTemplateRenderer({
   initialSongRequest = null,
   initialRideNeeded = false,
 }: LiveTemplateRendererProps) {
-  if (templateId !== "basic-1" && templateId !== "ritual-an-hoi") {
-    return (
-      <TemplatePreviewRenderer
-        templateId={templateId}
-        data={data}
-        mode="live"
-        contained={false}
-        viewport="desktop"
-        externalMusicControl={false}
-        inviteSlug={inviteSlug}
-        weddingSlug={weddingSlug}
-        invitationMode={invitationMode}
-        guestName={guestName}
-        initialStatus={initialStatus}
-        initialPlusOnes={initialPlusOnes}
-        initialDiet={initialDiet}
-        initialSongRequest={initialSongRequest}
-        initialRideNeeded={initialRideNeeded}
-      />
-    );
-  }
+  React.useEffect(() => {
+    const handleEnvelopeOpen = () => {
+      playOpenCardSound();
+    };
+    window.addEventListener("inviwedd:open-envelope", handleEnvelopeOpen);
+    return () => {
+      window.removeEventListener("inviwedd:open-envelope", handleEnvelopeOpen);
+    };
+  }, []);
 
-  // basic-1 tự render cây invitation (Hero/Envelope/RevealSection dùng `m`)
-  // nên phải tự bọc LazyMotion: nhánh này không đi qua TemplatePreviewRenderer.
   return (
-    <MotionProvider>
-      <Basic1Template
-        data={data}
-        mode="live"
-        contained={false}
-        viewport="desktop"
-        externalMusicControl={false}
-        inviteSlug={inviteSlug}
-        weddingSlug={weddingSlug}
-        invitationMode={invitationMode}
-        guestName={guestName}
-        initialStatus={initialStatus}
-        initialPlusOnes={initialPlusOnes}
-        initialDiet={initialDiet}
-        initialSongRequest={initialSongRequest}
-        initialRideNeeded={initialRideNeeded}
-      />
-    </MotionProvider>
+    <TemplatePreviewRenderer
+      templateId={templateId}
+      data={data}
+      mode="live"
+      contained={false}
+      viewport="desktop"
+      externalMusicControl={false}
+      inviteSlug={inviteSlug}
+      weddingSlug={weddingSlug}
+      invitationMode={invitationMode}
+      guestName={guestName}
+      initialStatus={initialStatus}
+      initialPlusOnes={initialPlusOnes}
+      initialDiet={initialDiet}
+      initialSongRequest={initialSongRequest}
+      initialRideNeeded={initialRideNeeded}
+    />
   );
 }

@@ -4,6 +4,7 @@ import {
   Be_Vietnam_Pro,
   Carattere,
   Cormorant_Garamond,
+  Dancing_Script,
   EB_Garamond,
   Lora,
   Pinyon_Script,
@@ -23,8 +24,8 @@ import {
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ["vietnamese", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["vietnamese"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-be-vietnam",
   display: "swap",
 });
@@ -55,6 +56,7 @@ const playfairDisplay = Playfair_Display({
   style: ["normal", "italic"],
   variable: "--font-playfair",
   display: "swap",
+  preload: false,
 });
 
 const ebGaramond = EB_Garamond({
@@ -98,6 +100,14 @@ const carattere = Carattere({
   preload: false,
 });
 
+const dancingScript = Dancing_Script({
+  subsets: ["latin", "vietnamese"],
+  weight: ["500", "600", "700"],
+  variable: "--font-dancing-script",
+  display: "swap",
+  preload: false,
+});
+
 function resolveMetadataBase(): URL | undefined {
   try {
     return new URL(resolveAppBaseUrl());
@@ -113,9 +123,39 @@ const brandThemeInitScript = `(function(){try{var m=document.cookie.match(new Re
 
 export const metadata: Metadata = {
   metadataBase: resolveMetadataBase(),
-  title: `Thiệp Cưới Online | ${SITE_NAME}`,
+  title: {
+    default: `Thiệp Cưới Online & Thiệp Cưới Điện Tử Cao Cấp | ${SITE_NAME}`,
+    template: `%s | ${SITE_NAME}`,
+  },
   description:
-    "Nền tảng tạo và quản lý thiệp cưới online cá nhân hóa tên từng vị khách.",
+    "Inviwedd — Nền tảng tạo và quản lý thiệp cưới online cao cấp, cá nhân hóa tên từng vị khách. Tích hợp mừng cưới QR thông minh, xác nhận tham dự RSVP tự động, album ảnh cưới tương tác và bản đồ chỉ đường tiện lợi.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "vi_VN",
+    url: "/",
+    siteName: SITE_NAME,
+    title: `Thiệp Cưới Online & Thiệp Cưới Điện Tử Cao Cấp | ${SITE_NAME}`,
+    description:
+      "Tạo thiệp cưới online cá nhân hóa tên từng vị khách, mã QR mừng cưới thông minh, xác nhận tham dự RSVP tự động và kho mẫu thiết kế đa dạng phong cách.",
+    images: [
+      {
+        url: "/images/og-cover.png",
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} - Nền tảng thiệp cưới online cao cấp`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Thiệp Cưới Online & Thiệp Cưới Điện Tử Cao Cấp | ${SITE_NAME}`,
+    description:
+      "Tạo thiệp cưới online cá nhân hóa tên từng vị khách, mừng cưới QR, xác nhận RSVP tự động.",
+    images: ["/images/og-cover.png"],
+  },
 };
 
 export const viewport: Viewport = {
@@ -139,7 +179,7 @@ export default function RootLayout({
     <html
       lang="vi"
       data-theme="light"
-      className={`${beVietnamPro.variable} ${cormorantGaramond.variable} ${lora.variable} ${playfairDisplay.variable} ${ebGaramond.variable} ${viaodaLibre.variable} ${pinyonScript.variable} ${theNautigal.variable} ${carattere.variable}`}
+      className={`${beVietnamPro.variable} ${cormorantGaramond.variable} ${lora.variable} ${playfairDisplay.variable} ${ebGaramond.variable} ${viaodaLibre.variable} ${pinyonScript.variable} ${theNautigal.variable} ${carattere.variable} ${dancingScript.variable}`}
       suppressHydrationWarning
     >
       <head>

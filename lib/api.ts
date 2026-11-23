@@ -24,6 +24,8 @@ import type {
   CreatedOrder,
   OrderStatusResponse,
   CreateOrderInput,
+  CreatePayosOrderInput,
+  PayosOrderResponse,
 } from "./types";
 
 export class ApiError extends Error {
@@ -776,5 +778,9 @@ export function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
 
 export function getOrder(orderId: string): Promise<OrderStatusResponse> {
   return authRequest(`/api/orders/${encodeURIComponent(orderId)}`);
+}
+
+export function createPayosOrder(input: CreatePayosOrderInput): Promise<PayosOrderResponse> {
+  return authRequest("/api/orders/payos", post(input));
 }
 

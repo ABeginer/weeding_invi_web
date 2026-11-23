@@ -28,10 +28,10 @@ function pick(
 export default async function CreatePreviewPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const requested = pick(params, "template", 40);
-  const templateId = (getTemplateMeta(requested) ?? getTemplateMeta("basic-1"))?.id ?? "basic-1";
+  const templateId = (getTemplateMeta(requested) ?? getTemplateMeta("nau-toi-gian"))?.id ?? "nau-toi-gian";
 
   return (
-    <div className="min-h-dvh bg-bg">
+    <div className="min-h-dvh h-dvh w-full bg-bg">
       <PreviewFrame
         templateId={templateId}
         groom={pick(params, "groom", 40)}

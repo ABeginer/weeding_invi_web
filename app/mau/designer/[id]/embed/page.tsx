@@ -34,8 +34,22 @@ export default async function DesignerEmbedPage({ params }: PageProps) {
   const canvas = version.canvas_json as unknown as DesignerCanvasContent;
 
   return (
-    <div data-designer-embed className="min-h-screen w-full bg-bg">
-      <style>{`html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}`}</style>
+    <div data-designer-embed className="min-h-screen w-full bg-bg [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <style>{`
+        html,
+        body,
+        * {
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar,
+        *::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+      `}</style>
       <DesignerInvitation
         canvas={canvas}
         values={SAMPLE_VALUES}

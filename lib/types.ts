@@ -238,3 +238,20 @@ export interface OrderStatusResponse {
   paidAt: string | null;
 }
 
+export interface CreatePayosOrderInput {
+  weddingId: string;
+  plan: PaidPlan;
+}
+
+export interface PayosOrderResponse {
+  orderId: string;
+  orderCode: number;
+  amount: number;
+  checkoutUrl: string;
+  qrCode: string;
+  accountName: string;
+  accountNumber: string;
+  bin: string;
+  description: string;
+}
+

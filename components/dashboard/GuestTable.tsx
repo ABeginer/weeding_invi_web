@@ -12,6 +12,7 @@ import {
   Copy,
   Download,
   ExternalLink,
+  Lock,
   MessageSquareShare,
   Music,
   Pencil,
@@ -60,6 +61,18 @@ import { useToast } from "@/components/ui/Toast";
 import { AddGuestDialog } from "./AddGuestDialog";
 import { BulkImportDialog } from "./BulkImportDialog";
 import { SentBadge, StatusBadge } from "./StatusBadge";
+import { VipFeatureModal } from "./VipFeatureModal";
+
+export type QuickFilter =
+  | "all"
+  | "unsent"
+  | "sent"
+  | "accepted"
+  | "pending"
+  | "declined"
+  | "veg"
+  | "unassigned"
+  | "checkedIn";
 
 interface GuestTableProps {
   weddingId: string;
@@ -68,6 +81,8 @@ interface GuestTableProps {
   mealMode?: "meat" | "veg" | "both";
   onMealModeChange?: (mode: "meat" | "veg" | "both") => void;
   onGuestsChanged?: () => void;
+  initialFilter?: QuickFilter;
+  initialEventId?: string;
 }
 
 // TODO: Persist 'is_sent' and 'sent_at' column directly in Supabase guests table when migration is applied.
@@ -95,17 +110,6 @@ function saveSentGuestIds(weddingId: string, ids: Set<string>): void {
   } catch { }
 }
 
-type QuickFilter =
-  | "all"
-  | "unsent"
-  | "sent"
-  | "accepted"
-  | "pending"
-  | "declined"
-  | "veg"
-  | "unassigned"
-  | "checkedIn";
-
 function getRelationshipLabel(group?: Guest["relationshipGroup"]): string | null {
   if (!group) return null;
   switch (group) {
@@ -129,6 +133,8 @@ export function GuestTable({
   mealMode = "meat",
   onMealModeChange,
   onGuestsChanged,
+  initialFilter,
+  initialEventId,
 }: GuestTableProps) {
   const { showToast } = useToast();
   const [guests, setGuests] = React.useState<Guest[]>([]);
@@ -142,7 +148,24 @@ export function GuestTable({
   const [total, setTotal] = React.useState(0);
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
-  const [filterTab, setFilterTab] = React.useState<QuickFilter>("all");
+  const [filterTab, setFilterTab] = React.useState<QuickFilter>(
+    initialFilter ?? "all",
+  );
+  const [selectedEventId, setSelectedEventId] = React.useState<string>(
+    initialEventId ?? "all",
+  );
+
+  React.useEffect(() => {
+    if (initialFilter !== undefined) {
+      setFilterTab(initialFilter);
+    }
+  }, [initialFilter]);
+
+  React.useEffect(() => {
+    if (initialEventId !== undefined) {
+      setSelectedEventId(initialEventId);
+    }
+  }, [initialEventId]);
 
   // Sent status tracking in localStorage (with DB migration TODO)
   const [sentGuestIds, setSentGuestIds] = React.useState<Set<string>>(() =>
@@ -164,7 +187,7 @@ export function GuestTable({
     setShowCopyInviteHint(false);
     try {
       window.localStorage.setItem("inviwedd_seen_copy_invite_hint", "1");
-    } catch {}
+    } catch { }
   }, []);
 
   // Dialog states
@@ -186,6 +209,9 @@ export function GuestTable({
   const [exporting, setExporting] = React.useState(false);
   const [editError, setEditError] = React.useState<string | null>(null);
   const [savingEdit, setSavingEdit] = React.useState(false);
+
+  // VIP feature modal state
+  const [vipModalOpen, setVipModalOpen] = React.useState(false);
 
   // Inline table assignment state
   const [editingTableGuestId, setEditingTableGuestId] = React.useState<string | null>(null);
@@ -403,10 +429,147 @@ export function GuestTable({
     setSelectedGuestIds([]);
   };
 
+  // Filter guests by ceremony/event first (Tier 1)
+  const eventFilteredGuests = React.useMemo(() => {
+    if (selectedEventId === "all") return guests;
+    return guests.filter(
+      (g) => !g.eventIds || g.eventIds.length === 0 || g.eventIds.includes(selectedEventId),
+    );
+  }, [guests, selectedEventId]);
+
+  // Dynamic counts within selected ceremony (Tier 2)
+  const filterCounts = React.useMemo(() => {
+    let sent = 0;
+    let unsent = 0;
+    let accepted = 0;
+    let pending = 0;
+    let declined = 0;
+    let veg = 0;
+    let unassigned = 0;
+    let checkedIn = 0;
+
+    for (const g of eventFilteredGuests) {
+      const isSent = sentGuestIds.has(g.id);
+      if (isSent) sent++;
+      else unsent++;
+
+      if (g.status === "accepted") accepted++;
+      else if (g.status === "declined") declined++;
+      else pending++;
+
+      if (g.diet === "veg" || g.dietaryPreference === "vegetarian") {
+        veg++;
+      }
+      if (g.status !== "declined" && (!g.tableNumber || !g.tableNumber.trim())) {
+        unassigned++;
+      }
+      if (g.checkedInAt) {
+        checkedIn++;
+      }
+    }
+
+    return {
+      total: eventFilteredGuests.length,
+      sent,
+      unsent,
+      accepted,
+      pending,
+      declined,
+      veg,
+      unassigned,
+      checkedIn,
+    };
+  }, [eventFilteredGuests, sentGuestIds]);
+
+  // Combined Tier 1 + Tier 2 + Search client-side filtering
+  const filteredGuests = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return eventFilteredGuests.filter((g) => {
+      if (q) {
+        const matchName = g.name.toLowerCase().includes(q);
+        const matchTable = (g.tableNumber ?? "").toLowerCase().includes(q);
+        const matchSong = (g.songRequest ?? "").toLowerCase().includes(q);
+        if (!matchName && !matchTable && !matchSong) return false;
+      }
+
+      const isSent = sentGuestIds.has(g.id);
+      if (filterTab === "unsent") return !isSent;
+      if (filterTab === "sent") return isSent;
+      if (filterTab === "accepted") return g.status === "accepted";
+      if (filterTab === "pending") return g.status === "pending";
+      if (filterTab === "declined") return g.status === "declined";
+      if (filterTab === "veg") {
+        return (
+          g.diet === "veg" ||
+          g.dietaryPreference === "vegetarian"
+        );
+      }
+      if (filterTab === "unassigned") {
+        return g.status !== "declined" && (!g.tableNumber || !g.tableNumber.trim());
+      }
+      if (filterTab === "checkedIn") {
+        return Boolean(g.checkedInAt);
+      }
+      return true;
+    });
+  }, [eventFilteredGuests, search, filterTab, sentGuestIds]);
+
+  const isFiltered =
+    selectedEventId !== "all" || filterTab !== "all" || search.trim().length > 0;
+
+  const handleResetAllFilters = () => {
+    setSelectedEventId("all");
+    setFilterTab("all");
+    setSearch("");
+  };
+
+  const getFilterTabLabel = (tab: QuickFilter): string => {
+    switch (tab) {
+      case "unsent": return "Chưa gửi";
+      case "sent": return "Đã gửi";
+      case "accepted": return "Đã xác nhận";
+      case "pending": return "Chờ phản hồi";
+      case "declined": return "Từ chối";
+      case "veg": return "Ăn chay";
+      case "unassigned": return "Chưa xếp bàn";
+      case "checkedIn": return "Đã đến";
+      default: return "";
+    }
+  };
+
+  const selectedEventName = React.useMemo(() => {
+    if (selectedEventId === "all") return null;
+    return eventMap.get(selectedEventId)?.title ?? "Lễ đã chọn";
+  }, [selectedEventId, eventMap]);
+
+  const pillCounts = React.useMemo(() => {
+    if (selectedEventId === "all") {
+      const tot = stats?.total ?? filterCounts.total;
+      const s = Math.min(sentGuestIds.size, tot);
+      return {
+        total: tot,
+        sent: s,
+        unsent: Math.max(0, tot - s),
+        accepted: stats?.accepted ?? filterCounts.accepted,
+        pending: stats?.pending ?? filterCounts.pending,
+        declined: stats?.declined ?? filterCounts.declined,
+        veg: stats?.vegCount ?? filterCounts.veg,
+        unassigned: filterCounts.unassigned,
+        checkedIn: filterCounts.checkedIn,
+      };
+    }
+    return filterCounts;
+  }, [selectedEventId, stats, filterCounts, sentGuestIds.size]);
+
   const handleExportCsv = async () => {
     setExporting(true);
     try {
-      const allGuests = await listGuests(weddingId);
+      let exportSourceGuests: Guest[];
+      if (isFiltered) {
+        exportSourceGuests = filteredGuests;
+      } else {
+        exportSourceGuests = await listGuests(weddingId);
+      }
       let gifts: Awaited<ReturnType<typeof listGifts>>["items"] = [];
       if (plan !== "free") {
         try {
@@ -415,15 +578,19 @@ export function GuestTable({
           gifts = [];
         }
       }
-      const rows = buildGuestExportRows(allGuests, {
+      const rows = buildGuestExportRows(exportSourceGuests, {
         origin: window.location.origin,
         gifts,
       });
+      const fileSuffix = isFiltered ? "loc" : "tat-ca";
       downloadGuestsCsv(
         rows,
-        `khach-moi-${new Date().toISOString().slice(0, 10)}.csv`,
+        `khach-moi-${fileSuffix}-${new Date().toISOString().slice(0, 10)}.csv`,
       );
-      showToast(`Đã xuất ${rows.length} khách mời ra CSV (UTF-8 BOM)`, "success");
+      showToast(
+        `Đã xuất ${rows.length} khách mời ${isFiltered ? "(theo bộ lọc) " : ""}ra CSV (UTF-8 BOM)`,
+        "success",
+      );
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Không xuất được danh sách.",
@@ -435,10 +602,10 @@ export function GuestTable({
   };
 
   const toggleSelectAll = () => {
-    if (selectedGuestIds.length === guests.length) {
+    if (selectedGuestIds.length === filteredGuests.length) {
       setSelectedGuestIds([]);
     } else {
-      setSelectedGuestIds(guests.map((g) => g.id));
+      setSelectedGuestIds(filteredGuests.map((g) => g.id));
     }
   };
 
@@ -603,6 +770,10 @@ export function GuestTable({
   };
 
   const handleStartEditTable = (guest: Guest) => {
+    if (plan !== "vip") {
+      setVipModalOpen(true);
+      return;
+    }
     setEditingTableGuestId(guest.id);
     setInlineTableValue(guest.tableNumber ?? "");
   };
@@ -649,6 +820,10 @@ export function GuestTable({
   const handleApplyBulkTable = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (selectedGuestIds.length === 0) return;
+    if (plan !== "vip") {
+      setVipModalOpen(true);
+      return;
+    }
     const trimmed = bulkTableValue.trim() || null;
     setBulkAssigningTable(true);
 
@@ -743,39 +918,6 @@ export function GuestTable({
     }
   };
 
-  // Instant client-side filtering + search
-  const filteredGuests = React.useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return guests.filter((g) => {
-      if (q) {
-        const matchName = g.name.toLowerCase().includes(q);
-        const matchTable = (g.tableNumber ?? "").toLowerCase().includes(q);
-        const matchSong = (g.songRequest ?? "").toLowerCase().includes(q);
-        if (!matchName && !matchTable && !matchSong) return false;
-      }
-
-      const isSent = sentGuestIds.has(g.id);
-      if (filterTab === "unsent") return !isSent;
-      if (filterTab === "sent") return isSent;
-      if (filterTab === "accepted") return g.status === "accepted";
-      if (filterTab === "pending") return g.status === "pending";
-      if (filterTab === "declined") return g.status === "declined";
-      if (filterTab === "veg") {
-        return (
-          g.diet === "veg" ||
-          g.dietaryPreference === "vegetarian"
-        );
-      }
-      if (filterTab === "unassigned") {
-        return g.status !== "declined" && (!g.tableNumber || !g.tableNumber.trim());
-      }
-      if (filterTab === "checkedIn") {
-        return Boolean(g.checkedInAt);
-      }
-      return true;
-    });
-  }, [guests, search, filterTab, sentGuestIds]);
-
   // Derived KPI numbers
   const firstUnsentGuestId = React.useMemo(() => {
     return filteredGuests.find((g) => !sentGuestIds.has(g.id))?.id;
@@ -846,7 +988,13 @@ export function GuestTable({
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-4 py-2 text-xs font-semibold text-[#1F1D1A] shadow-2xs transition-colors hover:border-[#B89B72] hover:bg-[#FAF8F5] disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5 text-[#6B655E]" aria-hidden="true" />
-            <span>{exporting ? "Đang xuất..." : "Xuất CSV"}</span>
+            <span>
+              {exporting
+                ? "Đang xuất..."
+                : isFiltered
+                  ? `Xuất CSV (${filteredGuests.length})`
+                  : "Xuất CSV"}
+            </span>
           </button>
 
           <button
@@ -1002,155 +1150,262 @@ export function GuestTable({
           </div>
         </div>
 
-        {/* Quick Filter Pills (Wrapping layout - 100% visible on Desktop without scrolling) */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        {/* Tier 1: Ceremony / Event Filter (Shown when wedding has > 1 event) */}
+        {events.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar sm:gap-2">
+            <div className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-[#8C827A] uppercase tracking-wider mr-1">
+              <CalendarHeart className="h-3.5 w-3.5 text-[#B89B72]" />
+              <span>Lễ:</span>
+            </div>
             <button
               type="button"
-              onClick={() => setFilterTab("all")}
+              onClick={() => setSelectedEventId("all")}
               className={cn(
-                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "all"
-                  ? "bg-[#1F1D1A] text-[#FAF8F5] shadow-xs"
-                  : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#1F1D1A]/30",
-              )}
-            >
-              <span>Tất cả</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
-                {totalCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterTab("unsent")}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "unsent"
-                  ? "bg-[#8A6D3B] text-white shadow-xs font-semibold"
-                  : "border border-[#E8DAC0] bg-[#FAF3E3] text-[#8A6D3B] hover:bg-[#f5e9d0]",
-              )}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#8A6D3B] animate-pulse" />
-              <span>Chưa gửi</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-bold tabular-nums">
-                {unsentCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterTab("sent")}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "sent"
-                  ? "bg-[#2F6F4E] text-white shadow-xs font-semibold"
-                  : "border border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E] hover:bg-[#d8ece0]",
-              )}
-            >
-              <span>Đã gửi</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
-                {sentCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterTab("accepted")}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "accepted"
-                  ? "bg-[#1F1D1A] text-[#FAF8F5] shadow-xs"
-                  : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#1F1D1A]/30",
-              )}
-            >
-              <span>Đã xác nhận</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
-                {acceptedCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterTab("pending")}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "pending"
-                  ? "bg-[#1F1D1A] text-[#FAF8F5] shadow-xs"
-                  : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#1F1D1A]/30",
-              )}
-            >
-              <span>Chờ phản hồi</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
-                {pendingCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterTab("declined")}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "declined"
-                  ? "bg-[#9E3B3B] text-white shadow-xs"
-                  : "border border-[#ECCFCF] bg-[#FBEFEF] text-[#9E3B3B] hover:bg-[#f6dfdf]",
-              )}
-            >
-              <span>Từ chối</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
-                {declinedCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterTab("veg")}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "veg"
-                  ? "bg-[#2F6F4E] text-white shadow-xs"
-                  : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#1F1D1A]/30",
-              )}
-            >
-              <span>Ăn chay</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
-                {vegCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterTab("unassigned")}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "unassigned"
+                "inline-flex cursor-pointer shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+                selectedEventId === "all"
                   ? "bg-[#7A1C24] text-white shadow-xs font-semibold"
-                  : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#7A1C24]/30",
+                  : "border border-[#E8E2D9] bg-white text-[#6B655E] hover:border-[#7A1C24]/30 hover:text-[#1F1D1A]",
               )}
             >
-              <span>Chưa xếp bàn</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
-                {unassignedCount}
+              <span>Tất cả lễ</span>
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.2 text-[10px] tabular-nums",
+                  selectedEventId === "all"
+                    ? "bg-white/20 text-white font-bold"
+                    : "bg-black/5 text-[#6B655E]",
+                )}
+              >
+                {events.length}
               </span>
             </button>
+            {events.map((evt) => {
+              const isSelected = selectedEventId === evt.id;
+              const countForEvent = guests.filter(
+                (g) => !g.eventIds || g.eventIds.length === 0 || g.eventIds.includes(evt.id),
+              ).length;
+              return (
+                <button
+                  key={evt.id}
+                  type="button"
+                  onClick={() => setSelectedEventId(evt.id)}
+                  className={cn(
+                    "inline-flex cursor-pointer shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+                    isSelected
+                      ? "bg-[#7A1C24] text-white shadow-xs font-semibold"
+                      : "border border-[#E8E2D9] bg-white text-[#6B655E] hover:border-[#7A1C24]/30 hover:text-[#1F1D1A]",
+                  )}
+                >
+                  <span>{evt.title}</span>
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.2 text-[10px] tabular-nums",
+                      isSelected
+                        ? "bg-white/20 text-white font-bold"
+                        : "bg-black/5 text-[#6B655E]",
+                    )}
+                  >
+                    {countForEvent}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
+        {/* Tier 2: Quick Filter Pills (Wrapping layout - 100% visible on Desktop without scrolling) */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setFilterTab("all")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "all"
+                ? "bg-[#1F1D1A] text-[#FAF8F5] shadow-xs"
+                : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#1F1D1A]/30",
+            )}
+          >
+            <span>Tất cả</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
+              {pillCounts.total}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab("unsent")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "unsent"
+                ? "bg-[#8A6D3B] text-white shadow-xs font-semibold"
+                : "border border-[#E8DAC0] bg-[#FAF3E3] text-[#8A6D3B] hover:bg-[#f5e9d0]",
+            )}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-[#8A6D3B] animate-pulse" />
+            <span>Chưa gửi</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] font-bold tabular-nums">
+              {pillCounts.unsent}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab("sent")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "sent"
+                ? "bg-[#2F6F4E] text-white shadow-xs font-semibold"
+                : "border border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E] hover:bg-[#d8ece0]",
+            )}
+          >
+            <span>Đã gửi</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
+              {pillCounts.sent}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab("accepted")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "accepted"
+                ? "bg-[#1F1D1A] text-[#FAF8F5] shadow-xs"
+                : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#1F1D1A]/30",
+            )}
+          >
+            <span>Đã xác nhận</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
+              {pillCounts.accepted}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab("pending")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "pending"
+                ? "bg-[#1F1D1A] text-[#FAF8F5] shadow-xs"
+                : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#1F1D1A]/30",
+            )}
+          >
+            <span>Chờ phản hồi</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
+              {pillCounts.pending}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab("declined")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "declined"
+                ? "bg-[#9E3B3B] text-white shadow-xs"
+                : "border border-[#ECCFCF] bg-[#FBEFEF] text-[#9E3B3B] hover:bg-[#f6dfdf]",
+            )}
+          >
+            <span>Từ chối</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px] tabular-nums">
+              {pillCounts.declined}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab("veg")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "veg"
+                ? "bg-[#2F6F4E] text-white shadow-xs"
+                : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#1F1D1A]/30",
+            )}
+          >
+            <span>Ăn chay</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+              {pillCounts.veg}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab("unassigned")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "unassigned"
+                ? "bg-[#7A1C24] text-white shadow-xs font-semibold"
+                : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#7A1C24]/30",
+            )}
+          >
+            <span>Chưa xếp bàn</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+              {pillCounts.unassigned}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab("checkedIn")}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+              filterTab === "checkedIn"
+                ? "bg-[#2F6F4E] text-white shadow-xs font-semibold"
+                : "border border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E] hover:bg-[#d8ece0]",
+            )}
+          >
+            <Check className="h-3 w-3" />
+            <span>Đã đến</span>
+            <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
+              {pillCounts.checkedIn}
+            </span>
+          </button>
+        </div>
+
+        {/* Tier 3: Active Filter Summary & Reset Bar */}
+        {isFiltered && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#B89B72]/30 bg-[#FAF8F5] px-3.5 py-2 text-xs text-[#6B655E] animate-in fade-in">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-medium text-[#1F1D1A]">
+                Hiển thị <strong>{filteredGuests.length}</strong> khách
+              </span>
+              {selectedEventName && (
+                <>
+                  <span>·</span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#7A1C24]/10 px-2 py-0.5 font-medium text-[#7A1C24]">
+                    <CalendarHeart className="h-3 w-3" />
+                    {selectedEventName}
+                  </span>
+                </>
+              )}
+              {filterTab !== "all" && (
+                <>
+                  <span>·</span>
+                  <span className="rounded-md bg-[#1F1D1A]/10 px-2 py-0.5 font-medium text-[#1F1D1A]">
+                    {getFilterTabLabel(filterTab)}
+                  </span>
+                </>
+              )}
+              {search.trim() && (
+                <>
+                  <span>·</span>
+                  <span className="rounded-md bg-black/5 px-2 py-0.5 font-medium text-[#1F1D1A]">
+                    &ldquo;{search.trim()}&rdquo;
+                  </span>
+                </>
+              )}
+            </div>
             <button
               type="button"
-              onClick={() => setFilterTab("checkedIn")}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                filterTab === "checkedIn"
-                  ? "bg-[#2F6F4E] text-white shadow-xs font-semibold"
-                  : "border border-[#BBDBC9] bg-[#ECF5F0] text-[#2F6F4E] hover:bg-[#d8ece0]",
-              )}
+              onClick={handleResetAllFilters}
+              className="inline-flex cursor-pointer items-center gap-1 font-medium text-[#7A1C24] hover:underline"
             >
-              <Check className="h-3 w-3" />
-              <span>Đã đến</span>
-              <span className="rounded-full bg-black/10 px-1.5 py-0.2 text-[10px]">
-                {checkedInCount}
-              </span>
+              <X className="h-3.5 w-3.5" />
+              <span>Xóa bộ lọc</span>
             </button>
           </div>
-        </div>
+        )}
+      </div>
 
       {/* Bulk Action Bar (When selected) */}
       {selectedGuestIds.length > 0 && (
@@ -1185,26 +1440,37 @@ export function GuestTable({
             </button>
 
             {/* Gán số bàn hàng loạt */}
-            <form
-              onSubmit={handleApplyBulkTable}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-2.5 py-1 shadow-2xs"
-            >
-              <span className="text-[11px] font-medium text-[#6B655E]">Gán vào bàn:</span>
-              <input
-                type="text"
-                value={bulkTableValue}
-                onChange={(e) => setBulkTableValue(e.target.value)}
-                placeholder="Bàn 08..."
-                className="h-5 w-20 bg-transparent text-xs text-[#1F1D1A] outline-none placeholder:text-[#6B655E]/60"
-              />
+            {plan !== "vip" ? (
               <button
-                type="submit"
-                disabled={bulkAssigningTable || !bulkTableValue.trim()}
-                className="cursor-pointer rounded-full bg-[#7A1C24] px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-[#5E141B] disabled:opacity-40"
+                type="button"
+                onClick={() => setVipModalOpen(true)}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#B89B72]/40 bg-[#FAF8F5] px-3 py-1 text-xs font-semibold text-[#8A6D3B] hover:border-[#7A1C24] hover:text-[#7A1C24]"
               >
-                {bulkAssigningTable ? "..." : "Áp dụng"}
+                <Lock className="h-3 w-3 text-[#B89B72]" />
+                <span>Xếp bàn · Pro</span>
               </button>
-            </form>
+            ) : (
+              <form
+                onSubmit={handleApplyBulkTable}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-2.5 py-1 shadow-2xs"
+              >
+                <span className="text-[11px] font-medium text-[#6B655E]">Gán vào bàn:</span>
+                <input
+                  type="text"
+                  value={bulkTableValue}
+                  onChange={(e) => setBulkTableValue(e.target.value)}
+                  placeholder="Bàn 08..."
+                  className="h-5 w-20 bg-transparent text-xs text-[#1F1D1A] outline-none placeholder:text-[#6B655E]/60"
+                />
+                <button
+                  type="submit"
+                  disabled={bulkAssigningTable || !bulkTableValue.trim()}
+                  className="cursor-pointer rounded-full bg-[#7A1C24] px-2.5 py-0.5 text-[11px] font-semibold text-white hover:bg-[#5E141B] disabled:opacity-40"
+                >
+                  {bulkAssigningTable ? "..." : "Áp dụng"}
+                </button>
+              </form>
+            )}
             <button
               type="button"
               onClick={() => setBulkDeleteOpen(true)}
@@ -1249,24 +1515,21 @@ export function GuestTable({
             <Users className="h-7 w-7" />
           </div>
           <h3 className="mt-4 font-serif text-2xl font-normal text-[#1F1D1A]">
-            {search || filterTab !== "all"
+            {isFiltered
               ? "Không có khách mời nào khớp với bộ lọc"
               : "Chưa có khách mời nào trong danh sách"}
           </h3>
           <p className="mx-auto mt-1.5 max-w-md text-xs text-[#6B655E]">
-            {search || filterTab !== "all"
+            {isFiltered
               ? "Hãy thử tìm kiếm với từ khóa khác hoặc xóa bớt tiêu chí lọc."
               : "Thêm từng khách hoặc nhập file Excel để Inviwedd tạo thiệp kèm xưng hô riêng biệt."}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2.5">
-            {search || filterTab !== "all" ? (
+            {isFiltered ? (
               <button
                 type="button"
-                onClick={() => {
-                  setSearch("");
-                  setFilterTab("all");
-                }}
-                className="rounded-full bg-[#1F1D1A] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#151412]"
+                onClick={handleResetAllFilters}
+                className="cursor-pointer rounded-full bg-[#1F1D1A] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#151412]"
               >
                 Xem tất cả khách
               </button>
@@ -1436,7 +1699,17 @@ export function GuestTable({
                               >
                                 <span className="tabular-nums">📍 {guest.tableNumber}</span>
                               </button>
-                            ) : guest.status === "declined" ? null : (
+                            ) : guest.status === "declined" ? null : plan !== "vip" ? (
+                              <button
+                                type="button"
+                                onClick={() => setVipModalOpen(true)}
+                                title="Xếp bàn & mã QR check-in (Dành riêng cho gói Pro)"
+                                className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#B89B72]/30 bg-[#FAF8F5] px-2 py-0.5 text-[10px] font-medium text-[#8A6D3B] hover:border-[#7A1C24] hover:text-[#7A1C24]"
+                              >
+                                <Lock className="h-2.5 w-2.5 text-[#B89B72]" />
+                                <span>Xếp bàn · Pro</span>
+                              </button>
+                            ) : (
                               <button
                                 type="button"
                                 onClick={() => handleStartEditTable(guest)}
@@ -1483,7 +1756,7 @@ export function GuestTable({
                                 role="tooltip"
                                 className="absolute -top-10 right-0 z-50 flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#1F1D1A] px-3.5 py-1.5 text-xs text-[#FAF8F5] shadow-lg backdrop-blur-xs"
                               >
-                                <span className="text-[#B89B72]" aria-hidden="true">✦</span>
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#B89B72]" aria-hidden="true" />
                                 <span>Bấm để copy sẵn lời mời đúng vai vế + link Zalo</span>
                                 <button
                                   type="button"
@@ -1651,7 +1924,17 @@ export function GuestTable({
                             <span>📍 {guest.tableNumber}</span>
                             <span className="text-[10px] text-[#6B655E]">(đổi)</span>
                           </button>
-                        ) : guest.status === "declined" ? null : (
+                        ) : guest.status === "declined" ? null : plan !== "vip" ? (
+                          <button
+                            type="button"
+                            onClick={() => setVipModalOpen(true)}
+                            title="Xếp bàn & mã QR check-in (Dành riêng cho gói Pro)"
+                            className="mt-0.5 inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#B89B72]/30 bg-[#FAF8F5] px-2 py-0.5 text-[10px] font-medium text-[#8A6D3B] hover:border-[#7A1C24] hover:text-[#7A1C24]"
+                          >
+                            <Lock className="h-2.5 w-2.5 text-[#B89B72]" />
+                            <span>Xếp bàn · Pro</span>
+                          </button>
+                        ) : (
                           <button
                             type="button"
                             onClick={() => handleStartEditTable(guest)}
@@ -1720,7 +2003,7 @@ export function GuestTable({
                         role="tooltip"
                         className="absolute -top-11 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#1F1D1A] px-3.5 py-1.5 text-xs text-[#FAF8F5] shadow-lg backdrop-blur-xs"
                       >
-                        <span className="text-[#B89B72]" aria-hidden="true">✦</span>
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#B89B72]" aria-hidden="true" />
                         <span>Bấm để copy sẵn lời mời đúng vai vế + link Zalo</span>
                         <button
                           type="button"
@@ -1904,13 +2187,31 @@ export function GuestTable({
               </select>
             </label>
 
-            <Input
-              label="Số bàn tiệc"
-              value={editTableNumber}
-              onChange={(e) => setEditTableNumber(e.target.value)}
-              placeholder="Ví dụ: Bàn 08 - Khu VIP"
-              maxLength={40}
-            />
+            {plan !== "vip" ? (
+              <div>
+                <label className="block text-xs font-medium text-[#1F1D1A]">
+                  Số bàn tiệc
+                </label>
+                <div
+                  onClick={() => setVipModalOpen(true)}
+                  className="mt-1 flex h-10 w-full cursor-pointer items-center justify-between rounded-xl border border-dashed border-[#B89B72]/50 bg-[#FAF8F5] px-3 text-xs text-[#8A6D3B] hover:border-[#7A1C24]"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Lock className="h-3.5 w-3.5 text-[#B89B72]" />
+                    <span>{editTableNumber ? `📍 ${editTableNumber}` : "Chưa xếp bàn"}</span>
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#7A1C24]">Mở khóa Pro →</span>
+                </div>
+              </div>
+            ) : (
+              <Input
+                label="Số bàn tiệc"
+                value={editTableNumber}
+                onChange={(e) => setEditTableNumber(e.target.value)}
+                placeholder="Ví dụ: Bàn 08 - Khu VIP"
+                maxLength={40}
+              />
+            )}
           </div>
 
           <label className="block text-xs font-medium text-[#1F1D1A]">
@@ -2166,6 +2467,11 @@ export function GuestTable({
           </Button>
         </div>
       </Dialog>
+
+      <VipFeatureModal
+        open={vipModalOpen}
+        onClose={() => setVipModalOpen(false)}
+      />
     </div>
   );
 }

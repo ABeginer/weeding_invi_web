@@ -15,10 +15,10 @@ export interface TableOccupancyInfo {
 /**
  * Trích xuất slug định danh khách mời từ chuỗi mã QR
  * Hỗ trợ các định dạng URL:
- * - https://inviwedd.com/m/slug-khach/tra-cuu-ban
- * - https://inviwedd.com/m/slug-khach
+ * - https://inviwedd.date/m/slug-khach/tra-cuu-ban
+ * - https://inviwedd.date/m/slug-khach
  * - /m/slug-khach
- * - https://inviwedd.com/invite/slug-khach
+ * - https://inviwedd.date/invite/slug-khach
  * - Mã slug thô (chữ, số, gạch nối)
  */
 export function extractGuestSlugFromQr(qrText: string): string | null {

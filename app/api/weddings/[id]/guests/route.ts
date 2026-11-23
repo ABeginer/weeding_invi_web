@@ -142,7 +142,11 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
     insertData.custom_pronoun_guest = text(body.customPronounGuest, 60);
   }
   if (body?.tableNumber !== undefined) {
-    insertData.table_number = text(body.tableNumber, 40);
+    const rawTable = text(body.tableNumber, 40);
+    if (rawTable !== null && wedding.plan !== "vip") {
+      return fail("Tính năng xếp bàn và thẻ check-in chỉ khả dụng trên gói VIP.", 403);
+    }
+    insertData.table_number = rawTable;
   }
   if (body?.dietaryPreference !== undefined) {
     const value = body.dietaryPreference;

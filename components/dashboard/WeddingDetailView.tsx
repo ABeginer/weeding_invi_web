@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,13 +11,13 @@ import {
   CalendarHeart,
   Check,
   Copy,
+  Crown,
   ExternalLink,
   FileEdit,
   Image as ImageIcon,
   MailOpen,
   MessageSquareHeart,
   Smartphone,
-  Sparkles,
   ShieldCheck,
   Tv,
   Users,
@@ -39,6 +40,7 @@ import { DesignerPreviewEditor } from "./DesignerPreviewEditor";
 import { normalizeWeddingContent, toTemplateData } from "@/lib/wedding-data";
 import { weddingContentPatchSchema } from "@/lib/wedding-types";
 import { TemplatePreviewRenderer } from "@/templates/TemplatePreviewRenderer";
+import { MobilePreviewFrame } from "@/components/MobilePreviewFrame";
 import { PhoneFrame } from "@/components/landing/phone-frame";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -47,15 +49,26 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { EventsManager } from "./EventsManager";
 import { getTemplateSections } from "@/config/template-sections";
-import { GuestTable } from "./GuestTable";
+import { GuestTable, type QuickFilter } from "./GuestTable";
 import { PhotosManager } from "./PhotosManager";
 import { StatCards } from "./StatCards";
 import { WeddingInfoEditor } from "./WeddingInfoEditor";
 import { WishList } from "./WishList";
-import { PhotoModerator } from "./PhotoModerator";
-import { AssistantPinManager } from "./AssistantPinManager";
 
-type DetailTab =
+const PhotoModerator = dynamic(
+  () => import("./PhotoModerator").then((m) => m.PhotoModerator),
+  { ssr: false },
+);
+const AssistantPinManager = dynamic(
+  () => import("./AssistantPinManager").then((m) => m.AssistantPinManager),
+  { ssr: false },
+);
+const UpgradeModal = dynamic(
+  () => import("./UpgradeModal").then((m) => m.UpgradeModal),
+  { ssr: false },
+);
+
+export type DetailTab =
   | "info"
   | "events"
   | "photos"
@@ -70,8 +83,8 @@ interface WeddingDetailViewProps {
   weddingId: string;
 }
 
-const SIDEBAR_TABS: {
-  id: Exclude<DetailTab, "preview">;
+const CORE_SIDEBAR_TABS: {
+  id: Exclude<DetailTab, "preview" | "moderation" | "assistant">;
   label: string;
   Icon: typeof Users;
   badge?: string;
@@ -79,12 +92,22 @@ const SIDEBAR_TABS: {
   { id: "info", label: "Thông tin cưới", Icon: FileEdit },
   { id: "events", label: "Lễ & địa điểm", Icon: CalendarHeart },
   { id: "photos", label: "Ảnh cưới", Icon: ImageIcon },
-  { id: "moderation", label: "Duyệt ảnh LED", Icon: Sparkles },
-  { id: "assistant", label: "Trợ lý & Check-in", Icon: ShieldCheck, badge: "VIP" },
   { id: "guests", label: "Khách mời", Icon: Users },
   { id: "wishes", label: "Lời chúc", Icon: MessageSquareHeart },
   { id: "stats", label: "Thống kê", Icon: BarChart3 },
 ];
+
+const VIP_SIDEBAR_TABS: {
+  id: "moderation" | "assistant";
+  label: string;
+  Icon: typeof Users;
+  badge: string;
+}[] = [
+  { id: "moderation", label: "Duyệt ảnh LED", Icon: Tv, badge: "Pro" },
+  { id: "assistant", label: "Trợ lý & Check-in", Icon: ShieldCheck, badge: "Pro" },
+];
+
+const SIDEBAR_TABS = [...CORE_SIDEBAR_TABS, ...VIP_SIDEBAR_TABS];
 
 export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   const router = useRouter();
@@ -94,12 +117,14 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   const [events, setEvents] = React.useState<WeddingEvent[]>([]);
   const [photos, setPhotos] = React.useState<WeddingPhoto[]>([]);
 
-  const [draftTemplateId, setDraftTemplateId] = React.useState("basic-1");
+  const [draftTemplateId, setDraftTemplateId] = React.useState("vuon-o-liu");
   const [draftContent, setDraftContent] = React.useState<WeddingContent | null>(null);
 
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState<DetailTab>("info");
+  const [guestFilter, setGuestFilter] = React.useState<QuickFilter>("all");
+  const [guestEventId, setGuestEventId] = React.useState<string>("all");
   const [copiedPublic, setCopiedPublic] = React.useState(false);
 
   const [savingInfo, setSavingInfo] = React.useState(false);
@@ -111,6 +136,9 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   const [statsRefreshSignal, setStatsRefreshSignal] = React.useState(0);
   const [editingElement, setEditingElement] = React.useState<DesignerElement | null>(null);
   const phoneScrollRef = React.useRef<HTMLDivElement | null>(null);
+
+  const [upgradeModalOpen, setUpgradeModalOpen] = React.useState(false);
+  const [upgradeTargetPlan, setUpgradeTargetPlan] = React.useState<"pro" | "vip">("pro");
 
   const loadWedding = React.useCallback(async () => {
     setLoading(true);
@@ -141,6 +169,19 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   React.useEffect(() => {
     loadWedding();
   }, [loadWedding]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const search = window.location.search;
+    if (search.includes("payment=success")) {
+      showToast("Nâng cấp gói thành công!", "success");
+      loadWedding();
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (search.includes("payment=cancelled")) {
+      showToast("Đã hủy giao dịch thanh toán.", "info");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [loadWedding, showToast]);
 
   const isDirty = React.useMemo(() => {
     if (!wedding || !draftContent) return false;
@@ -194,12 +235,12 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       setWedding((prev) =>
         prev
           ? {
-              ...prev,
-              ...updated,
-              content: normalized,
-              events,
-              photos,
-            }
+            ...prev,
+            ...updated,
+            content: normalized,
+            events,
+            photos,
+          }
           : null,
       );
       setDraftTemplateId(updated.templateId);
@@ -238,17 +279,17 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       setWedding((prev) =>
         prev
           ? {
-              ...prev,
-              designerTemplateId: result.wedding.designerTemplateId,
-              designerTemplateVersion: result.wedding.designerTemplateVersion,
-              designerTemplate: result.designerTemplate,
-            }
+            ...prev,
+            designerTemplateId: result.wedding.designerTemplateId,
+            designerTemplateVersion: result.wedding.designerTemplateVersion,
+            designerTemplate: result.designerTemplate,
+          }
           : prev,
       );
       // Tải lại canvas mới nhất để preview + field ảnh cập nhật ngay.
       void getWedding(result.wedding.id)
         .then((next) => setWedding(next))
-        .catch(() => {});
+        .catch(() => { });
     },
     [],
   );
@@ -260,6 +301,22 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       return;
     }
     setActiveTab(nextTab);
+  };
+
+  const handleNavigateFromStats = (tab: DetailTab, filter?: QuickFilter, eventId?: string) => {
+    if (filter) {
+      setGuestFilter(filter);
+    }
+    if (eventId) {
+      setGuestEventId(eventId);
+    } else if (tab === "guests") {
+      setGuestEventId("all");
+    }
+    setActiveTab(tab);
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      const target = document.getElementById("dashboard-tab-content");
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const handleEventsChange = (nextEvents: WeddingEvent[]) => {
@@ -278,28 +335,28 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       setWedding((prev) =>
         prev
           ? {
-              ...prev,
-              photos: nextPhotos,
-              content: {
-                ...prev.content,
-                heroPhotoId: normalizedServer.heroPhotoId,
-                groomPhotoId: normalizedServer.groomPhotoId,
-                bridePhotoId: normalizedServer.bridePhotoId,
-                designerFields: normalizedServer.designerFields,
-              },
-            }
+            ...prev,
+            photos: nextPhotos,
+            content: {
+              ...prev.content,
+              heroPhotoId: normalizedServer.heroPhotoId,
+              groomPhotoId: normalizedServer.groomPhotoId,
+              bridePhotoId: normalizedServer.bridePhotoId,
+              designerFields: normalizedServer.designerFields,
+            },
+          }
           : null,
       );
       // Đồng bộ slot ảnh mà không làm mất các thay đổi chữ chưa lưu
       setDraftContent((prev) =>
         prev
           ? {
-              ...prev,
-              heroPhotoId: normalizedServer.heroPhotoId,
-              groomPhotoId: normalizedServer.groomPhotoId,
-              bridePhotoId: normalizedServer.bridePhotoId,
-              designerFields: normalizedServer.designerFields,
-            }
+            ...prev,
+            heroPhotoId: normalizedServer.heroPhotoId,
+            groomPhotoId: normalizedServer.groomPhotoId,
+            bridePhotoId: normalizedServer.bridePhotoId,
+            designerFields: normalizedServer.designerFields,
+          }
           : normalizedServer,
       );
     } else {
@@ -426,16 +483,16 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             </button>
           )}
           <button
-          type="button"
-          onClick={() => {
-            setPreviewOpened((prev) => !prev);
-            phoneScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
-          }}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1 text-xs font-medium text-fg transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>{previewOpened ? "Đóng bì thư" : "Mở xem nội dung"}</span>
-        </button>
+            type="button"
+            onClick={() => {
+              setPreviewOpened((prev) => !prev);
+              phoneScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+            }}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1 text-xs font-medium text-fg transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{previewOpened ? "Đóng bì thư" : "Mở xem nội dung"}</span>
+          </button>
         </div>
       </div>
 
@@ -458,42 +515,43 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               ["dresscode", "Dress code"],
               ["rsvp", "Xác nhận"],
               ["music", "Nhạc"],
+              ["story", "Chuyện chúng mình"],
             ]
               .filter(([key]) =>
                 getTemplateSections(draftTemplateId, wedding.plan).sections.includes(key),
               )
               .map(([key, label]) => {
-              const hidden = (draftContent.hiddenSections ?? []).includes(key);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() =>
-                    setDraftContent((previous) => {
-                      if (!previous) return previous;
-                      const current = new Set(previous.hiddenSections ?? []);
-                      if (current.has(key)) current.delete(key);
-                      else current.add(key);
-                      return { ...previous, hiddenSections: Array.from(current) };
-                    })
-                  }
-                  className={cn(
-                    "rounded-full border px-2 py-1 text-[10px] font-medium",
-                    hidden
-                      ? "border-border bg-bg text-fg-muted line-through"
-                      : "border-accent/40 bg-accent-soft text-accent-text",
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
+                const hidden = (draftContent.hiddenSections ?? []).includes(key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      setDraftContent((previous) => {
+                        if (!previous) return previous;
+                        const current = new Set(previous.hiddenSections ?? []);
+                        if (current.has(key)) current.delete(key);
+                        else current.add(key);
+                        return { ...previous, hiddenSections: Array.from(current) };
+                      })
+                    }
+                    className={cn(
+                      "rounded-full border px-2 py-1 text-[10px] font-medium",
+                      hidden
+                        ? "border-border bg-bg text-fg-muted line-through"
+                        : "border-accent/40 bg-accent-soft text-accent-text",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
           </div>
         </details>
         <PhoneFrame
-          scrollRef={phoneScrollRef}
+          scrollRef={wedding.designerTemplate ? phoneScrollRef : undefined}
           enableFloat={false}
-          lockedScroll={wedding.designerTemplate ? false : !previewOpened}
+          lockedScroll={wedding.designerTemplate ? false : true}
           desktopOffsetPx={164}
           className="lg:w-full lg:max-w-[356px]"
         >
@@ -515,15 +573,15 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                   setDraftContent((previous) =>
                     previous
                       ? {
-                          ...previous,
-                          designerOverrides: {
-                            ...(previous.designerOverrides ?? {}),
-                            [id]: {
-                              ...(previous.designerOverrides?.[id] ?? {}),
-                              ...patch,
-                            },
+                        ...previous,
+                        designerOverrides: {
+                          ...(previous.designerOverrides ?? {}),
+                          [id]: {
+                            ...(previous.designerOverrides?.[id] ?? {}),
+                            ...patch,
                           },
-                        }
+                        },
+                      }
                       : previous,
                   );
                 }}
@@ -537,17 +595,22 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               />
             )
           ) : (
-            <TemplatePreviewRenderer
-              key={draftTemplateId}
-              templateId={draftTemplateId}
-              data={previewData}
-              mode="preview"
-              contained
-              viewport="phone"
-              isOpened={previewOpened}
-              onOpenedChange={setPreviewOpened}
-              externalMusicControl
-            />
+            <MobilePreviewFrame
+              scrollRef={phoneScrollRef}
+              lockedScroll={!previewOpened}
+            >
+              <TemplatePreviewRenderer
+                key={draftTemplateId}
+                templateId={draftTemplateId}
+                data={previewData}
+                mode="preview"
+                contained
+                viewport="phone"
+                isOpened={previewOpened}
+                onOpenedChange={setPreviewOpened}
+                externalMusicControl
+              />
+            </MobilePreviewFrame>
           )}
         </PhoneFrame>
       </div>
@@ -575,13 +638,26 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                 "rounded-full border px-2.5 py-0.5 text-xs font-medium",
                 wedding.plan === "free" && "border-sage bg-surface text-text",
                 wedding.plan === "pro" &&
-                  "border-accent bg-accent text-accent-fg font-semibold",
+                "border-accent bg-accent text-accent-fg font-semibold",
                 wedding.plan === "vip" &&
-                  "border-vip-border bg-vip-bg text-vip-fg font-semibold",
+                "border-vip-border bg-vip-bg text-vip-fg font-semibold",
               )}
             >
               Gói {getPlanLabel(wedding.plan)}
             </span>
+            {wedding.plan !== "vip" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setUpgradeTargetPlan(wedding.plan === "free" ? "pro" : "vip");
+                  setUpgradeModalOpen(true);
+                }}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#B89B72]/50 bg-[#F4EFEA] px-3 py-0.5 text-xs font-semibold text-[#7A1C24] transition hover:bg-[#FAF8F5]"
+              >
+                <Crown className="h-3.5 w-3.5 text-[#B89B72]" />
+                <span>Nâng cấp {wedding.plan === "free" ? "Standard / Pro" : "lên Pro"}</span>
+              </button>
+            )}
             {isDirty && (
               <span className="rounded-full border border-accent/50 bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-text">
                 Chưa lưu thay đổi
@@ -598,9 +674,17 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
 
         <div className="flex flex-wrap items-center gap-2">
           {wedding.plan === "free" ? (
-            <span className="inline-flex h-9 items-center rounded-lg border border-border bg-surface px-3 text-xs text-fg-muted">
-              Link chung chỉ có ở gói Pro
-            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setUpgradeTargetPlan("pro");
+                setUpgradeModalOpen(true);
+              }}
+              className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#B89B72]/50 bg-[#F4EFEA] px-3 text-xs font-medium text-[#7A1C24] transition hover:bg-[#FAF8F5]"
+            >
+              <Crown className="h-3.5 w-3.5 text-[#B89B72]" />
+              <span>Link chung chỉ có ở gói Standard — Nâng cấp ngay</span>
+            </button>
           ) : (
             <>
               <Button variant="outline" size="sm" onClick={handleCopyPublic}>
@@ -692,7 +776,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             aria-label="Mục quản lý thiệp"
             className="sticky top-16 space-y-1.5 rounded-2xl border border-border bg-surface p-2"
           >
-            {SIDEBAR_TABS.map(({ id, label, Icon, badge }) => {
+            {CORE_SIDEBAR_TABS.map(({ id, label, Icon, badge }) => {
               const active = activeTab === id;
               return (
                 <button
@@ -737,10 +821,54 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                 </button>
               );
             })}
+
+            {/* Subtle Divider: Tính năng sảnh tiệc · Pro */}
+            <div className="pt-3 pb-1 px-3">
+              <div className="border-t border-border pt-2 text-[10px] font-semibold uppercase tracking-wider text-[#B89B72]">
+                Tính năng sảnh tiệc · Pro
+              </div>
+            </div>
+
+            {VIP_SIDEBAR_TABS.map(({ id, label, Icon, badge }) => {
+              const active = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => handleSelectTab(id)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors",
+                    active
+                      ? "bg-accent text-accent-fg font-semibold"
+                      : "text-fg-muted hover:bg-surface-muted hover:text-fg",
+                  )}
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>{label}</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {badge && (
+                      <span
+                        className={cn(
+                          "rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide",
+                          active
+                            ? "bg-white/20 text-white"
+                            : "bg-[#B89B72]/20 text-[#8A6D3B]",
+                        )}
+                      >
+                        {badge}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </nav>
         </aside>
 
-        <section className="min-w-0">
+        <section id="dashboard-tab-content" className="min-w-0">
           {activeTab === "info" && (
             <div className="space-y-6">
               <WeddingInfoEditor
@@ -844,6 +972,8 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                 void handleSaveInfo(next);
               }}
               onGuestsChanged={() => setStatsRefreshSignal((n) => n + 1)}
+              initialFilter={guestFilter}
+              initialEventId={guestEventId}
             />
           )}
 
@@ -873,7 +1003,11 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
           )}
 
           {activeTab === "stats" && (
-            <StatCards weddingId={wedding.id} refreshSignal={statsRefreshSignal} />
+            <StatCards
+              weddingId={wedding.id}
+              refreshSignal={statsRefreshSignal}
+              onNavigate={handleNavigateFromStats}
+            />
           )}
 
           {activeTab === "preview" && (
@@ -943,6 +1077,20 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
           return ok;
         }}
       />
+
+      {wedding && (
+        <UpgradeModal
+          open={upgradeModalOpen}
+          currentPlan={wedding.plan}
+          weddingId={wedding.id}
+          initialTargetPlan={upgradeTargetPlan}
+          onClose={() => setUpgradeModalOpen(false)}
+          onSuccess={() => {
+            showToast("Nâng cấp gói thành công!", "success");
+            loadWedding();
+          }}
+        />
+      )}
     </div>
   );
 }

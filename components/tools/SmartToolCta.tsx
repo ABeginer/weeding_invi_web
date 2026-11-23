@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SmartToolCtaProps {
@@ -41,7 +41,7 @@ export function SmartToolCta({
 
       <div className="relative z-10">
         <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.16em] uppercase text-[#B89B72]">
-          <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#B89B72]" aria-hidden="true" />
           <span>{eyebrow}</span>
         </div>
 

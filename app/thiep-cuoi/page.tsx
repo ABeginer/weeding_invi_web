@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { LandingNavbar } from "@/components/landing/navbar";
 import { LiveTemplateCollection } from "@/components/templates/live-template-collection";
 import type { CollectionTemplate } from "@/components/templates/types";
 import { SITE_LINKS, SITE_NAME, toAbsoluteSiteUrl } from "@/config/site";
@@ -21,21 +24,14 @@ export const metadata: Metadata = {
   },
 };
 
-const CEREMONY_FILTERS: Record<string, string> = {
-  "vu-quy": "Lễ Vu Quy",
-  "thanh-hon": "Lễ Thành Hôn",
-  "bao-hy": "Lễ Báo Hỷ",
-};
-
 interface TemplateCollectionPageProps {
-  searchParams: Promise<{ ceremony?: string }>;
+  searchParams: Promise<{ category?: string; color?: string }>;
 }
 
 export default async function TemplateCollectionPage({
   searchParams,
 }: TemplateCollectionPageProps) {
-  const { ceremony } = await searchParams;
-  const initialStyle = ceremony ? CEREMONY_FILTERS[ceremony] : undefined;
+  const { category, color } = await searchParams;
   const templates: CollectionTemplate[] = getTemplateCollection().map(
     (template) => ({
       id: template.id,
@@ -43,6 +39,8 @@ export default async function TemplateCollectionPage({
       subtitle: template.subtitle,
       description: template.description,
       plan: template.plan,
+      category: template.category,
+      color: template.color,
       previewImage: template.previewImage,
       snapshotImage: template.snapshotImage,
       demoUrl: template.demoUrl,
@@ -55,20 +53,34 @@ export default async function TemplateCollectionPage({
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#1F1D1A]">
+      <LandingNavbar />
+
       {/* Editorial Page Header */}
-      <header className="border-b border-[#E8E2D9] pt-16 pb-12 text-center sm:pt-20 sm:pb-14">
+      <header className="border-b border-[#E8E2D9] pt-8 pb-12 sm:pt-10 sm:pb-14">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <p className="text-xs font-semibold tracking-[0.2em] text-[#7A1C24] uppercase">
-            BỘ SƯU TẬP 2026
-          </p>
+          <div className="text-left">
+            <Link
+              href={SITE_LINKS.home}
+              className="inline-flex items-center gap-1.5 text-sm text-[#6B655E] hover:text-[#7A1C24] transition-colors mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              <span>Quay lại trang chủ</span>
+            </Link>
+          </div>
 
-          <h1 className="mt-4 font-serif text-4xl font-normal tracking-tight text-[#1F1D1A] sm:text-5xl lg:text-6xl">
-            Chọn mẫu thiệp cho <span className="italic text-[#7A1C24]">ngày trọng đại</span>
-          </h1>
+          <div className="text-center">
+            <p className="text-xs font-semibold tracking-[0.2em] text-[#7A1C24] uppercase">
+              BỘ SƯU TẬP 2026
+            </p>
 
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#6B655E]">
-            Tối ưu hiển thị mượt mà trên điện thoại, hỗ trợ nhạc nền, bản đồ chỉ đường và tự động cá nhân hóa xưng hô theo từng vị khách.
-          </p>
+            <h1 className="mt-4 font-serif text-4xl font-normal tracking-tight text-[#1F1D1A] sm:text-5xl lg:text-6xl">
+              Chọn mẫu thiệp cho <span className="italic text-[#7A1C24]">ngày trọng đại</span>
+            </h1>
+
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#6B655E]">
+              Tối ưu hiển thị mượt mà trên điện thoại, hỗ trợ nhạc nền, bản đồ chỉ đường và tự động cá nhân hóa xưng hô theo từng vị khách.
+            </p>
+          </div>
         </div>
       </header>
 
@@ -77,7 +89,8 @@ export default async function TemplateCollectionPage({
         <LiveTemplateCollection
           initialTemplates={templates}
           variant="grid"
-          initialStyle={initialStyle}
+          initialCategory={category}
+          initialColor={color}
         />
 
         <div className="border-t border-[#E8E2D9] py-12 text-center">

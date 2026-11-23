@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/tools/JsonLd";
 import { LandingPageClient } from "@/components/landing/landing-page-client";
 import { FAQ_ITEMS } from "@/components/landing/faq";
 import { LANDING_COPY } from "@/config/landing";
@@ -19,9 +20,9 @@ export const metadata: Metadata = {
     url: resolveAppBaseUrl(),
     images: [
       {
-        url: toAbsoluteSiteUrl("/templates/basic-1/cover.webp"),
-        width: 600,
-        height: 800,
+        url: toAbsoluteSiteUrl("/images/og-cover.png"),
+        width: 1200,
+        height: 630,
         alt: LANDING_COPY.seo.ogAlt,
       },
     ],
@@ -30,12 +31,21 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: LANDING_COPY.seo.title,
     description: LANDING_COPY.seo.description,
-    images: [toAbsoluteSiteUrl("/templates/basic-1/cover.webp")],
+    images: [toAbsoluteSiteUrl("/images/og-cover.png")],
   },
 };
 
 export default function HomePage() {
   const siteUrl = resolveAppBaseUrl();
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Inviwedd",
+    url: siteUrl,
+    logo: toAbsoluteSiteUrl("/images/og-cover.png"),
+    description: LANDING_COPY.seo.description,
+  };
 
   const webApplicationSchema = {
     "@context": "https://schema.org",
@@ -69,18 +79,9 @@ export default function HomePage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(webApplicationSchema),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqPageSchema),
-        }}
-      />
+      <JsonLd data={organizationSchema} />
+      <JsonLd data={webApplicationSchema} />
+      <JsonLd data={faqPageSchema} />
       <LandingPageClient />
     </>
   );

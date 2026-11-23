@@ -9,7 +9,6 @@ import {
   Pause,
   Play,
   QrCode,
-  Sparkles,
 } from "lucide-react";
 import type { PublicWeddingData } from "@/lib/server/public-wedding";
 import type { WeddingPhoto } from "@/lib/types";
@@ -130,9 +129,10 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
     return () => clearInterval(interval);
   }, [isPlaying, photos.length, speedMs]);
 
-  // 15s polling tự động tải ảnh mới được duyệt mà không cần reload trình duyệt (offline-resilient)
+  // 15s polling tự động tải ảnh mới được duyệt mà không cần reload trình duyệt (offline-resilient, guard document.hidden)
   React.useEffect(() => {
-    const pollInterval = setInterval(async () => {
+    const pollPhotos = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const res = await fetch(`/api/public/wedding/${encodeURIComponent(slug)}`, {
           cache: "no-store",
@@ -147,9 +147,25 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
       } catch {
         // Mạng sảnh tiệc chập chờn / rớt Wi-Fi: im lặng bỏ qua, tiếp tục phát ảnh từ state / cache
       }
-    }, 15000);
+    };
 
-    return () => clearInterval(pollInterval);
+    const pollInterval = setInterval(pollPhotos, 15000);
+
+    const onVisibilityChange = () => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        void pollPhotos();
+      }
+    };
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
+    return () => {
+      clearInterval(pollInterval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+    };
   }, [slug]);
 
   // Lắng nghe thay đổi Fullscreen
@@ -207,7 +223,7 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
         </div>
 
         <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-[#FAF8F5]/70 uppercase">
-          <Sparkles className="h-4 w-4 text-[#B89B72] animate-pulse" />
+          <span className="h-2 w-2 rounded-full bg-[#B89B72] animate-pulse" />
           <span>Live Photo Wall</span>
         </div>
       </header>

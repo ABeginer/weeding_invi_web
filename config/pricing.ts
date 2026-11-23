@@ -44,24 +44,24 @@ export const PRICING_TIERS: PricingTier[] = [
   },
   {
     id: "pro",
-    name: "Gói Pro",
+    name: "Gói Standard",
     price: "159.000đ",
     originalPrice: "199.000đ",
     promoNote: "Ưu đãi giai đoạn ra mắt",
     tagline: "Trọn vẹn cho khâu mời cưới & chốt mâm tiệc.",
     badge: "PHỔ BIẾN NHẤT",
-    ctaLabel: "Chọn gói Pro",
+    ctaLabel: "Chọn gói Standard",
     highlighted: true,
   },
   {
     id: "vip",
-    name: "Gói VIP",
+    name: "Gói Pro",
     price: "399.000đ",
     originalPrice: "499.000đ",
     promoNote: "Ưu đãi giai đoạn ra mắt",
     tagline: "Đẳng cấp & tương tác trực tiếp tại nhà hàng.",
     badge: "TRẢI NGHIỆM SẢNH TIỆC",
-    ctaLabel: "Chọn gói VIP",
+    ctaLabel: "Chọn gói Pro",
   },
 ];
 
@@ -100,8 +100,8 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Ảnh trên thiệp",
     values: {
       free: { text: "5 ảnh" },
-      pro: { text: "30 ảnh HD" },
-      vip: { text: "30 ảnh HD" },
+      pro: { text: "30 ảnh album cưới HD" },
+      vip: { text: "50 ảnh album cưới HD" },
     },
   },
   {
@@ -128,7 +128,7 @@ export const PRICING_ROWS: PricingRow[] = [
     values: {
       free: { text: "6 tháng" },
       pro: { text: "1 năm" },
-      vip: { text: "Vĩnh viễn" },
+      vip: { text: "2 năm" },
     },
   },
   {

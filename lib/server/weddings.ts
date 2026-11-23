@@ -90,7 +90,8 @@ export async function getGuestVisibleEvents(
     return allEvents;
   }
 
-  return allEvents.filter((evt) => assignedIds.has(evt.id));
+  const filtered = allEvents.filter((evt) => assignedIds.has(String(evt.id)));
+  return filtered.length > 0 ? filtered : allEvents;
 }
 
 interface SuspensionRow {

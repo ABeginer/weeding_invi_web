@@ -6,7 +6,7 @@ import { useInvitationContained, useWeddingContent } from "./WeddingContentProvi
 export function Footer() {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
-  const isOliveGarden = data.templateId === "basic-1";
+  const isOliveGarden = data.templateId === "vuon-o-liu" || data.templateId === "basic-1";
   const resolvedBannerImage =
     data.photos.gallery[1]?.url ?? data.photos.heroUrl ?? null;
   const FooterTag = isContained ? "div" : "footer";

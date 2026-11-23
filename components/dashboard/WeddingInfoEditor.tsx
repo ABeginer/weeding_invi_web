@@ -426,6 +426,38 @@ export function WeddingInfoEditor({
     });
   };
 
+  const isFreePlan = wedding.plan === "free";
+
+  const storyMilestones = draftContent.story ?? [];
+
+  const updateStory = (
+    index: number,
+    patch: { year?: string; title?: string; content?: string },
+  ) => {
+    const next = storyMilestones.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, ...patch } : item,
+    );
+    onDraftChange({ ...draftContent, story: next });
+  };
+
+  const addStory = () => {
+    if (storyMilestones.length >= 8) return;
+    onDraftChange({
+      ...draftContent,
+      story: [
+        ...storyMilestones,
+        { year: "", title: "", content: "" },
+      ],
+    });
+  };
+
+  const removeStory = (index: number) => {
+    onDraftChange({
+      ...draftContent,
+      story: storyMilestones.filter((_, itemIndex) => itemIndex !== index),
+    });
+  };
+
   const updateGift = (patch: Partial<WeddingContent["gift"]>) => {
     onDraftChange({
       ...draftContent,
@@ -1043,10 +1075,37 @@ export function WeddingInfoEditor({
                   "dresscode",
                   "rsvp",
                   "music",
+                  "story",
                 ] as const
               )
-                .filter((key) => allowedSections.includes(key))
+                .filter((key) => allowedSections.includes(key) || (key === "story" && isFreePlan))
                 .map((key) => {
+                  if (key === "story" && isFreePlan) {
+                    return (
+                      <label
+                        key={key}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-bg/50 px-3 py-2 text-xs text-fg opacity-75"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{SECTION_LABELS[key]}</span>
+                          <span className="rounded bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 dark:text-amber-300">
+                            Standard
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={false}
+                          disabled
+                          className="relative inline-flex h-5 w-9 shrink-0 cursor-not-allowed items-center rounded-full bg-border opacity-60"
+                          title="Tính năng dành cho gói Standard & Pro"
+                        >
+                          <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow translate-x-0.5" />
+                        </button>
+                      </label>
+                    );
+                  }
+
                   const hidden = (draftContent.hiddenSections ?? []).includes(key);
                   return (
                     <label
@@ -1326,6 +1385,110 @@ export function WeddingInfoEditor({
               </div>
             ))}
           </div>
+        </Card>
+
+        {/* Chuyện chúng mình (Love Story) - Standard & Pro only */}
+        <Card className="space-y-4 p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-fg">Chuyện chúng mình (Love Story)</h3>
+                {isFreePlan ? (
+                  <span className="rounded bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 dark:text-amber-300">
+                    Gói Standard
+                  </span>
+                ) : (
+                  <span className="rounded bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:text-emerald-300">
+                    Đã mở khóa
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-fg-muted">
+                Kể lại hành trình tình yêu và các mốc kỷ niệm đáng nhớ của hai bạn.
+              </p>
+            </div>
+            {!isFreePlan && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addStory}
+                disabled={storyMilestones.length >= 8}
+              >
+                + Thêm kỷ niệm
+              </Button>
+            )}
+          </div>
+
+          {isFreePlan ? (
+            <div className="rounded-xl border border-dashed border-border bg-bg/50 p-4 text-center">
+              <Lock className="mx-auto h-6 w-6 text-fg-muted/60" />
+              <p className="mt-2 text-xs font-medium text-fg">
+                Tính năng Chuyện chúng mình dành riêng cho gói Standard và Pro
+              </p>
+              <p className="mt-1 text-[11px] text-fg-muted">
+                Nâng cấp gói để thêm mốc kỷ niệm, chia sẻ câu chuyện tình yêu mộc mạc và chân thành trên thiệp cưới.
+              </p>
+            </div>
+          ) : storyMilestones.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-bg/50 p-4 text-center">
+              <p className="text-xs text-fg-muted">
+                Chưa có mốc kỷ niệm nào. Bấm &quot;+ Thêm kỷ niệm&quot; để tạo câu chuyện riêng hoặc thiệp sẽ hiển thị mốc mẫu mặc định.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {storyMilestones.map((item, index) => (
+                <div
+                  key={index}
+                  className="space-y-2 rounded-xl border border-border bg-bg p-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={item.year ?? ""}
+                      onChange={(event) =>
+                        updateStory(index, { year: event.target.value })
+                      }
+                      placeholder="Năm / Mốc (vd: 2020)"
+                      maxLength={30}
+                      className="h-8 w-32 rounded-lg border border-border bg-surface px-2 text-xs text-fg font-medium"
+                      aria-label={`Mốc thời gian ${index + 1}`}
+                    />
+                    <Input
+                      value={item.title}
+                      onChange={(event) =>
+                        updateStory(index, { title: event.target.value })
+                      }
+                      maxLength={120}
+                      placeholder="Tiêu đề (vd: Lần đầu gặp gỡ)"
+                      className="h-8 flex-1 text-xs"
+                      aria-label={`Tiêu đề kỷ niệm ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeStory(index)}
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border text-fg-muted hover:text-fg hover:bg-surface transition-colors"
+                      aria-label={`Xóa mốc ${index + 1}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <Textarea
+                    value={item.content}
+                    onChange={(event) =>
+                      updateStory(index, { content: event.target.value })
+                    }
+                    maxLength={1000}
+                    placeholder="Nội dung kỷ niệm... (Một buổi chiều thu dịu dàng ở góc quán quen...)"
+                    rows={2}
+                    className="text-xs"
+                    aria-label={`Nội dung kỷ niệm ${index + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Quà mừng & chuyển khoản */}

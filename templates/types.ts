@@ -8,41 +8,51 @@ import type {
 
 export type BaseTemplateId =
   | "basic-1"
-  | "basic-2"
-  | "basic-3"
-  | "pro-1"
+  | "vuon-o-liu"
+  | "bach-lan-lua-nga"
+  | "rang-hong-hoang-hon"
   | "vip-1"
   | "ritual-an-hoi"
   | "ritual-gia-tien"
-  | "ritual-vu-quy"
-  | "anh-dao-hong"
-  | "bach-su-do"
-  | "bach-su-nau"
-  | "chibi-red"
-  | "hoa-moc-nau"
-  | "hoang-kim-do"
-  | "long-phung-v2-do"
-  | "mai-lan-xanh"
-  | "ren-theu-trang"
+  | "phuong-loan-gam-do"
+  | "thanh-mai-ngoc-lan"
   | "song-hy-v2-do"
-  | "song-phung-xanh"
-  | "to-duyen-do-dam"
-  | "to-duyen-hong"
-  | "vuon-xuan-do"
-  | "vuon-xuan-xanh"
-  | "vuonkinh-xanh-nhat"
+  | "song-phung-bich-dao"
+  | "to-hong-lua-tham"
   | "vuonkinh-xanh"
-  | "hoa-anh-dao-v2"
-  | "do-may-man"
-  | "xanh-tu-do"
-  | "do-mix-xanh"
+  | "anh-dao-phan-tuyet"
+  | "yen-chi-mau-don"
   | "nau-toi-gian"
   | "do-truyen-thong"
   | "long-phung"
+  | "chu-sa-long-phung"
+  | "bich-ngoc-hoang-trieu"
+  | "long-phung-ep4"
+  | "bach-nguyet"
+  | "lam-hoa-vien"
+  | "bach-tra-suong-mai"
+  | "song-hac-kim-van"
+  | "hac-vu-luu-ly"
+  | "diem-phan-kim-to"
+  | "phi-thuy-dong-duong"
+  | "ho-phach-mat-thu"
+  | "lam-tu-ngoc-suong"
+  | "tu-dang-da-khuc"
+  | "huyen-kim-long-phung"
+  | "hac-kim-nhat-thuc"
+  | "da-yen-pha-le"
+  | "mac-lam-kim-tuyen"
   | "do-ruou-vang"
   | "minimal-red"
-  | "minimal-brown"
-  | "flowery-white";
+  | "moc-huong-nang-thu"
+  | "flowery-white"
+  | "ban-sac-huong-cang"
+  | "cuu-long-hy-yen"
+  | "da-anh-huong-cang"
+  | "hao-quang-huong-cang"
+  | "huong-cang-dem-neon"
+  | "nhat-ky-mua-yeu"
+  | "mot-thoi-de-nho";
 
 export type TemplateId =
   | BaseTemplateId
@@ -51,6 +61,15 @@ export type TemplateId =
   | `${BaseTemplateId}-v4`;
 
 export type TemplateRenderMode = TemplateMode;
+
+export type TemplateCategory = "traditional" | "romantic" | "minimal" | "hongkong";
+export type TemplateColorGroup =
+  | "red"
+  | "pink"
+  | "green"
+  | "blue-purple"
+  | "neutral"
+  | "black-gold";
 
 export interface WeddingTemplateMeta {
   id: TemplateId;
@@ -67,6 +86,8 @@ export interface WeddingTemplateMeta {
   isPlaceholder?: boolean;
   accentSwatch: string;
   tone: "bright" | "neutral" | "dark";
+  category?: TemplateCategory;
+  color?: TemplateColorGroup;
   ritualKey?: "an-hoi" | "gia-tien" | "vu-quy";
   ritualLabel?: string;
   styleTags?: string[];

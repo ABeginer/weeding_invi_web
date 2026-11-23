@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Eye, Sparkles } from "lucide-react";
+import { Eye } from "lucide-react";
 import { PLAN_LABELS } from "@/config/template-features";
 import { cn } from "@/lib/utils";
 import {
@@ -185,10 +185,6 @@ export function DesignerTemplateCard({ template }: DesignerTemplateCardProps) {
               {template.ritual ? ` · ${template.ritual}` : ""}
             </p>
           </div>
-          <Sparkles
-            className="h-3.5 w-3.5 shrink-0 text-accent-text"
-            aria-hidden="true"
-          />
         </div>
       </div>
 

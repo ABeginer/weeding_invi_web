@@ -12,7 +12,7 @@ export function InvitationIntro({ guestName }: InvitationIntroProps) {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const isDesktopLayout = useInvitationDesktopLayout();
-  const isOliveGarden = data.templateId === "basic-1";
+  const isOliveGarden = data.templateId === "vuon-o-liu" || data.templateId === "basic-1";
   const displayName =
     guestName && guestName.trim().length > 0
       ? guestName.trim()

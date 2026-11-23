@@ -34,7 +34,7 @@ export function Hero({ guestName }: HeroProps) {
 
   const reducedMotion = mounted && Boolean(prefersReducedMotion);
 
-  if (data.templateId === "basic-1") {
+  if (data.templateId === "vuon-o-liu" || data.templateId === "basic-1") {
     return <OliveGardenHero guestName={guestName} />;
   }
 

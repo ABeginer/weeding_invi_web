@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Disc3, Music, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInvitationExperience } from "@/components/invitation/InvitationExperienceProvider";
 import type { TemplateTone } from "./TemplateOverlays";
 
 interface LiveMusicFloatingButtonProps {
@@ -18,6 +19,14 @@ export function LiveMusicFloatingButton({
   visible,
   tone = "obsidian",
 }: LiveMusicFloatingButtonProps) {
+  const exp = useInvitationExperience();
+  // Nếu đã nằm trong InvitationExperienceProvider, Provider quản lý tập trung
+  // 1 thẻ <audio> duy nhất và FloatingExperienceControls (gồm cả nút Nhạc + nút Auto-Scroll),
+  // tránh tuyệt đối việc xuất hiện 2 thẻ <audio> hoặc 2 nút nhạc nổi trùng lặp.
+  if (exp) {
+    return null;
+  }
+
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [available, setAvailable] = React.useState(Boolean(src));
   const [playing, setPlaying] = React.useState(false);

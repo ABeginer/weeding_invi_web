@@ -48,6 +48,13 @@ export type WeddingTimelineItem = {
   label: string;
 };
 
+export type WeddingStoryMilestone = {
+  id?: string;
+  year?: string;
+  title: string;
+  content: string;
+};
+
 export type WeddingContent = {
   couple: {
     groomName: string;
@@ -79,7 +86,19 @@ export type WeddingContent = {
   hideCouplePhotos?: boolean;
   hostFirst?: "groom" | "bride";
   timeline?: WeddingTimelineItem[];
-  musicPreset?: "default" | "calm" | "beginning" | "custom";
+  story?: WeddingStoryMilestone[];
+  musicPreset?:
+  | "default"
+  | "priority1"
+  | "prio2"
+  | "classic"
+  | "garden"
+  | "cheerful"
+  | "moonlight"
+  | "calm"
+  | "beginning"
+  | "sweet"
+  | "custom";
   musicUrl?: string;
   musicTitle?: string;
   mealMode?: "meat" | "veg" | "both";
@@ -155,6 +174,7 @@ export type TemplateData = {
   hideCouplePhotos?: boolean;
   hostFirst?: "groom" | "bride";
   timeline: WeddingTimelineItem[];
+  story?: WeddingStoryMilestone[];
   mealMode: "meat" | "veg" | "both";
   music: {
     src: string;
@@ -314,7 +334,18 @@ const designerOverrideSchema = z.object({
   color: z.string().max(40).optional(),
   fontSize: z.number().min(8).max(120).optional(),
   radius: z.number().min(0).max(100).optional(),
-  imageUrl: z.string().max(5_000_000).optional(),
+  imageUrl: z
+    .string()
+    .max(5_000_000)
+    .refine(
+      (val) =>
+        !val ||
+        val.startsWith("/media/") ||
+        isValidHttpsUrl(val) ||
+        val.startsWith("data:image/"),
+      "Định dạng URL ảnh không hợp lệ.",
+    )
+    .optional(),
   imageScale: z.number().min(0.5).max(4).optional(),
   imageX: z.number().min(-100).max(100).optional(),
   imageY: z.number().min(-100).max(100).optional(),
@@ -378,8 +409,33 @@ export const weddingContentInputSchema = z.object({
   sectionOrder: z.array(z.string().max(40)).max(20).optional(),
   hideCouplePhotos: z.boolean().optional(),
   hostFirst: z.enum(["groom", "bride"]).optional(),
-  musicPreset: z.enum(["default", "calm", "beginning", "custom"]).optional(),
-  musicUrl: z.string().trim().max(500).optional(),
+  musicPreset: z
+    .enum([
+      "default",
+      "priority1",
+      "prio2",
+      "classic",
+      "garden",
+      "cheerful",
+      "moonlight",
+      "calm",
+      "beginning",
+      "sweet",
+      "custom",
+    ])
+    .optional(),
+  musicUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (val) =>
+        !val ||
+        val.startsWith("/media/weddings/") ||
+        isValidHttpsUrl(val),
+      "Link nhạc phải bắt đầu bằng https:// hoặc file tải lên hệ thống.",
+    )
+    .optional(),
   musicTitle: z.string().trim().max(120).optional(),
   mealMode: z.enum(["meat", "veg", "both"]).optional(),
   photoApprovalMode: z.enum(["manual", "auto"]).optional(),
@@ -399,6 +455,17 @@ export const weddingContentInputSchema = z.object({
       }),
     )
     .max(6)
+    .optional(),
+  story: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        year: z.string().trim().max(30).optional(),
+        title: z.string().trim().max(120),
+        content: z.string().trim().max(1000),
+      }),
+    )
+    .max(10)
     .optional(),
 });
 

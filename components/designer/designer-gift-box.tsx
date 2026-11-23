@@ -68,7 +68,7 @@ export function DesignerGiftBox({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/templates/hoa-anh-dao-v2/gift-box.webp"
+            src="/templates/anh-dao-phan-tuyet/gift-normal.webp"
             alt="Hộp quà mừng"
             className="h-32 w-32 object-contain drop-shadow-[0_12px_18px_rgba(155,63,80,0.18)]"
           />

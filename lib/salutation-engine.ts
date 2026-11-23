@@ -72,6 +72,25 @@ function baseSalutation(group: RelationshipGroup): Omit<Salutation, "guestLabel"
   }
 }
 
+function inferGuestPronoun(group: RelationshipGroup, guestName: string, fallback: string): string {
+  if (group === "elder") {
+    const match = guestName.match(/^(chú|cô|bác|dì|dượng|cậu|mợ|thím|ông|bà)(?:\s|$)/i);
+    if (match) {
+      const title = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+      return `${title} cùng Gia đình`;
+    }
+    return fallback;
+  }
+  if (group === "peer_formal") {
+    const match = guestName.match(/^(anh|chị)(?:\s|$)/i);
+    if (match) {
+      return match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+    }
+    return fallback;
+  }
+  return fallback;
+}
+
 /**
  * Sinh câu mời, cách xưng hô và lời nhắn Zalo theo vai vế văn hóa Việt.
  * Không phụ thuộc DB để dùng được ở cả server và client.
@@ -80,7 +99,9 @@ export function buildSalutation(input: SalutationInput): Salutation {
   const group = input.relationshipGroup ?? DEFAULT_GROUP;
   const base = baseSalutation(group);
   const guestName = input.guestName.trim();
-  const guestPronoun = input.customPronounGuest?.trim() || base.guestPronoun;
+  const guestPronoun =
+    input.customPronounGuest?.trim() ||
+    inferGuestPronoun(group, guestName, base.guestPronoun);
   const hostPronoun = input.customPronounHost?.trim() || base.hostPronoun;
 
   const suffixForGroup: Record<RelationshipGroup, string> = {

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles } from "lucide-react";
 import type { ThemeConfig } from "./theme-configs";
 
 interface ThemedDressCodeProps {
@@ -27,7 +26,11 @@ export function ThemedDressCode({ theme }: ThemedDressCodeProps) {
           color: theme.badgeTextColor,
         }}
       >
-        <Sparkles className="h-3.5 w-3.5" />
+        <span
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ backgroundColor: theme.badgeTextColor }}
+          aria-hidden="true"
+        />
         <span>Dress Code Gợi Ý</span>
       </div>
 
@@ -53,13 +56,16 @@ export function ThemedDressCode({ theme }: ThemedDressCodeProps) {
               className="h-10 w-10 rounded-full border-2 border-white/60 shadow-md ring-2 ring-black/10 transition-transform duration-200 hover:scale-110 sm:h-12 sm:w-12"
               style={{ backgroundColor: swatch.color }}
               title={swatch.name}
+              aria-label={swatch.name || `Màu trang phục ${idx + 1}`}
             />
-            <span
-              style={{ color: theme.textColor }}
-              className="text-[11px] font-medium tracking-tight sm:text-xs"
-            >
-              {swatch.name}
-            </span>
+            {swatch.name && !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(swatch.name) && (
+              <span
+                style={{ color: theme.textColor }}
+                className="text-[11px] font-medium tracking-tight sm:text-xs"
+              >
+                {swatch.name}
+              </span>
+            )}
           </div>
         ))}
       </div>

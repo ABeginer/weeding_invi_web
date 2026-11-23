@@ -10,23 +10,22 @@ import {
   MapPin,
   Music,
   QrCode,
-  Sparkles,
-  Star,
   type LucideIcon,
 } from "lucide-react";
 import type { DesignerCover, DesignerIconName } from "@/components/ops/designer-types";
+import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn } from "@/lib/utils";
 
 const COVER_ICONS: Record<DesignerIconName, LucideIcon> = {
   Heart,
-  Star,
+  Star: Flower2,
   MapPin,
   CalendarDays,
   Music,
   QrCode,
   Camera,
   Flower2,
-  Sparkles,
+  Sparkles: Flower2,
   Mail,
 };
 
@@ -71,6 +70,7 @@ export function DesignerCover({ cover, coupleLabel }: DesignerCoverProps) {
 
   const openCover = React.useCallback(() => {
     if (hideTimerRef.current) return;
+    playOpenCardSound();
     setProgress(1);
     hideTimerRef.current = window.setTimeout(() => setHidden(true), 950);
   }, []);

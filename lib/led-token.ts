@@ -1,15 +1,25 @@
+import { safeEqual } from "./safe-equal.ts";
+
 /**
  * Sinh và kiểm tra mã token bảo mật cho màn hình LED (không cần migration DB)
  * Sử dụng HMAC-SHA256 chuẩn Web Crypto API (100% Edge / Cloudflare Workers safe).
  */
-const LED_SECRET =
-  process.env.LED_TOKEN_SECRET || "inviwedd-led-secret-token-key-2026";
+function getLedSecret(): string {
+  const secret = process.env.LED_TOKEN_SECRET?.trim();
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("LED_TOKEN_SECRET must be configured in production.");
+    }
+    return "dev-inviwedd-led-secret-token-key-2026";
+  }
+  return secret;
+}
 
 export async function generateLedToken(weddingIdOrSlug: string): Promise<string> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
-    enc.encode(LED_SECRET),
+    enc.encode(getLedSecret()),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -26,5 +36,5 @@ export async function verifyLedToken(
 ): Promise<boolean> {
   if (!candidateToken || typeof candidateToken !== "string") return false;
   const expected = await generateLedToken(weddingIdOrSlug);
-  return candidateToken.trim().toLowerCase() === expected.toLowerCase();
+  return safeEqual(candidateToken.trim().toLowerCase(), expected.toLowerCase());
 }

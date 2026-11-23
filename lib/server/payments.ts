@@ -9,6 +9,24 @@ export const PLAN_RANK: Record<"free" | "pro" | "vip", number> = {
   vip: 2,
 };
 
+/**
+ * Tính số tiền nâng cấp gói chính xác (VND).
+ * - free -> pro: 159.000đ
+ * - free -> vip: 399.000đ
+ * - pro  -> vip: 240.000đ (chênh lệch giữa 399k và 159k)
+ * Trả về null nếu không hợp lệ hoặc hạ cấp/trùng gói.
+ */
+export function calculateUpgradeAmount(
+  currentPlan: "free" | "pro" | "vip",
+  targetPlan: "pro" | "vip",
+): number | null {
+  if (PLAN_RANK[targetPlan] <= PLAN_RANK[currentPlan]) return null;
+  if (currentPlan === "free" && targetPlan === "pro") return 159000;
+  if (currentPlan === "free" && targetPlan === "vip") return 399000;
+  if (currentPlan === "pro" && targetPlan === "vip") return 240000;
+  return null;
+}
+
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export function newOrderCode(): string {
@@ -24,9 +42,4 @@ export function findOrderCode(description: string): string | null {
   return match ? `INV-${match[1]}` : null;
 }
 
-export function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
+export { safeEqual } from "../safe-equal.ts";

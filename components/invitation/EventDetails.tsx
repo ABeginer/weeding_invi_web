@@ -1,77 +1,40 @@
 "use client";
 
-import { cn, formatWeddingDateParts } from "@/lib/utils";
+import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { getVisibleEvents, getEventDirectionsUrl } from "@/lib/events";
 import { RevealSection } from "./RevealSection";
-import { useInvitationContained, useInvitationDesktopLayout, useWeddingContent } from "./WeddingContentProvider";
-
-function RingsOrnament({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 92 64"
-      aria-hidden="true"
-      className={cn(
-        "mx-auto my-10 block h-auto w-[64px] text-inv-olive/75 sm:w-[74px]",
-        className,
-      )}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M27 12h12l4 5-10 7-10-7 4-5Z" strokeWidth="1.5" />
-      <path d="M23 17h20" strokeWidth="1.2" />
-      <circle cx="33" cy="40" r="16" />
-      <circle cx="57" cy="40" r="16" />
-      <path d="M23 33a12 12 0 0 1 8-4" strokeWidth="1.2" opacity="0.6" />
-      <path d="M62 29a12 12 0 0 1 6 7" strokeWidth="1.2" opacity="0.6" />
-    </svg>
-  );
-}
+import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
 
 export function EventDetails() {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
-  const isDesktopLayout = useInvitationDesktopLayout();
-  const isMultiColumnDesktop = isDesktopLayout && data.events.length > 1;
+  const visibleEvents = getVisibleEvents(data);
 
   return (
     <RevealSection
       className={cn(
         "bg-inv-bg pt-2 text-center",
-        isContained ? "px-3.5 pb-12" : "px-5 pb-14",
-        isDesktopLayout && "md:px-8",
+        isContained ? "px-3.5 pb-12" : "px-4 sm:px-5 pb-14",
       )}
     >
-      <div
-        className={cn(
-          "mx-auto",
-          isMultiColumnDesktop
-            ? "max-w-[880px] md:grid md:grid-cols-2 md:items-start md:gap-8"
-            : isDesktopLayout && data.events.length === 1
-              ? "max-w-[500px]"
-              : "max-w-[440px]",
-        )}
-      >
-        {data.events.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-inv-olive/35 bg-inv-tint/60 px-5 py-8 text-center">
+      <div className={`mx-auto w-full ${visibleEvents.length > 1 ? "max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-5 text-left" : "max-w-[440px] sm:max-w-[460px] grid grid-cols-1 gap-5 text-center"}`}>
+        {visibleEvents.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-inv-olive/35 bg-inv-tint/60 px-5 py-8 text-center col-span-full">
             <p className="font-inv-serif text-sm font-medium text-inv-olive-deep">
               Thêm lễ để hiển thị
             </p>
           </div>
         ) : (
-          data.events.map((event, index) => {
+          visibleEvents.map((event, index) => {
             const dateParts = formatWeddingDateParts(event.startsAt);
+            const directionsUrl = getEventDirectionsUrl(event);
 
             return (
               <div
                 key={event.id || `${event.title}-${index}`}
-                className={cn(
-                  isMultiColumnDesktop &&
-                  "md:rounded-3xl md:border md:border-inv-olive/20 md:bg-inv-paper/60 md:p-6",
-                )}
+                className="w-full overflow-hidden rounded-3xl border border-inv-olive/20 bg-inv-paper/60 p-5 sm:p-6 shadow-xs flex flex-col items-center text-center justify-between"
               >
-                <article className="text-center">
+                <article className="w-full flex flex-col items-center text-center">
                   <h2
                     className={cn(
                       "font-inv-serif leading-[1.2] font-semibold tracking-[0.02em] text-inv-olive-btn uppercase break-words",
@@ -90,40 +53,14 @@ export function EventDetails() {
                     VÀO LÚC {dateParts.time}, {dateParts.weekday}
                   </p>
 
-                  <div
-                    className={cn(
-                      "mx-auto mt-3.5 mb-4 grid max-w-[400px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center text-inv-text",
-                      isContained ? "gap-1.5" : "gap-2",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "block border-y border-inv-olive/60 py-1.5 font-inv-serif leading-none whitespace-nowrap uppercase",
-                        isContained
-                          ? "text-[clamp(10px,3.6cqw,14px)]"
-                          : "text-[13.5px] sm:text-[17px]",
-                      )}
-                    >
+                  <div className="mx-auto mt-3.5 mb-4 flex w-full items-center justify-center gap-3 sm:gap-5 text-inv-text">
+                    <span className="border-y border-inv-olive/60 px-2 py-1.5 font-inv-serif text-xs tracking-[0.14em] leading-none whitespace-nowrap uppercase">
                       THÁNG {dateParts.month}
                     </span>
-                    <strong
-                      className={cn(
-                        "px-1 font-inv-serif leading-[0.88] font-normal text-inv-ink",
-                        isContained
-                          ? "text-[clamp(36px,13.5cqw,54px)]"
-                          : "text-[clamp(50px,14vw,70px)]",
-                      )}
-                    >
+                    <strong className="shrink-0 px-1 font-inv-serif text-4xl sm:text-5xl font-normal leading-none text-inv-ink">
                       {dateParts.day}
                     </strong>
-                    <span
-                      className={cn(
-                        "block border-y border-inv-olive/60 py-1.5 font-inv-serif leading-none whitespace-nowrap uppercase",
-                        isContained
-                          ? "text-[clamp(10px,3.6cqw,14px)]"
-                          : "text-[13.5px] sm:text-[17px]",
-                      )}
-                    >
+                    <span className="border-y border-inv-olive/60 px-2 py-1.5 font-inv-serif text-xs tracking-[0.14em] leading-none whitespace-nowrap uppercase">
                       NĂM {dateParts.year}
                     </span>
                   </div>
@@ -135,7 +72,7 @@ export function EventDetails() {
                         isContained ? "text-[12.5px]" : "text-[13.5px] sm:text-[14.5px]",
                       )}
                     >
-                      (Nhằm {event.lunarDate})
+                      (Tức ngày {formatLunarDateClean(event.lunarDate)})
                     </p>
                   )}
 
@@ -159,30 +96,19 @@ export function EventDetails() {
                     </p>
                   )}
 
-                  {event.mapDirectionsUrl && (
-                    <div className="mt-4">
+                  {directionsUrl && (
+                    <div className="mt-4 w-full flex justify-center">
                       <a
-                        href={event.mapDirectionsUrl}
+                        href={directionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={cn(
-                          "inline-flex items-center justify-center rounded-full bg-inv-olive-btn font-inv-serif tracking-[0.04em] text-white uppercase transition-colors hover:bg-inv-olive-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg inv-cta-pulse",
-                          isContained
-                            ? "w-full max-w-[205px] px-4 py-2 text-[12.5px]"
-                            : "min-w-[210px] max-w-full px-7 py-2.5 text-[14px]",
-                        )}
+                        className="inline-flex w-full max-w-[210px] mx-auto items-center justify-center rounded-full bg-inv-olive-btn px-6 py-2.5 font-inv-serif text-xs sm:text-[13px] tracking-[0.04em] text-white uppercase transition-colors hover:bg-inv-olive-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive-deep focus-visible:ring-offset-2 focus-visible:ring-offset-inv-bg inv-cta-pulse"
                       >
                         {data.ui.directionsButtonLabel}
                       </a>
                     </div>
                   )}
                 </article>
-
-                {index < data.events.length - 1 && (
-                  <RingsOrnament
-                    className={cn(isMultiColumnDesktop && "md:hidden")}
-                  />
-                )}
               </div>
             );
           })

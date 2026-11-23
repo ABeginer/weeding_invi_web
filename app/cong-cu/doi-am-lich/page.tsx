@@ -9,7 +9,7 @@ import { SITE_LINKS, toAbsoluteSiteUrl } from "@/config/site";
 import { IS_LUNAR_TOOL_PUBLIC, LUNAR_CONVERTER_COPY } from "@/config/tools-copy";
 
 const canonicalUrl = toAbsoluteSiteUrl(SITE_LINKS.toolLunar);
-const ogImageUrl = toAbsoluteSiteUrl("/templates/basic-3/cover.webp");
+const ogImageUrl = toAbsoluteSiteUrl("/templates/rang-hong-hoang-hon/cover.webp");
 
 export const dynamic = "force-static";
 

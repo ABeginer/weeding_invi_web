@@ -16,13 +16,17 @@ export const GET = route(async (req: Request) => {
   const client = db();
   const { data: wedding, error: weddingError } = await client
     .from("weddings")
-    .select("id, slug, owner_id")
+    .select("id, slug, owner_id, plan")
     .eq("slug", slug)
     .maybeSingle();
 
   if (weddingError) throw weddingError;
   if (!wedding) {
     return fail("Không tìm thấy tiệc cưới.", 404);
+  }
+
+  if (wedding.plan !== "vip") {
+    return fail("Tính năng chỉ dành cho gói VIP.", 403);
   }
 
   // Xác thực quyền PIN hoặc Owner

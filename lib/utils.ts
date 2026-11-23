@@ -114,3 +114,14 @@ export function formatWeddingDateParts(dateInput: string, timeInput?: string) {
     dotDate: `${day}.${month}.${year}`,
   };
 }
+
+/**
+ * Chuẩn hóa chuỗi ngày âm lịch để hiển thị kèm tiền tố "(Tức ngày ...)" hoặc "(Nhằm ...)"
+ * Loại bỏ từ "ngày" / "Ngày" / "Tức ngày" / "Nhằm" ở đầu chuỗi nếu người dùng hoặc hệ thống đã điền sẵn,
+ * tránh lỗi lặp từ như "(Tức ngày Ngày 13 tháng 02 năm...)".
+ */
+export function formatLunarDateClean(lunarDate?: string | null): string {
+  if (!lunarDate) return "";
+  return lunarDate.trim().replace(/^(tức ngày|nhằm ngày|nhằm|ngày)\s+/i, "");
+}
+

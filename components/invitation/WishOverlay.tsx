@@ -27,10 +27,10 @@ export function WishOverlay() {
 
   // Template nền tối dùng nền đen mờ, còn lại dùng chính màu chủ đạo (olive).
   const dark =
+    data.templateId !== "vuon-o-liu" &&
     data.templateId !== "basic-1" &&
-    data.templateId !== "basic-2" &&
-    data.templateId !== "basic-3" &&
-    data.templateId !== "pro-1";
+    data.templateId !== "bach-lan-lua-nga" &&
+    data.templateId !== "rang-hong-hoang-hon";
 
   // Overlay portal ra body nên KHÔNG còn biến --inv-* của theme trong cây thiệp.
   // Dùng màu cứng: xanh ô liu của mẫu sáng, đen mờ cho mẫu tối (card_exp §22.28).

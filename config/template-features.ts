@@ -36,7 +36,7 @@ const VIP_FEATURES: TemplateFeature[] = PRO_FEATURES.map((feature) => {
     return { ...feature, id: "album-300", label: "Album QR cho khách (300 ảnh)" };
   }
   if (feature.id === "retention-1y") {
-    return { ...feature, id: "retention-forever", label: "Lưu trữ vĩnh viễn" };
+    return { ...feature, id: "retention-2y", label: "Lưu trữ 2 năm" };
   }
   return feature;
 });
@@ -44,7 +44,6 @@ const VIP_FEATURES: TemplateFeature[] = PRO_FEATURES.map((feature) => {
 const EXTRA_FEATURES: Record<string, TemplateFeature> = {
   "ritual-an-hoi": { id: "ritual-an-hoi", label: "Bố cục riêng cho Lễ Ăn Hỏi" },
   "ritual-gia-tien": { id: "ritual-gia-tien", label: "Bố cục riêng cho Lễ Gia Tiên" },
-  "ritual-vu-quy": { id: "ritual-vu-quy", label: "Bố cục riêng cho Lễ Vu Quy" },
 };
 
 export interface TemplateFeatureGroups {
@@ -68,6 +67,6 @@ export function getTemplateFeatures(
 
 export const PLAN_LABELS: Record<WeddingPlan, string> = {
   free: "Miễn phí",
-  pro: "Pro",
-  vip: "VIP",
+  pro: "Standard",
+  vip: "Pro",
 };

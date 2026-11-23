@@ -213,7 +213,7 @@ export const GET = route(async (req: Request) => {
     .limit(60);
   if (error) throw error;
 
-  return json({
+  const res = json({
     enabled: true,
     wishes: (data ?? []).map((row) => ({
       id: row.id as string,
@@ -221,4 +221,9 @@ export const GET = route(async (req: Request) => {
       message: row.message as string,
     })),
   });
+  res.headers.set(
+    "Cache-Control",
+    "public, s-maxage=30, stale-while-revalidate=60",
+  );
+  return res;
 });

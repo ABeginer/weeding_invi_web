@@ -30,5 +30,28 @@
 			"binding": "PHOTOS",
 			"bucket_name": "thiep-cuoi-photos"
 		}
-	]
+	],
+	"env": {
+		"staging": {
+			"name": "wedding-invitation-staging",
+			"vars": {
+				"NEXT_PUBLIC_SITE_URL": "https://wedding-invitation-staging.inviwedd.workers.dev",
+				"APP_BASE_URL": "https://wedding-invitation-staging.inviwedd.workers.dev"
+			},
+			"services": [
+				{
+					// Self-reference service binding, the service name must match the worker name
+					// see https://opennext.js.org/cloudflare/caching
+					"binding": "WORKER_SELF_REFERENCE",
+					"service": "wedding-invitation-staging"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "PHOTOS",
+					"bucket_name": "thiep-cuoi-photos"
+				}
+			]
+		}
+	}
 }

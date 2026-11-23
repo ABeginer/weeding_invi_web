@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { LANDING_COPY } from "@/config/landing";
-import { SITE_LINKS } from "@/config/site";
+import { SITE_LINKS, ZALO_SUPPORT_URL } from "@/config/site";
 import type { WeddingPlan } from "@/lib/types";
 import { FeatureInfoPopover } from "@/components/pricing/FeatureInfoPopover";
 import { ScrollReveal } from "./scroll-reveal";
@@ -20,15 +20,15 @@ const INFO_POPOVER_TEXTS = {
   music:
     "Tự tải lên bài hát kỷ niệm của hai bạn (MP3) để phát ngay khi khách chạm mở phong bì.",
   qrOnlineAlbum:
-    "Tạo mã QR riêng để khách mời quét và gửi ảnh chụp tại tiệc vào album kỷ niệm online của hai bạn mà không cần cài app hay đăng nhập.",
+    "Tạo mã QR riêng dẫn thẳng tới album ảnh cưới online do cô dâu chú rể đăng tải. Khách mời chỉ cần quét mã để xem trọn bộ ảnh sắc nét ngay trên điện thoại mà không cần cài app hay đăng nhập.",
   excel:
     "Tải toàn bộ danh sách xác nhận tham dự & thực đơn mặn/chay ra file Excel chuẩn tiếng Việt chỉ với 1 chạm.",
   boardingPass:
-    "Mỗi khách có 1 tấm vé điện tử ghi rõ số bàn, thực đơn và mã QR lễ tân check-in. Lưu được về máy chống mất mạng.",
+    "Mỗi khách nhận sẵn số bàn trên thiệp mời điện tử; lễ tân chỉ cần dùng điện thoại quét mã là biết ngay khách ngồi bàn nào, khỏi dò sổ giấy.",
   livePhotoWall:
-    "Khách ngồi bàn quét QR gửi ảnh chụp lên màn hình LED sảnh tiệc theo thời gian thực. Kèm file in bảng QR A5/A6 và tải trọn bộ ảnh (.ZIP).",
+    "Khách đến dự chỉ cần quét mã QR đặt trên bàn tiệc để gửi ảnh kỷ niệm chụp tại sảnh — ảnh sẽ tự động hiện lên màn hình lớn (bạn có thể bật duyệt trước khi chiếu). Kèm file in bảng QR và tải trọn bộ ảnh.",
   familyPin:
-    "Tạo mã PIN 4 số để phù dâu/người nhà phụ duyệt ảnh chiếu LED và quét QR điểm danh khách mà không cần chia sẻ tài khoản.",
+    "Gửi link riêng kèm mã 4 số cho phụ dâu/người thân giúp duyệt ảnh và điểm danh khách, không cần đưa tài khoản chính của bạn.",
 } as const;
 
 export function PricingTable({
@@ -80,7 +80,7 @@ export function PricingTable({
 
                 {/* Price */}
                 <div className="mt-5 flex items-baseline gap-1.5">
-                  <span className="font-serif text-3xl sm:text-4xl font-semibold text-[#1F1D1A] tabular-nums">
+                  <span className="font-sans text-3xl sm:text-4xl font-bold tracking-tight text-[#1F1D1A] tabular-nums lining-nums">
                     0đ
                   </span>
                 </div>
@@ -133,17 +133,17 @@ export function PricingTable({
             </div>
           </ScrollReveal>
 
-          {/* Card 2 — Gói Pro (Highlighted Primary) */}
+          {/* Card 2 — Gói Standard (Highlighted Primary) */}
           <ScrollReveal as="article" className="relative flex h-full flex-col">
             {/* Top Badge */}
-            <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-[#7A1C24] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#FAF8F5] uppercase shadow-sm whitespace-nowrap">
+            <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#C8AD7F]/60 bg-[#7A1C24] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#FAF8F5] uppercase shadow-sm whitespace-nowrap">
               PHỔ BIẾN NHẤT
             </span>
 
             <div className="flex h-full flex-1 flex-col rounded-2xl border-2 border-[#7A1C24] bg-white p-6 sm:p-8 shadow-md relative">
               <div>
                 <h3 className="font-serif text-2xl font-semibold text-[#1F1D1A]">
-                  Gói Pro
+                  Gói Standard
                 </h3>
                 <p className="mt-1 text-xs text-[#6B655E] leading-relaxed">
                   Trọn vẹn cho khâu mời cưới &amp; chốt mâm tiệc.
@@ -151,13 +151,13 @@ export function PricingTable({
 
                 {/* Launch Promo Price */}
                 <div className="mt-5 flex flex-wrap items-baseline gap-2">
-                  <span className="text-sm text-[#6B655E] line-through tabular-nums decoration-[#7A1C24]/60">
+                  <span className="font-sans text-sm font-normal text-[#6B655E] line-through tabular-nums lining-nums decoration-[#7A1C24]/60">
                     199.000đ
                   </span>
-                  <span className="font-serif text-3xl sm:text-4xl font-semibold text-[#1F1D1A] tabular-nums">
+                  <span className="font-sans text-3xl sm:text-4xl font-bold tracking-tight text-[#1F1D1A] tabular-nums lining-nums">
                     159.000đ
                   </span>
-                  <span className="text-sm font-normal text-[#6B655E]">
+                  <span className="font-sans text-sm font-normal text-[#6B655E]">
                     / lần
                   </span>
                 </div>
@@ -171,7 +171,7 @@ export function PricingTable({
                   onClick={() => handleChoosePaidPlan("pro")}
                   className="mt-6 flex h-11 w-full cursor-pointer items-center justify-center rounded-full bg-[#7A1C24] text-sm font-medium text-[#FAF8F5] transition-colors hover:bg-[#5E141B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24] shadow-xs"
                 >
-                  Chọn gói Pro
+                  Chọn gói Standard
                 </button>
               </div>
 
@@ -188,7 +188,7 @@ export function PricingTable({
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
-                  <span>Toàn bộ 27+ mẫu thiệp</span>
+                  <span>Toàn bộ 41+ mẫu thiệp</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
@@ -203,14 +203,14 @@ export function PricingTable({
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
-                  <span>30 ảnh HD &amp; 2 ảnh VietQR</span>
+                  <span>30 ảnh album cưới HD &amp; 2 ảnh VietQR</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
                   <div className="flex items-center gap-1.5 font-medium text-[#1F1D1A]">
-                    <span>QR Online Album</span>
+                    <span>QR Album ảnh cưới (chỉ đọc)</span>
                     <FeatureInfoPopover
-                      title="QR Online Album"
+                      title="QR Album ảnh cưới"
                       content={INFO_POPOVER_TEXTS.qrOnlineAlbum}
                       variant="light"
                     />
@@ -235,17 +235,17 @@ export function PricingTable({
             </div>
           </ScrollReveal>
 
-          {/* Card 3 — Gói VIP (Editorial Dark Ink) */}
+          {/* Card 3 — Gói Pro (Editorial Black-Gold Ink) */}
           <ScrollReveal as="article" className="relative flex h-full flex-col">
             {/* Top Badge */}
-            <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-[#B89B72] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#1F1D1A] uppercase shadow-sm whitespace-nowrap">
+            <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#D8B15B]/70 bg-[#141210] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#D8B15B] uppercase shadow-xs whitespace-nowrap">
               TRẢI NGHIỆM SẢNH TIỆC
             </span>
 
-            <div className="flex h-full flex-1 flex-col rounded-2xl border border-[#B89B72]/40 bg-[#1F1D1A] p-6 sm:p-8 text-[#FAF8F5] relative shadow-lg">
+            <div className="flex h-full flex-1 flex-col rounded-2xl border border-[#D8B15B]/50 bg-[#141210] p-6 sm:p-8 text-[#FAF8F5] relative shadow-lg">
               <div>
                 <h3 className="font-serif text-2xl font-semibold text-[#FAF8F5]">
-                  Gói VIP
+                  Gói Pro
                 </h3>
                 <p className="mt-1 text-xs text-[#FAF8F5]/70 leading-relaxed">
                   Đẳng cấp &amp; tương tác trực tiếp tại nhà hàng.
@@ -253,13 +253,13 @@ export function PricingTable({
 
                 {/* Launch Promo Price */}
                 <div className="mt-5 flex flex-wrap items-baseline gap-2">
-                  <span className="text-sm text-[#FAF8F5]/50 line-through tabular-nums decoration-[#B89B72]">
+                  <span className="font-sans text-sm font-normal text-[#FAF8F5]/50 line-through tabular-nums lining-nums decoration-[#B89B72]">
                     499.000đ
                   </span>
-                  <span className="font-serif text-3xl sm:text-4xl font-semibold text-[#FAF8F5] tabular-nums">
+                  <span className="font-sans text-3xl sm:text-4xl font-bold tracking-tight text-[#FAF8F5] tabular-nums lining-nums">
                     399.000đ
                   </span>
-                  <span className="text-sm font-normal text-[#FAF8F5]/70">
+                  <span className="font-sans text-sm font-normal text-[#FAF8F5]/70">
                     / lần
                   </span>
                 </div>
@@ -271,18 +271,18 @@ export function PricingTable({
                 <button
                   type="button"
                   onClick={() => handleChoosePaidPlan("vip")}
-                  className="mt-6 flex h-11 w-full cursor-pointer items-center justify-center rounded-full bg-[#B89B72] text-sm font-medium text-[#1F1D1A] transition-colors hover:bg-[#A68960] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B89B72] shadow-xs"
+                  className="mt-6 flex h-11 w-full cursor-pointer items-center justify-center rounded-full bg-[#D8B15B] text-sm font-semibold text-[#141210] transition-colors hover:bg-[#E5C173] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B15B] shadow-xs"
                 >
-                  Chọn gói VIP
+                  Chọn gói Pro
                 </button>
               </div>
 
               {/* Divider */}
               <div className="my-6 border-t border-[#B89B72]/20" />
 
-              {/* Subheading for VIP additions */}
+              {/* Subheading for Pro additions */}
               <p className="text-[11px] italic text-[#B89B72] pb-1">
-                Mọi tính năng gói Pro, cộng thêm:
+                Mọi tính năng gói Standard, cộng thêm:
               </p>
 
               {/* Features List */}
@@ -290,9 +290,9 @@ export function PricingTable({
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
                   <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
-                    <span>Thẻ mời &amp; Số bàn (Boarding Pass)</span>
+                    <span>Vé mời số bàn &amp; Check-in bằng mã QR</span>
                     <FeatureInfoPopover
-                      title="Thẻ mời & Số bàn (Boarding Pass)"
+                      title="Vé mời số bàn & Check-in bằng mã QR"
                       content={INFO_POPOVER_TEXTS.boardingPass}
                       variant="dark"
                     />
@@ -301,9 +301,9 @@ export function PricingTable({
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
                   <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
-                    <span>Live QR Photo Wall &amp; Chiếu màn hình LED</span>
+                    <span>Chiếu ảnh khách chụp trực tiếp lên màn hình LED</span>
                     <FeatureInfoPopover
-                      title="Live QR Photo Wall & Chiếu màn hình LED"
+                      title="Chiếu ảnh khách chụp trực tiếp lên màn hình LED"
                       content={INFO_POPOVER_TEXTS.livePhotoWall}
                       variant="dark"
                     />
@@ -312,9 +312,9 @@ export function PricingTable({
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
                   <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
-                    <span>Link mã PIN cho người nhà &amp; Quét Check-in</span>
+                    <span>Nhờ người nhà hỗ trợ bằng mã PIN 4 số</span>
                     <FeatureInfoPopover
-                      title="Cổng trợ lý gia đình & Quét Check-in"
+                      title="Nhờ người nhà hỗ trợ bằng mã PIN 4 số"
                       content={INFO_POPOVER_TEXTS.familyPin}
                       variant="dark"
                     />
@@ -329,7 +329,7 @@ export function PricingTable({
                 <li className="flex items-start gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
                   <span>
-                    50 ảnh HD &amp; Lưu trữ <strong className="font-semibold text-[#FAF8F5]">2 năm</strong>
+                    50 ảnh album cưới HD &amp; Lưu trữ <strong className="font-semibold text-[#FAF8F5]">2 năm</strong>
                   </span>
                 </li>
               </ul>
@@ -338,8 +338,17 @@ export function PricingTable({
         </div>
 
         {/* Footer Note Below Grid */}
-        <p className="mt-8 text-center text-xs text-[#6B655E] max-w-xl mx-auto leading-relaxed">
-          Thanh toán một lần duy nhất · Không gia hạn tự động · Hỗ trợ nâng cấp từ Pro lên VIP chỉ cần bù phần chênh lệch.
+        <p className="mt-8 text-center text-xs text-[#6B655E] max-w-2xl mx-auto leading-relaxed">
+          Thanh toán một lần duy nhất · Kích hoạt nhanh qua chuyển khoản · Cần tư vấn chọn gói?{" "}
+          <a
+            href={ZALO_SUPPORT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-[#7A1C24] hover:underline"
+          >
+            <span>Nhắn Zalo hỗ trợ ngay</span>
+            <span aria-hidden="true">→</span>
+          </a>
         </p>
       </div>
     </section>

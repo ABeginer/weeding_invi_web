@@ -12,10 +12,27 @@ import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidge
 import type { TemplateRenderMode } from "../types";
 import type { TemplateTone } from "./TemplateOverlays";
 
+export interface TemplateRsvpCustomTheme {
+  isDark: boolean;
+  wrap?: string;
+  eyebrow?: string;
+  heading?: string;
+  subtext?: string;
+  card?: string;
+  input?: string;
+  primaryBtn?: string;
+  outlineBtn?: string;
+  alert?: string;
+  badge?: string;
+  optionBg: string;
+  optionColor: string;
+}
+
 interface TemplateRsvpSectionProps {
   data: TemplateData;
   mode: TemplateRenderMode;
   tone: TemplateTone;
+  customTheme?: TemplateRsvpCustomTheme;
   contained?: boolean;
   inviteSlug?: string;
   weddingSlug?: string;
@@ -35,6 +52,7 @@ export function TemplateRsvpSection({
   data,
   mode,
   tone,
+  customTheme,
   contained = false,
   inviteSlug,
   weddingSlug,
@@ -57,9 +75,9 @@ export function TemplateRsvpSection({
   const dietOptions =
     mealMode === "both"
       ? [
-          { value: "meat" as const, label: "Mặn" },
-          { value: "veg" as const, label: "Chay" },
-        ]
+        { value: "meat" as const, label: "Mặn" },
+        { value: "veg" as const, label: "Chay" },
+      ]
       : mealMode === "veg"
         ? [{ value: "veg" as const, label: "Chay" }]
         : [{ value: "meat" as const, label: "Mặn" }];
@@ -316,157 +334,232 @@ export function TemplateRsvpSection({
     }
   };
 
-  const styles =
+  const baseStyles =
     tone === "obsidian"
       ? {
-        wrap: "bg-lnd-surface border-y border-lnd-border text-lnd-body",
-        eyebrow: "text-lnd-gold",
-        heading: "text-lnd-gold font-display",
-        subtext: "text-lnd-muted",
-        card: "border border-lnd-border bg-lnd-bg text-lnd-body",
+        wrap: "bg-transparent text-[#F1F5F9]",
+        eyebrow: "text-[#D4AF37]",
+        heading: "text-[#E6C670] font-display",
+        subtext: "text-[#94A3B8]",
+        card: "border border-[#2E3545] bg-[#161B26] text-[#F1F5F9]",
         input:
-          "border border-lnd-border bg-lnd-bg text-lnd-body placeholder:text-lnd-muted focus:border-lnd-gold focus:ring-lnd-gold",
+          "border border-[#384256] bg-[#0F141F] text-[#F8FAFC] placeholder:text-[#64748B] focus:border-[#D4AF37] focus:ring-[#D4AF37]",
         primaryBtn:
-          "bg-lnd-gold text-lnd-bg hover:bg-lnd-gold-bright font-semibold",
+          "bg-[#D4AF37] text-[#0B0D12] hover:bg-[#E3C35A] font-semibold",
         outlineBtn:
-          "border border-lnd-gold-soft bg-transparent text-lnd-body hover:border-lnd-gold hover:text-lnd-gold",
-        alert: "border-lnd-gold-soft bg-lnd-gold-tint text-lnd-body",
-        badge: "border-lnd-gold-soft bg-lnd-surface text-lnd-body",
+          "border border-[#D4AF37]/60 bg-transparent text-[#F1F5F9] hover:bg-[#D4AF37]/15 hover:border-[#D4AF37]",
+        alert: "border-[#D4AF37]/50 bg-[#1A1811] text-[#E6C670]",
+        badge: "border-[#2E3545] bg-[#1E2536] text-[#E2E8F0]",
       }
-      : tone === "flowery"
+      : tone === "amethyst"
         ? {
           wrap: "bg-transparent text-[#595638]",
           eyebrow: "text-[#8A8460]",
           heading: "text-[#464E25] font-display",
           subtext: "text-[#8A8460]",
-          card: "border border-[#464E25]/25 bg-[#FDFAF5] text-[#595638]",
+          card: "border border-[#464E25]/30 bg-[#FDFAF5] text-[#595638]",
           input:
-            "border border-[#464E25]/30 bg-white text-[#595638] placeholder:text-[#8A8460]/80 focus:border-[#464E25] focus:ring-[#464E25]",
+            "border border-[#464E25]/45 bg-[#F7F4EB] text-[#595638] placeholder:text-[#8A8460] focus:border-[#464E25] focus:ring-[#464E25]",
           primaryBtn: "bg-[#464E25] text-[#FDFAF5] hover:bg-[#3A411E] font-semibold",
           outlineBtn:
-            "border border-[#464E25] bg-transparent text-[#464E25] hover:bg-[#F1EEE2]",
-          alert: "border-[#464E25]/30 bg-white text-[#595638]",
-          badge: "border-[#464E25]/30 bg-white text-[#464E25]",
+            "border border-[#464E25]/80 bg-[#F7F4EB] text-[#464E25] hover:bg-[#EFEAD8]",
+          alert: "border-[#464E25]/40 bg-[#F7F4EB] text-[#595638]",
+          badge: "border-[#464E25]/40 bg-[#F7F4EB] text-[#464E25]",
         }
         : tone === "minbrown"
-        ? {
-          wrap: "bg-transparent text-[#A76B43]",
-          eyebrow: "text-[#A76B43]",
-          heading: "text-[#A76B43] font-display",
-          subtext: "text-[#A76B43]/85",
-          label: "text-[#A76B43]",
-          card: "border border-[#A76B43]/30 bg-[#F7F7F8] text-[#A76B43]",
-          input:
-            "border border-[#A76B43]/35 bg-white text-[#A76B43] placeholder:text-[#A76B43]/45 focus:border-[#A76B43] focus:ring-[#A76B43]",
-          primaryBtn: "bg-[#A76B43] text-white hover:bg-[#8F5735] font-semibold",
-          outlineBtn:
-            "border border-[#A76B43] bg-transparent text-[#A76B43] hover:bg-[#F4EAE2]",
-          alert: "border-[#A76B43]/35 bg-white text-[#A76B43]",
-          badge: "border-[#A76B43]/35 bg-white text-[#A76B43]",
-        }
-        : tone === "minred"
-        ? {
-          wrap: "bg-transparent border-y border-[#E1BC7C]/30 text-[#E9D4AE]",
-          eyebrow: "text-[#B89667]",
-          heading: "text-[#E1BC7C] font-display",
-          subtext: "text-[#B89667]",
-          card: "border border-[#E1BC7C]/35 bg-[#2C0102]/70 text-[#E9D4AE]",
-          input:
-            "border border-[#E1BC7C]/45 bg-[#1E0101]/80 text-[#E9D4AE] placeholder:text-[#B89667]/80 focus:border-[#E1BC7C] focus:ring-[#E1BC7C]",
-          primaryBtn: "bg-[#E1BC7C] text-[#390102] hover:bg-[#F0D3A0] font-semibold",
-          outlineBtn:
-            "border border-[#E1BC7C] bg-transparent text-[#E1BC7C] hover:bg-[#2C0102]",
-          alert: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E9D4AE]",
-          badge: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E1BC7C]",
-        }
-        : tone === "ruby"
-        ? {
-          wrap: "bg-[#390202] border-y border-[#E5C787]/40 text-[#E5E4D0]",
-          eyebrow: "text-[#E5C787]",
-          heading: "text-[#F7E7CE] font-display",
-          subtext: "text-[#B3B2A0]",
-          card: "border border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
-          input:
-            "border border-[#E5C787]/60 bg-[#2E0409] text-[#E5E4D0] placeholder:text-[#9C9B8A] focus:border-[#E5C787] focus:ring-[#E5C787]",
-          primaryBtn: "bg-[#F7E7CE] text-[#390202] hover:bg-[#FFF6E6] font-semibold",
-          outlineBtn:
-            "border border-[#E5C787] bg-transparent text-[#E5C787] hover:bg-[#4A060C]",
-          alert: "border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
-          badge: "border-[#E5C787]/50 bg-[#390202] text-[#E5C787]",
-        }
-        : tone === "velvet"
-        ? {
-          wrap: "bg-[#4A0B0A] border-y border-[#8A6A3A] text-[#E9CE91]",
-          eyebrow: "text-[#E9CE91]",
-          heading: "text-[#E9CE91] font-display",
-          subtext: "text-[#BFA478]",
-          card: "border border-[#8A6A3A]/60 bg-[#5A0D0C] text-[#E9CE91]",
-          input:
-            "border border-[#8A6A3A]/70 bg-[#3A0807] text-[#E9CE91] placeholder:text-[#A98F6C] focus:border-[#E9CE91] focus:ring-[#E9CE91]",
-          primaryBtn: "bg-[#E9CE91] text-[#3B0A0D] hover:bg-[#F2E0B6] font-semibold",
-          outlineBtn:
-            "border border-[#E9CE91]/70 bg-transparent text-[#E9CE91] hover:bg-[#5A0D0C]",
-          alert: "border-[#8A6A3A] bg-[#5A0D0C] text-[#E9CE91]",
-          badge: "border-[#8A6A3A] bg-[#4A0B0A] text-[#E9CE91]",
-        }
-        : tone === "red"
-        ? {
-          wrap: "bg-[#fff7eb] border-y border-[#e0cba4] text-[#4a1010]",
-          eyebrow: "text-[#800000]",
-          heading: "text-[#800000] font-display",
-          subtext: "text-[#8a6a63]",
-          card: "border border-[#e0cba4] bg-white text-[#4a1010]",
-          input:
-            "border border-[#e0cba4] bg-white text-[#4a1010] placeholder:text-[#a98d7d] focus:border-[#800000] focus:ring-[#800000]",
-          primaryBtn: "bg-[#800000] text-[#ffeed2] hover:bg-[#5c0000] font-medium",
-          outlineBtn:
-            "border border-[#c9a24a] bg-white text-[#800000] hover:bg-[#fff1dd]",
-          alert: "border-[#e0cba4] bg-[#fff1dd] text-[#4a1010]",
-          badge: "border-[#e0cba4] bg-[#fff7eb] text-[#7a0b0b]",
-        }
-        : tone === "sunset"
-        ? {
-          wrap: "bg-[#FBF3ED] border-y border-[#E7CFC3] text-[#322424]",
-          eyebrow: "text-[#8A4444]",
-          heading: "text-[#7A3535] font-display",
-          subtext: "text-[#6B504B]",
-          card: "border border-[#E7CFC3] bg-white text-[#322424]",
-          input:
-            "border border-[#D5B2A3] bg-white text-[#322424] placeholder:text-[#8E6F68] focus:border-[#7A3535] focus:ring-[#7A3535]",
-          primaryBtn: "bg-[#7A3535] text-white hover:bg-[#612828] font-medium",
-          outlineBtn:
-            "border border-[#B77C72] bg-white text-[#6A2E2E] hover:bg-[#F5E6DF]",
-          alert: "border-[#D5B2A3] bg-[#F5E6DF] text-[#4B2626]",
-          badge: "border-[#E7CFC3] bg-[#FCF5F0] text-[#5C2626]",
-        }
-        : {
-          wrap: "bg-[#F6F3EC] border-y border-[#E2D9C8] text-[#1F1D1A]",
-          eyebrow: "text-[#706040]",
-          heading: "text-[#1F1D1A] font-display",
-          subtext: "text-[#5E574B]",
-          card: "border border-[#DFD5C3] bg-white text-[#1F1D1A]",
-          input:
-            "border border-[#C9BFA9] bg-white text-[#1F1D1A] placeholder:text-[#786E5C] focus:border-[#706040] focus:ring-[#706040]",
-          primaryBtn: "bg-[#23201C] text-[#FAF7F0] hover:bg-[#3A342D] font-medium",
-          outlineBtn:
-            "border border-[#9A8966] bg-white text-[#23201C] hover:bg-[#EFEAE0]",
-          alert: "border-[#D4C7AE] bg-[#EFEAE0] text-[#23201C]",
-          badge: "border-[#DFD5C3] bg-[#FAF7F0] text-[#23201C]",
-        };
+          ? {
+            wrap: "bg-transparent text-[#7D4E2D]",
+            eyebrow: "text-[#7D4E2D]",
+            heading: "text-[#7D4E2D] font-display",
+            subtext: "text-[#7D4E2D]/85",
+            label: "text-[#7D4E2D]",
+            card: "border border-[#7D4E2D]/35 bg-[#FAF7F4] text-[#7D4E2D]",
+            input:
+              "border border-[#7D4E2D]/50 bg-[#F3EDE6] text-[#7D4E2D] placeholder:text-[#7D4E2D]/60 focus:border-[#7D4E2D] focus:ring-[#7D4E2D]",
+            primaryBtn: "bg-[#7D4E2D] text-white hover:bg-[#653E23] font-semibold",
+            outlineBtn:
+              "border border-[#7D4E2D]/90 bg-[#F3EDE6] text-[#7D4E2D] hover:bg-[#EAE0D6]",
+            alert: "border-[#7D4E2D]/45 bg-[#F3EDE6] text-[#7D4E2D]",
+            badge: "border-[#7D4E2D]/45 bg-[#F3EDE6] text-[#7D4E2D]",
+          }
+          : tone === "minred"
+            ? {
+              wrap: "bg-transparent text-[#E9D4AE]",
+              eyebrow: "text-[#B89667]",
+              heading: "text-[#E1BC7C] font-display",
+              subtext: "text-[#B89667]",
+              card: "border border-[#E1BC7C]/35 bg-[#2C0102]/70 text-[#E9D4AE]",
+              input:
+                "border border-[#E1BC7C]/45 bg-[#1E0101]/80 text-[#E9D4AE] placeholder:text-[#B89667]/80 focus:border-[#E1BC7C] focus:ring-[#E1BC7C]",
+              primaryBtn: "bg-[#E1BC7C] text-[#390102] hover:bg-[#F0D3A0] font-semibold",
+              outlineBtn:
+                "border border-[#E1BC7C] bg-transparent text-[#E1BC7C] hover:bg-[#2C0102]",
+              alert: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E9D4AE]",
+              badge: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E1BC7C]",
+            }
+            : tone === "ruby"
+              ? {
+                wrap: "bg-transparent text-[#E5E4D0]",
+                eyebrow: "text-[#E5C787]",
+                heading: "text-[#F7E7CE] font-display",
+                subtext: "text-[#B3B2A0]",
+                card: "border border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
+                input:
+                  "border border-[#E5C787]/60 bg-[#2E0409] text-[#E5E4D0] placeholder:text-[#9C9B8A] focus:border-[#E5C787] focus:ring-[#E5C787]",
+                primaryBtn: "bg-[#F7E7CE] text-[#390202] hover:bg-[#FFF6E6] font-semibold",
+                outlineBtn:
+                  "border border-[#E5C787] bg-transparent text-[#E5C787] hover:bg-[#4A060C]",
+                alert: "border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
+                badge: "border-[#E5C787]/50 bg-[#390202] text-[#E5C787]",
+              }
+              : tone === "velvet"
+                ? {
+                  wrap: "bg-transparent text-[#E9CE91]",
+                  eyebrow: "text-[#E9CE91]",
+                  heading: "text-[#E9CE91] font-display",
+                  subtext: "text-[#BFA478]",
+                  card: "border border-[#8A6A3A]/60 bg-[#5A0D0C] text-[#E9CE91]",
+                  input:
+                    "border border-[#8A6A3A]/70 bg-[#3A0807] text-[#E9CE91] placeholder:text-[#A98F6C] focus:border-[#E9CE91] focus:ring-[#E9CE91]",
+                  primaryBtn: "bg-[#E9CE91] text-[#3B0A0D] hover:bg-[#F2E0B6] font-semibold",
+                  outlineBtn:
+                    "border border-[#E9CE91]/70 bg-transparent text-[#E9CE91] hover:bg-[#5A0D0C]",
+                  alert: "border-[#8A6A3A] bg-[#5A0D0C] text-[#E9CE91]",
+                  badge: "border-[#8A6A3A] bg-[#4A0B0A] text-[#E9CE91]",
+                }
+                : tone === "red"
+                  ? {
+                    wrap: "bg-transparent text-[#4a1010]",
+                    eyebrow: "text-[#800000]",
+                    heading: "text-[#800000] font-display",
+                    subtext: "text-[#8a6a63]",
+                    card: "border border-[#e0cba4] bg-white text-[#4a1010]",
+                    input:
+                      "border border-[#c9a24a] bg-[#FFFBF5] text-[#4a1010] placeholder:text-[#a98d7d] focus:border-[#800000] focus:ring-[#800000]",
+                    primaryBtn: "bg-[#800000] text-[#ffeed2] hover:bg-[#5c0000] font-medium",
+                    outlineBtn:
+                      "border border-[#c9a24a] bg-[#FFFBF5] text-[#800000] hover:bg-[#fff1dd]",
+                    alert: "border-[#e0cba4] bg-[#fff1dd] text-[#4a1010]",
+                    badge: "border-[#e0cba4] bg-[#fff7eb] text-[#7a0b0b]",
+                  }
+                  : tone === "sunset"
+                    ? {
+                      wrap: "bg-transparent text-[#322424]",
+                      eyebrow: "text-[#8A4444]",
+                      heading: "text-[#7A3535] font-display",
+                      subtext: "text-[#6B504B]",
+                      card: "border border-[#E7CFC3] bg-white text-[#322424]",
+                      input:
+                        "border border-[#C99C8B] bg-[#FCF7F5] text-[#322424] placeholder:text-[#8E6F68] focus:border-[#7A3535] focus:ring-[#7A3535]",
+                      primaryBtn: "bg-[#7A3535] text-white hover:bg-[#612828] font-medium",
+                      outlineBtn:
+                        "border border-[#B77C72] bg-[#FCF7F5] text-[#6A2E2E] hover:bg-[#F5E6DF]",
+                      alert: "border-[#D5B2A3] bg-[#F5E6DF] text-[#4B2626]",
+                      badge: "border-[#E7CFC3] bg-[#FCF5F0] text-[#5C2626]",
+                    }
+                    : {
+                      wrap: "bg-transparent text-[#1F1D1A]",
+                      eyebrow: "text-[#706040]",
+                      heading: "text-[#1F1D1A] font-display",
+                      subtext: "text-[#5E574B]",
+                      card: "border border-[#DFD5C3] bg-white text-[#1F1D1A]",
+                      input:
+                        "border border-[#C9BFA9] bg-[#FAF8F5] text-[#1F1D1A] placeholder:text-[#786E5C] focus:border-[#706040] focus:ring-[#706040]",
+                      primaryBtn: "bg-[#23201C] text-[#FAF7F0] hover:bg-[#3A342D] font-medium",
+                      outlineBtn:
+                        "border border-[#9A8966] bg-[#FAF8F5] text-[#23201C] hover:bg-[#EFEAE0]",
+                      alert: "border-[#D4C7AE] bg-[#EFEAE0] text-[#23201C]",
+                      badge: "border-[#DFD5C3] bg-[#FAF7F0] text-[#23201C]",
+                    };
 
-  const turnstileTheme =
-    tone === "obsidian" || tone === "velvet" || tone === "ruby" || tone === "minred" ? "dark" : "light";
+  const styles = customTheme
+    ? {
+      wrap: customTheme.wrap ?? baseStyles.wrap,
+      eyebrow: customTheme.eyebrow ?? baseStyles.eyebrow,
+      heading: customTheme.heading ?? baseStyles.heading,
+      subtext: customTheme.subtext ?? baseStyles.subtext,
+      card: customTheme.card ?? baseStyles.card,
+      input: customTheme.input ?? baseStyles.input,
+      primaryBtn: customTheme.primaryBtn ?? baseStyles.primaryBtn,
+      outlineBtn: customTheme.outlineBtn ?? baseStyles.outlineBtn,
+      alert: customTheme.alert ?? baseStyles.alert,
+      badge: customTheme.badge ?? baseStyles.badge,
+    }
+    : baseStyles;
+
+  const isDarkTone = customTheme
+    ? customTheme.isDark
+    : tone === "obsidian" ||
+    tone === "velvet" ||
+    tone === "ruby" ||
+    tone === "minred" ||
+    tone === "amethyst" ||
+    tone === "sapphire" ||
+    tone === "midnight-ink" ||
+    tone === "emerald";
+
+  const selectColorScheme = isDarkTone ? "dark" : "light";
+  const optionBg = customTheme
+    ? customTheme.optionBg
+    : tone === "obsidian"
+      ? "#161B26"
+      : tone === "amethyst"
+        ? "#261636"
+        : tone === "sapphire"
+          ? "#0E2238"
+          : tone === "midnight-ink"
+            ? "#0B2042"
+            : tone === "emerald"
+              ? "#15392B"
+              : tone === "velvet"
+                ? "#3A0807"
+                : tone === "ruby"
+                  ? "#2E0409"
+                  : tone === "minred"
+                    ? "#1E0101"
+                    : "#FFFFFF";
+
+  const optionColor = customTheme
+    ? customTheme.optionColor
+    : tone === "obsidian"
+      ? "#F8FAFC"
+      : tone === "amethyst"
+        ? "#F3EDFA"
+        : tone === "sapphire"
+          ? "#F0F6FC"
+          : tone === "midnight-ink"
+            ? "#F4EFE6"
+            : tone === "emerald"
+              ? "#F4F9F6"
+              : tone === "velvet"
+                ? "#E9CE91"
+                : tone === "ruby"
+                  ? "#F7E7CE"
+                  : tone === "minred"
+                    ? "#E9D4AE"
+                    : tone === "sunset"
+                      ? "#322424"
+                      : tone === "minbrown"
+                        ? "#7D4E2D"
+                        : tone === "flowery"
+                          ? "#595638"
+                          : tone === "red"
+                            ? "#4a1010"
+                            : "#1F2937";
+
+  const turnstileTheme = isDarkTone ? "dark" : "light";
 
   if (isPublicMode) {
     return (
       <section
-        id="rsvp-wishes"
+        id="rsvp"
         className={cn(
           "scroll-mt-10",
           contained ? "px-3.5 py-8" : "px-5 py-10",
           styles.wrap,
         )}
       >
+        <span id="rsvp-wishes" className="sr-only" aria-hidden="true" />
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
             <p className={cn("text-[11px] font-medium uppercase tracking-[0.2em]", styles.eyebrow)}>
@@ -597,11 +690,7 @@ export function TemplateRsvpSection({
           {/* Sổ lưu bút luôn hiển thị, kể cả sau khi khách đã xác nhận/gửi lời chúc */}
           <WishOverlay />
           <WishMarquee
-            tone={
-              tone === "obsidian" || tone === "velvet" || tone === "ruby" || tone === "red"
-                ? "dark"
-                : "light"
-            }
+            tone={isDarkTone ? "dark" : "light"}
             className="mt-5"
           />
         </div>
@@ -616,13 +705,14 @@ export function TemplateRsvpSection({
 
   return (
     <section
-      id="rsvp-wishes"
+      id="rsvp"
       className={cn(
         "scroll-mt-10",
         contained ? "px-3.5 py-8" : "px-5 py-10",
         styles.wrap,
       )}
     >
+      <span id="rsvp-wishes" className="sr-only" aria-hidden="true" />
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
           <p className={cn("text-[11px] font-medium uppercase tracking-[0.2em]", styles.eyebrow)}>
@@ -844,13 +934,21 @@ export function TemplateRsvpSection({
                     value={plusOnes + 1}
                     onChange={(e) => setPlusOnes(Math.max(0, Number(e.target.value) - 1))}
                     disabled={submitting !== null}
+                    style={{ colorScheme: selectColorScheme }}
                     className={cn(
                       "mt-1.5 h-10 w-full rounded-lg px-3 text-xs sm:text-sm focus:outline-none focus:ring-2",
                       styles.input,
                     )}
                   >
                     {ATTENDEE_OPTIONS.map((count) => (
-                      <option key={count} value={count}>
+                      <option
+                        key={count}
+                        value={count}
+                        style={{
+                          backgroundColor: optionBg,
+                          color: optionColor,
+                        }}
+                      >
                         {count === 1
                           ? "1 người (chỉ mình tôi)"
                           : `${count} người`}
@@ -1009,11 +1107,7 @@ export function TemplateRsvpSection({
         {/* Sổ lưu bút dưới nút "Thay đổi lựa chọn...", luôn hiển thị */}
         <WishOverlay />
         <WishMarquee
-          tone={
-            tone === "obsidian" || tone === "velvet" || tone === "ruby" || tone === "red"
-              ? "dark"
-              : "light"
-          }
+          tone={isDarkTone ? "dark" : "light"}
           className="mt-5"
         />
       </div>

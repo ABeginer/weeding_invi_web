@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Download, Loader2, Palette, Printer, Sparkles, X } from "lucide-react";
+import { Download, Loader2, Palette, Printer, X } from "lucide-react";
 import {
   downloadTableQrPoster,
   exportTableQrPosterToPngDataUrl,

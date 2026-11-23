@@ -26,7 +26,7 @@ export function RevealSection({
   const prefersReducedMotion = useReducedMotion();
   const contained = useInvitationContained();
   const data = useWeddingContent();
-  const isOlive = data.templateId === "basic-1";
+  const isOlive = data.templateId === "vuon-o-liu" || data.templateId === "basic-1";
   const animateInContained = contained && isOlive;
   const [mounted, setMounted] = React.useState(false);
   const ref = React.useRef<HTMLElement | null>(null);

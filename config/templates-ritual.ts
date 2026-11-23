@@ -24,13 +24,5 @@ export const RITUAL_TEMPLATES_CONFIG: RitualTemplateConfig[] = [
     styleTags: ["Gia đình", "Ấm cúng"],
     description: "", // Để trống cho chủ sở hữu điền
   },
-  {
-    id: "ritual-vu-quy",
-    ritualKey: "vu-quy",
-    ritualLabel: "Vu quy",
-    name: "Lễ vu quy",
-    styleTags: ["Nhà gái", "Thanh lịch"],
-    description: "", // Để trống cho chủ sở hữu điền
-  },
 ];
 

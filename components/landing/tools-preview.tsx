@@ -1,6 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Calculator, CalendarDays, MessageSquareHeart, Sparkles } from "lucide-react";
+import { ArrowRight, Calculator, CalendarDays, MessageSquareHeart } from "lucide-react";
 import { TOOLS_HUB_COPY } from "@/config/tools-copy";
 import { ScrollReveal } from "./scroll-reveal";
 
@@ -16,7 +16,7 @@ export function ToolsPreviewSection() {
         <ScrollReveal className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#E8E2D9] bg-white/80 px-4 py-1.5 shadow-2xs">
-              <Sparkles className="h-3.5 w-3.5 text-[#B89B72]" aria-hidden="true" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B89B72]" aria-hidden="true" />
               <span className="text-[12px] font-medium tracking-wide text-[#7A1C24] sm:text-[13px]">
                 {section.eyebrow}
               </span>

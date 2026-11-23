@@ -6,7 +6,20 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { TemplatePhotoItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export type TemplateTone = "minimal" | "sunset" | "obsidian" | "red" | "velvet" | "ruby" | "minred" | "minbrown" | "flowery";
+export type TemplateTone =
+  | "minimal"
+  | "sunset"
+  | "obsidian"
+  | "red"
+  | "velvet"
+  | "ruby"
+  | "minred"
+  | "minbrown"
+  | "flowery"
+  | "amethyst"
+  | "sapphire"
+  | "midnight-ink"
+  | "emerald";
 
 interface LightboxModalProps {
   photos: TemplatePhotoItem[];

@@ -45,6 +45,7 @@ function getPlanBadgeClasses(plan: WeddingPlan): string {
 
 function TemplateCoverMedia({
   template,
+  prioritize = false,
 }: {
   template: WeddingTemplateMeta;
   prioritize?: boolean;
@@ -75,8 +76,9 @@ function TemplateCoverMedia({
       alt={`${template.name} — ${template.subtitle}`}
       width={480}
       height={640}
-      loading="lazy"
+      loading={prioritize ? "eager" : "lazy"}
       decoding="async"
+      fetchPriority={prioritize ? "high" : "auto"}
       onError={() => setErrored(true)}
       className="block h-full w-full bg-surface-alt object-cover"
     />
@@ -235,7 +237,7 @@ export function TemplateGrid({ onUseTemplate }: TemplateGridProps) {
                 >
                   {/* Khung ảnh bìa tỉ lệ 3:4 */}
                   <div className="relative aspect-[3/4] w-full overflow-hidden border-b border-border bg-surface-alt">
-                    <TemplateCoverMedia template={tpl} prioritize={index < 2} />
+                    <TemplateCoverMedia template={tpl} prioritize={index < 4} />
 
                     <span
                       className={cn(

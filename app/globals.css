@@ -167,29 +167,45 @@
 .olive-reveal:not(.is-revealed) img {
   opacity: 0;
 }
+
 /* Vườn Ô Liu: text slides in, images fade in. Mỗi phần tử nhận
    `--olive-delay` riêng (RevealSection đặt) nên hiện lần lượt, không cùng lúc. */
 .olive-reveal.is-revealed :is(h1, h2, h3, h4, p, label) {
   animation: olive-text-slide 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--olive-delay, 0ms);
 }
+
 .olive-reveal.is-revealed img {
   animation: olive-image-fade 1.2s ease-out both;
   animation-delay: var(--olive-delay, 0ms);
 }
 
 @keyframes olive-text-slide {
-  from { opacity: 0; transform: translate3d(0, 16px, 0); }
-  to { opacity: 1; transform: translate3d(0, 0, 0); }
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
+
 @keyframes olive-image-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Trước đây thiếu nhánh này: người bật giảm chuyển động vẫn thấy hiệu ứng
    1,5s, và nếu JS lỗi thì nội dung kẹt ở opacity 0. */
 @media (prefers-reduced-motion: reduce) {
+
   .olive-reveal :is(h1, h2, h3, h4, p, label),
   .olive-reveal img {
     animation: none !important;
@@ -215,13 +231,13 @@
   0% {
     transform: translate3d(0, -8vh, 0) rotate(0deg);
   }
+
   50% {
-    transform: translate3d(var(--petal-drift, 20px), 52vh, 0)
-      rotate(calc(var(--petal-rotate, 180deg) / 2));
+    transform: translate3d(var(--petal-drift, 20px), 52vh, 0) rotate(calc(var(--petal-rotate, 180deg) / 2));
   }
+
   100% {
-    transform: translate3d(calc(var(--petal-drift, 20px) * -0.5), 110vh, 0)
-      rotate(var(--petal-rotate, 180deg));
+    transform: translate3d(calc(var(--petal-drift, 20px) * -0.5), 110vh, 0) rotate(var(--petal-rotate, 180deg));
   }
 }
 
@@ -239,8 +255,13 @@
 }
 
 @keyframes album-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .album-track {
@@ -335,25 +356,24 @@ body:has(.template-pro-obsidian) {
 }
 
 .lnd-phone-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: var(--brand-border) transparent;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 .lnd-phone-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.lnd-phone-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--brand-border);
-  border-radius: 9999px;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 @keyframes inv-tap-hint-pulse {
+
   0%,
   100% {
     opacity: 0.45;
     transform: translateY(0px);
   }
+
   50% {
     opacity: 0.92;
     transform: translateY(-2px);
@@ -361,17 +381,21 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes inv-heartbeat {
+
   0%,
   64%,
   100% {
     transform: scale(1);
   }
+
   20% {
     transform: scale(1.06);
   }
+
   36% {
     transform: scale(0.99);
   }
+
   48% {
     transform: scale(1.03);
   }
@@ -394,11 +418,13 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes inv-cta-ring {
+
   0%,
   100% {
     opacity: 0.55;
     transform: scale(1);
   }
+
   50% {
     opacity: 0;
     transform: scale(1.14);
@@ -416,6 +442,7 @@ body:has(.template-pro-obsidian) {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -436,6 +463,7 @@ body:has(.template-pro-obsidian) {
   from {
     width: 0;
   }
+
   to {
     width: 5rem;
   }
@@ -445,6 +473,7 @@ body:has(.template-pro-obsidian) {
   from {
     transform: scale(1.04);
   }
+
   to {
     transform: scale(1.0);
   }
@@ -462,6 +491,7 @@ body:has(.template-pro-obsidian) {
   .hover-lift {
     transition: transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
   }
+
   .hover-lift:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
@@ -537,12 +567,15 @@ body:has(.template-pro-obsidian) {
     transform: translateY(0) translateX(0) rotate(0deg);
     opacity: 0;
   }
+
   10% {
     opacity: 0.9;
   }
+
   90% {
     opacity: 0.8;
   }
+
   100% {
     transform: translateY(105vh) translateX(var(--sway, 20px)) rotate(360deg);
     opacity: 0;
@@ -550,18 +583,24 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes seal-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
   }
+
   50% {
     transform: translate(-50%, -50%) scale(1.06);
   }
 }
 
 @keyframes seal-pulse-center {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.06);
   }
@@ -571,7 +610,9 @@ body:has(.template-pro-obsidian) {
   0% {
     transform: translateX(-100%);
   }
-  30%, 100% {
+
+  30%,
+  100% {
     transform: translateX(300%);
   }
 }
@@ -590,8 +631,13 @@ body:has(.template-pro-obsidian) {
 
 /* ===== Template collection: snapshot autoscroll + dialog motion ===== */
 @keyframes template-snapshot-scroll {
-  from { transform: translateY(0); }
-  to { transform: translateY(calc(-1 * var(--snapshot-distance, 0px))); }
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(calc(-1 * var(--snapshot-distance, 0px)));
+  }
 }
 
 .snapshot-scroll {
@@ -606,32 +652,58 @@ body:has(.template-pro-obsidian) {
 }
 
 .no-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 @keyframes template-dialog-in {
-  from { opacity: 0; transform: translateY(12px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes template-dialog-out {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(12px) scale(0.96); }
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
 }
 
 @keyframes template-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes template-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 .template-dialog-panel[data-state="open"] {
@@ -665,34 +737,28 @@ body:has(.template-pro-obsidian) {
 }
 
 /* ===== Phone preview: ẩn thanh cuộn nhưng vẫn cuộn được ===== */
-.lnd-phone-scroll {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.lnd-phone-scroll::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
-}
-
-/* Ẩn luôn scrollbar của các vùng cuộn lồng bên trong khung điện thoại. */
 .lnd-phone-scroll,
 .lnd-phone-scroll * {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
+.lnd-phone-scroll::-webkit-scrollbar,
 .lnd-phone-scroll *::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 /* ===== Social proof marquee ===== */
 @keyframes marquee-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .marquee-track {
@@ -714,71 +780,169 @@ body:has(.template-pro-obsidian) {
    của element không nằm trong các class này. */
 
 @keyframes anim-fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes anim-slideIn {
-  from { opacity: 0; transform: translate(var(--anim-from-x, -40px), var(--anim-from-y, 0px)); }
-  to { opacity: 1; transform: translate(0, 0); }
+  from {
+    opacity: 0;
+    transform: translate(var(--anim-from-x, -40px), var(--anim-from-y, 0px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
 }
 
 @keyframes anim-rise {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes anim-zoomIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes anim-zoomOut {
-  from { opacity: 0; transform: scale(1.2); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes anim-pop {
-  0% { opacity: 0; transform: scale(0.6); }
-  60% { opacity: 1; transform: scale(1.08); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes anim-bounceIn {
-  0% { opacity: 0; transform: translateY(-40px); }
-  60% { opacity: 1; transform: translateY(10px); }
-  80% { transform: translateY(-4px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(10px);
+  }
+
+  80% {
+    transform: translateY(-4px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes anim-blurIn {
-  from { opacity: 0; filter: blur(12px); }
-  to { opacity: 1; filter: blur(0px); }
+  from {
+    opacity: 0;
+    filter: blur(12px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0px);
+  }
 }
 
 @keyframes anim-rotateIn {
-  from { opacity: 0; transform: rotate(-12deg) scale(0.9); }
-  to { opacity: 1; transform: rotate(0deg) scale(1); }
+  from {
+    opacity: 0;
+    transform: rotate(-12deg) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
 }
 
 @keyframes anim-flipIn {
-  from { opacity: 0; transform: perspective(800px) rotateY(90deg); }
-  to { opacity: 1; transform: perspective(800px) rotateY(0deg); }
+  from {
+    opacity: 0;
+    transform: perspective(800px) rotateY(90deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: perspective(800px) rotateY(0deg);
+  }
 }
 
 @keyframes anim-fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes anim-slideOut {
-  from { opacity: 1; transform: translate(0, 0); }
-  to { opacity: 0; transform: translate(var(--out-x, -40px), var(--out-y, 0px)); }
+  from {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(var(--out-x, -40px), var(--out-y, 0px));
+  }
 }
 
 @keyframes anim-zoomOutExit {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.8); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
 }
 
 [data-anim-out][data-anim-out-play="true"] {
@@ -790,18 +954,34 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes anim-wipe {
-  from { clip-path: var(--anim-from-clip, inset(0 100% 0 0)); opacity: 0; }
-  to { clip-path: inset(0); opacity: 1; }
+  from {
+    clip-path: var(--anim-from-clip, inset(0 100% 0 0));
+    opacity: 0;
+  }
+
+  to {
+    clip-path: inset(0);
+    opacity: 1;
+  }
 }
 
 /* Phase 3: chữ gõ từng ký tự / hiện từng từ. */
 @keyframes anim-charIn {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes anim-wordIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .anim-char {
@@ -831,46 +1011,109 @@ body:has(.template-pro-obsidian) {
 /* ===== Phase 3: loop / emphasis =====
    Wrapper "Lặp" chỉ chạy sau khi "Vào" xong; tạm dừng khi off-screen hoặc tab ẩn. */
 @keyframes loop-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(calc(-10px * var(--loop-amount, 1))); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(calc(-10px * var(--loop-amount, 1)));
+  }
 }
 
 @keyframes loop-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(calc(1 + 0.06 * var(--loop-amount, 1))); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(calc(1 + 0.06 * var(--loop-amount, 1)));
+  }
 }
 
 @keyframes loop-heartbeat {
-  0%, 100% { transform: scale(1); }
-  14% { transform: scale(calc(1 + 0.15 * var(--loop-amount, 1))); }
-  28% { transform: scale(1); }
-  42% { transform: scale(calc(1 + 0.12 * var(--loop-amount, 1))); }
-  56% { transform: scale(1); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  14% {
+    transform: scale(calc(1 + 0.15 * var(--loop-amount, 1)));
+  }
+
+  28% {
+    transform: scale(1);
+  }
+
+  42% {
+    transform: scale(calc(1 + 0.12 * var(--loop-amount, 1)));
+  }
+
+  56% {
+    transform: scale(1);
+  }
 }
 
 @keyframes loop-breathe {
-  0% { transform: scale(1); opacity: 0.85; }
-  100% { transform: scale(calc(1 + 0.03 * var(--loop-amount, 1))); opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+
+  100% {
+    transform: scale(calc(1 + 0.03 * var(--loop-amount, 1)));
+    opacity: 1;
+  }
 }
 
 @keyframes loop-sway {
-  0%, 100% { transform: rotate(calc(-4deg * var(--loop-amount, 1))); }
-  50% { transform: rotate(calc(4deg * var(--loop-amount, 1))); }
+
+  0%,
+  100% {
+    transform: rotate(calc(-4deg * var(--loop-amount, 1)));
+  }
+
+  50% {
+    transform: rotate(calc(4deg * var(--loop-amount, 1)));
+  }
 }
 
 @keyframes loop-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes loop-twinkle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(calc(1 - 0.06 * var(--loop-amount, 1))); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.3;
+    transform: scale(calc(1 - 0.06 * var(--loop-amount, 1)));
+  }
 }
 
 @keyframes loop-kenBurns {
-  from { transform: scale(1) translate(0, 0); }
-  to { transform: scale(calc(1 + 0.12 * var(--loop-amount, 1))) translate(calc(2% * var(--loop-amount, 1)), calc(-1.5% * var(--loop-amount, 1))); }
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+
+  to {
+    transform: scale(calc(1 + 0.12 * var(--loop-amount, 1))) translate(calc(2% * var(--loop-amount, 1)), calc(-1.5% * var(--loop-amount, 1)));
+  }
 }
 
 [data-loop] {
@@ -911,12 +1154,10 @@ body:has(.template-pro-obsidian) {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    transparent 35%,
-    color-mix(in srgb, currentColor 55%, transparent) 50%,
-    transparent 65%
-  );
+  background: linear-gradient(115deg,
+      transparent 35%,
+      color-mix(in srgb, currentColor 55%, transparent) 50%,
+      transparent 65%);
   transform: translateX(-120%);
   animation: loop-shimmer 3000ms linear infinite;
   animation-play-state: inherit;
@@ -935,7 +1176,9 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes loop-shimmer {
-  to { transform: translateX(120%); }
+  to {
+    transform: translateX(120%);
+  }
 }
 
 [data-anim-in="flipIn"] {
@@ -998,19 +1241,23 @@ body:has(.template-pro-obsidian) {
     filter: none !important;
     clip-path: none !important;
   }
+
   [data-text-play] .anim-char,
   [data-text-play] .anim-word {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
+
   [data-loop],
   [data-loop]::after {
     animation: none !important;
   }
+
   [data-loop]::after {
     opacity: 0 !important;
   }
+
   [data-anim-out] {
     animation: none !important;
     opacity: 1 !important;
@@ -1037,14 +1284,24 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes wish-marquee-y-scroll {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(0, -50%, 0); }
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, -50%, 0);
+  }
 }
 
 /* Minimal Red: chữ hiện dần theo chiều ngang (text mask reveal) */
 @keyframes minred-wipe {
-  from { clip-path: inset(0 100% 0 0); }
-  to { clip-path: inset(0 0 0 0); }
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
 }
 
 .minred-wipe {
@@ -1066,10 +1323,12 @@ body:has(.template-pro-obsidian) {
     transform: scale(0.9);
     opacity: 0.85;
   }
+
   70% {
     transform: scale(1.45);
     opacity: 0;
   }
+
   100% {
     transform: scale(1.45);
     opacity: 0;
@@ -1085,13 +1344,16 @@ body:has(.template-pro-obsidian) {
     transform: translateY(10px);
     opacity: 0;
   }
+
   30% {
     opacity: 1;
   }
+
   70% {
     transform: translateY(-8px);
     opacity: 1;
   }
+
   100% {
     transform: translateY(-16px);
     opacity: 0;
@@ -1103,10 +1365,13 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes luxury-shimmer {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(184, 155, 114, 0);
     border-color: rgba(184, 155, 114, 0.3);
   }
+
   50% {
     box-shadow: 0 0 0 4px rgba(184, 155, 114, 0.3);
     border-color: rgba(184, 155, 114, 0.85);
@@ -1118,14 +1383,19 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes led-mini-photo-1 {
-  0%, 45% {
+
+  0%,
+  45% {
     opacity: 1;
     transform: scale(1);
   }
-  50%, 95% {
+
+  50%,
+  95% {
     opacity: 0;
     transform: scale(1.04);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -1133,14 +1403,19 @@ body:has(.template-pro-obsidian) {
 }
 
 @keyframes led-mini-photo-2 {
-  0%, 45% {
+
+  0%,
+  45% {
     opacity: 0;
     transform: scale(1.04);
   }
-  50%, 95% {
+
+  50%,
+  95% {
     opacity: 1;
     transform: scale(1);
   }
+
   100% {
     opacity: 0;
     transform: scale(1.04);
@@ -1156,6 +1431,7 @@ body:has(.template-pro-obsidian) {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .animate-luxury-ripple,
   .animate-luxury-swipe-up,
   .animate-luxury-shimmer,
