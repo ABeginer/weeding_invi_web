@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import { AttendanceRatioTierChart } from "@/components/blog/AttendanceRatioTierChart";
 import { BossAddressingDecisionTree } from "@/components/blog/BossAddressingDecisionTree";
 import { BossInvitationEtiquetteTimeline } from "@/components/blog/BossInvitationEtiquetteTimeline";
 import { BossZaloTemplatesCard } from "@/components/blog/BossZaloTemplatesCard";
@@ -7,8 +8,10 @@ import { GroomCardLayoutDiagram } from "@/components/blog/GroomCardLayoutDiagram
 import { GroomSpecialFamilyCases } from "@/components/blog/GroomSpecialFamilyCases";
 import { GroomVsBrideComparisonCard } from "@/components/blog/GroomVsBrideComparisonCard";
 import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
+import { ReserveTableDecisionSplit } from "@/components/blog/ReserveTableDecisionSplit";
 import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
 import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
+import { TableReserveCalculatorCard } from "@/components/blog/TableReserveCalculatorCard";
 import { slugifyHeading } from "@/lib/blog";
 
 const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
@@ -21,6 +24,9 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   GroomCardLayoutDiagram,
   GroomVsBrideComparisonCard,
   GroomSpecialFamilyCases,
+  AttendanceRatioTierChart,
+  TableReserveCalculatorCard,
+  ReserveTableDecisionSplit,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {

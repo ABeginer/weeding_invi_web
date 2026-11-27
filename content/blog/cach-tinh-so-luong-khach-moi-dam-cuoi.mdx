@@ -1,0 +1,87 @@
+---
+title: "Cách tính số lượng khách mời đám cưới và đặt bàn dự phòng tránh vỡ trận tiền cỗ"
+description: "Hướng dẫn cách tính số lượng khách mời đám cưới chuẩn theo từng nhóm quan hệ, công thức cộng hệ số đi kèm, quy tắc đặt 5–10% bàn dự phòng và chốt RSVP tự động."
+date: "2026-11-27"
+author: "Inviwedd"
+category: "Cẩm nang cưới"
+tags:
+  - cách tính số lượng khách mời đám cưới
+  - đặt bàn dự phòng đám cưới
+  - tính số mâm tiệc cưới
+  - thiệp cưới online
+cover: "/blog/covers/cach-tinh-so-luong-khach-moi-dam-cuoi.webp"
+faqs:
+  - question: "Tỷ lệ khách đi đám cưới thực tế thường đạt bao nhiêu phần trăm?"
+    answer: "Trung bình các tiệc cưới tại thành phố đạt khoảng 75% đến 85% tổng lượng thiệp phát ra. Trong đó họ hàng gần đạt 90%–95%, bạn thân đạt 85%–90%, đồng nghiệp 75%–85%, còn nhóm bạn cũ hoặc khách ở tỉnh xa dao động 55%–70%."
+  - question: "Nên đặt thêm bao nhiêu phần trăm bàn dự phòng cho tiệc 20 đến 30 mâm?"
+    answer: "Mức an toàn phổ biến là cộng thêm 5% đến 10% tổng số bàn chính thức, tương đương 1 đến 3 bàn chờ. Hãy thỏa thuận trước với nhà hàng để chỉ phải trả tiền khi thực tế bóc màng bọc và phục vụ món cho bàn chờ đó."
+  - question: "Vì sao phải nhân thêm hệ số người đi kèm khi tính số lượng khách mời?"
+    answer: "Một thiệp mời gửi cho gia đình họ hàng hoặc bạn bè đã lập gia đình thường tương ứng từ 2 đến 4 chỗ ngồi thực tế chứ không phải 1 ghế. Nếu đếm theo số lượng phong bì mà quên nhân người đi kèm, bạn sẽ bị thiếu ghế trầm trọng."
+  - question: "Nên chốt số bàn chính thức với nhà hàng trước ngày cưới mấy hôm?"
+    answer: "Thời điểm đẹp nhất để khóa số bàn cứng với bếp nhà hàng là trước tiệc từ 3 đến 5 ngày, sau khi đã hoàn tất đợt nhắc xác nhận tham dự (RSVP) vào mốc 7 ngày trước lễ."
+  - question: "Làm thế nào thu xác nhận tham dự sớm để giảm bàn dư vào phút chót?"
+    answer: "Khi gửi thiệp cưới điện tử cá nhân hóa tên từng người trên Inviwedd, khách mời có thể bấm chọn trạng thái tham dự và số người đi cùng ngay trên điện thoại, giúp bạn xem tổng đầu người cập nhật theo thời gian thực thay vì đoán mò."
+---
+
+import { AttendanceRatioTierChart } from "@/components/blog/AttendanceRatioTierChart";
+import { TableReserveCalculatorCard } from "@/components/blog/TableReserveCalculatorCard";
+import { ReserveTableDecisionSplit } from "@/components/blog/ReserveTableDecisionSplit";
+
+Sai số phổ biến nhất khi ước lượng khách mời không phải quên cộng tên người quen, mà là gộp chung một tỷ lệ tham dự cho mọi mối quan hệ và quên nhân hệ số người đi kèm. Để tính số lượng khách mời đám cưới sát thực tế, bạn cần tách riêng tỷ lệ đi tiệc giữa họ hàng, bạn thân, đồng nghiệp và cộng thêm 5–10% bàn dự phòng thay vì đặt thừa cỗ theo cảm tính.
+
+> **Tóm tắt nhanh:** Đừng lấy 100% số phong bì chia cho 10 chỗ/bàn. Tách danh sách theo 4 nhóm độ thân thiết để ước lượng tỷ lệ đi tiệc, nhân thêm số người đi cùng (`+1`), đặt khoảng `5%–10%` bàn dự phòng dạng bàn chờ chưa tính phí và thu xác nhận RSVP trước ngày khóa mâm 5–7 ngày.
+
+## Tại sao ước lượng cảm tính dễ làm lệch tới hàng chục triệu tiền cỗ?
+
+Chi phí tiệc mặn tại nhà hàng hiện chiếm từ 50% đến 70% tổng ngân sách cưới của đa số cặp đôi, với đơn giá phổ biến dao động khoảng 4 triệu đến 7 triệu đồng cho mỗi mâm 10 người. Chỉ cần ước tính sai 3 bàn tiệc, gia đình có thể đối mặt ngay hai kịch bản khó xử: thừa cỗ phải trả thêm 15–20 triệu đồng cho những ghế trống, hoặc thiếu bàn phải kê gấp ghế phụ khiến khách tới sau cảm thấy không được chu đáo.
+
+Cái bẫy lớn nhất nằm ở **thói quen đếm theo số thiệp phát ra**. Một lá thiệp gửi tới chú bác hoặc đồng nghiệp thân đã kết hôn thường mang theo 2 đến 4 người ăn tiệc; ngược lại, 50 lá thiệp gửi nhóm bạn đại học cũ ở tỉnh khác có thể chỉ có khoảng 30 người sắp xếp về dự được. Khi hai sai số ngược chiều này không được tách bạch, bảng dự trù ban đầu gần như chắc chắn lệch khỏi thực tế.
+
+## Công thức 4 bước quy đổi từ số thiệp phát ra thành số bàn nhà hàng
+
+Thay vì đoán con số chung chung, bạn có thể áp dụng đúng quy trình 4 biến số đang vận hành bên trong công cụ tài chính cưới của Inviwedd: số thiệp mời (`G`), tỷ lệ tham dự dự kiến (`r`), hệ số người đi kèm trung bình (`c`) và tỷ lệ bàn dự phòng (`b`). Dưới đây là phép tính minh họa trực tiếp cho một đám cưới phát ra 250 thiệp:
+
+<TableReserveCalculatorCard />
+
+Nhìn vào phép tính trên, nếu đặt theo cảm tính `250 ÷ 10 = 25 bàn` cứng, bạn tưởng mình đang an toàn nhưng thực tế lại có thể thiếu hoặc thừa tùy vào tỷ trọng nhóm họ hàng trong danh sách. Để thử thay ngay số thiệp và giá cỗ của riêng gia đình bạn, hãy nhập trực tiếp các con số vào [bảng tính chi phí đám cưới](/cong-cu/bang-tinh-dam-cuoi) nhằm kiểm tra cả điểm hòa vốn tiền mừng dự kiến.
+
+## Tỷ lệ tham dự thực tế theo từng nhóm họ hàng, bạn bè và đồng nghiệp
+
+Để biến số `r` trong công thức trên sát nhất với tiệc của bạn, hãy chia danh sách khách hiện có thành 4 tầng quan hệ trước khi nhân tỷ lệ. Mỗi nhóm tại Việt Nam có thói quen đi tiệc và mức độ dắt theo người nhà hoàn toàn khác nhau:
+
+<AttendanceRatioTierChart />
+
+Khi tổng hợp lại, nếu danh sách của hai họ nghiêng nhiều về bà con họ nội, họ ngoại gần nhà (trên 50% tổng lượng khách), tỷ lệ tham dự trung bình toàn tiệc thường nhích lên **85%–90%** kèm hệ số đi kèm cao. Ngược lại, với tiệc báo hỷ đãi chủ yếu bạn bè trẻ và đồng nghiệp tại thành phố lớn, tỷ lệ này thường ổn định quanh mức **75%–82%**.
+
+## Quy tắc đặt bàn dự phòng vừa đủ không thiếu chỗ mà vẫn không lỗ mâm
+
+Bàn dự phòng sinh ra để giải quyết sai số 5%–10% vào giờ chót (khách vốn báo bận bỗng thu xếp qua được, hoặc bạn bè đưa thêm người nhà tới dự). Tuy nhiên, đặt bàn dự phòng sai điều khoản hợp đồng sẽ biến khoản bảo hiểm này thành chi phí chết:
+
+<ReserveTableDecisionSplit />
+
+Một mẹo thực tế khi làm việc với quản lý sảnh tiệc là hỏi rõ **chính sách ghép suất lẻ và bàn dự phòng trước ngày ký cọc**: đa số nhà hàng đồng ý giữ sẵn 1 đến 3 bàn chờ chưa lên món lạnh và không tính phí nếu không sử dụng, miễn là bạn chốt sát số bàn chính thức trước tiệc từ 3 đến 5 ngày. Bên cạnh đó, khâu sắp chỗ ngồi cũng cần gom đúng nhóm quen biết vào cùng mâm theo hướng dẫn [cách xưng hô ghi thiệp cưới chuẩn lễ nghĩa](/blog/cach-xung-ho-ghi-thiep-cuoi) hoặc tách rạch ròi khách sáng gia tiên và khách tối nhà hàng như lưu ý trong bài [mẫu thiệp cưới nhà trai chuẩn Lễ Thành Hôn](/blog/mau-thiep-cuoi-nha-trai).
+
+## Chốt số người chính xác trước ngày khóa mâm nhờ xác nhận RSVP tự động
+
+Mọi công thức ước lượng đều chỉ là lớp dự phòng ở tháng đầu tiên chuẩn bị cưới; muốn tiệm cận 98% số khách thực tế có mặt, bạn vẫn cần dữ liệu xác nhận thật từ khách mời trước ngày báo bếp nhà hàng 1 tuần.
+
+| Mốc thời gian trước lễ | Hành động kiểm soát số lượng khách | Công cụ hỗ trợ thực hiện |
+| :--- | :--- | :--- |
+| Trước 4–6 tuần | Lên danh sách thô theo 4 nhóm vai vế và tách buổi lễ gia tiên với tiệc nhà hàng | [Công cụ lập danh sách khách mời](/cong-cu/tao-danh-sach-khach-moi) |
+| Trước 10–14 ngày | Gửi thiệp kèm tin nhắn 1-1 riêng cho từng khách, mở nút chọn số người đi cùng | [Công cụ tạo lời mời cưới Zalo](/cong-cu/tao-loi-moi-zalo) |
+| Trước 5–7 ngày | Lọc những khách chưa phản hồi RSVP để nhắn nhắc lịch đúng 1 lần trước khi chốt mâm | Bảng quản lý trạng thái RSVP trên Inviwedd |
+| Trước 3 ngày | Khóa số bàn chính thức và giữ 5%–10% bàn chờ trong hợp đồng với nhà hàng | Đối chiếu tổng chi phí lần cuối |
+
+Nếu bạn cũng mời nhiều cấp trên hoặc khách quý tại cơ quan và cần hỏi khéo số ghế đi cùng để không làm sếp ngại, bạn có thể xem thêm cách trao thiệp và nhắn riêng tại bài [cách ghi thiệp cưới mời sếp tinh tế](/blog/cach-ghi-thiep-cuoi-moi-sep).
+
+## Khi nào công thức tỷ lệ chung không còn chính xác để áp dụng máy móc?
+
+Công thức tỷ lệ trung bình `75%–85%` rất hiệu quả với đa số tiệc cưới nhà hàng quy mô 150 đến 400 khách, nhưng sẽ cần tự điều chỉnh tay trong 3 tình huống đặc biệt:
+
+* **Tiệc cưới quy mô nhỏ dưới 50 khách thân mật (Intimate Wedding):** Với nhóm toàn gia đình ruột thịt và bạn thân cốt cán, tỷ lệ tham dự thường đạt 95%–100%, chỉ cần sai lệch 3–4 người đã ảnh hưởng trực tiếp tới sơ đồ chỗ ngồi.
+* **Tiệc tổ chức vào ngày mưa bão lớn hoặc trùng kỳ nghỉ lễ dài:** Khách đi từ xa hoặc đi kèm người cao tuổi, trẻ nhỏ có thể hủy lịch đột ngột ngay sáng hôm tổ chức khiến tỷ lệ thực tế tụt thêm 10%–15%.
+* **Đãi tiệc theo tập quán ở quê mời cả xóm hoặc làm cỗ dựng rạp nhiều ngày:** Nhiều địa phương có thói quen hàng xóm sang ăn cỗ theo hộ gia đình từ sáng đến chiều không báo trước qua tin nhắn; lúc này phụ huynh hai bên cần dự trù dư nguyên liệu linh hoạt theo kinh nghiệm địa phương.
+
+Khi danh sách khách theo từng nhóm đã lên khung rõ ràng, bạn có thể tham khảo bộ [mẫu thiệp cưới online](/thiep-cuoi) hoặc vào trang [tạo thiệp cưới miễn phí](/tao-thiep) (dùng thử miễn phí cho danh sách tới 20 khách) để phát hành link thiệp riêng cho từng người và theo dõi chính xác số lượng tham dự đổ về tự động trước ngày đặt cọc bàn tiệc.
+
+<span data-dispatchseo="1e04cc6c-291d-4e16-aee6-6f9369ec133e" hidden></span>
