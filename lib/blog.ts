@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { BUNDLED_BLOG_FILES } from "./blog-bundle.generated.ts";
 
 export interface BlogFaqItem {
   question: string;
@@ -233,16 +234,61 @@ function parseTags(raw: unknown): string[] {
     .filter(Boolean);
 }
 
+function readAllBlogSourceFiles(): Array<{ file: string; raw: string }> {
+  try {
+    if (fs.existsSync(BLOG_DIR)) {
+      const files = fs
+        .readdirSync(BLOG_DIR)
+        .filter((file) => file.endsWith(".mdx") || file.endsWith(".md"));
+      if (files.length > 0) {
+        return files.map((file) => ({
+          file,
+          raw: fs.readFileSync(path.join(BLOG_DIR, file), "utf8"),
+        }));
+      }
+    }
+  } catch {
+    // Cloudflare Workers isolate has no runtime filesystem; fall back to bundled posts.
+  }
+
+  return Object.entries(BUNDLED_BLOG_FILES).map(([file, raw]) => ({
+    file,
+    raw,
+  }));
+}
+
+function readBlogSourceBySlug(slug: string): string | null {
+  const candidates = [`${slug}.mdx`, `${slug}.md`];
+
+  try {
+    if (fs.existsSync(BLOG_DIR)) {
+      const fileName = candidates.find((candidate) =>
+        fs.existsSync(path.join(BLOG_DIR, candidate)),
+      );
+      if (fileName) {
+        return fs.readFileSync(path.join(BLOG_DIR, fileName), "utf8");
+      }
+    }
+  } catch {
+    // Fall back to bundled posts on Cloudflare Workers.
+  }
+
+  for (const candidate of candidates) {
+    if (Object.prototype.hasOwnProperty.call(BUNDLED_BLOG_FILES, candidate)) {
+      return BUNDLED_BLOG_FILES[candidate];
+    }
+  }
+
+  return null;
+}
+
 export function getAllBlogPosts(): BlogPostMeta[] {
-  if (!fs.existsSync(BLOG_DIR)) return [];
-  const files = fs
-    .readdirSync(BLOG_DIR)
-    .filter((file) => file.endsWith(".mdx") || file.endsWith(".md"));
+  const sourceFiles = readAllBlogSourceFiles();
+  if (sourceFiles.length === 0) return [];
 
   const posts: BlogPostMeta[] = [];
-  for (const file of files) {
+  for (const { file, raw } of sourceFiles) {
     const slug = file.replace(/\.(mdx|md)$/, "");
-    const raw = fs.readFileSync(path.join(BLOG_DIR, file), "utf8");
     const { data, body } = parseFrontmatter(raw);
     const content = stripMdxPreamble(body);
     const title = typeof data.title === "string" ? data.title.trim() : slug;
@@ -283,14 +329,9 @@ export function getAllBlogPosts(): BlogPostMeta[] {
 }
 
 export function getBlogPostBySlug(slug: string): BlogPost | null {
-  if (!fs.existsSync(BLOG_DIR)) return null;
-  const candidates = [`${slug}.mdx`, `${slug}.md`];
-  const fileName = candidates.find((candidate) =>
-    fs.existsSync(path.join(BLOG_DIR, candidate)),
-  );
-  if (!fileName) return null;
+  const raw = readBlogSourceBySlug(slug);
+  if (!raw) return null;
 
-  const raw = fs.readFileSync(path.join(BLOG_DIR, fileName), "utf8");
   const { data, body } = parseFrontmatter(raw);
   const content = stripMdxPreamble(body);
   const title = typeof data.title === "string" ? data.title.trim() : slug;

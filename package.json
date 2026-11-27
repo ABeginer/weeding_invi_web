@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "blog:sync": "node scripts/sync-blog-bundle.mjs",
+    "prebuild": "node scripts/sync-blog-bundle.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
