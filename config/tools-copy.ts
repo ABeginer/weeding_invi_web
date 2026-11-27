@@ -72,6 +72,16 @@ export const TOOLS_HUB_COPY = {
       badge: "Mới",
       available: true,
     },
+    {
+      id: "wedding-checklist",
+      title: "Checklist đếm ngược đám cưới",
+      description:
+        "Chọn ngày cưới dương lịch để tự chia 5 mốc chuẩn bị từ 6 tháng tới ngày lễ, lưu tiến độ trên trình duyệt và xuất file Excel chuẩn UTF-8.",
+      href: "/cong-cu/checklist-chuan-bi-dam-cuoi",
+      ctaLabel: "Mở checklist",
+      badge: "Mới",
+      available: true,
+    },
   ] as const,
 } as const;
 
@@ -386,6 +396,60 @@ export const GUEST_LIST_COPY = {
       question: "Nút Sao chép dán Inviwedd dùng để làm gì?",
       answer:
         "Khi bấm Sao chép dán Inviwedd, công cụ xuất văn bản 3 cột chuẩn gồm Tên khách, Vai vế xưng hô và Số bàn. Bạn chỉ cần mở trình tạo thiệp tại /tao-thiep, vào mục Nhập khách hàng loạt (hỗ trợ tối đa 500 khách) và dán một lần là xong cả tên lẫn cách xưng hô đúng vai vế.",
+    },
+  ] satisfies ToolFaqItem[],
+} as const;
+
+export const WEDDING_CHECKLIST_COPY = {
+  seo: {
+    title: "File checklist chuẩn bị đám cưới đếm ngược theo ngày (Xuất Excel)",
+    description:
+      "Công cụ checklist đếm ngược chuẩn bị đám cưới miễn phí: nhập ngày cưới để tự chia mốc 6 tháng, 3 tháng, 1 tháng, 1 tuần, lưu tiến độ trình duyệt và xuất file CSV mở ngay trên Excel.",
+    keywords: [
+      "file checklist chuẩn bị đám cưới",
+      "checklist đám cưới excel",
+      "kế hoạch chuẩn bị đám cưới theo tháng",
+      "Inviwedd",
+    ],
+    appName: "Checklist đếm ngược chuẩn bị đám cưới",
+    ogAlt: `Công cụ checklist đếm ngược chuẩn bị đám cưới ${SITE_NAME}`,
+  },
+  breadcrumbs: [
+    { label: "Trang chủ", href: "/" },
+    { label: "Công cụ", href: "/cong-cu" },
+    { label: "Checklist chuẩn bị đám cưới", href: "/cong-cu/checklist-chuan-bi-dam-cuoi" },
+  ],
+  hero: {
+    eyebrow: "LỘ TRÌNH CHUẨN BỊ ĐÁM CƯỚI ĐẦY ĐỦ",
+    h1: "Checklist đếm ngược chuẩn bị đám cưới",
+    subtitle:
+      "Chọn ngày cưới dự kiến để tự tính hạn hoàn thành cho 5 mốc thời gian, lưu tiến độ ngay trên trình duyệt và tải xuống file Excel chuẩn tiếng Việt.",
+  },
+  faqs: [
+    {
+      question: "Làm sao công cụ tính ngày hạn cho từng đầu việc trong checklist?",
+      answer:
+        "Từ ngày cưới dương lịch bạn chọn, công cụ trừ lùi chính xác số ngày theo 5 mốc: Trước 6 tháng (-180 ngày), Trước 3 tháng (-90 ngày), Trước 1 tháng (-30 ngày), Trước 1 tuần (-7 ngày) và Ngày cưới. Ví dụ chọn ngày 20/06/2027 thì hạn gửi thiệp sẽ rơi vào 21/05/2027.",
+    },
+    {
+      question: "Tiến độ tôi đã tích hoàn thành có bị mất khi đóng trình duyệt không?",
+      answer:
+        "Không. Mọi dấu tích hoàn thành, quy mô đám cưới, ngày cưới và các đầu việc riêng bạn thêm vào đều được lưu tự động trong localStorage của trình duyệt trên thiết bị đang dùng.",
+    },
+    {
+      question: "File tải về có mở được bằng Microsoft Excel mà không bị lỗi font tiếng Việt không?",
+      answer:
+        "Có. File .csv xuất ra đã gắn sẵn mã UTF-8 BOM ở đầu tệp nên khi nhấp đúp mở bằng Microsoft Excel hoặc nhập vào Google Sheets sẽ hiển thị đầy đủ dấu tiếng Việt cùng cột phụ trách Nhà trai, Nhà gái và trạng thái.",
+    },
+    {
+      question: "Quy mô Thân mật gia đình và Cả hai họ hai nơi khác nhau điểm gì?",
+      answer:
+        "Chế độ Cả hai họ hai nơi bổ sung đầy đủ các bước đặt sảnh tách riêng cho Lễ Vu Quy và Lễ Thành Hôn, cùng khâu chuẩn bị mâm quả và đội bưng tráp hai bên; còn Thân mật gia đình tinh gọn lại các đầu việc cồng kềnh không cần thiết.",
+    },
+    {
+      question: "Khi đến mốc 1 tháng trước ngày cưới thì nên dùng tính năng nào tiếp theo?",
+      answer:
+        "Tại mốc Trước 1 tháng, bạn có thể mở trực tiếp trình tạo thiệp tại /tao-thiep trên Inviwedd để dán danh sách khách từ Excel (tối đa 500 khách/lượt), lấy đường dẫn cá nhân hóa tên từng người và thu xác nhận bàn tiệc RSVP tự động.",
     },
   ] satisfies ToolFaqItem[],
 } as const;

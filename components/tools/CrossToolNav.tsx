@@ -1,9 +1,14 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Calculator, Calendar, MessageSquare, Users } from "lucide-react";
+import { ArrowRight, Calculator, Calendar, ClipboardList, MessageSquare, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ToolId = "wedding-calc" | "lunar-converter" | "zalo-invite" | "guest-list";
+export type ToolId =
+  | "wedding-calc"
+  | "lunar-converter"
+  | "zalo-invite"
+  | "guest-list"
+  | "wedding-checklist";
 
 interface ToolItem {
   id: ToolId;
@@ -45,6 +50,14 @@ const ALL_TOOLS: ToolItem[] = [
       "Phân nhóm khách theo Lễ Vu Quy, Thành Hôn, Tiệc Cưới, chia bàn và xuất Excel hoặc dán 500 khách vào Inviwedd.",
     href: "/cong-cu/tao-danh-sach-khach-moi",
     icon: Users,
+  },
+  {
+    id: "wedding-checklist",
+    title: "Checklist chuẩn bị đám cưới",
+    description:
+      "Chia lộ trình 5 mốc thời gian theo ngày cưới thực tế, lưu tiến độ trình duyệt và xuất file Excel chuẩn tiếng Việt.",
+    href: "/cong-cu/checklist-chuan-bi-dam-cuoi",
+    icon: ClipboardList,
   },
 ];
 

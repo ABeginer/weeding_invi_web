@@ -86,6 +86,7 @@ export const SITE_LINKS = {
   toolLunar: "/cong-cu/doi-am-lich",
   toolZaloInvite: "/cong-cu/tao-loi-moi-zalo",
   toolGuestList: "/cong-cu/tao-danh-sach-khach-moi",
+  toolChecklist: "/cong-cu/checklist-chuan-bi-dam-cuoi",
   createWedding: "/tao-thiep",
   createWeddingSave: "/tao-thiep/luu",
   templatesAnchor: "/#mau-thiep",
