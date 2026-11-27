@@ -1,9 +1,14 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Calculator, Calendar, MessageSquare, Users } from "lucide-react";
+import { ArrowRight, Calculator, Calendar, HelpCircle, MessageSquare, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ToolId = "wedding-calc" | "lunar-converter" | "zalo-invite" | "guest-list";
+export type ToolId =
+  | "wedding-calc"
+  | "lunar-converter"
+  | "zalo-invite"
+  | "guest-list"
+  | "wedding-quiz";
 
 interface ToolItem {
   id: ToolId;
@@ -45,6 +50,14 @@ const ALL_TOOLS: ToolItem[] = [
       "Phân nhóm khách theo Lễ Vu Quy, Thành Hôn, Tiệc Cưới, chia bàn và xuất Excel hoặc dán 500 khách vào Inviwedd.",
     href: "/cong-cu/tao-danh-sach-khach-moi",
     icon: Users,
+  },
+  {
+    id: "wedding-quiz",
+    title: "Tạo Quiz trò chơi đám cưới",
+    description:
+      "Soạn bộ câu hỏi hiểu Cô dâu Chú rể, xuất kịch bản MC sân khấu, bản gửi nhóm chat và thẻ ảnh Story.",
+    href: "/cong-cu/quiz-dam-cuoi-co-dau-chu-re",
+    icon: HelpCircle,
   },
 ];
 
