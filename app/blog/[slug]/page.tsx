@@ -27,7 +27,7 @@ export async function generateMetadata({
   const post = getBlogPostBySlug(slug);
   if (!post) {
     return {
-      title: `Không tìm thấy bài viết | ${SITE_NAME}`,
+      title: "Không tìm thấy bài viết",
     };
   }
 
@@ -37,19 +37,26 @@ export async function generateMetadata({
   );
 
   return {
-    title: `${post.title} | ${SITE_NAME}`,
+    title: post.title,
     description: post.description,
+    keywords: post.tags.length > 0 ? post.tags : undefined,
     alternates: {
       canonical: canonicalUrl,
+      languages: {
+        "vi-VN": canonicalUrl,
+      },
     },
     openGraph: {
-      title: post.title,
+      title: `${post.title} | ${SITE_NAME}`,
       description: post.description,
       type: "article",
       locale: "vi_VN",
       url: canonicalUrl,
+      siteName: SITE_NAME,
       publishedTime: post.date || undefined,
       modifiedTime: post.updated || post.date || undefined,
+      authors: [post.author],
+      tags: post.tags.length > 0 ? post.tags : undefined,
       images: [
         {
           url: ogImageUrl,
@@ -59,7 +66,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: post.title,
+      title: `${post.title} | ${SITE_NAME}`,
       description: post.description,
       images: [ogImageUrl],
     },
@@ -84,18 +91,30 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     { label: post.title, href: `/blog/${post.slug}` },
   ] as const;
 
+  const relatedPosts = getAllBlogPosts()
+    .filter((item) => item.slug !== post.slug)
+    .slice(0, 3);
+  const estimatedWordCount = post.content
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+
   const jsonLdData: Array<Record<string, unknown>> = [
     {
       "@context": "https://schema.org",
-      "@type": "Article",
+      "@type": "BlogPosting",
       headline: post.title,
       description: post.description,
       image: [ogImageUrl],
       datePublished: post.date || undefined,
       dateModified: post.updated || post.date || undefined,
+      articleSection: post.category || "Cẩm nang cưới",
+      keywords: post.tags.length > 0 ? post.tags.join(", ") : undefined,
+      wordCount: estimatedWordCount,
       author: {
         "@type": "Organization",
         name: post.author,
+        url: toAbsoluteSiteUrl("/"),
       },
       publisher: {
         "@type": "Organization",
@@ -103,7 +122,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         url: toAbsoluteSiteUrl("/"),
       },
       mainEntityOfPage: canonicalUrl,
-      inLanguage: "vi",
+      inLanguage: "vi-VN",
     },
     {
       "@context": "https://schema.org",
@@ -187,6 +206,47 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
           {post.faqs.length > 0 && (
             <ToolFaqSection title="Câu hỏi thường gặp" items={post.faqs} />
+          )}
+
+          {relatedPosts.length > 0 && (
+            <section
+              aria-label="Bài viết liên quan"
+              className="mt-10 rounded-2xl border border-border bg-surface p-6 sm:p-8"
+            >
+              <p className="text-[11px] font-semibold tracking-[0.16em] text-accent-text uppercase">
+                ĐỌC TIẾP CẨM NANG CƯỚI
+              </p>
+              <h2 className="mt-1 font-display text-2xl font-semibold text-text">
+                Bài viết liên quan
+              </h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {relatedPosts.map((related) => (
+                  <Link
+                    key={related.slug}
+                    href={`/blog/${related.slug}`}
+                    className="group flex flex-col justify-between rounded-xl border border-border bg-surface-alt/40 p-4 transition-colors hover:border-accent"
+                  >
+                    <div>
+                      <p className="text-xs text-text-muted">
+                        {related.readingTimeMinutes} phút đọc
+                      </p>
+                      <h3 className="mt-1 font-display text-lg font-semibold text-text transition-colors group-hover:text-accent-text">
+                        {related.title}
+                      </h3>
+                      {related.description && (
+                        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-text-muted">
+                          {related.description}
+                        </p>
+                      )}
+                    </div>
+                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-accent-text">
+                      Đọc bài viết
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
 
           <div className="mt-10 rounded-2xl border border-border bg-surface p-6 sm:p-8 lg:hidden">

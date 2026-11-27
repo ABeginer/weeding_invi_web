@@ -12,19 +12,31 @@ const OG_IMAGE_URL = toAbsoluteSiteUrl("/templates/basic-1/cover.webp");
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: `Cẩm nang cưới & thiệp cưới online | ${SITE_NAME}`,
+  title: "Blog cẩm nang cưới & kinh nghiệm chuẩn bị đám cưới",
   description:
-    "Hướng dẫn lập kế hoạch cưới, ước tính ngân sách, quản lý danh sách khách mời và tạo thiệp cưới trực tuyến tối ưu cho cô dâu chú rể.",
+    "Hướng dẫn lập kế hoạch cưới, cách xưng hô ghi thiệp cưới, nghi thức lễ Vu Quy - Thành Hôn, dự trù ngân sách và quản lý danh sách khách mời từ Inviwedd.",
+  keywords: [
+    "cẩm nang cưới",
+    "kinh nghiệm chuẩn bị đám cưới",
+    "cách ghi thiệp cưới",
+    "thiệp cưới online",
+    "nghi thức cưới hỏi Việt Nam",
+    "Inviwedd",
+  ],
   alternates: {
     canonical: BLOG_INDEX_URL,
+    languages: {
+      "vi-VN": BLOG_INDEX_URL,
+    },
   },
   openGraph: {
-    title: `Cẩm nang cưới & thiệp cưới online | ${SITE_NAME}`,
+    title: `Blog cẩm nang cưới & kinh nghiệm chuẩn bị đám cưới | ${SITE_NAME}`,
     description:
-      "Hướng dẫn lập kế hoạch cưới, ước tính ngân sách, quản lý danh sách khách mời và tạo thiệp cưới trực tuyến tối ưu cho cô dâu chú rể.",
+      "Hướng dẫn lập kế hoạch cưới, cách xưng hô ghi thiệp cưới, nghi thức lễ Vu Quy - Thành Hôn, dự trù ngân sách và quản lý danh sách khách mời từ Inviwedd.",
     type: "website",
     locale: "vi_VN",
     url: BLOG_INDEX_URL,
+    siteName: SITE_NAME,
     images: [
       {
         url: OG_IMAGE_URL,
@@ -36,9 +48,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `Cẩm nang cưới & thiệp cưới online | ${SITE_NAME}`,
+    title: `Blog cẩm nang cưới & kinh nghiệm chuẩn bị đám cưới | ${SITE_NAME}`,
     description:
-      "Hướng dẫn lập kế hoạch cưới, ước tính ngân sách, quản lý danh sách khách mời và tạo thiệp cưới trực tuyến tối ưu cho cô dâu chú rể.",
+      "Hướng dẫn lập kế hoạch cưới, cách xưng hô ghi thiệp cưới, nghi thức lễ Vu Quy - Thành Hôn, dự trù ngân sách và quản lý danh sách khách mời từ Inviwedd.",
     images: [OG_IMAGE_URL],
   },
 };
@@ -56,13 +68,23 @@ export default function BlogIndexPage() {
       "@type": "CollectionPage",
       name: `Cẩm nang cưới ${SITE_NAME}`,
       description:
-        "Tổng hợp bài viết hướng dẫn chuẩn bị đám cưới, lập ngân sách và quản lý thiệp mời trực tuyến.",
+        "Tổng hợp bài viết hướng dẫn chuẩn bị đám cưới, cách ghi thiệp cưới, lập ngân sách và quản lý danh sách khách mời.",
       url: BLOG_INDEX_URL,
-      inLanguage: "vi",
+      inLanguage: "vi-VN",
       isPartOf: {
         "@type": "WebSite",
         name: SITE_NAME,
         url: toAbsoluteSiteUrl("/"),
+      },
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: posts.length,
+        itemListElement: posts.map((post, idx) => ({
+          "@type": "ListItem",
+          position: idx + 1,
+          url: toAbsoluteSiteUrl(`/blog/${post.slug}`),
+          name: post.title,
+        })),
       },
     },
     {
@@ -134,7 +156,7 @@ export default function BlogIndexPage() {
           aria-label="Danh sách bài viết cẩm nang cưới"
           className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2"
         >
-          {posts.map((post) => (
+          {posts.map((post, idx) => (
             <article
               key={post.slug}
               className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-colors hover:border-accent"
@@ -144,6 +166,8 @@ export default function BlogIndexPage() {
                   <img
                     src={post.cover}
                     alt={post.title}
+                    loading={idx < 2 ? "eager" : "lazy"}
+                    decoding="async"
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   />
                 ) : (
@@ -198,6 +222,47 @@ export default function BlogIndexPage() {
           ))}
         </section>
       )}
+
+      {/* Liên kết nội bộ sang bộ công cụ cưới miễn phí */}
+      <section
+        aria-label="Công cụ cưới miễn phí đi kèm"
+        className="mt-10 rounded-2xl border border-border bg-surface p-6 sm:p-8"
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-accent-text uppercase">
+              CÔNG CỤ CƯỚI MIỄN PHÍ
+            </p>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-text">
+              Áp dụng ngay vào kế hoạch đám cưới của bạn
+            </h2>
+          </div>
+          <Link
+            href={SITE_LINKS.tools}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent-text hover:text-accent-hover"
+          >
+            <span>Xem tất cả công cụ</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Lập danh sách khách mời", href: SITE_LINKS.toolGuestList },
+            { label: "Bảng tính chi phí cưới", href: SITE_LINKS.toolWeddingCalc },
+            { label: "Soạn lời mời Zalo", href: SITE_LINKS.toolZaloInvite },
+            { label: "Đổi ngày âm lịch", href: SITE_LINKS.toolLunar },
+          ].map((tool) => (
+            <Link
+              key={tool.href}
+              href={tool.href}
+              className="flex items-center justify-between rounded-xl border border-border bg-surface-alt/50 px-4 py-3 text-sm font-medium text-text transition-colors hover:border-accent hover:text-accent-text"
+            >
+              <span>{tool.label}</span>
+              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
+      </section>
     </ToolsPageShell>
   );
 }

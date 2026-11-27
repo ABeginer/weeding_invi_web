@@ -1,5 +1,8 @@
 import * as React from "react";
 import Link from "next/link";
+import { BossAddressingDecisionTree } from "@/components/blog/BossAddressingDecisionTree";
+import { BossInvitationEtiquetteTimeline } from "@/components/blog/BossInvitationEtiquetteTimeline";
+import { BossZaloTemplatesCard } from "@/components/blog/BossZaloTemplatesCard";
 import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
 import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
 import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
@@ -9,6 +12,9 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   SalutationHierarchyFlow,
   KinshipPrefixMatrix,
   SalutationMistakeSplit,
+  BossAddressingDecisionTree,
+  BossInvitationEtiquetteTimeline,
+  BossZaloTemplatesCard,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
@@ -156,7 +162,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
       continue;
     }
 
-    // Embedded bespoke blog visual component tags (e.g. <SalutationHierarchyFlow />)
+    // Embedded bespoke blog visual component tags
     const jsxTagMatch = trimmed.match(/^<([A-Z][A-Za-z0-9]*)\s*\/>$/);
     if (jsxTagMatch) {
       const VisualComponent = BLOG_VISUAL_COMPONENTS[jsxTagMatch[1]];

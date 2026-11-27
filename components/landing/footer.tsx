@@ -18,9 +18,11 @@ const RITUAL_LINKS = [
 ];
 
 const TOOL_LINKS = [
+  { label: "Lập danh sách khách mời", href: "/cong-cu/tao-danh-sach-khach-moi" },
   { label: "Bảng tính đám cưới", href: "/cong-cu/bang-tinh-dam-cuoi" },
   { label: "Đổi ngày âm lịch", href: "/cong-cu/doi-am-lich" },
   { label: "Tạo lời mời Zalo", href: "/cong-cu/tao-loi-moi-zalo" },
+  { label: "Blog cẩm nang cưới", href: SITE_LINKS.blog },
   { label: "Tất cả công cụ", href: SITE_LINKS.tools },
 ];
 

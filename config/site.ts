@@ -80,6 +80,7 @@ export const SUPPORT_EMAIL = resolveSupportEmail();
 export const SITE_LINKS = {
   home: "/",
   templates: "/thiep-cuoi",
+  blog: "/blog",
   tools: "/cong-cu",
   toolWeddingCalc: "/cong-cu/bang-tinh-dam-cuoi",
   toolLunar: "/cong-cu/doi-am-lich",

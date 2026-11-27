@@ -323,6 +323,7 @@ export function GuestListPlannerClient() {
   const handleSelectCeremonyPreset = (ceremonies: CeremonyId[]) => {
     setActiveCeremonies(ceremonies);
     setNewCeremonies(ceremonies);
+    setCeremonyFilter("all");
     goToStep(2);
   };
 
@@ -331,6 +332,7 @@ export function GuestListPlannerClient() {
       const exists = prev.includes(id);
       const next = exists ? prev.filter((item) => item !== id) : [...prev, id];
       setNewCeremonies(next.length > 0 ? next : [id]);
+      setCeremonyFilter("all");
       return next;
     });
   };
@@ -1014,7 +1016,7 @@ export function GuestListPlannerClient() {
                   {copyStatus === "copied" ? (
                     <>
                       <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                      Đã sao chép TSV
+                      Đã sao chép danh sách
                     </>
                   ) : (
                     <>

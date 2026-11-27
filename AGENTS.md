@@ -127,3 +127,13 @@ Các quy chuẩn bắt buộc cho mọi thay đổi mã nguồn trong repository
    - Cấm nhãn kỹ thuật / tiếng Anh thừa / nhãn gói cước trên mặt thiệp (kể cả mặt sau thẻ 3D & `<footer>`): `SAFETY FILM`, `KODAK`, `35MM`, `24FPS`, `CUE SHEET`, `CAST DOSSIER`, `STAR 01/02`, `A FILM BY LOVE`, `ALL RIGHTS RESERVED`, `THE BIG DAY`, `SAVE THE DATE`, `SAVE OUR DATE`, `Memories & Moments`, `Our Little Story`, `Thank you for celebrating with us`, `PHIÊN BẢN STANDARD`, `Forever & Always`, `Black-Tie Wedding`, `Midnight Ballroom Gala`.
    - Chỉ giữ 1 tiêu đề tiếng Việt ngắn ở đầu mỗi block (xóa câu giải thích dài dưới tiêu đề, không lặp cùng tiêu đề ở eyebrow ngay trên `<h2>`). Ngày âm bắt buộc qua `formatLunarDateClean(...)`.
 3. **Đồng bộ `"Riêng mẫu này"` (`config/template-features.ts` ↔ `templates/registry.ts`)**: Không hardcode chi tiết đặc thù chủ đề vào key dùng chung trong `EXTRA_FEATURES`; mọi ID đặc thù khớp 1-1 với cơ chế thật trong `templates/<id>/index.tsx`.
+
+---
+
+## 11. DispatchSEO Shortcuts
+
+Khi người dùng gõ các lệnh tắt sau, tự động gọi MCP tool `dispatchseo-inviwedd` -> `get_instructions` với workflow tương ứng và thực hiện đúng hướng dẫn:
+- `seo research`: chạy workflow `research`.
+- `seo build [chủ đề]`: chạy workflow `build` (nếu có kèm chủ đề thì ưu tiên bài đó, không thì lấy bài đầu tiên trong Guide queue).
+- `seo tool [tên tool]`: chạy workflow `build-tool` (nếu có kèm tên thì build đích danh tool đó, không thì lấy tool đầu tiên trong Tool queue).
+

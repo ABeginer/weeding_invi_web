@@ -13,6 +13,7 @@ export const LANDING_COPY = {
     links: [
       { label: "Mẫu thiệp", href: "/thiep-cuoi" },
       { label: "Công cụ", href: "/cong-cu" },
+      { label: "Blog", href: "/blog" },
       { label: "Cách hoạt động", href: "/#cach-hoat-dong" },
       { label: "Bảng giá", href: "/#bang-gia" },
     ],
