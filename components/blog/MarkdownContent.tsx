@@ -6,6 +6,8 @@ import { BossZaloTemplatesCard } from "@/components/blog/BossZaloTemplatesCard";
 import { GroomCardLayoutDiagram } from "@/components/blog/GroomCardLayoutDiagram";
 import { GroomSpecialFamilyCases } from "@/components/blog/GroomSpecialFamilyCases";
 import { GroomVsBrideComparisonCard } from "@/components/blog/GroomVsBrideComparisonCard";
+import { GuestbookFormatsShowcase } from "@/components/blog/GuestbookFormatsShowcase";
+import { GuestbookHybridSetupCard } from "@/components/blog/GuestbookHybridSetupCard";
 import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
 import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
 import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
@@ -21,6 +23,8 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   GroomCardLayoutDiagram,
   GroomVsBrideComparisonCard,
   GroomSpecialFamilyCases,
+  GuestbookFormatsShowcase,
+  GuestbookHybridSetupCard,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
