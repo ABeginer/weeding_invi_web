@@ -7,8 +7,11 @@ import { GroomCardLayoutDiagram } from "@/components/blog/GroomCardLayoutDiagram
 import { GroomSpecialFamilyCases } from "@/components/blog/GroomSpecialFamilyCases";
 import { GroomVsBrideComparisonCard } from "@/components/blog/GroomVsBrideComparisonCard";
 import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
+import { OnlineInviteTemplatesByRole } from "@/components/blog/OnlineInviteTemplatesByRole";
 import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
 import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
+import { ZaloLinkPreviewChecklist } from "@/components/blog/ZaloLinkPreviewChecklist";
+import { ZaloMessageAnatomyCard } from "@/components/blog/ZaloMessageAnatomyCard";
 import { slugifyHeading } from "@/lib/blog";
 
 const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
@@ -21,6 +24,9 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   GroomCardLayoutDiagram,
   GroomVsBrideComparisonCard,
   GroomSpecialFamilyCases,
+  ZaloMessageAnatomyCard,
+  OnlineInviteTemplatesByRole,
+  ZaloLinkPreviewChecklist,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
