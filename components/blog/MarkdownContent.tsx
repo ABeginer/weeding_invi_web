@@ -7,6 +7,8 @@ import { GroomCardLayoutDiagram } from "@/components/blog/GroomCardLayoutDiagram
 import { GroomSpecialFamilyCases } from "@/components/blog/GroomSpecialFamilyCases";
 import { GroomVsBrideComparisonCard } from "@/components/blog/GroomVsBrideComparisonCard";
 import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
+import { PhotoCollectionComparisonGrid } from "@/components/blog/PhotoCollectionComparisonGrid";
+import { QrPhotoModerationFlow } from "@/components/blog/QrPhotoModerationFlow";
 import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
 import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
 import { slugifyHeading } from "@/lib/blog";
@@ -21,6 +23,8 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   GroomCardLayoutDiagram,
   GroomVsBrideComparisonCard,
   GroomSpecialFamilyCases,
+  PhotoCollectionComparisonGrid,
+  QrPhotoModerationFlow,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
