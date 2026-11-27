@@ -3,6 +3,8 @@ import Link from "next/link";
 import { BossAddressingDecisionTree } from "@/components/blog/BossAddressingDecisionTree";
 import { BossInvitationEtiquetteTimeline } from "@/components/blog/BossInvitationEtiquetteTimeline";
 import { BossZaloTemplatesCard } from "@/components/blog/BossZaloTemplatesCard";
+import { GalleryPrepChecklist90Min } from "@/components/blog/GalleryPrepChecklist90Min";
+import { GalleryTableZoneDiagram } from "@/components/blog/GalleryTableZoneDiagram";
 import { GroomCardLayoutDiagram } from "@/components/blog/GroomCardLayoutDiagram";
 import { GroomSpecialFamilyCases } from "@/components/blog/GroomSpecialFamilyCases";
 import { GroomVsBrideComparisonCard } from "@/components/blog/GroomVsBrideComparisonCard";
@@ -21,6 +23,8 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   GroomCardLayoutDiagram,
   GroomVsBrideComparisonCard,
   GroomSpecialFamilyCases,
+  GalleryTableZoneDiagram,
+  GalleryPrepChecklist90Min,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
