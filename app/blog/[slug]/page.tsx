@@ -194,6 +194,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <img
                   src={post.cover}
                   alt={post.title}
+                  width={1024}
+                  height={576}
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                   className="aspect-video w-full object-cover"
                 />
               </div>
