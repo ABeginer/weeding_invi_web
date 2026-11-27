@@ -72,6 +72,16 @@ export const TOOLS_HUB_COPY = {
       badge: "Mới",
       available: true,
     },
+    {
+      id: "venue-qr",
+      title: "Tạo mã QR địa điểm",
+      description:
+        "Tạo mã QR Google Maps kèm khung thiệp trang trí sắc nét (Kem, Đỏ nhung, Lá ô liu), tải PNG chèn thẳng vào file in thiệp hoặc gửi Zalo.",
+      href: "/cong-cu/tao-ma-qr-dia-diem",
+      ctaLabel: "Tạo mã QR",
+      badge: "Mới",
+      available: true,
+    },
   ] as const,
 } as const;
 
@@ -386,6 +396,60 @@ export const GUEST_LIST_COPY = {
       question: "Nút Sao chép dán Inviwedd dùng để làm gì?",
       answer:
         "Khi bấm Sao chép dán Inviwedd, công cụ xuất văn bản 3 cột chuẩn gồm Tên khách, Vai vế xưng hô và Số bàn. Bạn chỉ cần mở trình tạo thiệp tại /tao-thiep, vào mục Nhập khách hàng loạt (hỗ trợ tối đa 500 khách) và dán một lần là xong cả tên lẫn cách xưng hô đúng vai vế.",
+    },
+  ] satisfies ToolFaqItem[],
+} as const;
+
+export const VENUE_QR_COPY = {
+  seo: {
+    title: "Tạo mã QR địa điểm đám cưới kèm khung thiệp miễn phí",
+    description:
+      "Công cụ tạo mã QR Google Maps địa điểm tiệc cưới kèm khung thiệp trang trí miễn phí, tải ảnh PNG 1080×1350px in ngay lên thiệp giấy hoặc gửi Zalo trong 30 giây.",
+    keywords: [
+      "tạo mã qr địa điểm đám cưới",
+      "mã qr google maps thiệp cưới",
+      "tạo qr chỉ đường nhà hàng tiệc cưới",
+      "Inviwedd",
+    ],
+    appName: "Công cụ tạo mã QR địa điểm đám cưới",
+    ogAlt: `Công cụ tạo mã QR địa điểm đám cưới ${SITE_NAME}`,
+  },
+  breadcrumbs: [
+    { label: "Trang chủ", href: "/" },
+    { label: "Công cụ", href: "/cong-cu" },
+    { label: "Tạo mã QR địa điểm", href: "/cong-cu/tao-ma-qr-dia-diem" },
+  ],
+  hero: {
+    eyebrow: "CHỈ ĐƯỜNG BẢN ĐỒ KHÔNG LẠC SẢNH",
+    h1: "Công cụ tạo mã QR địa điểm đám cưới",
+    subtitle:
+      "Chuyển link Google Maps hoặc địa chỉ nhà hàng thành mã QR kèm khung thiệp trang nhã, tải ngay ảnh PNG sắc nét để in thiệp giấy hoặc gửi Zalo.",
+  },
+  faqs: [
+    {
+      question: "Mã QR địa điểm tạo ra có bị hết hạn sau ngày cưới không?",
+      answer:
+        "Không. Mã QR được tạo trực tiếp từ đường dẫn Google Maps hoặc tên địa điểm gốc, không đi qua link rút gọn thu phí trung gian nên khách có thể quét vĩnh viễn mà không bao giờ bị khóa hay chèn quảng cáo.",
+    },
+    {
+      question: "Khách quét mã bằng camera iPhone hoặc Zalo có mở được bản đồ luôn không?",
+      answer:
+        "Có. Cả trình quét mã QR mặc định trong Camera iPhone, Android và nút quét QR trong Zalo đều nhận diện đường dẫn Google Maps và tự bật ứng dụng bản đồ chỉ đường ngay trên điện thoại khách.",
+    },
+    {
+      question: "Tôi chưa có link Google Maps thì có tạo được mã QR không?",
+      answer:
+        "Có. Bạn chỉ cần gõ tên nhà hàng kèm địa chỉ cụ thể (ví dụ White Palace, 194 Hoàng Văn Thụ, Phú Nhuận) hoặc dán tọa độ vĩ độ/kinh độ (ví dụ 10.7769, 106.7009), công cụ tự động tạo đường dẫn Google Maps chuẩn.",
+    },
+    {
+      question: "Ảnh tải xuống có đủ độ nét để đưa cho nhà in gắn lên thiệp giấy không?",
+      answer:
+        "Khung thiệp PNG được xuất ở kích thước 1080×1350px và bản mã QR nền trắng riêng xuất ở độ phân giải 1000×1000px kèm vùng viền trắng an toàn (quiet zone), đảm bảo máy quét đọc mượt ngay cả khi in ở kích thước nhỏ 2,5×2,5cm trên góc thiệp.",
+    },
+    {
+      question: "Nếu dùng thiệp cưới online thì khách có cần tự quét mã QR nữa không?",
+      answer:
+        "Không cần quét thủ công. Khi tạo thiệp cưới trực tuyến tại /tao-thiep trên Inviwedd, nút Chỉ đường Google Maps được gắn sẵn ngay trên màn hình điện thoại để khách bấm một chạm và mở bản đồ ngay.",
     },
   ] satisfies ToolFaqItem[],
 } as const;
