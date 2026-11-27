@@ -69,6 +69,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.85,
     },
+    {
+      url: makeUrl("/cong-cu/tao-anh-dem-nguoc-ngay-cuoi"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: makeUrl("/cong-cu/checklist-chuan-bi-dam-cuoi"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
     ...LEGAL_POLICIES.map((p) => ({
       url: makeUrl(p.href),
       lastModified: now,
