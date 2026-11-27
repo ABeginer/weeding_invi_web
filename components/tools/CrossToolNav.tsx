@@ -1,9 +1,14 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Calculator, Calendar, MessageSquare, Users } from "lucide-react";
+import { ArrowRight, Calculator, Calendar, Image as ImageIcon, MessageSquare, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ToolId = "wedding-calc" | "lunar-converter" | "zalo-invite" | "guest-list";
+export type ToolId =
+  | "wedding-calc"
+  | "lunar-converter"
+  | "zalo-invite"
+  | "guest-list"
+  | "save-the-date";
 
 interface ToolItem {
   id: ToolId;
@@ -45,6 +50,14 @@ const ALL_TOOLS: ToolItem[] = [
       "Phân nhóm khách theo Lễ Vu Quy, Thành Hôn, Tiệc Cưới, chia bàn và xuất Excel hoặc dán 500 khách vào Inviwedd.",
     href: "/cong-cu/tao-danh-sach-khach-moi",
     icon: Users,
+  },
+  {
+    id: "save-the-date",
+    title: "Ảnh Save the Date & Đếm ngược",
+    description:
+      "Tạo ảnh đếm ngược ngày cưới chuẩn Story 9:16 và Facebook 4:5 từ ảnh cưới của bạn, tải PNG ngay.",
+    href: "/cong-cu/tao-anh-dem-nguoc-ngay-cuoi",
+    icon: ImageIcon,
   },
 ];
 

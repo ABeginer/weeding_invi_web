@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Calculator, Calendar, MessageSquare, Users } from "lucide-react";
+import { ArrowRight, Calculator, Calendar, Image as ImageIcon, MessageSquare, Users } from "lucide-react";
 import { JsonLd } from "@/components/tools/JsonLd";
 import { ToolsPageShell } from "@/components/tools/ToolsPageShell";
 import { SITE_LINKS, SITE_NAME, toAbsoluteSiteUrl } from "@/config/site";
@@ -96,6 +96,7 @@ export default function ToolsHubPage() {
           const isWeddingCalc = card.id === "wedding-calc";
           const isLunar = card.id === "lunar-converter";
           const isGuestList = card.id === "guest-list";
+          const isSaveTheDate = card.id === "save-the-date";
 
           return (
             <article
@@ -112,6 +113,8 @@ export default function ToolsHubPage() {
                       <Calendar className="h-5 w-5" aria-hidden="true" />
                     ) : isGuestList ? (
                       <Users className="h-5 w-5" aria-hidden="true" />
+                    ) : isSaveTheDate ? (
+                      <ImageIcon className="h-5 w-5" aria-hidden="true" />
                     ) : (
                       <MessageSquare className="h-5 w-5" aria-hidden="true" />
                     )}
