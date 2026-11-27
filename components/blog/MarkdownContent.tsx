@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import { AudioSetupChecklistCard } from "@/components/blog/AudioSetupChecklistCard";
 import { BossAddressingDecisionTree } from "@/components/blog/BossAddressingDecisionTree";
 import { BossInvitationEtiquetteTimeline } from "@/components/blog/BossInvitationEtiquetteTimeline";
 import { BossZaloTemplatesCard } from "@/components/blog/BossZaloTemplatesCard";
@@ -9,6 +10,7 @@ import { GroomVsBrideComparisonCard } from "@/components/blog/GroomVsBrideCompar
 import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
 import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
 import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
+import { WeddingMusicMoodTimeline } from "@/components/blog/WeddingMusicMoodTimeline";
 import { slugifyHeading } from "@/lib/blog";
 
 const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
@@ -21,6 +23,8 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   GroomCardLayoutDiagram,
   GroomVsBrideComparisonCard,
   GroomSpecialFamilyCases,
+  WeddingMusicMoodTimeline,
+  AudioSetupChecklistCard,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
