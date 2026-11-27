@@ -72,6 +72,16 @@ export const TOOLS_HUB_COPY = {
       badge: "Mới",
       available: true,
     },
+    {
+      id: "wedding-quiz",
+      title: "Tạo bộ Quiz minigame tiệc cưới",
+      description:
+        "Soạn nhanh bộ câu hỏi \"Bạn hiểu Cô dâu Chú rể bao nhiêu %?\", xuất kịch bản MC, đố vui nhóm chat và thẻ Story 9:16.",
+      href: "/cong-cu/quiz-dam-cuoi-co-dau-chu-re",
+      ctaLabel: "Tạo bộ Quiz",
+      badge: "Mới",
+      available: true,
+    },
   ] as const,
 } as const;
 
@@ -386,6 +396,60 @@ export const GUEST_LIST_COPY = {
       question: "Nút Sao chép dán Inviwedd dùng để làm gì?",
       answer:
         "Khi bấm Sao chép dán Inviwedd, công cụ xuất văn bản 3 cột chuẩn gồm Tên khách, Vai vế xưng hô và Số bàn. Bạn chỉ cần mở trình tạo thiệp tại /tao-thiep, vào mục Nhập khách hàng loạt (hỗ trợ tối đa 500 khách) và dán một lần là xong cả tên lẫn cách xưng hô đúng vai vế.",
+    },
+  ] satisfies ToolFaqItem[],
+} as const;
+
+export const WEDDING_QUIZ_COPY = {
+  seo: {
+    title: "Tạo bộ Quiz trò chơi đám cưới cô dâu chú rể miễn phí",
+    description:
+      "Soạn bộ câu hỏi Minigame \"Bạn hiểu Cô dâu Chú rể bao nhiêu %?\" cho MC sân khấu, nhóm chat Zalo hoặc tải thẻ ảnh Story 9:16 đố vui miễn phí ngay trên trình duyệt.",
+    keywords: [
+      "trò chơi đám cưới cô dâu chú rể",
+      "minigame đám cưới",
+      "câu hỏi trò chơi đám cưới",
+      "quiz hiểu cô dâu chú rể",
+      "kịch bản mc đám cưới",
+      "Inviwedd",
+    ],
+    appName: "Trình tạo bộ câu hỏi Minigame trò chơi đám cưới",
+    ogAlt: `Trình tạo bộ câu hỏi Minigame trò chơi đám cưới ${SITE_NAME}`,
+  },
+  breadcrumbs: [
+    { label: "Trang chủ", href: "/" },
+    { label: "Công cụ", href: "/cong-cu" },
+    {
+      label: "Tạo Quiz trò chơi đám cưới",
+      href: "/cong-cu/quiz-dam-cuoi-co-dau-chu-re",
+    },
+  ],
+  hero: {
+    eyebrow: "MINIGAME KHUẤY ĐỘNG TIỆC CƯỚI",
+    h1: "Tạo bộ Quiz trò chơi cô dâu chú rể",
+    subtitle:
+      "Chọn chủ đề câu chuyện tình yêu hoặc hội bạn thân, tự chỉnh câu hỏi và xuất ngay kịch bản MC sân khấu, bản gửi nhóm chat hoặc thẻ ảnh Story 9:16.",
+  },
+  faqs: [
+    {
+      question: "Bộ Quiz minigame đám cưới nên chọn khoảng bao nhiêu câu hỏi là vừa đủ?",
+      answer:
+        "Khoảng 6 đến 8 câu hỏi trắc nghiệm là thời lượng đẹp nhất (chỉ tốn 8–10 phút tại sảnh tiệc). Số câu này đủ để các bàn thảo luận sôi nổi mà không làm chậm nhịp phục vụ món của nhà hàng.",
+    },
+    {
+      question: "Khác biệt giữa bản Kịch bản MC và bản Gửi nhóm chat là gì?",
+      answer:
+        "Bản Kịch bản MC giữ nguyên lời dẫn mở đầu, đáp án đúng và gợi ý điều phối để MC cầm đọc trên sân khấu. Bản Gửi nhóm chat tự động ẩn đáp án để bạn gửi trước vào nhóm bạn bè bình chọn tăng tương tác.",
+    },
+    {
+      question: "Có thể chỉnh sửa lại câu hỏi và đáp án theo kỷ niệm riêng của hai vợ chồng không?",
+      answer:
+        "Có. Toàn bộ nội dung câu hỏi, 4 lựa chọn A–D và nút đánh dấu đáp án đúng ở Bước 2 đều sửa trực tiếp được, hoặc bạn có thể bấm Thêm câu hỏi riêng và hệ thống tự lưu trên trình duyệt.",
+    },
+    {
+      question: "Làm sao để mời bạn bè tham gia minigame ngay từ lúc nhận thiệp cưới?",
+      answer:
+        "Bạn có thể tải thẻ ảnh Story 9:16 để đăng trước tiệc hoặc tạo thiệp cưới online tại /tao-thiep kèm mã QR check-in theo bàn và màn hình LED chiếu ảnh khách mời trong sảnh.",
     },
   ] satisfies ToolFaqItem[],
 } as const;
