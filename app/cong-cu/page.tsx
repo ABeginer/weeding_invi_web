@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Calculator, Calendar, MessageSquare } from "lucide-react";
+import { ArrowRight, Calculator, Calendar, MessageSquare, Users } from "lucide-react";
 import { JsonLd } from "@/components/tools/JsonLd";
 import { ToolsPageShell } from "@/components/tools/ToolsPageShell";
 import { SITE_LINKS, SITE_NAME, toAbsoluteSiteUrl } from "@/config/site";
@@ -90,12 +90,12 @@ export default function ToolsHubPage() {
 
       <section
         aria-label="Danh sách công cụ miễn phí"
-        className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3"
+        className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2"
       >
         {TOOLS_HUB_COPY.cards.map((card) => {
           const isWeddingCalc = card.id === "wedding-calc";
           const isLunar = card.id === "lunar-converter";
-          const isZalo = card.id === "zalo-invite";
+          const isGuestList = card.id === "guest-list";
 
           return (
             <article
@@ -110,6 +110,8 @@ export default function ToolsHubPage() {
                       <Calculator className="h-5 w-5" aria-hidden="true" />
                     ) : isLunar ? (
                       <Calendar className="h-5 w-5" aria-hidden="true" />
+                    ) : isGuestList ? (
+                      <Users className="h-5 w-5" aria-hidden="true" />
                     ) : (
                       <MessageSquare className="h-5 w-5" aria-hidden="true" />
                     )}

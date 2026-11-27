@@ -1,9 +1,9 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Calculator, Calendar, MessageSquare } from "lucide-react";
+import { ArrowRight, Calculator, Calendar, MessageSquare, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ToolId = "wedding-calc" | "lunar-converter" | "zalo-invite";
+export type ToolId = "wedding-calc" | "lunar-converter" | "zalo-invite" | "guest-list";
 
 interface ToolItem {
   id: ToolId;
@@ -37,6 +37,14 @@ const ALL_TOOLS: ToolItem[] = [
       "Soạn lời mời gửi Zalo/Messenger đúng chuẩn lễ nghi và xưng hô cho từng nhóm khách mời.",
     href: "/cong-cu/tao-loi-moi-zalo",
     icon: MessageSquare,
+  },
+  {
+    id: "guest-list",
+    title: "Lập danh sách khách mời",
+    description:
+      "Phân nhóm khách theo Lễ Vu Quy, Thành Hôn, Tiệc Cưới, chia bàn và xuất Excel hoặc dán 500 khách vào Inviwedd.",
+    href: "/cong-cu/tao-danh-sach-khach-moi",
+    icon: Users,
   },
 ];
 

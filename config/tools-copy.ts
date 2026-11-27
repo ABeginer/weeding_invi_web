@@ -62,6 +62,16 @@ export const TOOLS_HUB_COPY = {
       badge: "Mới",
       available: true,
     },
+    {
+      id: "guest-list",
+      title: "Lập danh sách khách mời",
+      description:
+        "Chia khách theo Lễ Vu Quy, Thành Hôn, Tiệc Cưới, ước tính số bàn kèm bàn dự phòng, xuất Excel UTF-8 và dán thẳng 500 khách vào Inviwedd.",
+      href: "/cong-cu/tao-danh-sach-khach-moi",
+      ctaLabel: "Lập danh sách",
+      badge: "Mới",
+      available: true,
+    },
   ] as const,
 } as const;
 
@@ -323,4 +333,61 @@ export const LUNAR_CONVERTER_COPY = {
     },
   ] satisfies ToolFaqItem[],
 } as const;
+
+export const GUEST_LIST_COPY = {
+  seo: {
+    title: "Tạo danh sách khách mời đám cưới & chia bàn theo buổi lễ",
+    description:
+      "Công cụ lập danh sách khách mời đám cưới miễn phí theo Lễ Vu Quy, Thành Hôn và Tiệc Cưới. Tự chia bàn theo nhóm, xuất Excel UTF-8 và dán 500 khách vào Inviwedd.",
+    keywords: [
+      "tạo danh sách khách mời đám cưới",
+      "lập danh sách khách mời cưới",
+      "chia bàn tiệc cưới",
+      "mẫu danh sách khách mời đám cưới excel",
+      "tính số bàn tiệc cưới",
+      "Inviwedd",
+    ],
+    appName: "Công cụ tạo danh sách khách mời đám cưới",
+    ogAlt: `Công cụ lập danh sách khách mời đám cưới và chia bàn ${SITE_NAME}`,
+  },
+  breadcrumbs: [
+    { label: "Trang chủ", href: "/" },
+    { label: "Công cụ", href: "/cong-cu" },
+    { label: "Tạo danh sách khách mời", href: "/cong-cu/tao-danh-sach-khach-moi" },
+  ],
+  hero: {
+    eyebrow: "LẬP DANH SÁCH & CHIA BÀN TIỆC CƯỚI",
+    h1: "Công cụ tạo danh sách khách mời đám cưới",
+    subtitle:
+      "Phân tách khách dự Lễ Vu Quy, Thành Hôn, Tiệc Cưới, ước tính số bàn kèm bàn dự phòng và xuất Excel hoặc dán thẳng vào thiệp điện tử.",
+  },
+  faqs: [
+    {
+      question: "Vì sao nên chia khách mời theo từng buổi lễ ngay từ đầu?",
+      answer:
+        "Đám cưới Việt Nam thường có ba mốc riêng: Lễ Vu Quy tại nhà gái, Lễ Thành Hôn tại nhà trai và Tiệc Cưới chung tại nhà hàng. Nếu chỉ ghi chung một danh sách, hai bên rất dễ đặt thừa mâm cỗ lễ gia tiên hoặc gửi nhầm giờ đón dâu cho nhóm bạn chỉ đi tiệc tối.",
+    },
+    {
+      question: "Cách tính số bàn chính thức và bàn dự phòng hoạt động thế nào?",
+      answer:
+        "Mỗi khách mời được cộng thêm số người đi cùng dự kiến (ví dụ gia đình 4 người tính thành 4 chỗ). Tổng số người tham dự từng buổi lễ chia cho bội số khách mỗi bàn (thường là 10 hoặc 8 người) và làm tròn lên để ra số bàn chính thức, sau đó cộng thêm khoảng 10% (tối thiểu 1 bàn) làm bàn dự phòng phát sinh.",
+    },
+    {
+      question: "Dữ liệu danh sách khách mời có bị mất khi tải lại trang không?",
+      answer:
+        "Danh sách và số bàn được lưu tự động trên bộ nhớ trình duyệt (localStorage) ngay tại máy của bạn. Công cụ chạy hoàn toàn phía trình duyệt, không tải danh sách cá nhân lên máy chủ khi bạn chưa bấm tạo thiệp.",
+    },
+    {
+      question: "Làm sao mở file CSV tiếng Việt trên Excel mà không bị lỗi font?",
+      answer:
+        "Nút Xuất Excel (.csv) gắn sẵn mã UTF-8 BOM ở đầu tệp để Microsoft Excel trên Windows và macOS nhận diện đúng dấu tiếng Việt khi nhấp đúp mở trực tiếp, đồng thời tự động bảo vệ các ký tự đặc biệt ở đầu tên khách.",
+    },
+    {
+      question: "Nút Sao chép dán Inviwedd dùng để làm gì?",
+      answer:
+        "Khi bấm Sao chép dán Inviwedd, công cụ xuất văn bản 3 cột chuẩn gồm Tên khách, Vai vế xưng hô và Số bàn. Bạn chỉ cần mở trình tạo thiệp tại /tao-thiep, vào mục Nhập khách hàng loạt (hỗ trợ tối đa 500 khách) và dán một lần là xong cả tên lẫn cách xưng hô đúng vai vế.",
+    },
+  ] satisfies ToolFaqItem[],
+} as const;
+
 
