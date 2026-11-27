@@ -1,6 +1,15 @@
 import * as React from "react";
 import Link from "next/link";
+import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
+import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
+import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
 import { slugifyHeading } from "@/lib/blog";
+
+const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
+  SalutationHierarchyFlow,
+  KinshipPrefixMatrix,
+  SalutationMistakeSplit,
+};
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
@@ -142,6 +151,27 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
     if (/^[-*_]{3,}$/.test(trimmed)) {
       elements.push(
         <hr key={`hr-${blockKey++}`} className="my-8 border-border" />,
+      );
+      i += 1;
+      continue;
+    }
+
+    // Embedded bespoke blog visual component tags (e.g. <SalutationHierarchyFlow />)
+    const jsxTagMatch = trimmed.match(/^<([A-Z][A-Za-z0-9]*)\s*\/>$/);
+    if (jsxTagMatch) {
+      const VisualComponent = BLOG_VISUAL_COMPONENTS[jsxTagMatch[1]];
+      if (VisualComponent) {
+        elements.push(<VisualComponent key={`visual-${blockKey++}`} />);
+        i += 1;
+        continue;
+      }
+    }
+
+    // DispatchSEO hidden signature tag
+    const sigMatch = trimmed.match(/^<span\s+data-dispatchseo="([^"]+)"\s+hidden><\/span>$/);
+    if (sigMatch) {
+      elements.push(
+        <span key={`sig-${blockKey++}`} data-dispatchseo={sigMatch[1]} hidden />,
       );
       i += 1;
       continue;
