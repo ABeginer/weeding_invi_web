@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { resolveAppBaseUrl } from "@/config/site";
+import { getAllBlogPosts } from "@/lib/blog";
 import { LEGAL_POLICIES } from "@/lib/legal-config";
 import { TEMPLATE_REGISTRY } from "@/templates/registry";
 
@@ -30,6 +31,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: makeUrl("/mau-thiep"),
       lastModified: now,
       changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: makeUrl("/blog"),
+      lastModified: now,
+      changeFrequency: "daily",
       priority: 0.9,
     },
     {
@@ -64,15 +71,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   ];
 
-  // 2. All active template preview routes
-  const templateEntries: MetadataRoute.Sitemap = TEMPLATE_REGISTRY
-    .filter((tpl) => !tpl.isPlaceholder)
-    .map((tpl) => ({
-      url: makeUrl(`/mau/${tpl.id}`),
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    }));
+  // 2. Blog posts
+  const blogEntries: MetadataRoute.Sitemap = getAllBlogPosts().map((post) => ({
+    url: makeUrl(`/blog/${post.slug}`),
+    lastModified:
+      post.updated || post.date ? new Date(post.updated || post.date) : now,
+    changeFrequency: "monthly",
+    priority: 0.8,
+  }));
 
-  return [...coreEntries, ...templateEntries];
+  // 3. All active template preview routes
+  const templateEntries: MetadataRoute.Sitemap = TEMPLATE_REGISTRY.filter(
+    (tpl) => !tpl.isPlaceholder,
+  ).map((tpl) => ({
+    url: makeUrl(`/mau/${tpl.id}`),
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...coreEntries, ...blogEntries, ...templateEntries];
 }
