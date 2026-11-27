@@ -1,31 +1,45 @@
 import type { MetadataRoute } from "next";
-import { SITE_LINKS, toAbsoluteSiteUrl } from "@/config/site";
-import { IS_LUNAR_TOOL_PUBLIC } from "@/config/tools-copy";
+import { resolveAppBaseUrl } from "@/config/site";
 
 export default function robots(): MetadataRoute.Robots {
-  const allowPaths = [
-    SITE_LINKS.home,
-    SITE_LINKS.tools,
-    SITE_LINKS.toolWeddingCalc,
-    ...(IS_LUNAR_TOOL_PUBLIC ? [SITE_LINKS.toolLunar] : []),
-  ];
+  const base = resolveAppBaseUrl().replace(/\/+$/, "");
 
   return {
     rules: [
       {
         userAgent: "*",
-        allow: allowPaths,
+        allow: [
+          "/",
+          "/thiep-cuoi",
+          "/mau-thiep",
+          "/cong-cu",
+          "/cong-cu/*",
+          "/mau/*",
+          "/chinh-sach",
+          "/chinh-sach/*",
+          "/chinh-sach-bao-mat",
+          "/dieu-khoan-su-dung",
+        ],
         disallow: [
           "/api/",
           "/auth/",
           "/dashboard/",
+          "/dashboard/*",
+          "/ops/",
+          "/ops/*",
           "/m/",
           "/w/",
+          "/a/",
+          "/led/",
+          "/share/",
+          "/photo-wall/",
+          "/qa/",
+          "/media/",
           "/tao-thiep/luu",
+          "/tao-thiep/preview",
         ],
       },
     ],
-    sitemap: toAbsoluteSiteUrl("/sitemap.xml"),
+    sitemap: `${base}/sitemap.xml`,
   };
 }
-

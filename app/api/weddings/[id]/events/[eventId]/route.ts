@@ -27,17 +27,23 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
     );
   }
 
+  // Giữ nguyên map_embed_url nếu client không gửi khoá này (form hiện không có
+  // ô nhập bản đồ), tránh xoá dữ liệu cũ mỗi lần sửa lễ.
+  const patch: Record<string, unknown> = {
+    title: parsed.data.title,
+    starts_at: parsed.data.startsAt,
+    lunar_date: parsed.data.lunarDate || null,
+    venue_name: parsed.data.venueName,
+    venue_address: parsed.data.venueAddress,
+    map_directions_url: parsed.data.mapDirectionsUrl,
+  };
+  if (Object.prototype.hasOwnProperty.call(body, "mapEmbedUrl")) {
+    patch.map_embed_url = parsed.data.mapEmbedUrl;
+  }
+
   const { data, error } = await db()
     .from("events")
-    .update({
-      title: parsed.data.title,
-      starts_at: parsed.data.startsAt,
-      lunar_date: parsed.data.lunarDate || null,
-      venue_name: parsed.data.venueName,
-      venue_address: parsed.data.venueAddress,
-      map_embed_url: parsed.data.mapEmbedUrl,
-      map_directions_url: parsed.data.mapDirectionsUrl,
-    })
+    .update(patch)
     .eq("id", eventId)
     .eq("wedding_id", wedding.id)
     .select("*")

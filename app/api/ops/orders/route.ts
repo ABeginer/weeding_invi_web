@@ -1,6 +1,19 @@
 import { json } from "@/lib/server/http";
 import { opsRoute } from "@/lib/server/ops";
+import { fetchAllRows } from "@/lib/server/pagination";
 import { db } from "@/lib/server/supabase";
+
+interface OrderListRow {
+  id: string;
+  code: string;
+  plan: string;
+  amount_vnd: number | string | null;
+  status: string;
+  wedding_id: string;
+  user_id: string;
+  paid_at: string | null;
+  created_at: string;
+}
 
 export const GET = opsRoute(async (req: Request) => {
   const url = new URL(req.url);
@@ -20,8 +33,9 @@ export const GET = opsRoute(async (req: Request) => {
     query = query.eq("status", status);
   }
 
-  const { data: allOrders, error } = await query;
-  if (error) throw error;
+  const allOrders = await fetchAllRows<OrderListRow>((from, to) =>
+    query.range(from, to),
+  );
 
   // Resolve user emails
   const userIds = Array.from(new Set((allOrders || []).map((o) => o.user_id)));

@@ -13,7 +13,9 @@ import { getWeddingLimitMessage } from "@/config/plans";
 import { SITE_LINKS } from "@/config/site";
 import {
   ApiError,
+  assignDesignerTemplate,
   checkWeddingSlugAvailability,
+  createEvent,
   createWedding,
   syncMe,
 } from "@/lib/api";
@@ -51,6 +53,7 @@ export function SaveDraftPageClient({ userEmail }: SaveDraftPageClientProps) {
     async (targetDraft: WeddingDraft) => {
       setMessage("");
       try {
+        const resolvedDate = toIsoPlus07(targetDraft.date) || "2027-03-20T10:00:00+07:00";
         const created = await createWedding({
           slug: targetDraft.slug,
           templateId: targetDraft.templateId,
@@ -60,17 +63,58 @@ export function SaveDraftPageClient({ userEmail }: SaveDraftPageClientProps) {
               brideName: targetDraft.brideName,
               groomFullName: "",
               brideFullName: "",
-              groomParents: "",
-              brideParents: "",
+              groomParents: targetDraft.groomParents ?? "",
+              brideParents: targetDraft.brideParents ?? "",
             },
-            date: toIsoPlus07(targetDraft.date) || "2027-03-20T10:00:00+07:00",
+            date: resolvedDate,
             quote: targetDraft.quote,
+            musicPreset:
+              targetDraft.musicTrack && targetDraft.musicTrack !== "custom"
+                ? (targetDraft.musicTrack as
+                    | "default"
+                    | "priority1"
+                    | "prio2"
+                    | "classic"
+                    | "garden"
+                    | "cheerful"
+                    | "moonlight"
+                    | "calm"
+                    | "beginning"
+                    | "sweet")
+                : "priority1",
             heroPhotoId: null,
             groomPhotoId: null,
             bridePhotoId: null,
-            gift: emptyGiftInfo(),
+            gift: {
+              ...emptyGiftInfo(),
+              groomBankName: targetDraft.bank ?? "",
+              groomAccountNumber: targetDraft.accountNumber ?? "",
+              groomAccountName: targetDraft.accountName ?? "",
+            },
           },
         });
+        if (targetDraft.eventLocation?.trim()) {
+          try {
+            await createEvent(created.id, {
+              title: targetDraft.eventTitle?.trim() || "Lễ Thành Hôn & Tiệc Cưới",
+              startsAt: resolvedDate,
+              venueName: targetDraft.eventLocation.trim(),
+              venueAddress: targetDraft.eventAddress?.trim() || undefined,
+              mapDirectionsUrl: targetDraft.mapUrl?.trim() || undefined,
+            });
+          } catch {
+            // Event creation optional on first step
+          }
+        }
+        if (targetDraft.designerTemplateId) {
+          try {
+            await assignDesignerTemplate(created.id, {
+              designerTemplateId: targetDraft.designerTemplateId,
+            });
+          } catch {
+            // Thiệp vẫn được tạo; dashboard cho phép gán lại mẫu designer.
+          }
+        }
         clearWeddingDraft();
         router.replace(`${SITE_LINKS.dashboard}/weddings/${created.id}`);
       } catch (err) {

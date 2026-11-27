@@ -1,37 +1,59 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { useUser } from "@auth0/nextjs-auth0";
+import { AUTH0_EMAIL_CLAIM } from "@/config/site";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
-import { SITE_LINKS } from "@/config/site";
 import { listWeddings, syncMe } from "@/lib/api";
 import type { Wedding, WeddingPlan } from "@/lib/types";
-import { canPlanUseTemplate } from "@/templates/registry";
-import type { WeddingTemplateMeta } from "@/templates/types";
-import { LandingFooter } from "./footer";
-import { LandingFaq } from "./faq";
 import { HeroSection } from "./hero";
-import { HowItWorks } from "./how-it-works";
+import { InteractiveFeatureBento } from "./interactive-feature-bento";
 import { LandingNavbar } from "./navbar";
-import { PaymentTransferModal, PlanUpgradeModal } from "./pricing-modals";
 import { PricingTable } from "./pricing-table";
-import { TemplateGrid } from "./template-grid";
-import { ToolsPreviewSection } from "./tools-preview";
+import { VIP_SALES_ENABLED } from "@/config/pricing";
+import { TemplateShowcase } from "./template-showcase";
+
+const PaymentTransferModal = dynamic(
+  () => import("./pricing-modals").then((m) => m.PaymentTransferModal),
+  { ssr: false },
+);
+
+const BELOW_FOLD_SECTION_STYLE: React.CSSProperties = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "auto 680px",
+};
 
 interface LandingPageClientProps {
-  isAuthenticated: boolean;
+  isAuthenticated?: boolean;
   userEmail?: string | null;
+  toolsSection?: React.ReactNode;
+  howItWorksSection?: React.ReactNode;
+  faqSection?: React.ReactNode;
+  footerSection?: React.ReactNode;
 }
 
 export function LandingPageClient({
-  isAuthenticated,
+  isAuthenticated = false,
   userEmail = null,
+  toolsSection,
+  howItWorksSection,
+  faqSection,
+  footerSection,
 }: LandingPageClientProps) {
-  const router = useRouter();
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
-  const [userPlan, setUserPlan] = React.useState<WeddingPlan>("free");
+
+  // Trang chủ là static: trạng thái đăng nhập lấy từ /auth/profile phía client.
+  const { user } = useUser();
+  const sessionEmail = React.useMemo(() => {
+    const record = user as Record<string, unknown> | null | undefined;
+    const raw = record?.email ?? record?.[AUTH0_EMAIL_CLAIM];
+    return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  }, [user]);
+  const resolvedEmail = sessionEmail ?? userEmail;
+  const resolvedAuthenticated = Boolean(user) || isAuthenticated;
+
   const [userWeddings, setUserWeddings] = React.useState<Wedding[]>([]);
-  const [upgradeTemplate, setUpgradeTemplate] = React.useState<WeddingTemplateMeta | null>(null);
   const [paymentPlan, setPaymentPlan] = React.useState<Exclude<WeddingPlan, "free"> | null>(null);
 
   // Read ?pay=pro / ?pay=vip when returning from login
@@ -39,8 +61,11 @@ export function LandingPageClient({
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const pay = params.get("pay");
-    if (pay === "pro" || pay === "vip") {
-      setPaymentPlan(pay);
+    if (pay === "pro" || (pay === "vip" && VIP_SALES_ENABLED)) {
+      let active = true;
+      queueMicrotask(() => {
+        if (active) setPaymentPlan(pay);
+      });
       params.delete("pay");
       const nextQuery = params.toString();
       const nextUrl =
@@ -48,6 +73,9 @@ export function LandingPageClient({
         (nextQuery ? `?${nextQuery}` : "") +
         window.location.hash;
       window.history.replaceState(null, "", nextUrl);
+      return () => {
+        active = false;
+      };
     }
   }, []);
 
@@ -55,19 +83,15 @@ export function LandingPageClient({
     try {
       const weddings = await listWeddings();
       setUserWeddings(weddings);
-      if (weddings.some((w) => w.plan === "vip")) setUserPlan("vip");
-      else if (weddings.some((w) => w.plan === "pro")) setUserPlan("pro");
-      else setUserPlan("free");
-    } catch {}
+    } catch { }
   }, []);
 
   React.useEffect(() => {
-    setSessionInfo({ isAuthenticated, email: userEmail });
-  }, [isAuthenticated, setSessionInfo, userEmail]);
+    setSessionInfo({ isAuthenticated: resolvedAuthenticated, email: resolvedEmail });
+  }, [resolvedAuthenticated, resolvedEmail, setSessionInfo]);
 
   React.useEffect(() => {
-    if (!isAuthenticated) {
-      setUserPlan("free");
+    if (!resolvedAuthenticated) {
       return;
     }
 
@@ -78,77 +102,62 @@ export function LandingPageClient({
         if (cancelled) return;
         setSessionInfo({
           isAuthenticated: true,
-          email: profile.email ?? userEmail,
+          email: profile.email ?? resolvedEmail,
         });
         if (profile.theme) {
           adoptAccountTheme(profile.theme);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     listWeddings()
       .then((weddings) => {
         if (cancelled) return;
         setUserWeddings(weddings);
-        if (weddings.some((w) => w.plan === "vip")) setUserPlan("vip");
-        else if (weddings.some((w) => w.plan === "pro")) setUserPlan("pro");
-        else setUserPlan("free");
       })
       .catch(() => {
         if (!cancelled) {
           setUserWeddings([]);
-          setUserPlan("free");
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [adoptAccountTheme, isAuthenticated, setSessionInfo, userEmail]);
-
-  const handleUseTemplate = (template: WeddingTemplateMeta) => {
-    if (template.plan === "free") {
-      router.push(
-        `${SITE_LINKS.createWedding}?template=${encodeURIComponent(template.id)}`,
-      );
-      return;
-    }
-
-    if (!canPlanUseTemplate(userPlan, template.plan)) {
-      setUpgradeTemplate(template);
-      return;
-    }
-
-    const destination = `${SITE_LINKS.createWedding}?template=${encodeURIComponent(template.id)}`;
-    router.push(destination);
-  };
+  }, [adoptAccountTheme, resolvedAuthenticated, resolvedEmail, setSessionInfo]);
 
   return (
-    <div className="landing-theme min-h-screen-dvh bg-bg text-text overflow-x-hidden">
-      <LandingNavbar isAuthenticated={isAuthenticated} userEmail={userEmail} />
+    <div className="landing-theme min-h-screen-dvh bg-[#FAF8F5] text-[#1F1D1A] overflow-x-hidden">
+      <LandingNavbar
+        isAuthenticated={resolvedAuthenticated}
+        userEmail={resolvedEmail}
+        hideThemeToggle
+        revealMobileCtaOnScroll
+      />
       <main>
         <HeroSection />
-        <TemplateGrid userPlan={userPlan} onUseTemplate={handleUseTemplate} />
-        <ToolsPreviewSection />
-        <HowItWorks />
-        <PricingTable
-          isAuthenticated={isAuthenticated}
-          onSelectPaidPlan={(plan) => setPaymentPlan(plan)}
-        />
-        <LandingFaq />
+        <TemplateShowcase />
+        <div style={BELOW_FOLD_SECTION_STYLE}>
+          <InteractiveFeatureBento />
+        </div>
+        {toolsSection && <div style={BELOW_FOLD_SECTION_STYLE}>{toolsSection}</div>}
+        {howItWorksSection && (
+          <div style={BELOW_FOLD_SECTION_STYLE}>{howItWorksSection}</div>
+        )}
+        <div style={BELOW_FOLD_SECTION_STYLE}>
+          <PricingTable
+            isAuthenticated={resolvedAuthenticated}
+            onSelectPaidPlan={(plan) => setPaymentPlan(plan)}
+          />
+        </div>
+        {faqSection && <div style={BELOW_FOLD_SECTION_STYLE}>{faqSection}</div>}
       </main>
-      <LandingFooter />
-
-      <PlanUpgradeModal
-        template={upgradeTemplate}
-        onClose={() => setUpgradeTemplate(null)}
-        onSelectPlan={(plan) => setPaymentPlan(plan)}
-      />
+      {footerSection && <div style={BELOW_FOLD_SECTION_STYLE}>{footerSection}</div>}
 
       <PaymentTransferModal
         plan={paymentPlan}
         weddings={userWeddings}
-        isAuthenticated={isAuthenticated}
+        isAuthenticated={resolvedAuthenticated}
         onClose={() => setPaymentPlan(null)}
         onSuccess={refreshPlan}
       />

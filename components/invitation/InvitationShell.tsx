@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { playOpenCardSound } from "@/lib/sound-effects";
 import { invitationThemeCssVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Envelope } from "./Envelope";
 import { MusicPlayer } from "./MusicPlayer";
 import {
+  InvitationOpenedContext,
   useInvitationContained,
   useInvitationDesktopLayout,
   useWeddingContent,
@@ -22,7 +24,9 @@ interface InvitationShellProps {
 
 const TARGET_VOLUME = 0.6;
 const FADE_DURATION_MS = 2000;
-const ENVELOPE_DISMISS_MS = 900;
+// Cửa mở 800ms (cửa phải trễ thêm 80ms); cho nội dung hiện lên sớm hơn để
+// hero bắt đầu ngay khi cửa vừa rời khung, không chờ hẳn rồi mới chạy.
+const ENVELOPE_DISMISS_MS = 820;
 
 export function InvitationShell({
   guestName,
@@ -52,6 +56,18 @@ export function InvitationShell({
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const fadeTimerRef = React.useRef<number | null>(null);
   const autoScrollStoppedRef = React.useRef(false);
+  const wasPlayingBeforeHideRef = React.useRef(false);
+  const userManuallyMutedRef = React.useRef(false);
+
+  const broadcastMusicState = React.useCallback((playing: boolean) => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("inviwedd:music-state-change", {
+          detail: { isPlaying: playing },
+        }),
+      );
+    } catch {}
+  }, []);
 
   const clearFade = React.useCallback(() => {
     if (fadeTimerRef.current !== null) {
@@ -82,7 +98,6 @@ export function InvitationShell({
   const playAudio = React.useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !audioAvailable || !data.music?.src) return;
-
     try {
       audio.volume = 0.04;
       const playPromise = audio.play();
@@ -90,25 +105,30 @@ export function InvitationShell({
         playPromise
           .then(() => {
             setIsPlaying(true);
+            broadcastMusicState(true);
             startFadeIn(audio);
           })
           .catch(() => {
             setIsPlaying(false);
+            broadcastMusicState(false);
             if (audio.error) {
               setAudioAvailable(false);
             }
           });
       } else {
         setIsPlaying(true);
+        broadcastMusicState(true);
         startFadeIn(audio);
       }
     } catch {
       setIsPlaying(false);
+      broadcastMusicState(false);
     }
-  }, [audioAvailable, data.music?.src, startFadeIn]);
+  }, [audioAvailable, broadcastMusicState, data.music?.src, startFadeIn]);
 
   const handleOpenEnvelope = React.useCallback(() => {
     setIsOpened(true);
+    playOpenCardSound();
     onOpenedChange?.(true);
     if (!externalMusicControl) {
       playAudio();
@@ -142,43 +162,78 @@ export function InvitationShell({
     if (!audio || !audioAvailable) return;
 
     if (audio.paused) {
+      userManuallyMutedRef.current = false;
       playAudio();
     } else {
+      userManuallyMutedRef.current = true;
       clearFade();
       audio.pause();
       setIsPlaying(false);
+      broadcastMusicState(false);
     }
-  }, [audioAvailable, clearFade, playAudio]);
+  }, [audioAvailable, broadcastMusicState, clearFade, playAudio]);
 
+  // Lắng nghe lệnh bật/tắt nhạc từ Desktop Floating Utility Rail hoặc các block khác
+  React.useEffect(() => {
+    const onToggle = () => handleToggleMusic();
+    window.addEventListener("inviwedd:toggle-music", onToggle);
+    return () => {
+      window.removeEventListener("inviwedd:toggle-music", onToggle);
+    };
+  }, [handleToggleMusic]);
+
+  // Quản lý vòng đời audio khi người dùng chuyển tab hoặc ẩn ứng dụng Zalo/Messenger
   React.useEffect(() => {
     const handleVisibilityChange = () => {
       const audio = audioRef.current;
       if (!audio) return;
-      if (document.hidden && !audio.paused) {
-        clearFade();
-        audio.pause();
-        setIsPlaying(false);
+
+      if (document.hidden) {
+        if (!audio.paused) {
+          wasPlayingBeforeHideRef.current = true;
+          clearFade();
+          audio.pause();
+          setIsPlaying(false);
+          broadcastMusicState(false);
+        } else {
+          wasPlayingBeforeHideRef.current = false;
+        }
+      } else {
+        // Khi quay trở lại tab/ứng dụng: chỉ tự động phát tiếp nếu trước đó đang phát và người dùng không bấm mute tay
+        if (wasPlayingBeforeHideRef.current && !userManuallyMutedRef.current) {
+          playAudio();
+        }
       }
     };
 
     const handlePageHide = () => {
       const audio = audioRef.current;
       if (audio && !audio.paused) {
+        wasPlayingBeforeHideRef.current = true;
         clearFade();
         audio.pause();
         setIsPlaying(false);
+        broadcastMusicState(false);
+      }
+    };
+
+    const handlePageShow = () => {
+      if (wasPlayingBeforeHideRef.current && !userManuallyMutedRef.current) {
+        playAudio();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pageshow", handlePageShow);
 
     return () => {
       clearFade();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
     };
-  }, [clearFade]);
+  }, [broadcastMusicState, clearFade, playAudio]);
 
   React.useEffect(() => {
     const config = data.ui.autoScroll;
@@ -375,7 +430,7 @@ export function InvitationShell({
             ? envelopeDismissed
               ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100"
               : isOpened
-                ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300"
+                ? "mx-auto min-h-full w-full overflow-x-clip bg-inv-bg opacity-100 transition-[opacity,transform] duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300"
                 : "pointer-events-none mx-auto h-full w-full overflow-hidden bg-inv-bg opacity-0"
             : cn(
               "mx-auto w-full bg-inv-bg",
@@ -383,13 +438,17 @@ export function InvitationShell({
               envelopeDismissed
                 ? "min-h-screen-dvh overflow-x-clip opacity-100 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
                 : isOpened
-                  ? "min-h-screen-dvh overflow-x-clip opacity-100 transition-[opacity,transform] duration-[850ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
+                  ? "min-h-screen-dvh overflow-x-clip opacity-100 transition-[opacity,transform] duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-300 md:shadow-[0_0_50px_color-mix(in_srgb,var(--inv-olive-deep)_12%,transparent)]"
                   : "pointer-events-none h-screen-dvh overflow-hidden opacity-0 motion-safe:translate-y-4",
             )
         }
       >
-        {children}
+        <InvitationOpenedContext.Provider value={envelopeDismissed}>
+          {children}
+        </InvitationOpenedContext.Provider>
       </div>
+
+
 
       {!externalMusicControl && (
         <MusicPlayer

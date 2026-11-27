@@ -1,6 +1,6 @@
 import { readBody, route, json, fail } from "@/lib/server/http";
 import { db, env } from "@/lib/server/supabase";
-import { findOrderCode, safeEqual } from "@/lib/server/payments";
+import { findOrderCode, PLAN_RANK, safeEqual } from "@/lib/server/payments";
 
 export const POST = route(async (req: Request) => {
   const expected = env("BANK_WEBHOOK_SECRET");
@@ -44,12 +44,7 @@ export const POST = route(async (req: Request) => {
     if (orderError) throw orderError;
 
     if (order && order.status === "pending" && amount >= (order.amount_vnd as number)) {
-      const { error: planError } = await client
-        .from("weddings")
-        .update({ plan: order.plan })
-        .eq("id", order.wedding_id);
-      if (planError) throw planError;
-
+      // Khóa/claim đơn hàng nguyên tử TRƯỚC khi nâng gói
       const { data: marked, error: markError } = await client
         .from("orders")
         .update({ status: "paid", paid_at: new Date().toISOString() })
@@ -58,17 +53,41 @@ export const POST = route(async (req: Request) => {
         .select("id")
         .maybeSingle();
       if (markError) throw markError;
-      if (marked) matchedOrderId = order.id as string;
+
+      if (marked) {
+        matchedOrderId = order.id as string;
+
+        // Chỉ nâng gói khi bậc gói mới cao hơn gói hiện tại (chống hạ gói từ vip xuống pro)
+        const { data: currentWedding, error: weddingReadError } = await client
+          .from("weddings")
+          .select("plan")
+          .eq("id", order.wedding_id)
+          .maybeSingle();
+        if (weddingReadError) throw weddingReadError;
+
+        const currentPlan = (currentWedding?.plan as "free" | "pro" | "vip" | undefined) ?? "free";
+        const targetPlan = order.plan as "pro" | "vip";
+        if ((PLAN_RANK[targetPlan] ?? 0) > (PLAN_RANK[currentPlan] ?? 0)) {
+          const { error: planError } = await client
+            .from("weddings")
+            .update({ plan: targetPlan })
+            .eq("id", order.wedding_id);
+          if (planError) throw planError;
+        }
+      }
     }
   }
 
-  const { error: insertError } = await client.from("bank_transactions").insert({
-    ref,
-    amount_vnd: amount,
-    description,
-    received_at: receivedAt,
-    matched_order_id: matchedOrderId,
-  });
+  const { error: insertError } = await client.from("bank_transactions").upsert(
+    {
+      ref,
+      amount_vnd: amount,
+      description,
+      received_at: receivedAt,
+      matched_order_id: matchedOrderId,
+    },
+    { onConflict: "ref", ignoreDuplicates: true },
+  );
   if (insertError) throw insertError;
 
   return json({ ok: true, matched: matchedOrderId !== null });

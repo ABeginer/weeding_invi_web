@@ -1,6 +1,15 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import type { AllowedUploadMimeType } from "@/config/plans";
+import { toAbsoluteSiteUrl } from "@/config/site";
 import type { PhotoKind } from "@/lib/wedding-types";
+import { getDefaultEdgeCache } from "./edge-cache";
+
+const ALLOWED_MEDIA_CONTENT_TYPES = new Set([
+  "image/webp",
+  "image/jpeg",
+  "image/png",
+  "audio/mpeg",
+]);
 
 interface R2HttpMetadata {
   contentType?: string;
@@ -23,10 +32,29 @@ interface R2BucketLike {
 }
 
 export const MEDIA_KEY_RE =
-  /^weddings\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(banner|couple|gallery|og|gift)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/i;
+  /^weddings\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(banner|couple|gallery|og|gift|album|story)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/i;
+
+/** Ảnh nền/asset của designer (ops), lưu cùng bucket PHOTOS. */
+export const DESIGNER_MEDIA_KEY_RE = /^designer\/[0-9a-f-]{36}\.webp$/i;
+
+/** Nhạc nền tự tải lên (Pro). */
+export const MUSIC_MEDIA_KEY_RE =
+  /^weddings\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/music\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.mp3$/i;
+
+export function buildDesignerAssetKey(): string {
+  return `designer/${crypto.randomUUID()}.webp`;
+}
 
 export function buildPhotoStorageKey(weddingId: string, kind: PhotoKind): string {
   return `weddings/${weddingId}/${kind}/${crypto.randomUUID()}.webp`;
+}
+
+export function buildStoryPhotoStorageKey(weddingId: string): string {
+  return `weddings/${weddingId}/story/${crypto.randomUUID()}.webp`;
+}
+
+export function buildMusicStorageKey(weddingId: string): string {
+  return `weddings/${weddingId}/music/${crypto.randomUUID()}.mp3`;
 }
 
 export function buildMediaUrl(storageKey: string): string {
@@ -34,7 +62,11 @@ export function buildMediaUrl(storageKey: string): string {
 }
 
 export function isValidMediaStorageKey(key: string): boolean {
-  return MEDIA_KEY_RE.test(key);
+  return (
+    MEDIA_KEY_RE.test(key) ||
+    DESIGNER_MEDIA_KEY_RE.test(key) ||
+    MUSIC_MEDIA_KEY_RE.test(key)
+  );
 }
 
 export function detectImageMimeFromBytes(
@@ -87,6 +119,15 @@ async function getPhotosBucket(): Promise<R2BucketLike> {
   return bucket;
 }
 
+export async function putMusicObject(
+  storageKey: string,
+  bytes: Uint8Array,
+  contentType: "audio/mpeg",
+): Promise<void> {
+  const bucket = await getPhotosBucket();
+  await bucket.put(storageKey, bytes, { httpMetadata: { contentType } });
+}
+
 export async function putPhotoObject(
   storageKey: string,
   bytes: Uint8Array,
@@ -112,8 +153,14 @@ export async function getPhotoObject(storageKey: string): Promise<{
 
   const buffer = await obj.arrayBuffer();
   const bytes = new Uint8Array(buffer);
+  const rawContentType = obj.httpMetadata?.contentType;
+  const safeStoredType =
+    rawContentType && ALLOWED_MEDIA_CONTENT_TYPES.has(rawContentType)
+      ? rawContentType
+      : null;
   const contentType =
-    obj.httpMetadata?.contentType ||
+    safeStoredType ||
+    (MUSIC_MEDIA_KEY_RE.test(storageKey) ? "audio/mpeg" : null) ||
     detectImageMimeFromBytes(bytes) ||
     "image/webp";
 
@@ -124,5 +171,16 @@ export async function deletePhotoObject(storageKey: string): Promise<void> {
   if (!storageKey) return;
   const bucket = await getPhotosBucket();
   await bucket.delete(storageKey);
+
+  // Xóa cache tại Cloudflare Edge ngay khi chủ thiệp xóa ảnh/nhạc
+  const cache = getDefaultEdgeCache();
+  if (cache) {
+    try {
+      const url = toAbsoluteSiteUrl(buildMediaUrl(storageKey));
+      await cache.delete(new Request(url, { method: "GET" }));
+    } catch {
+      // Không để lỗi xóa cache làm hỏng luồng xóa file
+    }
+  }
 }
 

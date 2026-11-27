@@ -1,110 +1,196 @@
-# Danh sách việc cần hoàn thiện & xác nhận trước phát hành (TODO)
+# Việc còn lại
 
-Tài liệu tổng hợp các mục tạm thời/placeholder, kết quả kiểm tra tương phản WCAG 2.1 và cấu hình hạ tầng cần chủ dự án xác nhận cho **Inviwedd** (trang chủ `/`, trang tạo thử `/tao-thiep`, Dashboard `/dashboard`, kho mẫu `/mau/[templateId]`, và thiệp live `/w/[slug]`, `/m/[slug]`).
+Cập nhật: 2026-11-15 (Verified & Reconciled). Dưới đây là danh sách việc còn lại sau các đợt hoàn thiện launch hardening và designer engine:
 
----
+## A. Chủ dự án cần làm (Owner-only)
 
-## 1. Trạng thái kho mẫu thiệp (`templates/`)
-- [x] `basic-1` (**Vườn Ô Liu** — Gói Miễn phí): Bố cục phong bì sáp olive giữ nguyên bảng màu riêng, hỗ trợ xem thử (`contained`) và live (`/w/*`, `/m/*`), nút Quà mừng & biểu mẫu RSVP kèm người đi cùng/chế độ ăn.
-- [x] `basic-2` (**Trắng Ngà Tối Giản** — Gói Miễn phí): Bố cục tạp chí nền kem ngà & champagne, có bìa mở thiệp, lịch tiệc, đếm ngược, gallery phóng to, hộp thoại Quà mừng, RSVP & lời chúc.
-- [x] `basic-3` (**Ánh Nắng Hoàng Hôn** — Gói Miễn phí): Tông hồng cát & rượu vang, khung ảnh vòm cổ điển, đầy đủ hộp thoại Quà mừng & RSVP mở rộng.
-- [x] `pro-1` (**Nhung Đen Ánh Kim** — Gói Pro): Nền nhung tối `#0B0B0B` & chữ vàng `#D4AF37`, hiệu ứng mở thiệp rèm đôi hai cánh (hỗ trợ `prefers-reduced-motion`), hỗ trợ ảnh QR Quà mừng.
-- [ ] `vip-1` (**Ngọc Lục Bảo Độc Quyền** — Gói VIP): Hiện ở trạng thái **placeholder** (`isPlaceholder: true`, hiển thị nhãn `"Sắp có"`, chưa có `public/templates/vip-1/cover.webp`).
+- [x] Chạy các migration cơ sở dữ liệu:
+  - `migration_v16_ops_roles_template_meta.sql` (bảng `ops_members`, vai trò designer) — **Đã áp dụng trên production**.
+  - `migration_v17_invite_limits.sql` (giới hạn 30 lượt mở thiệp gói Free, khoá tên cặp đôi) — **Đã áp dụng trên production**.
+  - `migration_v18_wish_once.sql` (RPC `save_wish_once_v18` chống spam lời chúc) — **Đã áp dụng trên production**.
+- [ ] Xác nhận email admin trong `ops_members` (hiện fallback `ADMIN_EMAILS`).
+- [ ] Trước `npm run deploy`: `npx wrangler login` (hoặc đặt `CLOUDFLARE_API_TOKEN`).
+- [ ] **Bật Cloudflare Workers Paid (~$5/tháng)**: CPU free 10 ms không đủ cho Next.js 16 SSR và cron retention (tránh lỗi Error 1102).
+- [ ] Sau deploy: xác nhận cron dọn dữ liệu chạy (`wrangler tail` lúc 03:00 UTC, log `[retention]`);
+      chạy thử `POST /api/ops/retention/run` với `{ "dryRun": true, "reason": "..." }` trước.
+- [ ] Kiểm tra CSP trên trình duyệt thật: Turnstile, nhạc nền, Google Maps, preview Zalo.
+- [ ] Xác nhận bộ tính năng bán ra (bảng giá khớp code nhưng vẫn là bản nháp).
 
----
+## B. Kỹ thuật (Trạng thái thực tế)
 
-## 2. Giá trị tạm / cần xác nhận trước khi mở bán (`config/`)
-- [ ] **`config/site.ts`**: Xác nhận `SITE_NAME` (`"Inviwedd"`), `SITE_EMAIL` (`"lienhe@inviwedd.example"` -> đổi sang email tên miền thật), và `APP_BASE_URL` / `SITE_URL` / `NEXT_PUBLIC_SITE_URL` để chuẩn hóa canonical & Open Graph URL.
-- [ ] **`config/pricing.ts`**: Chốt giá chính thức của **Gói Tiêu chuẩn (Pro)** (hiện ghi `199.000đ` dự kiến) và **Gói Cao cấp (VIP)** (hiện ghi `399.000đ` dự kiến). Cập nhật lại các dòng đánh dấu `comingSoon: true` khi tính năng hoàn thiện.
-- [ ] **`config/bank.ts`**: Điền `bankName`, `accountNumber`, `accountHolder`, `branch` thật trong `BANK_TRANSFER_INFO` (hiện để rỗng và hiển thị `"Đang cập nhật (TODO)"` trong modal `"Thanh toán chuyển khoản"`).
-- [ ] **Thanh toán & kích hoạt gói (Backend giai đoạn sau)**: Modal `"Thanh toán chuyển khoản"` hiện chỉ hiển thị thông tin + mã đơn tạm ở client, chưa kết nối API đối soát chuyển khoản hoặc tự nâng cấp `plan` trên Supabase.
-- [ ] **Nội dung pháp lý**: Cập nhật văn bản chính thức cho `/chinh-sach-bao-mat` ([app/chinh-sach-bao-mat/page.tsx](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/app/chinh-sach-bao-mat/page.tsx)) và `/dieu-khoan-su-dung` ([app/dieu-khoan-su-dung/page.tsx](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/app/dieu-khoan-su-dung/page.tsx)).
+- [x] **Trang thiết kế thiệp cho designer trong /ops**: Đã hoàn thành (Multi-page canvas, seed styles, published/draft versions, role designer, interactive blocks, public renderer).
+- [x] **Ghim version và render thiệp thật**: `/w/<slug>` và `/m/<guest>` render Designer template đúng version, kèm RSVP / map / calendar block.
+- [x] **Phase 5 Animation & Replay**: Đã có multi-select trên canvas (Shift/Cmd-click), nút "Phát tất cả" và "Phát thử" trực tiếp trong artboard bằng `ElementAnimator`, badge animated trên Layers panel.
+- [x] **Hiệu ứng chữ (Text Effects)**: Đã hỗ trợ `shadow`, `stroke`, `glow`, `goldGradient` trong canvas properties và `DesignerTemplateRenderer`.
+- [ ] **Dynamic fields mở rộng**: Đang triển khai hỗ trợ text/textarea bên cạnh ảnh cho guest fields.
+- [ ] **Hoàn thiện khối tương tác (Blocks)**: Map (hỗ trợ nhiều sự kiện và chỉ đường), Gift (nút/QR chuẩn), Gallery/Music kết nối dữ liệu thật.
+- [ ] **RSVP Preload**: Tải trước dữ liệu khách (status, diet, plusOnes) cho thiệp `/m`.
+- [ ] **Editor UX**: Undo/redo, autosave debounce, dirty guard.
+- [ ] **Xoay ảnh/chữ khi export**: Exporter hỗ trợ góc xoay khi vẽ canvas background.
+- [ ] **98–124 cảnh báo `react-hooks/set-state-in-effect`** từ eslint-plugin-react-hooks v6 (React Compiler) — giữ mức warn, không chặn build.
+- [ ] **11 lỗ hổng audit build tooling** — không ảnh hưởng runtime worker.
 
----
+## B2. Live QR Photo Wall (đã có UI demo, chưa có backend)
 
-## 3. Tài nguyên đa phương tiện & ảnh bìa mẫu (`public/`)
-- [x] `public/templates/basic-1/cover.webp`, `basic-2/cover.webp`, `basic-3/cover.webp`: Ảnh minh họa bìa tỉ lệ 3:4 (`600x800`).
-- [ ] `public/templates/pro-1/cover.webp`: Hiện sử dụng ảnh vector Art Deco dựng tạm (`600x800` WebP); cân nhắc thay bằng ảnh sản phẩm thật hoặc ảnh AI khi sẵn sàng.
-- [ ] `public/templates/vip-1/cover.webp`: Chưa có ảnh — đang dùng card fallback tối kèm viền kim loại & nhãn `"Sắp có"`.
-- [ ] `content/demo.ts`: Dữ liệu cô dâu/chú rể/lịch tiệc mẫu đang dùng bộ ảnh trong `public/photos/*`, QR mẫu `/images/gift-qr.png` và nhạc `/media/wedding.mp3`.
-- [ ] `public/photos/*`, `public/images/gift-qr.png`, `public/media/wedding.mp3`: Kiểm tra bản quyền nhạc nền & thay ảnh mặc định trước khi quảng bá công khai.
+Hiện trạng: ô bento trên landing là **demo** với 6 ảnh mẫu. Album QR (`/a/<slug>`) đã chạy
+cho gói Pro/VIP nhưng chỉ chủ thiệp upload trong dashboard; khách chưa tự upload và chưa
+có màn hình chung cập nhật realtime.
 
----
+- [ ] Migration: bảng `album_photo_uploads` (wedding_id, guest_id?, table_number, r2_key,
+      status pending/approved/rejected, created_at) + token QR theo bàn.
+- [ ] API khách upload `POST /api/album/[slug]/upload?t=<token>`: kiểm tra token theo bàn,
+      giới hạn số ảnh, rate limit, ảnh nén client ≤1600px, lưu R2 + row `pending`.
+- [ ] API/UI duyệt ảnh trong dashboard (duyệt/từ chối, đếm theo hạn mức 30/300).
+- [ ] Trang upload mobile `/a/<slug>/upload` (chọn ảnh, xem tiến trình, thông báo chờ duyệt).
+- [ ] Trang wall `/a/<slug>/wall`: chỉ hiện ảnh approved, tự cập nhật bằng polling 8–10s
+      (Workers không giữ WebSocket lâu; Supabase Realtime là phương án thay thế), chế độ
+      fullscreen cho TV/màn hình tiệc.
+- [ ] Dashboard tạo/tải QR theo từng bàn trỏ tới link upload.
+- [ ] Test: token sai/hết hạn, vượt hạn mức ảnh, ảnh quá lớn, duyệt & từ chối, polling wall.
 
-## 4. Hệ hai Theme Light/Dark (`lib/brand-theme.ts`), Font chữ & Kiểm tra tương phản WCAG 2.1
+## B3. Trang thiết kế thiệp cho designer trong /ops (đề xuất, chưa code)
 
-### Bộ font (`app/layout.tsx`, hỗ trợ tiếng Việt đầy đủ)
-- **Tiêu đề (`--font-display`)**: Chọn nhất quán **Cormorant Garamond** (weights `400, 500, 600, 700`, bao gồm kiểu nghiêng *italic* hiển thị dấu tiếng Việt rõ nét).
-- **Nội dung & nút bấm (`--font-sans`)**: **Be Vietnam Pro** (weights `300, 400, 500, 600, 700`).
-- *Lưu ý ranh giới theme*: Hai theme Sáng/Tối chỉ áp dụng cho giao diện Inviwedd (`/`, `/tao-thiep`, `/dashboard`, `/chinh-sach-bao-mat`, `/dieu-khoan-su-dung`). Thiệp của khách (`/w/*`, `/m/*`, `/mau/*` & `templates/*`) giữ bảng màu độc lập theo từng mẫu trong `lib/theme.ts`.
+Mục tiêu: designer không cần code vẫn tạo được mẫu thiệp mới; cô dâu chú rể chỉ điền
+placeholder. Lưu dưới dạng **layout JSON + ảnh nền webp** (không flatten toàn bộ thiệp,
+để giữ RSVP/maps/nhạc là element tương tác).
 
-### Kết quả đo tự động từ `node scripts/check-contrast.mjs` (chuẩn WCAG AA `>= 4.5:1`)
+- [ ] Data model: `designer_templates` (name, plan, ritual, status draft/published, version,
+      canvas_json, background_key, snapshot_key, created_by), `designer_assets` (kind, r2_key,
+      width/height), lịch sử version.
+- [ ] Editor canvas: artboard 390×844 (xuất 2x 780×1688), zoom, pan, grid, snap, ruler,
+      layer panel, undo/redo, multi-page (bìa / nội dung / RSVP / thanks).
+- [ ] Text: 2 loại — text cố định và text placeholder (`{{groom}}`, `{{bride}}`, `{{date}}`,
+      `{{venue}}`, `{{guest}}`, `{{salutation}}`); chọn font self-hosted, size, line-height,
+      letter-spacing, align, auto-fit, max lines, overflow.
+- [ ] Element kéo thả: ảnh PNG/SVG upload R2, khung ảnh, shape, divider, icon; calendar block
+      (ngày giờ), map block (static image + link Google Maps), countdown, QR, music, RSVP anchor.
+- [ ] Ops UX: role `designer` (không phải admin), thư viện asset dùng chung, duplicate mẫu,
+      preview desktop/mobile, preview theo khách, publish cần duyệt, audit log.
+- [ ] Lưu & xuất: upload background webp (canvas `toBlob("image/webp", 0.9)` ở client, ≤300KB),
+      lưu JSON layout; version mỗi lần publish; snapshot OG xuất cùng lúc.
+- [ ] Runtime: registry trỏ `designerTemplateId`; renderer đọc JSON, đặt overlay theo toạ độ %
+      (scale theo bề rộng), fallback template code nếu thiếu layout.
+- [ ] Validation trước publish: placeholder thiếu, chữ tràn safe-area, contrast < 4.5:1,
+      asset quá lớn, block tương tác nằm ngoài vùng chạm 44px.
 
-**Light Theme (mặc định):**
+## B4. Designer → thiệp thật (version ghim)
 
-| Cặp màu | Mã Hex (Chữ / Nền) | Tỉ lệ đo | Trạng thái |
-| :--- | :--- | :---: | :---: |
-| `text` trên `bg` | `#2C2A29` / `#FAF7F2` | **13.37:1** | PASS |
-| `text` trên `surface` | `#2C2A29` / `#FFFFFF` | **14.28:1** | PASS |
-| `text` trên `surfaceAlt` | `#2C2A29` / `#F3EEE6` | **12.37:1** | PASS |
-| `textMuted` trên `bg` / `surface` / `surfaceAlt` | `#5C5752` trên `#FAF7F2` / `#FFFFFF` / `#F3EEE6` | **6.68:1** / **7.14:1** / **6.18:1** | PASS |
-| `accentText` trên `bg` / `surface` | `#8A6D2F` trên `#FAF7F2` / `#FFFFFF` | **4.56:1** / **4.87:1** | PASS |
-| `accentFg` trên `accent` / `accentHover` | `#2C2A29` trên `#C5A059` / `#B58F46` | **5.81:1** / **4.75:1** | PASS |
-| `text` trên `accentSoft` | `#2C2A29` / `#F1E7D0` | **11.62:1** | PASS |
-| `vipBadgeFg` trên `vipBadgeBg` | `#C5A059` / `#2C2A29` | **5.81:1** | PASS |
-| `soonBadgeFg` trên `soonBadgeBg` | `#5C5752` / `#F3EEE6` | **6.18:1** | PASS |
-| `successFg` trên `successBg` / `surface` | `#1B5E38` trên `#EBF5EE` / `#FFFFFF` | **6.96:1** / **7.76:1** | PASS |
-| `dangerFg` trên `dangerBg` / `surface` | `#991B1B` trên `#FCEEEE` / `#FFFFFF` | **7.36:1** / **8.31:1** | PASS |
-| `dangerBtnFg` trên `dangerBtnBg` | `#FFFFFF` / `#B91C1C` | **6.47:1** | PASS |
-| `neutralFg` trên `neutralBg` | `#4E4944` / `#EFECE6` | **7.55:1** | PASS |
+- [x] Multi-page canvas (Bìa / Nội dung), mỗi trang nền + element riêng.
+- [x] Seed bộ mẫu gốc kéo thả: Đào Phấn, Lục Xuân, Kim Hỏa, Ren Trắng, Mộc Nâu, Chibi Hồng
+      (`POST /api/ops/designer/seed-styles`, nút "Tạo bộ mẫu gốc").
+- [x] Fallback upload ảnh khi R2/Miniflare dev lỗi: nhúng data URL tạm vào layout.
+- [ ] Preview chuyển trang `?p=` + tab trang trên `/mau/designer/[id]`.
+- [ ] Xuất webp **tất cả trang** (lưu mảng `backgrounds[]`) thay vì chỉ trang đang chọn.
+- [x] Dashboard gán designer template cho thiệp: ghi `designer_template_id` +
+      `designer_template_version` (bản mới nhất), có nút "Cập nhật lên vN".
+- [x] `/m/<slug>`: nếu thiệp có designer template → render `DesignerTemplateRenderer`
+      đúng version ghim với dữ liệu thật (tên khách, xưng hô, ngày, địa điểm).
+- [x] Mẫu **Đào Phấn** hoàn chỉnh trong designer: 3 trang (Bìa / Nội dung / Cảm ơn),
+      publish v1 → v2, gán thiệp test `aaaaa` và kiểm tra `/m/<guest>`.
+- [ ] Block tương tác (RSVP, map, nhạc) cho designer template — giai đoạn sau.
 
-**Dark Theme:**
+## B5. Editor animations & fonts (theo prompt `DEEPSEEK_ANIMATIONS_FONTS.md`)
 
-| Cặp màu | Mã Hex (Chữ / Nền) | Tỉ lệ đo | Trạng thái |
-| :--- | :--- | :---: | :---: |
-| `text` trên `bg` / `surface` / `surfaceAlt` | `#E8DFC8` trên `#0B0B0B` / `#151515` / `#1B1B1B` | **14.83:1** / **13.76:1** / **12.98:1** | PASS |
-| `textMuted` trên `bg` / `surface` / `surfaceAlt` | `#A89F86` trên `#0B0B0B` / `#151515` / `#1B1B1B` | **7.47:1** / **6.93:1** / **6.54:1** | PASS |
-| `accentText` trên `bg` / `surface` | `#D4AF37` trên `#0B0B0B` / `#151515` | **9.36:1** / **8.68:1** | PASS |
-| `accentFg` trên `accent` / `accentHover` | `#0B0B0B` trên `#D4AF37` / `#E3C35A` | **9.36:1** / **11.45:1** | PASS |
-| `text` trên `accentSoft` | `#E8DFC8` / `#2A2412` | **11.64:1** | PASS |
-| `vipBadgeFg` trên `vipBadgeBg` | `#D4AF37` / `#0B0B0B` | **9.36:1** | PASS |
-| `soonBadgeFg` trên `soonBadgeBg` | `#A89F86` / `#1B1B1B` | **6.54:1** | PASS |
-| `successFg` trên `successBg` / `surface` | `#7FE3A8` trên `#12261C` / `#151515` | **10.20:1** / **11.70:1** | PASS |
-| `dangerFg` trên `dangerBg` / `surface` | `#FCA5A5` trên `#2B1414` / `#151515` | **9.12:1** / **9.62:1** | PASS |
-| `dangerBtnFg` trên `dangerBtnBg` | `#FFFFFF` / `#B91C1C` | **6.47:1** | PASS |
-| `neutralFg` trên `neutralBg` | `#C9BFA8` / `#201E1B` | **9.11:1** | PASS |
+- [x] Phase 1: data model `animation.in`, 10 preset "Vào", easing, wrapper trong
+      `ElementAnimator`, IntersectionObserver dùng chung, stagger màn hình đầu,
+      reduced-motion, no-JS/observer-failure fallback, panel "Hiệu ứng" tab Vào.
+- [x] Phase 3: loop/emphasis (`float/pulse/heartbeat/breathe/sway/spin/twinkle/
+      shimmer/kenBurns`), parallax một listener chung, tab "Lặp", 12 loop gần tâm,
+      `typewriter` / `wordsIn` / `flipIn`, tắt theo reduced-motion/no-JS.
+  - Còn thiếu: shimmer chưa mask theo alpha ảnh PNG; "Phát thử" mới mở trang preview,
+    chưa replay đúng element/"Phát tất cả"; badge animated trên layers chưa có.
+- [~] Phase 4: hiệu ứng rơi **bản built-in + nguồn tùy chỉnh** — 9 preset (tuyết/sakura/hồng/lá/tim/sao/
+      kim tuyến/bong bóng/đom đóm), tối đa 4 nguồn (preset/icon/ảnh upload 256px,
+      ≤512KB), panel đầy đủ tham số, trong khung/cả trang, static sample +
+      "Xem hiệu ứng khi chỉnh", max 2, area/hardware scale, DPR≤2, pause
+      off-screen/tab, reduced-motion tắt.
+  - Còn thiếu: icon color picker theo từng nguồn; "Phát thử" đúng element/"Phát tất cả".
+- [~] Phase 5: exit effects (`fadeOut/slideOut/zoomOutExit`, observer theo dõi
+      vào/ra, replay entrance khi "Chạy lại" bật), shimmer mask theo alpha ảnh,
+      "Tự động áp dụng" fadeIn so le 120ms, badge "Hiệu ứng" trên element chọn.
+  - Còn thiếu: multi-select thật (Shift/Cmd-click) + áp dụng preset cho nhiều element;
+    "Phát thử" đúng element / "Phát tất cả" trong editor (hiện mở trang preview).
+- [ ] Phase 2 (phần còn lại): các family mới (Great Vibes, Allura, Montserrat,
+      Quicksand, Noto Serif…), "Bộ chữ", hiệu ứng chữ (bóng/viền/glow/ánh kim).
+      Hiện mới có nhóm font self-host sẵn + 6 "Kiểu chữ có sẵn".
+- [ ] Export theo lớp: element có animation phải tách thành layer transparent 2x
+      thay vì bake vào một ảnh nền. Cần cột/bảng lưu layer + endpoint upload mới
+      (chưa làm vì prompt cấm đổi backend/storage).
 
----
+## B6. Tối ưu production & Hạ tầng (sau đợt audit)
 
-## 5. Cài đặt Hạ tầng, Biến môi trường & Migration SQL (CHƯA thực thi)
-- [ ] **Chạy lần lượt các file Migration SQL trên Supabase Studio -> SQL Editor**:
-  - `supabase/migration_v3.sql` (nếu chưa chạy: bảng `events`, `guest_events` & RLS).
-  - `supabase/migration_v4.sql` (**CHƯA thực thi**: thêm cột `plus_ones`, `diet` vào `public.guests` và mở rộng constraint `kind` của `public.photos` thêm `'gift'`).
-  - `supabase/migration_v5.sql` (**CHƯA thực thi**: thêm cột `theme` `'light' | 'dark'` vào `public.users`).
-- [ ] **Cloudflare Turnstile chống spam cho RSVP & Lời chúc**:
-  - Tạo Turnstile widget trên Cloudflare Dashboard, điền `TURNSTILE_SECRET_KEY` và `NEXT_PUBLIC_TURNSTILE_SITE_KEY` vào `.env.local` / biến môi trường deploy.
-  - Ở môi trường dev hiện tại khi chưa đặt key: widget client tự ẩn (`null`), backend cho phép vượt qua trong dev nhưng **sẽ chặn fail-closed** nếu đặt `TURNSTILE_SECRET_KEY` mà token rỗng/sai hoặc khi kiểm tra trên production.
-- [ ] **Biến môi trường chia sẻ Open Graph & Zalo**:
-  - `APP_BASE_URL` / `SITE_URL` / `NEXT_PUBLIC_SITE_URL`: đặt domain thật (ví dụ `https://inviwedd.vn`) để thẻ `og:image` và `og:url` dùng URL tuyệt đối.
-  - `SHARE_SHOW_GUEST_NAME`: mặc định `"false"` (ẩn tên khách khỏi `<title>` Open Graph `/m/[slug]` để bảo vệ riêng tư khi chia sẻ link; đặt `"true"` nếu muốn hiện tên khách trong preview).
-- [ ] **Tạo Cloudflare R2 Bucket cho ảnh cưới**:
-  ```bash
-  npx wrangler r2 bucket create thiep-cuoi-photos
-  ```
-- [ ] **Ngoài phạm vi đợt này (chưa triển khai)**: Đối soát thanh toán tự động, tên miền riêng, sổ ghi nhận tiền mừng, UI song ngữ, check-in QR tại tiệc, giới hạn tốc độ RSVP theo từng khách, tùy chọn phương tiện di chuyển.
+- [ ] **Bật Cloudflare Workers Paid trước production ($5/tháng)**: CPU free 10 ms không đủ cho
+      Next.js 16 SSR và cron retention (tránh lỗi Error 1102), dù bundle 16,7 MiB < 64 MiB.
+- [ ] **Thiết lập tự động sao lưu Supabase Database định kỳ**: Tạo GitHub Action hoặc cron
+      Worker chạy lệnh `pg_dump` nén tải lên bucket Cloudflare R2 hằng tuần/hằng ngày để
+      bảo vệ dữ liệu tiệc cưới khách hàng (do Supabase Free không có PITR/auto-backup).
+- [ ] Tạo Cloudflare Cache Rule cho `/media/*` (Edge TTL dài) để ảnh không chạy Worker.
+- [ ] Cache HTML `/w` (30–60 s) và `/m` (15–30 s) + cơ chế purge khi sửa nội dung/suspend.
+- [ ] Tách font designer khỏi root layout (chỉ tải ở `/m`, `/mau`, `/ops/designer`).
+- [ ] Giảm ảnh 1600 → 1280 px nếu R2 gần 8–9 GB; dọn `designer_template_versions`
+      không còn wedding ghim nếu DB gần 400 MB.
+- [ ] Ops: chuyển lọc/phân trang weddings/users xuống SQL khi dữ liệu lớn.
 
----
+## B7. Tái cấu trúc mã nguồn (Codebase Refactoring & Component Modularity)
 
-## 6. Khu vực Công cụ (`/cong-cu`)
-- [x] **Bảng đối chiếu âm lịch ([docs/lunar-test-cases.md](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/docs/lunar-test-cases.md))**: Đã đối chiếu **39 mốc ngày** (1945–2030, gồm **13 ngày tháng nhuận** và mốc UTC+7 Việt Nam `1985-01-21`) từ hai nhóm nguồn lịch Việt Nam chính thống & tra cứu phổ biến; phát hiện & sửa lỗi dấu biểu thức `C1 -=` trong [lib/lunar.ts](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/lib/lunar.ts) khiến mốc `2020-05-23` lệch 1 ngày; bộ kiểm thử [tests/lunar.test.ts](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/tests/lunar.test.ts) đạt **100% (3/3 pass)** và đã bật `IS_LUNAR_TOOL_PUBLIC = true` trong [config/tools-copy.ts](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/config/tools-copy.ts) để mở công khai `/cong-cu/doi-am-lich` và đưa vào `sitemap.xml`.
-- [ ] **Xác nhận các giá trị gợi ý mặc định trong Bảng tính đám cưới ([config/tools-copy.ts](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/config/tools-copy.ts) & [WeddingCalcClient.tsx](file:///c:/Users/thuan.ton/Desktop/wedding_invi_web/components/tools/WeddingCalcClient.tsx))**:
-  - Tỉ lệ khách đến dự mặc định: `90%` (`attendanceRate`).
-  - Số người đi cùng trung bình mỗi khách đến dự: tạm để `0` (trong đặc tả bị ngắt sau `0.`, nên đặt trung tính `0` — xác nhận nếu muốn đổi sang `0.2` hay `0.5`).
-  - Số khách mỗi bàn: `10` người (`guestsPerTable`).
-  - Dự phòng thêm: `5%` (`reserveRate`).
-  - Số khách mời dự kiến, giá một mâm, các khoản chi khác và tiền mừng trung bình đều để trống khi mở trang.
-- [ ] **SEO, Analytics & Kiểm tra thủ công sau deploy**:
-  - Đăng ký **Google Search Console** cho domain production và gửi `https://<domain>/sitemap.xml`.
-  - Xác nhận biến `NEXT_PUBLIC_CF_ANALYTICS_TOKEN` nếu muốn bật **Cloudflare Web Analytics** (hiện tại `app/layout.tsx` tự chèn script nếu biến này có giá trị và bỏ qua nếu chưa cấu hình).
-  - Kiểm tra dữ liệu có cấu trúc JSON-LD (`WebApplication`, `FAQPage`, `BreadcrumbList`) bằng **Google Rich Results Test** / Schema Markup Validator cho `/cong-cu/bang-tinh-dam-cuoi` sau khi deploy URL công khai và ghi lại kết quả tại đây.
-  - Tính năng ngoài phạm vi đợt 1 (chưa triển khai): mục 2.7 *"Lấy số khách từ danh sách của tôi"* (khi đã đăng nhập) và khu vực Cẩm nang / Thu email.
+- [ ] **Tách nhỏ các "God Components" ở Dashboard**:
+  - `components/dashboard/WeddingInfoEditor.tsx` (~1.700 dòng): Chia nhỏ theo từng section chức năng:
+    - `CoupleInfoSection.tsx`: Thông tin chú rể, cô dâu, ngày cưới, xưng hô.
+    - `EventTimelineSection.tsx`: Danh sách sự kiện, nghi lễ (Ăn hỏi, Vu Quy, Tiệc cưới).
+    - `TemplateSelectorSection.tsx`: Lựa chọn mẫu thiệp (Code vs Designer) và ghim version.
+    - `ShareSettingsSection.tsx`: Tuỳ chỉnh chia sẻ, hiển thị tên khách mời, lời nhắn.
+  - `components/dashboard/GuestTable.tsx` (~1.360 dòng): Chia nhỏ thành:
+    - `GuestFilterToolbar.tsx`: Tìm kiếm, bộ lọc trạng thái RSVP, nhóm khách.
+    - `GuestPaginationBar.tsx`: Thanh điều hướng phân trang 50 khách/trang.
+    - `GuestBatchActions.tsx`: Các thao tác hàng loạt (xoá, đổi nhóm, xuất danh sách).
+  - `components/dashboard/PhotosManager.tsx` (~1.370 dòng): Chia nhỏ thành:
+    - Quản lý slot ảnh theo từng nhóm riêng: ảnh bìa (banner), ảnh đôi (couple), album ảnh (gallery).
+    - Tách riêng `ImageCropDialog` và logic nén/upload client-side.
+- [ ] **Sửa script test trong package.json**: Thay đổi `"test"` thành `node --test tests/*.test.ts` (loại bỏ `--test-isolation=none` để tương thích tốt với mọi phiên bản Node.js).
+
+## C. Đã xong
+
+- [x] Đợt 1–4: 8 lỗi chặn, dữ liệu/bảo mật, dọn repo + docs + CI, Sổ mừng, Album,
+      retention cron, phân trang khách.
+- [x] Đợt 5: CSP + HSTS, 22 test helper, bỏ `authClient()`.
+- [x] Đợt 6: xoá mock `lib/ops-api.ts` (1.101 → 368 dòng).
+- [x] Đợt 7:
+  - Font: bỏ `@import` 7 family Google Fonts; 6 family dùng thật chuyển sang `next/font`
+    (self-host, 78 file woff2) + `theme-configs.ts` dùng CSS variable.
+  - Trang chủ `/` thành **static** (bỏ `force-dynamic`), session đọc client qua `useUser()`,
+    theme áp bằng script inline trước khi paint (không nháy sáng/tối).
+  - `eslint-config-next` nâng lên 16.4.6 (flat config), sửa 2 lỗi `react-hooks/refs`.
+  - Ảnh gallery hạ 2048px → 1600px.
+  - Gộp logic validate RSVP/gift thành `lib/rsvp-input.ts`, `lib/gift-input.ts` + 7 test mới (tổng 29).
+  - Xoá `FORBIDDEN_WEDDING_SLUGS` trùng, `isImplementedTemplateId` hardcode,
+    page redirect trùng `/cong-cu/du-tru-chi-phi`, ảnh `qr.jpg` không dùng, dependency `critters`
+    (sau đó thêm stub `vendor/critters-stub` để OpenNext build được — xem Đợt 8).
+- [x] Đợt 8 — Ops:
+  - Tab **Template** dạng grid + search cho các mẫu designer đã publish: đổi tên thiết kế,
+    title khách hàng thấy, upload ảnh bìa (R2), hiện số thiệp đang dùng.
+  - Phân quyền ops theo email (`ops_members`, migration v16): admin thấy toàn bộ + trang
+    Phân quyền; designer chỉ thấy Template + Thiết kế mẫu; chặn ở cả sidebar, layout và API.
+  - Title khách hàng thấy được dùng trong danh sách chọn mẫu ở dashboard.
+- [x] Đợt 9 — Editor animations (Phase 1) + kiểu chữ:
+  - `animation.in` cho mọi element, 10 preset vào, easing, duration/delay/direction/distance,
+    once/threshold; engine client `ElementAnimator` chỉ animate wrapper nội dung.
+  - Public `/m` + preview dùng chung engine; observer dùng chung, stagger màn hình đầu,
+    no-JS fallback, 3s safety, reduced-motion.
+  - Panel "Hiệu ứng" trong canvas; nhóm font self-host + 6 kiểu chữ có sẵn.
+- [x] Đợt 11 — Public designer catalog:
+  - Trang chủ mục "Mẫu thiết kế mới" + `/mau-thiep`; API `/api/public/designer-templates`
+    chỉ trả published, cache 60s.
+  - Hover desktop chạy iframe thiệp thật từ trên xuống; mobile hiện trang đầu;
+    popup có thông tin, nhạc, tự cuộn, CTA dashboard.
+  - Embed `/mau/designer/<id>/embed`; bỏ preload 7 font trang trí (chỉ preload
+    Be Vietnam + Playfair) để giảm tải trang.
+  - Card code template dùng `coverImage` (hết ảnh trắng); hover/carousel và popup
+    render iframe `/mau/<id>?embed=1`, tự cuộn, có nhạc.
+  - Gộp mẫu designer đã publish vào chính carousel "Chọn mẫu thiệp của bạn" và
+    `/thiep-cuoi` cùng 25 mẫu code; bỏ mục riêng trên trang chủ.
+  - Nút "Xuất bản" lưu canvas hiện tại trước khi tạo version (tránh mất animation).
+- [x] Đợt 10 — Tối ưu production:
+  - Supabase client singleton theo isolate; React `cache()` cho `/m` và `/w`.
+  - Cache API cho `/media` (R2 key bất biến) và designer version JSON.
+  - Bỏ binding `IMAGES` không dùng; thêm `PRODUCTION_CAPACITY.md` với số liệu 100 DAU,
+    giới hạn free và ngưỡng migration.

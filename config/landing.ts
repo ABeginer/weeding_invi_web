@@ -2,16 +2,16 @@ import { SITE_NAME } from "./site";
 
 export const LANDING_COPY = {
   seo: {
-    title: `Thiệp cưới online | ${SITE_NAME}`,
+    title: `Thiệp Cưới Online & Thiệp Cưới Điện Tử | ${SITE_NAME}`,
     description:
-      "Tạo thiệp cưới online cá nhân hóa tên từng khách, chỉ trong vài phút. Miễn phí cho 20 khách, không cần thẻ.",
+      "Tạo thiệp cưới online hiện đại, cá nhân hóa tên từng khách gửi qua Zalo. Tích hợp xác nhận tham dự RSVP, mừng cưới QR và check-in chuyên nghiệp cùng Inviwedd.",
     ogAlt: `Thiệp cưới online ${SITE_NAME}`,
   },
   navbar: {
     menuOpenLabel: "Mở menu điều hướng",
     menuCloseLabel: "Đóng menu điều hướng",
     links: [
-      { label: "Mẫu thiệp", href: "/#mau-thiep" },
+      { label: "Mẫu thiệp", href: "/thiep-cuoi" },
       { label: "Công cụ", href: "/cong-cu" },
       { label: "Cách hoạt động", href: "/#cach-hoat-dong" },
       { label: "Bảng giá", href: "/#bang-gia" },
@@ -22,12 +22,12 @@ export const LANDING_COPY = {
     logoutLabel: "Đăng xuất",
   },
   hero: {
-    eyebrow: "THIỆP CƯỚI TRỰC TUYẾN",
+    eyebrow: "Gửi thiệp online một cách nhanh chóng",
     title: "Trao gửi lời mời trân trọng đến từng vị khách quý",
     description:
-      "Tạo thiệp cưới online cá nhân hóa tên từng khách, chỉ trong vài phút. Miễn phí cho 20 khách, không cần thẻ.",
+      "Tạo thiệp cưới online tự động đổi cách xưng hô theo vai vế, cá nhân hóa ảnh hiển thị Zalo và quản lý bàn tiệc thông minh. Lưu trữ 6 tháng, không giới hạn lượt xem.",
     primaryCta: "Tạo thiệp miễn phí",
-    secondaryCta: "Xem mẫu thiệp",
+    secondaryCta: "Xem bộ sưu tập mẫu",
     authenticatedCta: "Tạo thiệp miễn phí",
     noCardNote: "Miễn phí cho 20 khách, không cần thẻ",
     phoneFrameAriaLabel: "Khung xem thử mẫu thiệp cưới tương tác trên màn hình điện thoại",
@@ -42,13 +42,13 @@ export const LANDING_COPY = {
     filters: [
       { id: "all", label: "Tất cả" },
       { id: "free", label: "Miễn phí" },
-      { id: "pro", label: "Pro" },
-      { id: "vip", label: "VIP" },
+      { id: "pro", label: "Standard" },
+      { id: "vip", label: "Pro" },
     ] as const,
     planBadges: {
       free: "Miễn phí",
-      pro: "Pro",
-      vip: "VIP",
+      pro: "Standard",
+      vip: "Pro",
     },
     previewLabel: "Xem thử",
     useTemplateLabel: "Dùng mẫu này",
@@ -98,7 +98,7 @@ export const LANDING_COPY = {
     ],
     dashboardCtaTitle: "Trải nghiệm trọn bộ Dashboard quản lý cưới ngay hôm nay",
     dashboardCtaDescription:
-      "Bắt đầu miễn phí cho 20 khách mời đầu tiên — không cần thẻ, dùng thử thực tế trước khi nâng cấp gói Pro/VIP.",
+      "Bắt đầu miễn phí cho 20 khách mời đầu tiên — không cần thẻ, dùng thử thực tế trước khi nâng cấp gói Standard / Pro.",
     dashboardPrimaryCta: "Tạo thiệp miễn phí",
     dashboardSecondaryCta: "Xem bảng giá",
   },
@@ -121,12 +121,12 @@ export const LANDING_COPY = {
     accountNumberLabel: "Số tài khoản",
     accountHolderLabel: "Chủ tài khoản",
     branchLabel: "Chi nhánh",
-    emptyValuePlaceholder: "Đang cập nhật (TODO)",
+    emptyValuePlaceholder: "Đang cập nhật",
     copyCodeLabel: "Sao chép mã đơn",
     copiedCodeLabel: "Đã chép mã",
     closeLabel: "Đóng",
     notice:
-      "Đây là giao diện đặt gói tạm thời — chưa thực hiện thanh toán trực tuyến tự động.",
+      "Chuyển khoản theo đúng mã đơn để hệ thống tự động kích hoạt gói trong 1–3 giây.",
   },
   planUpgradeModal: {
     title: "Mẫu thuộc gói nâng cao",
@@ -134,8 +134,8 @@ export const LANDING_COPY = {
     descriptionMiddle: "thuộc gói",
     descriptionSuffix:
       "để mở khóa giao diện và các hiệu ứng trình diễn đi kèm.",
-    chooseProLabel: "Chọn gói Pro",
-    chooseVipLabel: "Chọn gói VIP",
+    chooseProLabel: "Chọn gói Standard",
+    chooseVipLabel: "Chọn gói Pro",
     chooseFreeInsteadLabel: "Xem các mẫu Miễn phí",
     closeLabel: "Để sau",
   },
@@ -158,7 +158,7 @@ export const LANDING_COPY = {
     musicPlayLabel: "Phát nhạc",
     musicPauseLabel: "Tắt nhạc",
     musicLoadingLabel: "Đang tải...",
-    vipComingSoonTitle: "Mẫu VIP đang được hoàn thiện",
+    vipComingSoonTitle: "Mẫu Pro đang được hoàn thiện",
     vipComingSoonBody:
       "Phiên bản mẫu độc quyền có hiệu ứng nâng cao hiện đang ở trạng thái placeholder và sẽ sớm ra mắt.",
     backHomeLabel: "Về danh sách mẫu",
@@ -173,7 +173,7 @@ export const LANDING_COPY = {
     privacyTitle: "Chính sách bảo mật",
     termsTitle: "Điều khoản sử dụng",
     placeholderNote:
-      "Nội dung văn bản pháp lý đang được biên soạn và sẽ được cập nhật chính thức trước ngày phát hành.",
+      "Các điều khoản và chính sách được cập nhật định kỳ để bảo vệ quyền lợi khách hàng.",
     backHomeLabel: "← Quay lại trang chủ",
   },
 } as const;

@@ -1,11 +1,32 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { toAbsoluteSiteUrl } from "@/config/site";
+import { DesignerInvitation } from "@/components/designer/designer-invitation";
+import type { DesignerCanvasContent } from "@/components/ops/designer-types";
+import { FreeInviteLimit } from "@/components/invitation/FreeInviteLimit";
+import { GuestViewTracker } from "@/components/invitation/GuestViewTracker";
+import { InvitationDesktopStage } from "@/components/invitation/InvitationDesktopStage";
 import { InvitePageClient } from "@/components/invitation/InvitePageClient";
+import { buildDesignerInviteValues } from "@/lib/designer-invite";
+import { FREE_INVITE_VIEW_LIMIT } from "@/lib/server/invite-limits";
 import { getPublicWeddingByGuestSlug } from "@/lib/server/public-wedding";
+import { buildSalutation } from "@/lib/salutation-engine";
+import { formatWeddingDateParts } from "@/lib/utils";
 import { createDefaultWeddingContent, toTemplateData } from "@/lib/wedding-data";
 import { getTemplateMeta } from "@/templates/registry";
 
 export const dynamic = "force-dynamic";
+
+// metadata + page dùng chung một lần đọc DB trong cùng request.
+const getWeddingByGuestSlug = cache(getPublicWeddingByGuestSlug);
+
+function inferOgImageType(url: string): string | undefined {
+  const lower = url.toLowerCase().split("?")[0];
+  if (lower.includes("/api/og/") || lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  return undefined;
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -13,9 +34,9 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const wedding = await getPublicWeddingByGuestSlug(slug).catch(() => null);
+  const wedding = await getWeddingByGuestSlug(slug).catch(() => null);
   const content = wedding?.content ?? createDefaultWeddingContent();
-  const templateId = wedding?.templateId ?? "basic-1";
+  const templateId = wedding?.templateId ?? "vuon-o-liu";
   const templateData = toTemplateData({
     templateId,
     plan: wedding?.plan ?? "free",
@@ -28,23 +49,40 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseTitle = wedding
     ? `Thiệp cưới ${templateData.couple.groomName} & ${templateData.couple.brideName}`
     : "Thiệp Cưới Online";
-  const showGuestName = process.env.SHARE_SHOW_GUEST_NAME === "true";
+  // Chủ thiệp bật/tắt trong dashboard (content.shareGuestName); ENV chỉ là fallback cũ.
+  const showGuestName =
+    content.shareGuestName === true ||
+    process.env.SHARE_SHOW_GUEST_NAME === "true";
   const title =
     wedding && showGuestName && wedding.guestName?.trim()
-      ? `${baseTitle} — Kính mời ${wedding.guestName.trim()}`
+      ? `${baseTitle} — Trân trọng kính mời ${wedding.guestName.trim()}`
       : baseTitle;
 
-  const trimmedQuote = content.quote.trim();
-  const description =
-    trimmedQuote.length > 0
-      ? trimmedQuote.slice(0, 160)
-      : "Mời bạn xem thiệp cưới của chúng tôi";
+  const dateFormatted = formatWeddingDateParts(content.date).dotDate;
+  const primaryEvent = wedding?.events?.[0];
+  const venueFormatted = primaryEvent?.venueName ? `tại ${primaryEvent.venueName}` : "";
+  const ceremonySummary = [dateFormatted, venueFormatted].filter(Boolean).join(" ");
 
+  const trimmedQuote = content.quote?.trim() ?? "";
+  const description = ceremonySummary
+    ? `Trân trọng kính mời quý khách tham dự lễ cưới của ${templateData.couple.groomName} & ${templateData.couple.brideName} vào ngày ${ceremonySummary}.${trimmedQuote ? ` "${trimmedQuote.slice(0, 80)}"` : ""}`
+    : trimmedQuote.length > 0
+      ? trimmedQuote.slice(0, 160)
+      : "Trân trọng kính mời quý khách tham dự lễ cưới của chúng tôi.";
+
+  const coupleLabel = `${templateData.couple.groomName} & ${templateData.couple.brideName}`;
+  const dateLabel = content.date.slice(0, 10).split("-").reverse().join(".");
   const rawOgImage =
     wedding?.photos.find((p) => p.kind === "og")?.url ??
     templateData.photos.heroUrl ??
     getTemplateMeta(templateId)?.coverImage;
-  const ogImageUrl = rawOgImage ? toAbsoluteSiteUrl(rawOgImage) : undefined;
+  const ogImageUrl = showGuestName && wedding?.guestName
+    ? toAbsoluteSiteUrl(
+        `/api/og/invite?couple=${encodeURIComponent(coupleLabel)}&guest=${encodeURIComponent(wedding.guestName)}&date=${encodeURIComponent(dateLabel)}&style=olive`,
+      )
+    : rawOgImage
+      ? toAbsoluteSiteUrl(rawOgImage)
+      : undefined;
   const pageUrl = toAbsoluteSiteUrl(`/m/${slug}`);
 
   return {
@@ -67,6 +105,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
               width: 1200,
               height: 630,
               alt: title,
+              type: inferOgImageType(ogImageUrl),
             },
           ]
         : undefined,
@@ -82,11 +121,116 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PersonalInvitePage({ params }: PageProps) {
   const { slug } = await params;
-  const wedding = await getPublicWeddingByGuestSlug(slug).catch(() => null);
+  const wedding = await getWeddingByGuestSlug(slug).catch(() => null);
   const content = wedding?.content ?? createDefaultWeddingContent();
+
+  // Gói Free: mỗi link cá nhân chỉ được mở 30 lượt.
+  // Kiểm tra ngưỡng trực tiếp từ viewCount mà không block SSR trên câu lệnh write RPC.
+  if (
+    wedding &&
+    wedding.plan === "free" &&
+    typeof wedding.viewCount === "number" &&
+    wedding.viewCount > FREE_INVITE_VIEW_LIMIT
+  ) {
+    const limitedData = toTemplateData({
+      templateId: wedding.templateId,
+      plan: wedding.plan,
+      weddingSlug: wedding.slug,
+      content,
+      events: wedding.events,
+      photos: wedding.photos,
+    });
+    return (
+      <FreeInviteLimit
+        data={limitedData}
+        inviteSlug={slug}
+        weddingSlug={wedding.slug}
+        guestName={wedding.guestName}
+        initialStatus={wedding.rsvpStatus}
+        initialPlusOnes={wedding.plusOnes}
+        initialDiet={wedding.diet}
+        initialSongRequest={wedding.songRequest}
+        initialRideNeeded={wedding.rideNeeded}
+      />
+    );
+  }
+
+  // Thiệp đã ghim mẫu designer: render đúng layout của version đó với dữ liệu thật.
+  if (wedding?.designerTemplate) {
+    const salutation = buildSalutation({
+      guestName: wedding.guestName,
+      relationshipGroup: wedding.guestSalutation.relationshipGroup,
+      customPronounHost: wedding.guestSalutation.customPronounHost,
+      customPronounGuest: wedding.guestSalutation.customPronounGuest,
+    });
+    const values = buildDesignerInviteValues({
+      groomName: content.couple.groomName,
+      brideName: content.couple.brideName,
+      dateLabel: formatWeddingDateParts(content.date).dotDate,
+      dateIso: content.date,
+      events: wedding.events,
+      guestName: wedding.guestName,
+      salutation: salutation.invitePrefix,
+      designerFields: content.designerFields,
+      hasGifts: Boolean(
+        content.gift?.groomAccountNumber ||
+        content.gift?.brideAccountNumber,
+      ),
+      hasPhotos: Boolean(wedding.photos?.length),
+      photoCount: wedding.photos?.length ?? 0,
+      hasMusic: true,
+      musicTitle: "Nhạc nền",
+      musicUrl: "/media/wedding.mp3",
+    });
+    const designerData = toTemplateData({
+      templateId: wedding.templateId,
+      plan: wedding.plan,
+      weddingSlug: wedding.slug,
+      content,
+      events: wedding.events,
+      photos: wedding.photos,
+    });
+
+    const coverPhoto =
+      wedding.photos.find((p) => p.kind === "og")?.url ??
+      designerData.photos.heroUrl ??
+      designerData.photos.gallery[0]?.url ??
+      null;
+    const coupleLabel = `${content.couple.groomName} & ${content.couple.brideName}`;
+
+    return (
+      <InvitationDesktopStage
+        coverPhotoUrl={coverPhoto}
+        coupleLabel={coupleLabel}
+        hasMusic={true}
+        musicTitle="Nhạc nền"
+      >
+        {wedding.plan === "free" && <GuestViewTracker slug={slug} />}
+        <DesignerInvitation
+          canvas={
+            wedding.designerTemplate.canvas as unknown as DesignerCanvasContent
+          }
+          values={values}
+          coupleLabel={coupleLabel}
+          data={designerData}
+          weddingSlug={wedding.slug}
+          guestName={wedding.guestName}
+          invitationMode="personal"
+          plan={wedding.plan}
+          overrides={content.designerOverrides}
+          initialStatus={wedding.rsvpStatus}
+          initialPlusOnes={wedding.plusOnes}
+          initialDiet={wedding.diet}
+          initialSongRequest={wedding.songRequest}
+          initialRideNeeded={wedding.rideNeeded}
+        />
+      </InvitationDesktopStage>
+    );
+  }
+
   const plan = wedding?.plan ?? "free";
   const initialData = toTemplateData({
-    templateId: wedding?.templateId ?? "basic-1",
+    templateId: wedding?.templateId ?? "vuon-o-liu",
     plan,
     weddingSlug: wedding?.slug,
     content,
@@ -95,14 +239,19 @@ export default async function PersonalInvitePage({ params }: PageProps) {
   });
 
   return (
-    <InvitePageClient
-      slug={slug}
-      weddingSlug={wedding?.slug}
-      templateId={wedding?.templateId}
-      plan={plan}
-      initialData={initialData}
-      rawContent={content}
-      rawPhotos={wedding?.photos ?? []}
-    />
+    <>
+      {plan === "free" && <GuestViewTracker slug={slug} />}
+      <InvitePageClient
+        slug={slug}
+        weddingSlug={wedding?.slug}
+        templateId={wedding?.templateId}
+        plan={plan}
+        initialData={initialData}
+        rawContent={content}
+        rawPhotos={wedding?.photos ?? []}
+        guestExists={Boolean(wedding)}
+        initialGuestName={wedding?.guestName ?? null}
+      />
+    </>
   );
 }

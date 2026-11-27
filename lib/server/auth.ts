@@ -1,12 +1,12 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { AUTH0_EMAIL_CLAIM } from "@/config/site";
 import { env } from "./supabase";
 
 export interface AuthUser {
   id: string;
   email: string | null;
+  emailVerified?: boolean;
 }
-
-const EMAIL_CLAIM = "https://thiepcuoi/email";
 
 let keys: ReturnType<typeof createRemoteJWKSet> | null = null;
 
@@ -28,9 +28,13 @@ export async function getUser(req: Request): Promise<AuthUser | null> {
       algorithms: ["RS256"],
     });
     if (typeof payload.sub !== "string") return null;
-    const rawEmail = payload[EMAIL_CLAIM];
+    const rawEmail = payload[AUTH0_EMAIL_CLAIM];
     const email = typeof rawEmail === "string" ? rawEmail : null;
-    return { id: payload.sub, email };
+    const rawVerified =
+      payload["https://thiepcuoi/email_verified"] ?? payload.email_verified;
+    const emailVerified =
+      typeof rawVerified === "boolean" ? rawVerified : undefined;
+    return { id: payload.sub, email, emailVerified };
   } catch {
     return null;
   }

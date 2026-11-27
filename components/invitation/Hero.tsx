@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "motion/react";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { TemplatePhotoPlaceholder } from "@/templates/shared/TemplatePhotoPlaceholder";
 import { CoupleDisplayName } from "./CoupleDisplayName";
+import { OliveGardenHero } from "./OliveGardenHero";
 import {
   useInvitationContained,
   useInvitationDesktopLayout,
@@ -33,6 +34,10 @@ export function Hero({ guestName }: HeroProps) {
 
   const reducedMotion = mounted && Boolean(prefersReducedMotion);
 
+  if (data.templateId === "vuon-o-liu" || data.templateId === "basic-1") {
+    return <OliveGardenHero guestName={guestName} />;
+  }
+
   return (
     <section
       className={cn(
@@ -44,7 +49,7 @@ export function Hero({ guestName }: HeroProps) {
         "md:grid md:grid-cols-12 md:items-center md:gap-8 md:px-8 md:pt-8 md:pb-8 md:text-left",
       )}
     >
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={
@@ -102,9 +107,9 @@ export function Hero({ guestName }: HeroProps) {
           </span>
           <span>{dateParts.dotDate}</span>
         </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={
@@ -129,7 +134,7 @@ export function Hero({ guestName }: HeroProps) {
               decoding="async"
               fetchPriority="high"
               className={cn(
-                "hero-photo-scale block h-auto w-full object-cover",
+                "hero-photo-scale block aspect-[3/4] w-full object-cover",
                 isDesktopLayout && "md:aspect-[3/4] md:object-[center_20%]",
               )}
             />
@@ -137,7 +142,7 @@ export function Hero({ guestName }: HeroProps) {
             <TemplatePhotoPlaceholder />
           )}
         </div>
-      </motion.div>
+      </m.div>
     </section>
   );
 }

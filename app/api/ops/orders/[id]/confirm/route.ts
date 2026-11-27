@@ -1,6 +1,7 @@
 import { json, readBody } from "@/lib/server/http";
 import { opsRoute, recordAuditLog } from "@/lib/server/ops";
 import { coded } from "@/lib/server/owner";
+import { PLAN_RANK } from "@/lib/server/payments";
 import { db } from "@/lib/server/supabase";
 import { isUuid } from "@/lib/server/validate";
 
@@ -35,7 +36,7 @@ export const POST = opsRoute(async (req, admin, { params }: { params: Promise<{ 
 
   const nowIso = new Date().toISOString();
 
-  // Update order to paid
+  // Khóa đơn hàng nguyên tử TRƯỚC khi nâng gói
   const { data: updatedOrder, error: updateErr } = await client
     .from("orders")
     .update({
@@ -43,19 +44,32 @@ export const POST = opsRoute(async (req, admin, { params }: { params: Promise<{ 
       paid_at: nowIso,
     })
     .eq("id", id)
+    .eq("status", "pending")
     .select("id, code, plan, amount_vnd, status, wedding_id, user_id, created_at, paid_at")
-    .single();
+    .maybeSingle();
 
   if (updateErr) throw updateErr;
+  if (!updatedOrder) {
+    return coded("Đơn này đã được xử lý trước đó.", "VALIDATION", 409);
+  }
 
-  // Upgrade wedding plan
-  await client
+  // Chỉ nâng gói khi bậc gói mới cao hơn gói hiện tại (chống hạ gói)
+  const { data: currentWedding } = await client
     .from("weddings")
-    .update({
-      plan: order.plan,
-      updated_at: nowIso,
-    })
-    .eq("id", order.wedding_id);
+    .select("plan")
+    .eq("id", order.wedding_id)
+    .maybeSingle();
+  const currentPlan = (currentWedding?.plan as "free" | "pro" | "vip" | undefined) ?? "free";
+  const targetPlan = order.plan as "pro" | "vip";
+  if ((PLAN_RANK[targetPlan] ?? 0) > (PLAN_RANK[currentPlan] ?? 0)) {
+    await client
+      .from("weddings")
+      .update({
+        plan: targetPlan,
+        updated_at: nowIso,
+      })
+      .eq("id", order.wedding_id);
+  }
 
   await recordAuditLog({
     adminEmail: admin.email || "admin",

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Disc3, Music, VolumeX } from "lucide-react";
 import { LANDING_COPY } from "@/config/landing";
 import { cn } from "@/lib/utils";
+import { globalAudio } from "@/lib/global-audio";
 
 interface MusicToggleProps {
   src?: string;
@@ -11,6 +12,7 @@ interface MusicToggleProps {
   resetKey?: string;
   compact?: boolean;
   className?: string;
+  autoPlay?: boolean;
 }
 
 export function MusicToggle({
@@ -19,52 +21,61 @@ export function MusicToggle({
   resetKey,
   compact = false,
   className,
+  autoPlay = false,
 }: MusicToggleProps) {
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
-  const [hasError, setHasError] = React.useState(false);
+  const [hasError, setHasError] = React.useState(!src);
+  const userManuallyPausedRef = React.useRef(false);
 
+  // Đồng bộ trạng thái từ Global Audio Controller
   React.useEffect(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-    setIsPlaying(false);
     setHasError(!src);
+    userManuallyPausedRef.current = false;
+
+    return globalAudio.subscribe((state) => {
+      if (!src) {
+        setIsPlaying(false);
+        return;
+      }
+      const fullTargetUrl = typeof window !== "undefined" ? new URL(src, window.location.href).href : src;
+      const isCurSrc = state.src === src || state.src === fullTargetUrl || globalAudio.getAudioElement()?.src === fullTargetUrl;
+      setIsPlaying(state.isPlaying && isCurSrc);
+    });
   }, [src, resetKey]);
 
+  // Autoplay & 1-time interaction unlock listener qua Global Audio
   React.useEffect(() => {
-    const handleVisibilityChange = () => {
-      const audio = audioRef.current;
-      if (document.hidden && audio && !audio.paused) {
-        audio.pause();
-        setIsPlaying(false);
+    if (!src || hasError) return;
+    if (!autoPlay || userManuallyPausedRef.current) return;
+
+    globalAudio.play(src, { volume: 0.55 }).then((started) => {
+      if (!started && !userManuallyPausedRef.current) {
+        const unlockEvents = ["pointerdown", "click", "touchstart", "keydown"] as const;
+        const handleFirstInteraction = () => {
+          unlockEvents.forEach((ev) =>
+            window.removeEventListener(ev, handleFirstInteraction, true),
+          );
+          if (!userManuallyPausedRef.current && !globalAudio.isPlaying()) {
+            globalAudio.play(src, { volume: 0.55 }).catch(() => {});
+          }
+        };
+
+        unlockEvents.forEach((ev) => {
+          window.addEventListener(ev, handleFirstInteraction, { capture: true, once: true });
+        });
       }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
+    });
+  }, [src, resetKey, autoPlay, hasError]);
 
   const handleToggle = () => {
-    const audio = audioRef.current;
-    if (!audio || hasError || !src) return;
+    if (hasError || !src) return;
 
-    if (audio.paused) {
-      audio.volume = 0.55;
-      const playPromise = audio.play();
-      if (playPromise) {
-        playPromise
-          .then(() => setIsPlaying(true))
-          .catch(() => setIsPlaying(false));
-      } else {
-        setIsPlaying(true);
-      }
+    if (isPlaying) {
+      userManuallyPausedRef.current = true;
+      globalAudio.pause();
     } else {
-      audio.pause();
-      setIsPlaying(false);
+      userManuallyPausedRef.current = false;
+      globalAudio.play(src, { volume: 0.55 });
     }
   };
 
@@ -75,18 +86,6 @@ export function MusicToggle({
 
   return (
     <div className={cn("inline-flex items-center", className)}>
-      {src && !hasError && (
-        <audio
-          ref={audioRef}
-          src={src}
-          loop
-          preload="none"
-          onError={() => {
-            setHasError(true);
-            setIsPlaying(false);
-          }}
-        />
-      )}
       <button
         type="button"
         onClick={handleToggle}

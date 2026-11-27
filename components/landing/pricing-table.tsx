@@ -4,10 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { LANDING_COPY } from "@/config/landing";
-import { PRICING_ROWS, PRICING_TIERS } from "@/config/pricing";
-import { SITE_LINKS } from "@/config/site";
+import { SITE_LINKS, ZALO_SUPPORT_URL } from "@/config/site";
 import type { WeddingPlan } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { FeatureInfoPopover } from "@/components/pricing/FeatureInfoPopover";
 import { ScrollReveal } from "./scroll-reveal";
 
 interface PricingTableProps {
@@ -15,163 +14,396 @@ interface PricingTableProps {
   onSelectPaidPlan: (plan: Exclude<WeddingPlan, "free">) => void;
 }
 
+const INFO_POPOVER_TEXTS = {
+  salutation:
+    "Gửi 1 link riêng cho từng khách, thiệp và ảnh xem trước trên Zalo tự hiện đúng vai vế (Chú Bảy, Sếp, Bạn thân...).",
+  music:
+    "Tự tải lên bài hát kỷ niệm của hai bạn (MP3) để phát ngay khi khách chạm mở phong bì.",
+  qrOnlineAlbum:
+    "Tạo mã QR riêng dẫn thẳng tới album ảnh cưới online do cô dâu chú rể đăng tải. Khách mời chỉ cần quét mã để xem trọn bộ ảnh sắc nét ngay trên điện thoại mà không cần cài app hay đăng nhập.",
+  excel:
+    "Tải toàn bộ danh sách xác nhận tham dự & thực đơn mặn/chay ra file Excel chuẩn tiếng Việt chỉ với 1 chạm.",
+  boardingPass:
+    "Mỗi khách nhận sẵn số bàn trên thiệp mời điện tử; lễ tân chỉ cần dùng điện thoại quét mã là biết ngay khách ngồi bàn nào, khỏi dò sổ giấy.",
+  livePhotoWall:
+    "Khách đến dự chỉ cần quét mã QR đặt trên bàn tiệc để gửi ảnh kỷ niệm chụp tại sảnh — ảnh sẽ tự động hiện lên màn hình lớn (bạn có thể bật duyệt trước khi chiếu). Kèm file in bảng QR và tải trọn bộ ảnh.",
+  familyPin:
+    "Gửi link riêng kèm mã 4 số cho phụ dâu/người thân giúp duyệt ảnh và điểm danh khách, không cần đưa tài khoản chính của bạn.",
+} as const;
+
 export function PricingTable({
   isAuthenticated,
   onSelectPaidPlan,
 }: PricingTableProps) {
   const copy = LANDING_COPY.pricing;
+  const [mobileTier, setMobileTier] = React.useState<"free" | "pro" | "vip">("pro");
+
+  const handleChoosePaidPlan = (plan: "pro" | "vip") => {
+    if (!isAuthenticated) {
+      // Auth0 endpoint yêu cầu full-page navigation thay vì RSC router.push để tránh lỗi CORS
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign(
+        `/auth/login?returnTo=${encodeURIComponent(`/?pay=${plan}`)}`,
+      );
+      return;
+    }
+    onSelectPaidPlan(plan);
+  };
 
   return (
     <section
       id="bang-gia"
-      className="scroll-mt-14 border-b border-border bg-bg py-10 sm:py-12"
+      className="scroll-mt-14 border-b border-[#E8E2D9] bg-[#FAF8F5] py-14 sm:py-20"
     >
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <ScrollReveal className="mx-auto max-w-xl text-center">
-          <p className="text-[12px] sm:text-[13px] font-semibold tracking-[0.12em] text-accent-text uppercase">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <ScrollReveal className="mx-auto max-w-2xl text-center">
+          <p className="text-xs sm:text-[13px] font-semibold tracking-[0.14em] text-[#7A1C24] uppercase">
             {copy.eyebrow}
           </p>
-          <h2 className="mt-1.5 font-display text-2xl font-semibold leading-[1.2] text-accent-text sm:text-3xl">
+          <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight text-[#1F1D1A] sm:text-4xl">
             {copy.title}
           </h2>
-          <p className="mt-2 text-sm leading-[1.6] text-text-muted">
+          <p className="mt-3 text-sm leading-relaxed text-[#6B655E]">
             {copy.description}
           </p>
         </ScrollReveal>
 
-        {/* 3 thẻ gói nằm ngang trên desktop, xếp dọc gọn gàng trên mobile */}
-        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3 md:items-stretch">
-          {PRICING_TIERS.map((tier) => (
-            <ScrollReveal
-              as="article"
-              key={tier.id}
-              className="relative flex h-full flex-col"
-            >
-              {tier.badge && (
-                <span className="absolute -top-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-[10px] font-bold tracking-widest text-accent-fg uppercase shadow-sm">
-                  {tier.badge}
-                </span>
-              )}
-
-              <div
-                className={cn(
-                  "flex h-full flex-1 flex-col overflow-hidden rounded-2xl border bg-[var(--surface-card)] backdrop-blur-[8px] transition-shadow",
-                  tier.highlighted
-                    ? "border-accent shadow-lg ring-1 ring-accent/35"
-                    : "border-[var(--border-accent)] shadow-sm",
-                )}
+        {/* Mobile Quick Tier Switcher (< lg) */}
+        <div
+          role="tablist"
+          aria-label="Chọn gói dịch vụ"
+          className="mx-auto mt-8 grid max-w-sm grid-cols-3 rounded-full border border-[#E8E2D9] bg-white p-1 shadow-2xs lg:hidden"
+        >
+          {(
+            [
+              { id: "free", label: "Miễn phí" },
+              { id: "pro", label: "Standard ★" },
+              { id: "vip", label: "Pro" },
+            ] as const
+          ).map((tier) => {
+            const isSelected = mobileTier === tier.id;
+            return (
+              <button
+                key={tier.id}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                onClick={() => setMobileTier(tier.id)}
+                className={`h-9 cursor-pointer rounded-full px-2 text-xs font-semibold transition-all touch-manipulation ${
+                  isSelected
+                    ? tier.id === "vip"
+                      ? "bg-[#141210] text-[#D8B15B] shadow-2xs"
+                      : "bg-[#7A1C24] text-white shadow-2xs"
+                    : "text-[#6B655E] hover:text-[#1F1D1A]"
+                }`}
               >
-                {/* Phần đầu thẻ: Tên gói, giá & mô tả với chiều cao tối thiểu đồng nhất */}
-                <div
-                  className={cn(
-                    "flex min-h-[196px] flex-col justify-between border-b border-border p-5 sm:min-h-[210px] sm:p-6",
-                    tier.highlighted ? "bg-accent-soft/45" : "bg-surface",
-                  )}
-                >
-                  <div>
-                    <h3 className="font-display text-xl font-semibold text-text sm:text-2xl">
-                      {tier.name}
-                    </h3>
-                    <div className="mt-3 flex items-baseline gap-1">
-                      <span className="font-display text-3xl font-semibold tracking-tight tabular-nums text-text sm:text-4xl">
-                        {tier.price}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 text-sm leading-relaxed text-text-muted line-clamp-1">
-                      {tier.tagline}
-                    </p>
-                  </div>
-                  <p className="mt-2 text-xs font-normal text-text-muted">
-                    Không phát sinh phí ẩn
-                  </p>
-                </div>
-
-                {/* Danh sách 7 tính năng: cùng min-height để các hàng luôn thẳng hàng ngang */}
-                <div className="flex flex-1 flex-col p-5 sm:p-6">
-                  <p className="text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
-                    {copy.featureColumnHeader}
-                  </p>
-
-                  <ul className="mt-3.5 flex-1 divide-y divide-border/70">
-                    {PRICING_ROWS.map((row) => {
-                      const cell = row.values[tier.id];
-                      return (
-                        <li
-                          key={`${tier.id}-${row.id}`}
-                          className="flex min-h-[64px] items-start gap-2.5 py-3 first:pt-0 last:pb-0 sm:min-h-[70px]"
-                        >
-                          <Check
-                            className="mt-0.5 h-4 w-4 shrink-0 text-accent-text"
-                            aria-hidden="true"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-text-muted">
-                              {row.feature}
-                            </p>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm font-medium leading-snug text-text">
-                              {cell.text !== "Sắp có" && (
-                                <span>{cell.text}</span>
-                              )}
-                              {cell.comingSoon && (
-                                <span className="inline-flex items-center rounded-full border border-soon-border bg-soon-bg px-2 py-0.5 text-[10px] font-medium whitespace-nowrap text-soon-fg">
-                                  {copy.comingSoonBadge}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-
-                  {/* Nút chọn gói ghim cuối thẻ (mt-auto) để căn thẳng hàng ngang tuyệt đối */}
-                  <div className="mt-auto border-t border-border pt-5">
-                    {tier.id === "free" ? (
-                      <Link
-                        href={SITE_LINKS.createWedding}
-                        className="inline-flex min-h-[44px] h-11 w-full items-center justify-center rounded-full border border-text bg-transparent px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                      >
-                        {tier.ctaLabel}
-                      </Link>
-                    ) : tier.id === "pro" ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!isAuthenticated) {
-                            window.location.assign(
-                              `/auth/login?returnTo=${encodeURIComponent("/?pay=pro")}`,
-                            );
-                            return;
-                          }
-                          onSelectPaidPlan("pro");
-                        }}
-                        className="inline-flex min-h-[44px] h-11 w-full cursor-pointer items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                      >
-                        {tier.ctaLabel}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!isAuthenticated) {
-                            window.location.assign(
-                              `/auth/login?returnTo=${encodeURIComponent("/?pay=vip")}`,
-                            );
-                            return;
-                          }
-                          onSelectPaidPlan("vip");
-                        }}
-                        className="inline-flex min-h-[44px] h-11 w-full cursor-pointer items-center justify-center rounded-full border border-text bg-transparent px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                      >
-                        {tier.ctaLabel}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </ScrollReveal>
-          ))}
+                {tier.label}
+              </button>
+            );
+          })}
         </div>
+
+        {/* 3-Tier Grid Layout */}
+        <div className="mx-auto mt-8 grid max-w-6xl grid-cols-1 items-stretch gap-6 lg:mt-12 lg:grid-cols-3 lg:gap-8">
+          {/* Card 1 — Gói Miễn phí */}
+          <article
+            className={
+              mobileTier === "free" ? "flex h-full flex-col" : "hidden h-full flex-col lg:flex"
+            }
+          >
+            <div className="flex h-full flex-1 flex-col rounded-2xl border border-[#E8E2D9] bg-white p-6 sm:p-8 shadow-xs">
+              <div>
+                <h3 className="font-serif text-2xl font-semibold text-[#1F1D1A]">
+                  Gói Miễn phí
+                </h3>
+                <p className="mt-1 text-xs text-[#6B655E] leading-relaxed">
+                  Trải nghiệm đầy đủ trước khi quyết định.
+                </p>
+
+                {/* Price */}
+                <div className="mt-5 flex items-baseline gap-1.5">
+                  <span className="font-sans text-3xl sm:text-4xl font-bold tracking-tight text-[#1F1D1A] tabular-nums lining-nums">
+                    0đ
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-[#6B655E] tracking-wide">
+                  Dùng thử đầy đủ tính năng cơ bản
+                </p>
+
+                {/* CTA Directly under price */}
+                <Link
+                  href={SITE_LINKS.createWedding}
+                  className="mt-6 flex h-11 w-full items-center justify-center rounded-full border border-[#1F1D1A] bg-transparent text-sm font-medium text-[#1F1D1A] transition-colors hover:bg-[#1F1D1A] hover:text-[#FAF8F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F1D1A]"
+                >
+                  Dùng miễn phí
+                </Link>
+              </div>
+
+              {/* Divider */}
+              <div className="my-6 border-t border-[#E8E2D9]" />
+
+              {/* Features List */}
+              <ul className="flex-1 space-y-3.5 text-xs text-[#1F1D1A]">
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <span>Tối đa 20 khách mời</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <div className="flex items-center gap-1.5">
+                    <span>Tự đổi xưng hô &amp; Preview Zalo</span>
+                    <FeatureInfoPopover
+                      title="Tự đổi xưng hô & Preview Zalo"
+                      content={INFO_POPOVER_TEXTS.salutation}
+                      variant="light"
+                    />
+                  </div>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <span>Mẫu thiệp cơ bản</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <span>5 ảnh cưới</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <span>Lưu trữ 6 tháng</span>
+                </li>
+              </ul>
+            </div>
+          </article>
+
+          {/* Card 2 — Gói Standard (Highlighted Primary) */}
+          <article
+            className={
+              mobileTier === "pro"
+                ? "relative flex h-full flex-col"
+                : "relative hidden h-full flex-col lg:flex"
+            }
+          >
+            {/* Top Badge */}
+            <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#C8AD7F]/60 bg-[#7A1C24] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#FAF8F5] uppercase shadow-sm whitespace-nowrap">
+              PHỔ BIẾN NHẤT
+            </span>
+
+            <div className="flex h-full flex-1 flex-col rounded-2xl border-2 border-[#7A1C24] bg-white p-6 sm:p-8 shadow-md relative">
+              <div>
+                <h3 className="font-serif text-2xl font-semibold text-[#1F1D1A]">
+                  Gói Standard
+                </h3>
+                <p className="mt-1 text-xs text-[#6B655E] leading-relaxed">
+                  Trọn vẹn cho khâu mời cưới &amp; chốt mâm tiệc.
+                </p>
+
+                {/* Launch Promo Price */}
+                <div className="mt-5 flex flex-wrap items-baseline gap-2">
+                  <span className="font-sans text-sm font-normal text-[#6B655E] line-through tabular-nums lining-nums decoration-[#7A1C24]/60">
+                    199.000đ
+                  </span>
+                  <span className="font-sans text-3xl sm:text-4xl font-bold tracking-tight text-[#1F1D1A] tabular-nums lining-nums">
+                    159.000đ
+                  </span>
+                  <span className="font-sans text-sm font-normal text-[#6B655E]">
+                    / lần
+                  </span>
+                </div>
+                <p className="mt-1 text-xs font-medium text-[#8A6838] tracking-wide">
+                  Ưu đãi giai đoạn ra mắt
+                </p>
+
+                {/* CTA Directly under price */}
+                <button
+                  type="button"
+                  onClick={() => handleChoosePaidPlan("pro")}
+                  className="mt-6 flex h-11 w-full cursor-pointer items-center justify-center rounded-full bg-[#7A1C24] text-sm font-medium text-[#FAF8F5] transition-colors hover:bg-[#5E141B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24] shadow-xs"
+                >
+                  Chọn gói Standard
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="my-6 border-t border-[#E8E2D9]" />
+
+              {/* Features List */}
+              <ul className="flex-1 space-y-3.5 text-xs text-[#1F1D1A]">
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <span className="font-semibold text-[#1F1D1A]">
+                    Không giới hạn khách mời
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <span>Toàn bộ 41+ mẫu thiệp</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <div className="flex items-center gap-1.5">
+                    <span>Upload nhạc nền riêng</span>
+                    <FeatureInfoPopover
+                      title="Upload nhạc nền riêng"
+                      content={INFO_POPOVER_TEXTS.music}
+                      variant="light"
+                    />
+                  </div>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <span>30 ảnh album cưới HD &amp; 2 ảnh VietQR</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <div className="flex items-center gap-1.5 font-medium text-[#1F1D1A]">
+                    <span>QR Album ảnh cưới (chỉ đọc)</span>
+                    <FeatureInfoPopover
+                      title="QR Album ảnh cưới"
+                      content={INFO_POPOVER_TEXTS.qrOnlineAlbum}
+                      variant="light"
+                    />
+                  </div>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <div className="flex items-center gap-1.5">
+                    <span>Xuất danh sách Excel</span>
+                    <FeatureInfoPopover
+                      title="Xuất danh sách Excel"
+                      content={INFO_POPOVER_TEXTS.excel}
+                      variant="light"
+                    />
+                  </div>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7A1C24]" />
+                  <span>Lưu trữ 1 năm</span>
+                </li>
+              </ul>
+            </div>
+          </article>
+
+          {/* Card 3 — Gói Pro (Editorial Black-Gold Ink) */}
+          <article
+            className={
+              mobileTier === "vip"
+                ? "relative flex h-full flex-col"
+                : "relative hidden h-full flex-col lg:flex"
+            }
+          >
+            {/* Top Badge */}
+            <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#D8B15B]/70 bg-[#141210] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#D8B15B] uppercase shadow-xs whitespace-nowrap">
+              TRẢI NGHIỆM SẢNH TIỆC
+            </span>
+
+            <div className="flex h-full flex-1 flex-col rounded-2xl border border-[#D8B15B]/50 bg-[#141210] p-6 sm:p-8 text-[#FAF8F5] relative shadow-lg">
+              <div>
+                <h3 className="font-serif text-2xl font-semibold text-[#FAF8F5]">
+                  Gói Pro
+                </h3>
+                <p className="mt-1 text-xs text-[#FAF8F5]/70 leading-relaxed">
+                  Đẳng cấp &amp; tương tác trực tiếp tại nhà hàng.
+                </p>
+
+                {/* Launch Promo Price */}
+                <div className="mt-5 flex flex-wrap items-baseline gap-2">
+                  <span className="font-sans text-sm font-normal text-[#FAF8F5]/50 line-through tabular-nums lining-nums decoration-[#B89B72]">
+                    499.000đ
+                  </span>
+                  <span className="font-sans text-3xl sm:text-4xl font-bold tracking-tight text-[#FAF8F5] tabular-nums lining-nums">
+                    399.000đ
+                  </span>
+                  <span className="font-sans text-sm font-normal text-[#FAF8F5]/70">
+                    / lần
+                  </span>
+                </div>
+                <p className="mt-1 text-xs font-medium text-[#B89B72] tracking-wide">
+                  Ưu đãi giai đoạn ra mắt
+                </p>
+
+                {/* CTA Directly under price */}
+                <button
+                  type="button"
+                  onClick={() => handleChoosePaidPlan("vip")}
+                  className="mt-6 flex h-11 w-full cursor-pointer items-center justify-center rounded-full bg-[#D8B15B] text-sm font-semibold text-[#141210] transition-colors hover:bg-[#E5C173] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B15B] shadow-xs"
+                >
+                  Chọn gói Pro
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="my-6 border-t border-[#B89B72]/20" />
+
+              {/* Subheading for Pro additions */}
+              <p className="text-[11px] italic text-[#B89B72] pb-1">
+                Mọi tính năng gói Standard, cộng thêm:
+              </p>
+
+              {/* Features List */}
+              <ul className="flex-1 space-y-3.5 text-xs text-[#FAF8F5]">
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
+                  <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
+                    <span>Vé mời số bàn &amp; Check-in bằng mã QR</span>
+                    <FeatureInfoPopover
+                      title="Vé mời số bàn & Check-in bằng mã QR"
+                      content={INFO_POPOVER_TEXTS.boardingPass}
+                      variant="dark"
+                    />
+                  </div>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
+                  <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
+                    <span>Chiếu ảnh khách chụp trực tiếp lên màn hình LED</span>
+                    <FeatureInfoPopover
+                      title="Chiếu ảnh khách chụp trực tiếp lên màn hình LED"
+                      content={INFO_POPOVER_TEXTS.livePhotoWall}
+                      variant="dark"
+                    />
+                  </div>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
+                  <div className="flex items-center gap-1.5 font-semibold text-[#FAF8F5]">
+                    <span>Nhờ người nhà hỗ trợ bằng mã PIN 4 số</span>
+                    <FeatureInfoPopover
+                      title="Nhờ người nhà hỗ trợ bằng mã PIN 4 số"
+                      content={INFO_POPOVER_TEXTS.familyPin}
+                      variant="dark"
+                    />
+                  </div>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
+                  <span>
+                    Xuất file in bảng QR để bàn (A5/A6) &amp; Tải trọn bộ ảnh (.ZIP)
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B89B72]" />
+                  <span>
+                    50 ảnh album cưới HD &amp; Lưu trữ <strong className="font-semibold text-[#FAF8F5]">2 năm</strong>
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </article>
+        </div>
+
+        {/* Footer Note Below Grid */}
+        <p className="mt-8 text-center text-xs text-[#6B655E] max-w-2xl mx-auto leading-relaxed">
+          Thanh toán một lần duy nhất · Kích hoạt nhanh qua chuyển khoản · Cần tư vấn chọn gói?{" "}
+          <a
+            href={ZALO_SUPPORT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-[#7A1C24] hover:underline"
+          >
+            <span>Nhắn Zalo hỗ trợ ngay</span>
+            <span aria-hidden="true">→</span>
+          </a>
+        </p>
       </div>
     </section>
   );

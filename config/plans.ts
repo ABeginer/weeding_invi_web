@@ -1,6 +1,7 @@
 import type { PhotoKind, WeddingPlan } from "@/lib/wedding-types";
 
-export const UPLOAD_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
+export const MUSIC_MAX_BYTES = 8 * 1024 * 1024; // 5 MB
 
 export const UPLOAD_ALLOWED_MIME_TYPES = [
   "image/jpeg",
@@ -36,7 +37,7 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
     allowedTemplatePlans: ["free"],
   },
   pro: {
-    label: "Pro",
+    label: "Standard",
     weddings: null,
     guests: null,
     events: 10,
@@ -51,14 +52,14 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
     allowedTemplatePlans: ["free", "pro"],
   },
   vip: {
-    label: "VIP",
+    label: "Pro",
     weddings: null,
     guests: null,
     events: 20,
     photos: {
       banner: 1,
       couple: 2,
-      gallery: 30,
+      gallery: 50,
       album: 300,
       og: 1,
       gift: 2,
@@ -96,15 +97,15 @@ export function getPhotoLimitMessage(plan: WeddingPlan, kind: PhotoKind): string
   const max = limits.photos[kind];
   if (kind === "album") {
     if (plan === "free") {
-      return "Gói Miễn phí chưa hỗ trợ Album cho khách. Vui lòng nâng cấp gói Pro hoặc VIP.";
+      return "Gói Miễn phí chưa hỗ trợ Album cho khách. Vui lòng nâng cấp gói Standard hoặc Pro.";
     }
     if (plan === "pro") {
-      return "Nâng cấp VIP để thêm ảnh";
+      return "Nâng cấp Pro để thêm ảnh";
     }
     return "Đã đạt giới hạn 300 ảnh";
   }
   if (kind === "gift" && max === 0) {
-    return `Gói ${limits.label} chỉ hỗ trợ thông tin chuyển khoản dạng chữ. Nâng cấp lên Pro để tải ảnh QR quà mừng.`;
+    return `Gói ${limits.label} chỉ hỗ trợ thông tin chuyển khoản dạng chữ. Nâng cấp lên Standard để tải ảnh QR quà mừng.`;
   }
   if (kind === "gallery") {
     return `Gói ${limits.label} tối đa ${max} ảnh trên thiệp. Nâng cấp để thêm ảnh.`;

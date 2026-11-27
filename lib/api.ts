@@ -1,8 +1,11 @@
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import type { BrandThemeMode } from "./brand-theme";
 import type {
+  DesignerTemplateAssignmentResult,
+  DesignerTemplateOption,
   Guest,
   GuestDiet,
+  GuestStatus,
   Gift,
   GiftMethod,
   GiftTotals,
@@ -21,6 +24,8 @@ import type {
   CreatedOrder,
   OrderStatusResponse,
   CreateOrderInput,
+  CreatePayosOrderInput,
+  PayosOrderResponse,
 } from "./types";
 
 export class ApiError extends Error {
@@ -84,7 +89,7 @@ async function parseErrorResponse(res: Response): Promise<never> {
     if (body && typeof body.error === "string") message = body.error;
     if (body && typeof body.field === "string") field = body.field;
     if (body && typeof body.code === "string") code = body.code;
-  } catch {}
+  } catch { }
   throw new ApiError(message, res.status, field, code);
 }
 
@@ -115,6 +120,39 @@ async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (res.status === 401) {
+    clearAccessTokenCache();
+  }
+
+  if (!res.ok) {
+    await parseErrorResponse(res);
+  }
+
+  return (await res.json()) as T;
+}
+
+async function optionalAuthRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  let token: string | null = null;
+  try {
+    token = await getBearerToken();
+  } catch {
+    token = null;
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string>),
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(path, {
+    ...init,
+    cache: "no-store",
+    headers,
+  });
+
+  if (res.status === 401 && token) {
     clearAccessTokenCache();
   }
 
@@ -201,6 +239,10 @@ export interface SubmitRsvpInput {
   wish?: string;
   turnstileToken?: string;
   website?: string;
+  website_url?: string;
+  formLoadedAt?: number;
+  /** Khoá định danh người gửi cho link chung (uuid lưu ở localStorage). */
+  authorKey?: string;
 }
 
 export interface SubmitRsvpResponse {
@@ -237,15 +279,15 @@ export async function submitRsvp(
   const payload =
     typeof slugOrInput === "string"
       ? {
-          slug: slugOrInput,
-          status,
-          ...(extras?.plusOnes !== undefined ? { plusOnes: extras.plusOnes } : {}),
-          ...(extras?.diet !== undefined ? { diet: extras.diet } : {}),
-          ...(extras?.songRequest !== undefined ? { songRequest: extras.songRequest } : {}),
-          ...(extras?.rideNeeded !== undefined ? { rideNeeded: extras.rideNeeded } : {}),
-          ...(extras?.wish ? { wish: extras.wish } : {}),
-          ...(extras?.turnstileToken ? { turnstileToken: extras.turnstileToken } : {}),
-        }
+        slug: slugOrInput,
+        status,
+        ...(extras?.plusOnes !== undefined ? { plusOnes: extras.plusOnes } : {}),
+        ...(extras?.diet !== undefined ? { diet: extras.diet } : {}),
+        ...(extras?.songRequest !== undefined ? { songRequest: extras.songRequest } : {}),
+        ...(extras?.rideNeeded !== undefined ? { rideNeeded: extras.rideNeeded } : {}),
+        ...(extras?.wish ? { wish: extras.wish } : {}),
+        ...(extras?.turnstileToken ? { turnstileToken: extras.turnstileToken } : {}),
+      }
       : slugOrInput;
   return request<SubmitRsvpResponse>("/api/rsvp", post(payload));
 }
@@ -255,10 +297,103 @@ export async function submitWish(input: {
   weddingSlug?: string;
   name: string;
   message: string;
+  /** Khoá định danh người gửi cho link chung (uuid lưu ở localStorage). */
+  authorKey?: string;
   turnstileToken?: string;
   website?: string;
-}): Promise<void> {
-  await request("/api/wishes", post(input));
+  website_url?: string;
+  formLoadedAt?: number;
+}): Promise<{ updated: boolean }> {
+  const res = await request<{ ok: boolean; updated?: boolean }>("/api/wishes", post(input));
+  return { updated: res.updated === true };
+}
+
+export function verifySharePin(
+  slug: string,
+  pin: string,
+  turnstileToken?: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  return request(
+    "/api/share/verify-pin",
+    post({
+      slug,
+      pin,
+      ...(turnstileToken ? { turnstileToken } : {}),
+    }),
+  );
+}
+
+export function moderatePhoto(
+  slug: string,
+  photoId: string,
+  status: "approved" | "hidden" | "pending",
+): Promise<{ ok: boolean; photoModeration: Record<string, "pending" | "approved" | "hidden"> }> {
+  return optionalAuthRequest("/api/share/moderate-photo", post({ slug, photoId, status }));
+}
+
+export function setPhotoApprovalMode(
+  slug: string,
+  mode: "manual" | "auto",
+): Promise<{ ok: boolean; photoApprovalMode: "manual" | "auto" }> {
+  return optionalAuthRequest("/api/share/set-mode", post({ slug, mode }));
+}
+
+export type PublicWish = { id: string; name: string; message: string };
+
+/** Lời chúc đã được chủ thiệp duyệt + lời chúc của chính người xem. */
+export async function getWishes(params: {
+  weddingSlug?: string;
+  slug?: string;
+  authorKey?: string;
+}): Promise<{
+  enabled?: boolean;
+  wishes?: PublicWish[];
+  mine?: { name: string; message: string } | null;
+}> {
+  const qs = new URLSearchParams();
+  if (params.weddingSlug) qs.set("weddingSlug", params.weddingSlug);
+  if (params.slug) qs.set("slug", params.slug);
+  if (params.authorKey) qs.set("authorKey", params.authorKey);
+  return request<{
+    enabled?: boolean;
+    wishes?: PublicWish[];
+    mine?: { name: string; message: string } | null;
+  }>(`/api/wishes?${qs.toString()}`);
+}
+
+/** Duyệt / bỏ duyệt một lời chúc để hiện lên thiệp. */
+export function setWishApproved(
+  weddingId: string,
+  wishId: string,
+  approved: boolean,
+): Promise<Wish> {
+  return authRequest<Wish>(`/api/weddings/${encodeURIComponent(weddingId)}/wishes`, patch({ id: wishId, approved }));
+}
+
+/** Duyệt tự động (duyệt tất cả + lời chúc sau tự lên thiệp) hoặc về duyệt tay. */
+export function setWishApprovalMode(
+  weddingId: string,
+  mode: "manual" | "auto",
+): Promise<{ mode: "manual" | "auto"; approvedCount: number }> {
+  return authRequest<{ mode: "manual" | "auto"; approvedCount: number }>(
+    `/api/weddings/${encodeURIComponent(weddingId)}/wishes`,
+    post({ action: mode }),
+  );
+}
+
+/** Xoá lời chúc (1 hoặc nhiều). */
+export function deleteWishes(
+  weddingId: string,
+  ids: string[],
+): Promise<{ deleted: number }> {
+  return authRequest<{ deleted: number }>(
+    `/api/weddings/${encodeURIComponent(weddingId)}/wishes`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    },
+  );
 }
 
 export function syncMe(): Promise<UserProfile> {
@@ -308,6 +443,22 @@ export async function deleteWedding(weddingId: string): Promise<void> {
   await authRequest(`/api/weddings/${encodeURIComponent(weddingId)}`, {
     method: "DELETE",
   });
+}
+
+export function listDesignerTemplateOptions(): Promise<{
+  items: DesignerTemplateOption[];
+}> {
+  return authRequest("/api/designer-templates");
+}
+
+export function assignDesignerTemplate(
+  weddingId: string,
+  input: { designerTemplateId: string | null; version?: number },
+): Promise<DesignerTemplateAssignmentResult> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/designer-template`,
+    patch(input),
+  );
 }
 
 export interface WeddingEventPayload {
@@ -369,6 +520,20 @@ export function listPhotos(weddingId: string): Promise<WeddingPhoto[]> {
   return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}/photos`);
 }
 
+export function uploadWeddingMusic(
+  weddingId: string,
+  file: File,
+  title: string,
+): Promise<{ wedding: Wedding; url: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("title", title);
+  return authFormRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/music`,
+    formData,
+  );
+}
+
 export function uploadPhoto(
   weddingId: string,
   file: File | Blob,
@@ -388,6 +553,23 @@ export function uploadPhoto(
   }
   return authFormRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/photos`,
+    formData,
+  );
+}
+
+export function uploadStoryPhoto(
+  weddingId: string,
+  file: File | Blob,
+  fileName?: string,
+): Promise<{ url: string }> {
+  const formData = new FormData();
+  if (file instanceof File) {
+    formData.append("file", file);
+  } else {
+    formData.append("file", file, fileName ?? "story.webp");
+  }
+  return authFormRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/story-photo`,
     formData,
   );
 }
@@ -416,24 +598,88 @@ export function listGuests(weddingId: string): Promise<Guest[]> {
   return authRequest(`/api/weddings/${encodeURIComponent(weddingId)}/guests`);
 }
 
-export function createGuest(weddingId: string, name: string): Promise<Guest> {
+export interface GuestPage {
+  items: Guest[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export function listGuestsPage(
+  weddingId: string,
+  options?: {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    status?: GuestStatus | "all";
+  },
+): Promise<GuestPage> {
+  const search = new URLSearchParams();
+  search.set("page", String(options?.page ?? 1));
+  if (options?.pageSize) search.set("pageSize", String(options.pageSize));
+  const q = options?.q?.trim();
+  if (q) search.set("q", q);
+  if (options?.status && options.status !== "all") {
+    search.set("status", options.status);
+  }
   return authRequest(
-    `/api/weddings/${encodeURIComponent(weddingId)}/guests`,
-    post({ name }),
+    `/api/weddings/${encodeURIComponent(weddingId)}/guests?${search.toString()}`,
   );
 }
 
-export function createGuestsBulk(weddingId: string, names: string[]): Promise<Guest[]> {
+export interface CreateGuestPayload {
+  name: string;
+  relationshipGroup?: Guest["relationshipGroup"] | null;
+  tableNumber?: string | null;
+  dietaryPreference?: Guest["dietaryPreference"] | null;
+}
+
+export function createGuest(
+  weddingId: string,
+  input: string | CreateGuestPayload,
+): Promise<Guest> {
+  const body = typeof input === "string" ? { name: input } : input;
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/guests`,
+    post(body),
+  );
+}
+
+export interface BulkGuestCreateItem {
+  name: string;
+  relationshipGroup?: Guest["relationshipGroup"] | null;
+  tableNumber?: string | null;
+}
+
+export function createGuestsBulk(
+  weddingId: string,
+  itemsOrNames: string[] | BulkGuestCreateItem[],
+  eventIds: string[] = [],
+): Promise<Guest[]> {
+  const isStringArray =
+    itemsOrNames.length > 0 && typeof itemsOrNames[0] === "string";
+  const payload = isStringArray
+    ? { names: itemsOrNames, eventIds }
+    : { items: itemsOrNames, eventIds };
+
   return authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/bulk`,
-    post({ names }),
+    post(payload),
   );
 }
 
 export function updateGuest(
   weddingId: string,
   guestId: string,
-  body: { name: string },
+  body: {
+    name: string;
+    relationshipGroup?: Guest["relationshipGroup"] | null;
+    customPronounHost?: string | null;
+    customPronounGuest?: string | null;
+    tableNumber?: string | null;
+    dietaryPreference?: Guest["dietaryPreference"] | null;
+  },
 ): Promise<Guest> {
   return authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/${encodeURIComponent(guestId)}`,
@@ -448,6 +694,32 @@ export async function deleteGuest(weddingId: string, guestId: string): Promise<v
   );
 }
 
+/** Xóa nhiều khách mời trong một request (thanh thao tác hàng loạt). */
+export async function deleteGuests(
+  weddingId: string,
+  guestIds: string[],
+): Promise<{ deleted: number }> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/guests/bulk`,
+    {
+      method: "DELETE",
+      body: JSON.stringify({ ids: guestIds }),
+    },
+  );
+}
+
+/** Gán số bàn hàng loạt cho danh sách khách đã chọn */
+export function bulkAssignTable(
+  weddingId: string,
+  guestIds: string[],
+  tableNumber: string | null,
+): Promise<{ updated: number; tableNumber: string | null }> {
+  return authRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/guests/bulk`,
+    patch({ ids: guestIds, tableNumber }),
+  );
+}
+
 export function setGuestEvents(
   weddingId: string,
   guestId: string,
@@ -456,19 +728,6 @@ export function setGuestEvents(
   return authRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/guests/${encodeURIComponent(guestId)}/events`,
     post({ eventIds }),
-  );
-}
-
-export function assignGuestEvents(
-  guestId: string,
-  eventIds: string[],
-): Promise<{ ok: boolean; eventIds: string[] }> {
-  return authRequest(
-    `/api/guests/${encodeURIComponent(guestId)}/events`,
-    {
-      method: "PUT",
-      body: JSON.stringify({ eventIds }),
-    },
   );
 }
 
@@ -544,5 +803,9 @@ export function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
 
 export function getOrder(orderId: string): Promise<OrderStatusResponse> {
   return authRequest(`/api/orders/${encodeURIComponent(orderId)}`);
+}
+
+export function createPayosOrder(input: CreatePayosOrderInput): Promise<PayosOrderResponse> {
+  return authRequest("/api/orders/payos", post(input));
 }
 

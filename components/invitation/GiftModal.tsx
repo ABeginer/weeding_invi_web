@@ -6,14 +6,17 @@ import { Check, Copy, Download, HeartHandshake, X } from "lucide-react";
 import { invitationThemeCssVars, landingThemeCssVars } from "@/lib/theme";
 import type { TemplateData, WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { VietQRGiftBox } from "@/components/wedding/VietQRGiftBox";
 
-export type GiftTone = "olive" | "minimal" | "sunset" | "obsidian";
+export type GiftTone = "olive" | "minimal" | "sunset" | "obsidian" | "red" | "velvet" | "ruby" | "minred" | "minbrown" | "flowery";
 
 interface GiftModalProps {
   open: boolean;
   onClose: () => void;
   gift: TemplateData["gift"];
   plan: WeddingPlan;
+  coupleName?: string;
+  guestName?: string | null;
   tone?: GiftTone;
   wishAnchorId?: string;
 }
@@ -27,18 +30,29 @@ interface GiftSideData {
   qrUrl: string | null;
 }
 
-async function copyTextSafe(value: string): Promise<void> {
+async function copyTextSafe(value: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(value);
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+    throw new Error("Clipboard unavailable");
   } catch {
+    try {
     const textarea = document.createElement("textarea");
     textarea.value = value;
     textarea.style.position = "fixed";
     textarea.style.opacity = "0";
+    textarea.style.left = "-9999px";
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
-    document.execCommand("copy");
+    const success = document.execCommand("copy");
     document.body.removeChild(textarea);
+    return success;
+  } catch {
+    return false;
+    }
   }
 }
 
@@ -47,11 +61,16 @@ export function GiftModal({
   onClose,
   gift,
   plan,
+  coupleName = "",
+  guestName = null,
   tone = "olive",
   wishAnchorId,
 }: GiftModalProps) {
   const [mounted, setMounted] = React.useState(false);
   const [copiedSide, setCopiedSide] = React.useState<"groom" | "bride" | null>(
+    null,
+  );
+  const [copyFailedSide, setCopyFailedSide] = React.useState<"groom" | "bride" | null>(
     null,
   );
   const closeButtonRef = React.useRef<HTMLButtonElement | null>(null);
@@ -66,6 +85,12 @@ export function GiftModal({
     document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
 
+    try {
+      window.dispatchEvent(
+        new CustomEvent("inviwedd:modal-state", { detail: { isOpen: true } }),
+      );
+    } catch {}
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
@@ -75,6 +100,11 @@ export function GiftModal({
     return () => {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      try {
+        window.dispatchEvent(
+          new CustomEvent("inviwedd:modal-state", { detail: { isOpen: false } }),
+        );
+      } catch {}
     };
   }, [open, onClose]);
 
@@ -110,6 +140,21 @@ export function GiftModal({
           side.qrUrl,
       ),
   );
+
+  /** VietQR tự sinh = tính năng Pro/VIP; Free chỉ được xem số tài khoản.
+      Bên nào đã có ảnh QR tự tải thì không sinh VietQR cho bên đó nữa. */
+  const vietQrSides =
+    allowQrImages && coupleName
+      ? sides.filter(
+          (side) => !side.qrUrl && Boolean(side.bankName) && Boolean(side.accountNumber),
+        )
+      : [];
+  const vietQrSideIds = new Set(vietQrSides.map((s) => s.id));
+  // Không lặp lại thẻ tài khoản đã có trong VietQRGiftBox
+  const manualSides = sides.filter((side) => !vietQrSideIds.has(side.id));
+  const showVietQr = vietQrSides.length > 0;
+  const isDarkTone =
+    tone === "obsidian" || tone === "minred" || tone === "ruby" || tone === "velvet";
 
   const toneTheme =
     tone === "obsidian"
@@ -153,7 +198,85 @@ export function GiftModal({
                 "border-stone-300 bg-white text-stone-700 hover:bg-stone-100",
               ring: "focus-visible:ring-stone-700",
             }
-          : {
+          : tone === "red"
+            ? {
+                panel: "border-[#c9a24a] bg-[#fff7eb] text-[#4a1010]",
+                subcard: "border-[#e0cba4] bg-white text-[#4a1010]",
+                heading: "text-[#800000]",
+                muted: "text-[#8a6a63]",
+                copyBtn:
+                  "border-[#800000] bg-[#800000] text-[#ffeed2] hover:bg-[#5c0000]",
+                outlineBtn:
+                  "border-[#c9a24a] bg-white text-[#800000] hover:bg-[#fff1dd]",
+                closeBtn:
+                  "border-[#e0cba4] bg-white text-[#800000] hover:bg-[#fff1dd]",
+                ring: "focus-visible:ring-[#800000]",
+              }
+            : tone === "flowery"
+              ? {
+                  panel: "border-[#464E25]/30 bg-[#FDFAF5] text-[#595638]",
+                  subcard: "border-[#464E25]/20 bg-white text-[#595638]",
+                  heading: "text-[#464E25]",
+                  muted: "text-[#8A8460]",
+                  copyBtn: "border-[#464E25] bg-[#464E25] text-[#FDFAF5] hover:bg-[#3A411E]",
+                  outlineBtn: "border-[#464E25]/55 bg-transparent text-[#464E25] hover:bg-[#F1EEE2]",
+                  closeBtn: "border-[#464E25]/30 bg-white text-[#464E25] hover:bg-[#F1EEE2]",
+                  ring: "focus-visible:ring-[#464E25]",
+                }
+              : tone === "minbrown"
+              ? {
+                  panel: "border-[#A76B43]/35 bg-[#F7F7F8] text-[#5B3B26]",
+                  subcard: "border-[#A76B43]/25 bg-white text-[#5B3B26]",
+                  heading: "text-[#7E4E2E]",
+                  muted: "text-[#9A7A63]",
+                  copyBtn: "border-[#A76B43] bg-[#A76B43] text-white hover:bg-[#8F5735]",
+                  outlineBtn: "border-[#A76B43]/60 bg-transparent text-[#7E4E2E] hover:bg-[#F4EAE2]",
+                  closeBtn: "border-[#A76B43]/35 bg-white text-[#7E4E2E] hover:bg-[#F4EAE2]",
+                  ring: "focus-visible:ring-[#A76B43]",
+                }
+              : tone === "minred"
+              ? {
+                  panel: "border-[#E1BC7C]/45 bg-[#1E0101] text-[#E9D4AE]",
+                  subcard: "border-[#E1BC7C]/30 bg-[#2C0102] text-[#E9D4AE]",
+                  heading: "text-[#E1BC7C]",
+                  muted: "text-[#B89667]",
+                  copyBtn:
+                    "border-[#E1BC7C] bg-[#E1BC7C] text-[#390102] hover:bg-[#F0D3A0]",
+                  outlineBtn:
+                    "border-[#E1BC7C]/60 bg-transparent text-[#E1BC7C] hover:bg-[#2C0102]",
+                  closeBtn:
+                    "border-[#E1BC7C]/40 bg-[#1E0101] text-[#E1BC7C] hover:bg-[#2C0102]",
+                  ring: "focus-visible:ring-[#E1BC7C]",
+                }
+              : tone === "ruby"
+              ? {
+                  panel: "border-[#E5C787]/50 bg-[#390202] text-[#E5E4D0]",
+                  subcard: "border-[#E5C787]/40 bg-[#4A060C] text-[#E5E4D0]",
+                  heading: "text-[#F7E7CE]",
+                  muted: "text-[#B3B2A0]",
+                  copyBtn:
+                    "border-[#F7E7CE] bg-[#F7E7CE] text-[#390202] hover:bg-[#FFF6E6]",
+                  outlineBtn:
+                    "border-[#E5C787] bg-transparent text-[#E5C787] hover:bg-[#4A060C]",
+                  closeBtn:
+                    "border-[#E5C787]/50 bg-[#390202] text-[#E5C787] hover:bg-[#4A060C]",
+                  ring: "focus-visible:ring-[#E5C787]",
+                }
+              : tone === "velvet"
+              ? {
+                  panel: "border-[#8A6A3A] bg-[#4A0B0A] text-[#E9CE91]",
+                  subcard: "border-[#8A6A3A]/60 bg-[#5A0D0C] text-[#E9CE91]",
+                  heading: "text-[#E9CE91]",
+                  muted: "text-[#BFA478]",
+                  copyBtn:
+                    "border-[#E9CE91] bg-[#E9CE91] text-[#3B0A0D] hover:bg-[#F2E0B6]",
+                  outlineBtn:
+                    "border-[#E9CE91]/70 bg-transparent text-[#E9CE91] hover:bg-[#5A0D0C]",
+                  closeBtn:
+                    "border-[#8A6A3A] bg-[#4A0B0A] text-[#E9CE91] hover:bg-[#5A0D0C]",
+                  ring: "focus-visible:ring-[#E9CE91]",
+                }
+              : {
               panel: "border-inv-olive/30 bg-inv-paper text-inv-ink",
               subcard: "border-inv-olive/25 bg-inv-bg text-inv-ink",
               heading: "text-inv-olive-deep",
@@ -176,7 +299,12 @@ export function GiftModal({
 
   const handleCopyAccount = async (side: GiftSideData) => {
     if (!side.accountNumber) return;
-    await copyTextSafe(side.accountNumber);
+    const ok = await copyTextSafe(side.accountNumber);
+    if (!ok) {
+      setCopyFailedSide(side.id);
+      return;
+    }
+    setCopyFailedSide(null);
     setCopiedSide(side.id);
     window.setTimeout(() => {
       setCopiedSide((prev) => (prev === side.id ? null : prev));
@@ -287,14 +415,14 @@ export function GiftModal({
               </button>
             )}
           </div>
-        ) : (
+        ) : manualSides.length > 0 ? (
           <div
             className={cn(
               "mt-5 grid gap-4",
-              sides.length > 1 ? "sm:grid-cols-2" : "grid-cols-1",
+              manualSides.length > 1 ? "sm:grid-cols-2" : "grid-cols-1",
             )}
           >
-            {sides.map((side) => {
+            {manualSides.map((side) => {
               const isCopied = copiedSide === side.id;
               return (
                 <div
@@ -315,14 +443,19 @@ export function GiftModal({
                     </h3>
 
                     {side.qrUrl && (
-                      <div className="mx-auto w-40 overflow-hidden rounded-xl border border-current/15 bg-white p-2">
-                        <img
-                          src={side.qrUrl}
-                          alt={`Mã QR chuyển khoản ${side.title}`}
-                          width={160}
-                          height={160}
-                          className="aspect-square h-auto w-full object-contain"
-                        />
+                      <div className="space-y-1.5">
+                        <div className="mx-auto w-40 overflow-hidden rounded-xl border border-current/15 bg-white p-2">
+                          <img
+                            src={side.qrUrl}
+                            alt={`Mã QR chuyển khoản ${side.title}`}
+                            width={160}
+                            height={160}
+                            className="aspect-square h-auto w-full object-contain"
+                          />
+                        </div>
+                        <p className={cn("text-center text-[10px]", toneTheme.muted)}>
+                          Trên iPhone / Zalo: nhấn giữ ảnh QR để lưu về máy
+                        </p>
                       </div>
                     )}
 
@@ -348,7 +481,7 @@ export function GiftModal({
                           <dt className={cn("text-[11px]", toneTheme.muted)}>
                             Số tài khoản
                           </dt>
-                          <dd className="font-mono text-sm font-semibold tracking-wide">
+                          <dd className="select-all font-mono text-sm font-semibold tracking-wide">
                             {side.accountNumber}
                           </dd>
                         </div>
@@ -362,7 +495,7 @@ export function GiftModal({
                         type="button"
                         onClick={() => handleCopyAccount(side)}
                         className={cn(
-                          "inline-flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          "inline-flex h-9 w-full cursor-pointer touch-manipulation select-none items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2",
                           toneTheme.copyBtn,
                           toneTheme.ring,
                         )}
@@ -376,6 +509,12 @@ export function GiftModal({
                           {isCopied ? "Đã sao chép STK" : "Sao chép số tài khoản"}
                         </span>
                       </button>
+                    )}
+
+                    {copyFailedSide === side.id && (
+                      <p className={cn("text-center text-[10px]", toneTheme.muted)}>
+                        Chạm giữ vào số tài khoản phía trên để sao chép thủ công.
+                      </p>
                     )}
 
                     {side.qrUrl && (
@@ -397,6 +536,23 @@ export function GiftModal({
               );
             })}
           </div>
+        ) : null}
+
+        {/* VietQR tự sinh là quyền của gói Pro/VIP: bản Free chỉ hiện số tài khoản.
+            Nếu chủ thiệp đã tự tải ảnh QR thì ẩn VietQR của bên đó để không trùng. */}
+        {showVietQr && coupleName && (
+          <VietQRGiftBox
+            coupleName={coupleName}
+            guestName={guestName}
+            isDark={isDarkTone}
+            sides={vietQrSides.map((side) => ({
+              id: side.id,
+              label: side.title,
+              bankName: side.bankName,
+              accountName: side.accountName,
+              accountNumber: side.accountNumber,
+            }))}
+          />
         )}
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-current/15 pt-4">

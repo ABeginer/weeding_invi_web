@@ -1,15 +1,16 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { ProfileMenu } from "@/components/theme/ProfileMenu";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LANDING_COPY } from "@/config/landing";
-import { SITE_LINKS } from "@/config/site";
+import { resolveDemoBackNavigation } from "@/lib/demo-return";
 import type { WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { WeddingTemplateMeta } from "@/templates/types";
+import { globalAudio } from "@/lib/global-audio";
 import { MusicToggle } from "./music-toggle";
 import { ViewSwitcher, type DemoViewportMode } from "./view-switcher";
 
@@ -18,6 +19,7 @@ interface DemoToolbarProps {
   viewport: DemoViewportMode;
   isAuthenticated: boolean;
   userEmail?: string | null;
+  ctaLabel?: string;
   onViewportChange: (next: DemoViewportMode) => void;
   onUseTemplate: () => void;
 }
@@ -37,23 +39,37 @@ export function DemoToolbar({
   viewport,
   isAuthenticated,
   userEmail,
+  ctaLabel,
   onViewportChange,
   onUseTemplate,
 }: DemoToolbarProps) {
+  const router = useRouter();
   const badgeLabel = LANDING_COPY.templates.planBadges[template.plan];
+  const resolvedCtaLabel = ctaLabel || LANDING_COPY.demo.useNowLabel;
+
+  const handleBack = () => {
+    globalAudio.stop();
+    const target = resolveDemoBackNavigation();
+    if (target.type === "back") {
+      router.back();
+    } else {
+      router.push(target.href);
+    }
+  };
 
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-bg/95 text-text sm:bg-bg/85 sm:backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2 sm:px-6">
           {/* Trái: Quay lại & Tên mẫu */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-            <Link
-              href={SITE_LINKS.templatesAnchor}
-              className="inline-flex h-8 shrink-0 items-center rounded-full border border-border bg-surface px-3 text-xs font-medium text-text transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex h-8 shrink-0 cursor-pointer items-center rounded-full border border-border bg-surface px-3 text-xs font-medium text-text transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               {LANDING_COPY.demo.backToTemplates}
-            </Link>
+            </button>
 
             <div className="flex min-w-0 items-center gap-2">
               <h1 className="truncate font-display text-base font-semibold text-accent-text sm:text-lg">
@@ -70,30 +86,34 @@ export function DemoToolbar({
             </div>
           </div>
 
-          {/* Giữa: Segmented View Switcher */}
-          <div className="order-3 flex w-full items-center justify-between gap-2 pt-1 md:order-2 md:w-auto md:pt-0">
+          {/* Giữa: Segmented View Switcher (chỉ hiển thị trên tablet/desktop) */}
+          <div className="hidden md:flex items-center justify-center">
             <ViewSwitcher value={viewport} onChange={onViewportChange} />
-            <div className="flex items-center gap-2 md:hidden">
-              <MusicToggle
-                src={template.defaultMusic.src}
-                title={template.defaultMusic.title}
-                resetKey={template.id}
-                compact
-              />
-              {isAuthenticated ? (
-                <ProfileMenu email={userEmail} />
-              ) : (
-                <ThemeToggle />
-              )}
-            </div>
           </div>
 
-          {/* Phải: Nhạc + Theme/Profile + CTA (Desktop) */}
-          <div className="order-2 hidden items-center gap-2.5 md:order-3 md:flex">
+          {/* Phải (Mobile): Nhạc + Theme/Profile */}
+          <div className="flex items-center gap-2 md:hidden">
             <MusicToggle
               src={template.defaultMusic.src}
               title={template.defaultMusic.title}
               resetKey={template.id}
+              autoPlay={true}
+              compact
+            />
+            {isAuthenticated ? (
+              <ProfileMenu email={userEmail} />
+            ) : (
+              <ThemeToggle />
+            )}
+          </div>
+
+          {/* Phải (Desktop): Nhạc + Theme/Profile + CTA */}
+          <div className="hidden items-center gap-2.5 md:flex">
+            <MusicToggle
+              src={template.defaultMusic.src}
+              title={template.defaultMusic.title}
+              resetKey={template.id}
+              autoPlay={true}
               compact
             />
             {isAuthenticated ? (
@@ -106,7 +126,7 @@ export function DemoToolbar({
               onClick={onUseTemplate}
               className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full bg-accent px-5 text-xs font-semibold tracking-wide text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg sm:text-sm"
             >
-              <span>{LANDING_COPY.demo.useNowLabel}</span>
+              <span>{resolvedCtaLabel}</span>
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
@@ -120,7 +140,7 @@ export function DemoToolbar({
           onClick={onUseTemplate}
           className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-accent-fg shadow-lg transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
-          <span>{LANDING_COPY.demo.useNowLabel}</span>
+          <span>{resolvedCtaLabel}</span>
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>

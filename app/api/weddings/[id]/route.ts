@@ -1,14 +1,17 @@
 import { getTemplateLockedMessage, isTemplateAllowedForPlan } from "@/config/plans";
+import { generateLedToken } from "@/lib/led-token";
 import { authRoute, fail, json, readBody, text } from "@/lib/server/http";
+import { getWeddingDesignerTemplateInfo, getPinnedDesignerTemplate } from "@/lib/server/designer";
 import { toWedding, type WeddingRow } from "@/lib/server/mappers";
 import { deletePhotoObject } from "@/lib/server/storage";
+import { collectMediaUrlsFromContent, safeRemoveStorageObjects } from "@/lib/server/storage-cleanup";
 import { db } from "@/lib/server/supabase";
 import {
   getOwnedWedding,
   listWeddingEvents,
   listWeddingPhotos,
 } from "@/lib/server/weddings";
-import { weddingContentInputSchema } from "@/lib/wedding-types";
+import { normalizeWeddingContent } from "@/lib/wedding-data";
 import { getTemplateMeta } from "@/templates/registry";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -20,15 +23,24 @@ export const GET = authRoute<Ctx>(async (_req, user, { params }) => {
   const wedding = await getOwnedWedding(id, user.id);
   if (!wedding) return fail("Không tìm thấy thiệp cưới.", 404);
 
-  const [events, photos] = await Promise.all([
+  const [events, photos, designerTemplate, ledToken] = await Promise.all([
     listWeddingEvents(wedding.id),
     listWeddingPhotos(wedding.id),
+    getWeddingDesignerTemplateInfo(wedding),
+    generateLedToken(wedding.slug),
   ]);
+  const designer = await getPinnedDesignerTemplate({
+    designerTemplateId: wedding.designer_template_id,
+    designerTemplateVersion: wedding.designer_template_version,
+  });
 
   return json({
     ...toWedding(wedding),
     events,
     photos,
+    designerTemplate,
+    designerCanvas: designer?.canvas ?? null,
+    ledToken,
   });
 });
 
@@ -58,13 +70,10 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   }
 
   if (body.content !== undefined) {
-    const parsed = weddingContentInputSchema.safeParse(body.content);
-    if (!parsed.success) {
-      return fail(
-        parsed.error.issues[0]?.message ?? "Nội dung thiệp không hợp lệ.",
-      );
-    }
-    patch.content = parsed.data;
+    return fail(
+      "Vui lòng cập nhật nội dung thiệp qua endpoint /api/weddings/[id]/content.",
+      400,
+    );
   }
 
   if (Object.keys(patch).length === 0) {
@@ -84,7 +93,11 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   if (error) throw error;
   if (!data) return fail("Không tìm thấy thiệp cưới.", 404);
 
-  return json(toWedding(data as WeddingRow));
+  const ledToken = await generateLedToken((data as WeddingRow).slug);
+  return json({
+    ...toWedding(data as WeddingRow),
+    ledToken,
+  });
 });
 
 export const DELETE = authRoute<Ctx>(async (_req, user, { params }) => {
@@ -102,6 +115,12 @@ export const DELETE = authRoute<Ctx>(async (_req, user, { params }) => {
     await Promise.allSettled(
       photoRows.map((row) => deletePhotoObject(String(row.storage_key))),
     );
+  }
+
+  // Dọn cả file nhạc MP3 / media riêng lưu trong content (nếu có)
+  const mediaKeys = collectMediaUrlsFromContent(normalizeWeddingContent(wedding.content));
+  if (mediaKeys.size > 0) {
+    await safeRemoveStorageObjects(Array.from(mediaKeys)).catch(() => undefined);
   }
 
   const { error } = await client

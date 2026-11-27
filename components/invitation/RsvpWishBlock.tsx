@@ -1,14 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
-import { submitRsvp, submitWish } from "@/lib/api";
+import { Check, CheckCircle2, Lock, Send, X, XCircle } from "lucide-react";
+import { getWishes, submitRsvp, submitWish } from "@/lib/api";
+import { getWishAuthorKey } from "@/lib/wish-author";
 import type { GuestDiet, GuestStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { RevealSection } from "./RevealSection";
+import { WishMarquee } from "./WishMarquee";
+import { WishOverlay } from "./WishOverlay";
 import {
   useInvitationContained,
   useInvitationReadOnly,
@@ -39,11 +42,20 @@ export function RsvpWishBlock({
   initialPlusOnes = 0,
   initialDiet = "meat",
   initialSongRequest = "",
-  initialRideNeeded = false,
 }: RsvpWishBlockProps) {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const isReadOnlyPreview = useInvitationReadOnly();
+  const mealMode = data.mealMode ?? "meat";
+  const dietOptions =
+    mealMode === "both"
+      ? [
+        { value: "meat" as const, label: "Mặn" },
+        { value: "veg" as const, label: "Chay" },
+      ]
+      : mealMode === "veg"
+        ? [{ value: "veg" as const, label: "Chay" }]
+        : [{ value: "meat" as const, label: "Mặn" }];
   const isPublicMode = !isReadOnlyPreview && mode === "public";
   const isNameLocked = !isPublicMode && !isReadOnlyPreview && Boolean(guestName && guestName.trim().length > 0);
   const effectiveWeddingSlug = weddingSlug ?? data.weddingSlug;
@@ -53,7 +65,9 @@ export function RsvpWishBlock({
     "accepted" | "declined" | null
   >(initialStatus !== "pending" ? initialStatus : null);
   const [plusOnes, setPlusOnes] = React.useState<number>(initialPlusOnes);
-  const [diet, setDiet] = React.useState<GuestDiet | null>(initialDiet ?? "meat");
+  const [diet, setDiet] = React.useState<GuestDiet | null>(
+    initialDiet ?? (data.mealMode === "veg" ? "veg" : "meat"),
+  );
   const [songRequest, setSongRequest] = React.useState<string>(initialSongRequest ?? "");
 
   const [isEditingRsvp, setIsEditingRsvp] = React.useState(
@@ -66,11 +80,43 @@ export function RsvpWishBlock({
 
   const [name, setName] = React.useState(guestName ?? (isReadOnlyPreview ? (data.ui.defaultGuestName ?? "") : ""));
   const [message, setMessage] = React.useState("");
+  /** Khoá định danh người gửi (link chung) — để mỗi người chỉ có 1 lời chúc. */
+  const [authorKey, setAuthorKey] = React.useState<string | undefined>(undefined);
+  const [hasExistingWish, setHasExistingWish] = React.useState(false);
   const [honeypot, setHoneypot] = React.useState("");
+  const formLoadedAtRef = React.useRef<number>(0);
+  React.useEffect(() => {
+    formLoadedAtRef.current = Date.now();
+  }, []);
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
 
   const [submitting, setSubmitting] = React.useState<"rsvp" | "wish" | null>(null);
+
+  // Mỗi người một lời chúc: lấy khoá định danh + điền sẵn lời chúc cũ để sửa.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    setAuthorKey(getWishAuthorKey(effectiveWeddingSlug));
+  }, [effectiveWeddingSlug]);
+
+  React.useEffect(() => {
+    if (isReadOnlyPreview || !effectiveWeddingSlug) return;
+    let alive = true;
+    getWishes({
+      weddingSlug: effectiveWeddingSlug,
+      slug: isPublicMode ? undefined : slug,
+      authorKey,
+    })
+      .then((res) => {
+        if (!alive || !res.mine) return;
+        setHasExistingWish(true);
+        setMessage((prev) => (prev.trim().length > 0 ? prev : res.mine!.message));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [authorKey, effectiveWeddingSlug, isPublicMode, isReadOnlyPreview, slug]);
 
   const [rsvpFeedback, setRsvpFeedback] = React.useState<{
     choice: "accepted" | "declined";
@@ -149,7 +195,12 @@ export function RsvpWishBlock({
     }
 
     const nextPlusOnes = selectedChoice === "accepted" ? plusOnes : 0;
-    const nextDiet = selectedChoice === "accepted" ? (diet ?? "meat") : null;
+    const nextDiet =
+      selectedChoice === "accepted"
+        ? mealMode === "both"
+          ? (diet ?? "meat")
+          : mealMode
+        : null;
     const nextSongRequest =
       selectedChoice === "accepted" && songRequest.trim() ? songRequest.trim() : null;
     const nextRideNeeded = false;
@@ -199,8 +250,11 @@ export function RsvpWishBlock({
             songRequest: nextSongRequest,
             rideNeeded: nextRideNeeded,
             wish: trimmedMessage || undefined,
+            authorKey,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
+            website_url: honeypot,
+            formLoadedAt: formLoadedAtRef.current,
           }
           : {
             weddingSlug: effectiveWeddingSlug,
@@ -211,8 +265,11 @@ export function RsvpWishBlock({
             songRequest: nextSongRequest,
             rideNeeded: nextRideNeeded,
             wish: trimmedMessage || undefined,
+            authorKey,
             turnstileToken: turnstileToken ?? undefined,
             website: honeypot,
+            website_url: honeypot,
+            formLoadedAt: formLoadedAtRef.current,
           },
       );
       if (!savedSlug && res.slug) {
@@ -276,8 +333,11 @@ export function RsvpWishBlock({
         weddingSlug: effectiveWeddingSlug,
         name: trimmedName,
         message: trimmedMessage,
+        authorKey,
         turnstileToken: turnstileToken ?? undefined,
         website: honeypot,
+        website_url: honeypot,
+        formLoadedAt: formLoadedAtRef.current,
       });
       setMessage("");
       setPublicWishSent(true);
@@ -303,12 +363,13 @@ export function RsvpWishBlock({
   if (isPublicMode) {
     return (
       <RevealSection
-        id="rsvp-wishes"
+        id="rsvp"
         className={cn(
           "scroll-mt-10 bg-inv-bg pb-6",
           isContained ? "px-3.5 pt-8" : "px-5 pt-10",
         )}
       >
+        <span id="rsvp-wishes" className="sr-only" aria-hidden="true" />
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
             <h2
@@ -321,14 +382,6 @@ export function RsvpWishBlock({
             >
               Gửi Lời Chúc
             </h2>
-            <p
-              className={cn(
-                "mx-auto mt-2.5 max-w-[390px] font-inv-serif leading-[1.55] text-inv-olive-btn",
-                isContained ? "text-[13px]" : "text-[14px] sm:text-[15px]",
-              )}
-            >
-              Gửi đôi lời yêu thương để cùng lưu giữ những kỷ niệm đẹp nhất trong ngày cưới của chúng mình.
-            </p>
           </div>
 
           {publicWishSent ? (
@@ -371,7 +424,17 @@ export function RsvpWishBlock({
                 aria-hidden="true"
                 value={honeypot}
                 onChange={(e) => setHoneypot(e.target.value)}
-                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none"
+                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
+              />
+              <input
+                name="website_url"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
               />
 
               <div>
@@ -442,6 +505,10 @@ export function RsvpWishBlock({
               </div>
             </form>
           )}
+
+          {/* Sổ lưu bút luôn hiển thị, kể cả sau khi đã gửi lời chúc */}
+          <WishOverlay />
+          <WishMarquee tone="olive" className="mt-5" />
         </div>
       </RevealSection>
     );
@@ -459,12 +526,13 @@ export function RsvpWishBlock({
 
   return (
     <RevealSection
-      id="rsvp-wishes"
+      id="rsvp"
       className={cn(
         "scroll-mt-10 bg-inv-bg pb-6",
         isContained ? "px-3.5 pt-8" : "px-5 pt-10",
       )}
     >
+      <span id="rsvp-wishes" className="sr-only" aria-hidden="true" />
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
           <h2
@@ -475,16 +543,8 @@ export function RsvpWishBlock({
                 : "text-[clamp(32px,8.8vw,46px)]",
             )}
           >
-            Xác Nhận Tham Dự
+            Xác nhận tham dự
           </h2>
-          <p
-            className={cn(
-              "mx-auto mt-2.5 max-w-[390px] font-inv-serif leading-[1.55] text-inv-olive-btn",
-              isContained ? "text-[13px]" : "text-[14px] sm:text-[15px]",
-            )}
-          >
-            Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới.
-          </p>
         </div>
 
         {showSavedSummary && activeChoice ? (
@@ -537,6 +597,17 @@ export function RsvpWishBlock({
               )}
             </div>
 
+            {activeChoice === "accepted" && (
+              <div className="flex justify-center pt-1">
+                <a
+                  href="#the-moi-boarding-pass"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-inv-olive/45 bg-inv-bg px-4 py-2 font-inv-serif text-xs font-semibold text-inv-olive-deep shadow-xs transition-colors hover:bg-inv-tint"
+                >
+                  <span>🎫 Xem thẻ mời &amp; số bàn (Boarding Pass)</span>
+                </a>
+              </div>
+            )}
+
             <div className="flex justify-center">
               <Button
                 type="button"
@@ -564,7 +635,17 @@ export function RsvpWishBlock({
               aria-hidden="true"
               value={honeypot}
               onChange={(e) => setHoneypot(e.target.value)}
-              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none"
+              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
+            />
+            <input
+              name="website_url"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              className="pointer-events-none fixed -left-[9999px] h-0 w-0 opacity-0 select-none sr-only"
             />
 
             <div>
@@ -613,7 +694,7 @@ export function RsvpWishBlock({
                 role="group"
                 aria-label="Lựa chọn tham dự"
                 className={cn(
-                  "grid grid-cols-1 gap-2",
+                  "grid grid-cols-1 gap-2.5",
                   !isContained && "sm:grid-cols-2",
                 )}
               >
@@ -626,13 +707,15 @@ export function RsvpWishBlock({
                     setSelectedChoice("accepted");
                   }}
                   className={cn(
-                    "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                    "flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-solid px-4 py-2 text-center font-inv-serif text-sm font-medium shadow-sm transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                     selectedChoice === "accepted"
                       ? "border-inv-olive-deep bg-inv-olive-btn font-semibold text-white"
                       : "border-inv-olive-btn bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                    selectedChoice === null && submitting === null && "rsvp-choice-nudge",
                   )}
                 >
-                  Tôi sẽ tham dự
+                  <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Tôi sẽ tham dự</span>
                 </button>
                 <button
                   type="button"
@@ -643,13 +726,17 @@ export function RsvpWishBlock({
                     setSelectedChoice("declined");
                   }}
                   className={cn(
-                    "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                    "flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-solid px-4 py-2 text-center font-inv-serif text-sm font-medium shadow-sm transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                     selectedChoice === "declined"
                       ? "border-inv-olive-deep bg-inv-olive-deep font-semibold text-white"
                       : "border-inv-olive/50 bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                    selectedChoice === null &&
+                      submitting === null &&
+                      "rsvp-choice-nudge rsvp-choice-nudge-delayed",
                   )}
                 >
-                  Tiếc quá, mình bận mất rồi
+                  <X className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Tiếc quá, tôi bận mất rồi</span>
                 </button>
               </div>
             </div>
@@ -668,10 +755,15 @@ export function RsvpWishBlock({
                     value={plusOnes + 1}
                     onChange={(e) => setPlusOnes(Math.max(0, Number(e.target.value) - 1))}
                     disabled={submitting !== null}
+                    style={{ colorScheme: "light" }}
                     className="mt-1.5 h-10 w-full rounded-xl border border-inv-olive/45 bg-inv-bg px-3 font-inv-serif text-sm text-inv-ink focus:border-inv-olive-deep focus:outline-none focus:ring-2 focus:ring-inv-olive"
                   >
                     {ATTENDEE_OPTIONS.map((count) => (
-                      <option key={count} value={count}>
+                      <option
+                        key={count}
+                        value={count}
+                        style={{ backgroundColor: "#FFFFFF", color: "#30451C" }}
+                      >
                         {count === 1
                           ? "1 người (chỉ mình tôi)"
                           : `${count} người`}
@@ -684,19 +776,16 @@ export function RsvpWishBlock({
                   <span className="block font-inv-serif text-xs font-semibold text-inv-ink">
                     Ăn chay / Ăn mặn
                   </span>
-                  <div className="mt-1.5 grid grid-cols-2 gap-2">
-                    {[
-                      { value: "meat" as const, label: "Mặn" },
-                      { value: "veg" as const, label: "Chay" },
-                    ].map((opt) => {
+                  <div className={cn("mt-1.5 grid gap-2", dietOptions.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+                    {dietOptions.map((opt) => {
                       const active = (diet ?? "meat") === opt.value;
                       return (
                         <button
                           key={opt.value}
                           type="button"
-                          disabled={submitting !== null}
+                          disabled={submitting !== null || dietOptions.length === 1}
                           aria-pressed={active}
-                          onClick={() => setDiet(opt.value)}
+                          onClick={() => dietOptions.length > 1 && setDiet(opt.value)}
                           className={cn(
                             "flex h-9 cursor-pointer items-center justify-center rounded-xl border font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                             active
@@ -750,6 +839,12 @@ export function RsvpWishBlock({
                 className="min-h-[96px] rounded-[19px] border-inv-olive-btn bg-inv-bg px-4 py-3 font-inv-serif text-base text-inv-ink placeholder:text-inv-olive-btn/80 focus-visible:border-inv-olive-deep focus-visible:ring-inv-olive sm:text-sm"
                 rows={3}
               />
+              {hasExistingWish && (
+                <p className="mt-1.5 px-1 font-inv-serif text-[11px] leading-relaxed text-inv-muted">
+                  Bạn đã gửi lời chúc trước đó — sửa lại ở trên rồi gửi để cập nhật
+                  (mỗi người chỉ có một lời chúc).
+                </p>
+              )}
               <div className="mt-1 flex justify-end px-2">
                 <span
                   className={
@@ -823,6 +918,11 @@ export function RsvpWishBlock({
             </div>
           </form>
         )}
+
+        {/* Sổ lưu bút nằm dưới nút "Thay đổi lựa chọn..." và luôn hiển thị,
+            kể cả sau khi khách đã xác nhận tham dự. */}
+        <WishOverlay />
+        <WishMarquee tone="olive" className="mt-5" />
       </div>
     </RevealSection>
   );

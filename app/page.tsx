@@ -1,25 +1,47 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/tools/JsonLd";
 import { LandingPageClient } from "@/components/landing/landing-page-client";
+import { FAQ_ITEMS, LandingFaq } from "@/components/landing/faq";
+import { LandingFooter } from "@/components/landing/footer";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { ToolsPreviewSection } from "@/components/landing/tools-preview";
 import { LANDING_COPY } from "@/config/landing";
-import { resolveAppBaseUrl, toAbsoluteSiteUrl } from "@/config/site";
-import { getAuth0 } from "@/lib/auth0";
+import {
+  resolveAppBaseUrl,
+  SITE_CONFIG,
+  SITE_NAME,
+  SUPPORT_EMAIL,
+  toAbsoluteSiteUrl,
+  ZALO_SUPPORT_URL,
+} from "@/config/site";
 
-export const dynamic = "force-dynamic";
+// Trang chủ là static; trạng thái đăng nhập được đọc phía client (/auth/profile)
+// để không phải render lại toàn trang theo session.
+export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: LANDING_COPY.seo.title,
+  title: {
+    absolute: LANDING_COPY.seo.title,
+  },
   description: LANDING_COPY.seo.description,
+  alternates: {
+    canonical: "/",
+    languages: {
+      "vi-VN": "/",
+    },
+  },
   openGraph: {
     title: LANDING_COPY.seo.title,
     description: LANDING_COPY.seo.description,
     type: "website",
     locale: "vi_VN",
-    url: resolveAppBaseUrl(),
+    siteName: SITE_NAME,
+    url: "/",
     images: [
       {
-        url: toAbsoluteSiteUrl("/templates/basic-1/cover.webp"),
-        width: 600,
-        height: 800,
+        url: toAbsoluteSiteUrl("/images/og-cover.png"),
+        width: 1200,
+        height: 630,
         alt: LANDING_COPY.seo.ogAlt,
       },
     ],
@@ -28,33 +50,100 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: LANDING_COPY.seo.title,
     description: LANDING_COPY.seo.description,
-    images: [toAbsoluteSiteUrl("/templates/basic-1/cover.webp")],
+    images: [toAbsoluteSiteUrl("/images/og-cover.png")],
   },
 };
 
-export default async function HomePage() {
-  let isAuthenticated = false;
-  let userEmail: string | null = null;
+export default function HomePage() {
+  const siteUrl = resolveAppBaseUrl();
+  const organizationId = `${siteUrl}/#organization`;
+  const websiteId = `${siteUrl}/#website`;
+  const sameAs = [
+    ZALO_SUPPORT_URL,
+    ...(SITE_CONFIG.contactFacebook.trim()
+      ? [SITE_CONFIG.contactFacebook.trim()]
+      : []),
+  ];
 
-  try {
-    const session = await getAuth0().getSession();
-    isAuthenticated = Boolean(session);
-    if (session?.user) {
-      const userObj = session.user as Record<string, unknown>;
-      const rawEmail = userObj.email ?? userObj["https://thiepcuoi/email"];
-      if (typeof rawEmail === "string" && rawEmail.trim()) {
-        userEmail = rawEmail.trim();
-      }
-    }
-  } catch {
-    isAuthenticated = false;
-    userEmail = null;
-  }
+  const structuredDataGraph = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": organizationId,
+        name: SITE_NAME,
+        url: siteUrl,
+        logo: toAbsoluteSiteUrl("/icon.png"),
+        description: LANDING_COPY.seo.description,
+        areaServed: "VN",
+        contactPoint: {
+          "@type": "ContactPoint",
+          telephone: "+84902955594",
+          email: SUPPORT_EMAIL,
+          contactType: "customer service",
+          availableLanguage: "Vietnamese",
+        },
+        sameAs,
+      },
+      {
+        "@type": "WebSite",
+        "@id": websiteId,
+        name: SITE_NAME,
+        alternateName: "inviwedd.date",
+        url: siteUrl,
+        inLanguage: "vi-VN",
+        publisher: {
+          "@id": organizationId,
+        },
+      },
+      {
+        "@type": "WebApplication",
+        name: SITE_NAME,
+        applicationCategory: "LifestyleApplication",
+        operatingSystem: "All",
+        url: siteUrl,
+        description: LANDING_COPY.seo.description,
+        publisher: {
+          "@id": organizationId,
+        },
+        offers: {
+          "@type": "AggregateOffer",
+          priceCurrency: "VND",
+          lowPrice: "0",
+          highPrice: "399000",
+          offerCount: "3",
+        },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: FAQ_ITEMS.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+          },
+        })),
+      },
+    ],
+  };
 
   return (
-    <LandingPageClient
-      isAuthenticated={isAuthenticated}
-      userEmail={userEmail}
-    />
+    <>
+      <link
+        rel="preload"
+        as="image"
+        href="/templates/nhat-ky-mua-yeu/cover-sm.webp?v=2"
+        fetchPriority="high"
+        media="(max-width: 1023px)"
+      />
+      <JsonLd data={structuredDataGraph} />
+      <LandingPageClient
+        toolsSection={<ToolsPreviewSection />}
+        howItWorksSection={<HowItWorks />}
+        faqSection={<LandingFaq />}
+        footerSection={<LandingFooter />}
+      />
+    </>
   );
 }

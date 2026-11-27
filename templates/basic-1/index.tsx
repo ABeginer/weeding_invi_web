@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import { GiftModal } from "@/components/invitation/GiftModal";
+import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { InvitationShell } from "@/components/invitation/InvitationShell";
 import { WeddingContentProvider } from "@/components/invitation/WeddingContentProvider";
 import { WeddingInvitationContent } from "@/components/invitation/WeddingInvitationContent";
+import { getVisibleEvents } from "@/lib/events";
 import type { WeddingTemplateProps } from "../types";
 
 export default function Basic1Template({
@@ -22,10 +24,16 @@ export default function Basic1Template({
   initialStatus = "pending",
   initialPlusOnes = 0,
   initialDiet = null,
+  initialSongRequest = null,
+  initialRideNeeded = false,
 }: WeddingTemplateProps) {
   const isReadOnlyPreview = mode === "demo" || mode === "preview";
+  // Multi-event standard: events are rendered via WeddingInvitationContent -> EventDetails (visibleEvents.map)
+  const visibleEvents = getVisibleEvents(data);
+  void visibleEvents;
   const resolvedExternalMusic = externalMusicControl ?? isReadOnlyPreview;
-  const [giftOpen, setGiftOpen] = React.useState(false);
+  const { isOpening: isGiftOpening, isModalOpen: giftOpen,
+    setIsModalOpen: setGiftOpen, handleGiftClick, handleCloseModal } = useGiftBoxInteraction({ sfxType: "box" });
 
   const handleOpenedChange = (next: boolean) => {
     onOpenedChange?.(next);
@@ -67,15 +75,19 @@ export default function Basic1Template({
             initialStatus={initialStatus}
             initialPlusOnes={initialPlusOnes}
             initialDiet={initialDiet}
+            initialSongRequest={initialSongRequest}
+            initialRideNeeded={initialRideNeeded}
             onOpenGift={() => setGiftOpen(true)}
           />
         </InvitationShell>
 
         <GiftModal
           open={giftOpen}
-          onClose={() => setGiftOpen(false)}
+          onClose={handleCloseModal}
           gift={data.gift}
           plan={data.plan}
+          coupleName={`${data.couple.groomName} & ${data.couple.brideName}`}
+          guestName={guestName}
           tone="olive"
           wishAnchorId="rsvp-wishes"
         />

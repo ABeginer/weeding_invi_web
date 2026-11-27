@@ -54,7 +54,7 @@ export function formatDefaultLunarDateFromSolar(dateStr: string): string {
   const day = parseInt(match[3], 10);
   if (!isValidSolarDate(day, month, year)) return "";
   const res = convertSolarToLunar(day, month, year);
-  return `Ngày ${res.lunarDay} tháng ${res.lunarMonth}${res.isLeapMonth ? " (nhuận)" : ""} năm ${res.yearCanChi}`;
+  return `${res.lunarDay} tháng ${res.lunarMonth}${res.isLeapMonth ? " (nhuận)" : ""} năm ${res.yearCanChi}`;
 }
 
 interface EventsManagerProps {
@@ -159,7 +159,7 @@ export function EventsManager({
       lunarDate: form.lunarDate,
       venueName: form.venueName,
       venueAddress: form.venueAddress,
-      mapEmbedUrl: null,
+      mapEmbedUrl: form.mapEmbedUrl.trim() || null,
       mapDirectionsUrl: form.mapDirectionsUrl.trim() || null,
     };
 
@@ -199,7 +199,7 @@ export function EventsManager({
       }
       if (err instanceof ApiError && err.code === "PLAN_LIMIT") {
         setFormError(
-          "Bạn đã đạt giới hạn buổi lễ của gói hiện tại. Vui lòng nâng cấp gói Pro để tạo không giới hạn buổi lễ.",
+          "Bạn đã đạt giới hạn buổi lễ của gói hiện tại. Vui lòng nâng cấp gói Standard để tạo không giới hạn buổi lễ.",
         );
         return;
       }

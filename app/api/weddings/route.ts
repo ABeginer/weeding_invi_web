@@ -103,7 +103,7 @@ export const POST = authRoute(async (req, user) => {
     return fail(slugCheck.error ?? "Đường dẫn thiệp không hợp lệ.");
   }
 
-  let templateId = "basic-1";
+  let templateId = "vuon-o-liu";
   if (body?.templateId !== undefined) {
     const parsed = text(body.templateId, 40);
     if (!parsed || !TEMPLATE_ID_RE.test(parsed)) {
@@ -135,14 +135,17 @@ export const POST = authRoute(async (req, user) => {
   if (countError) throw countError;
 
   const weddingsList = existing ?? [];
-  const freeMaxWeddings = getPlanLimits("free").weddings;
+  const freeMaxWeddings = getPlanLimits("free").weddings ?? 1;
+  const freeWeddingsCount = weddingsList.filter((w) => w.plan === "free").length;
   const hasPaidPlan = weddingsList.some((w) => w.plan === "pro" || w.plan === "vip");
-  if (
-    !hasPaidPlan &&
-    freeMaxWeddings !== null &&
-    weddingsList.length >= freeMaxWeddings
-  ) {
-    return fail(getWeddingLimitMessage("free"), 403);
+  const maxAllowedUnpaidFree = hasPaidPlan ? Math.max(2, freeMaxWeddings) : freeMaxWeddings;
+  if (freeWeddingsCount >= maxAllowedUnpaidFree) {
+    return fail(
+      hasPaidPlan
+        ? `Mỗi tài khoản chỉ được giữ tối đa ${maxAllowedUnpaidFree} thiệp đang ở gói Miễn phí chưa nâng cấp. Vui lòng nâng cấp hoặc xóa bớt thiệp Miễn phí cũ.`
+        : getWeddingLimitMessage("free"),
+      403,
+    );
   }
 
   const { data, error } = await client

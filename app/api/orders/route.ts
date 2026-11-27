@@ -1,88 +1,144 @@
+import { resolveAppBaseUrl } from "@/config/site";
 import { getUser } from "@/lib/server/auth";
-import { readBody, route, json } from "@/lib/server/http";
+import { readBody, route, json, fail } from "@/lib/server/http";
 import { coded, ownedWedding } from "@/lib/server/owner";
-import { db, env } from "@/lib/server/supabase";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
+import { db } from "@/lib/server/supabase";
 import { isUuid } from "@/lib/server/validate";
-import { newOrderCode, PLAN_PRICES, PLAN_RANK } from "@/lib/server/payments";
-import { buildVietQrPayload } from "@/lib/server/vietqr";
-
-const REUSE_WINDOW_MS = 24 * 60 * 60 * 1000;
+import { calculateUpgradeAmount, newOrderCode } from "@/lib/server/payments";
+import { createPayosPaymentLink } from "@/lib/server/payos";
 
 export const POST = route(async (req: Request) => {
   const user = await getUser(req);
   if (!user) return coded("Bạn cần đăng nhập.", "UNAUTHORIZED", 401);
 
+  const limited = rateLimit(req, `orders:${user.id}`, 10, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const body = await readBody(req);
-  if (!body || !isUuid(body.weddingId)) return coded("Thiệp không hợp lệ.", "VALIDATION", 400);
-  if (body.plan !== "pro" && body.plan !== "vip") return coded("Gói không hợp lệ.", "VALIDATION", 400);
-  const plan = body.plan;
+  if (!body || !isUuid(body.weddingId)) {
+    return coded("Thiệp không hợp lệ.", "VALIDATION", 400);
+  }
+  if (body.plan !== "pro" && body.plan !== "vip") {
+    return coded("Gói không hợp lệ.", "VALIDATION", 400);
+  }
 
   const wedding = await ownedWedding(user.id, body.weddingId);
   if (!wedding) return coded("Không tìm thấy thiệp.", "NOT_FOUND", 404);
-  if (PLAN_RANK[plan] <= PLAN_RANK[wedding.plan]) {
+
+  const amount = calculateUpgradeAmount(wedding.plan, body.plan);
+  if (amount === null) {
     return coded("Thiệp đã ở gói này hoặc cao hơn.", "VALIDATION", 400);
   }
 
   const client = db();
-  const bankBin = env("BANK_BIN");
-  const bank = {
-    name: env("BANK_NAME"),
-    accountNo: env("BANK_ACCOUNT_NO"),
-    accountName: env("BANK_ACCOUNT_NAME"),
+
+  type OrderInsertResult = {
+    id: string;
+    code: string;
+    plan: string;
+    amount_vnd: number;
   };
-  const qr = (amountVnd: number, code: string) =>
-    buildVietQrPayload({ bin: bankBin, accountNo: bank.accountNo, amount: amountVnd, content: code });
 
-  const { data: recent, error: recentError } = await client
-    .from("orders")
-    .select("id, code, plan, amount_vnd, created_at")
-    .eq("wedding_id", wedding.id)
-    .eq("plan", plan)
-    .eq("status", "pending")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (recentError) throw recentError;
-  if (recent && Date.now() - Date.parse(recent.created_at as string) < REUSE_WINDOW_MS) {
-    return json({
-      id: recent.id,
-      code: recent.code,
-      plan: recent.plan,
-      amountVnd: recent.amount_vnd,
-      bank,
-      transferContent: recent.code,
-      qrPayload: qr(recent.amount_vnd as number, recent.code as string),
-    });
-  }
+  // Sinh mã code INV-[A-Z0-9]{6} & payos orderCode với cơ chế retry nếu trùng (Postgres error 23505)
+  let order: OrderInsertResult | null = null;
+  let orderCode = 0;
+  const maxRetries = 5;
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     const code = newOrderCode();
-    const { data, error } = await client
+    orderCode = Number(
+      `${Math.floor(Date.now() / 1000)}${Math.floor(100 + Math.random() * 900)}`,
+    );
+    const insertPayload: Record<string, unknown> = {
+      code,
+      user_id: user.id,
+      wedding_id: wedding.id,
+      plan: body.plan,
+      amount_vnd: amount,
+      status: "pending",
+      payos_order_code: orderCode,
+    };
+
+    let { data: inserted, error: insertError } = await client
       .from("orders")
-      .insert({
-        code,
-        user_id: user.id,
-        wedding_id: wedding.id,
-        plan,
-        amount_vnd: PLAN_PRICES[plan],
-      })
+      .insert(insertPayload)
       .select("id, code, plan, amount_vnd")
       .single();
-    if (!error && data) {
-      return json(
-        {
-          id: data.id,
-          code: data.code,
-          plan: data.plan,
-          amountVnd: data.amount_vnd,
-          bank,
-          transferContent: data.code,
-          qrPayload: qr(data.amount_vnd as number, data.code as string),
-        },
-        201,
-      );
+
+    // Nếu DB chưa có cột payos_order_code (Postgres error 42703), retry không có trường này
+    if (insertError && (insertError.code === "42703" || insertError.message?.includes("payos_order_code"))) {
+      delete insertPayload.payos_order_code;
+      const fallbackInsert = await client
+        .from("orders")
+        .insert(insertPayload)
+        .select("id, code, plan, amount_vnd")
+        .single();
+      inserted = fallbackInsert.data;
+      insertError = fallbackInsert.error;
     }
-    if (error && error.code !== "23505") throw error;
+
+    // Nếu trùng mã code (23505 unique violation), thử lại với mã code mới
+    if (insertError && insertError.code === "23505") {
+      continue;
+    }
+
+    if (insertError || !inserted) {
+      throw insertError || new Error("Không thể khởi tạo bản ghi đơn hàng.");
+    }
+
+    order = inserted as unknown as OrderInsertResult;
+    break;
   }
-  throw new Error("Could not create a unique order code");
+
+  if (!order) {
+    return fail("Không thể sinh mã đơn hàng không trùng sau nhiều lần thử.", 500);
+  }
+
+  const baseUrl = resolveAppBaseUrl();
+  const returnUrl = `${baseUrl}/dashboard/weddings/${wedding.id}?payment=success`;
+  const cancelUrl = `${baseUrl}/dashboard/weddings/${wedding.id}?payment=cancelled`;
+  const description = order.code;
+
+  try {
+    const paymentData = await createPayosPaymentLink({
+      orderCode,
+      amount,
+      description,
+      returnUrl,
+      cancelUrl,
+    });
+
+    // Trả về dữ liệu tương thích cả client cũ (CreatedOrder) và client mới (PayosOrderResponse)
+    return json(
+      {
+        id: order.id,
+        code: order.code,
+        plan: body.plan,
+        amountVnd: paymentData.amount,
+        bank: {
+          name: paymentData.bin || "VietQR (payOS)",
+          accountNo: paymentData.accountNumber,
+          accountName: paymentData.accountName,
+        },
+        transferContent: paymentData.description,
+        qrPayload: paymentData.qrCode,
+        // Các trường payOS chuẩn
+        orderId: order.id,
+        orderCode: paymentData.orderCode,
+        amount: paymentData.amount,
+        checkoutUrl: paymentData.checkoutUrl,
+        qrCode: paymentData.qrCode,
+        accountName: paymentData.accountName,
+        accountNumber: paymentData.accountNumber,
+        bin: paymentData.bin,
+        description: paymentData.description,
+      },
+      201,
+    );
+  } catch (err: unknown) {
+    await client.from("orders").delete().eq("id", order.id);
+    console.error("[Orders PayOS Error]", err);
+    return fail("Không thể khởi tạo liên kết thanh toán lúc này. Vui lòng thử lại sau ít phút.", 502);
+  }
 });

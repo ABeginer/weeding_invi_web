@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "motion/react";
+import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn } from "@/lib/utils";
 import {
   useInvitationContained,
@@ -16,146 +17,18 @@ interface EnvelopeProps {
 }
 
 const DOOR_EASE = [0.22, 1, 0.36, 1] as const;
+/** Cửa phải đi sau cửa trái một nhịp ngắn để không trượt đều như máy. */
+const DOOR_STAGGER = 0.08;
 
 function BotanicalLineArt() {
   return (
-    <svg
-      viewBox="0 0 500 844"
-      preserveAspectRatio="xMidYMid slice"
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/templates/basic-1/line-flowers.webp"
+      alt=""
       aria-hidden="true"
-      className="h-full w-full text-inv-olive-deep/80"
-    >
-      <g fill="var(--inv-paper)" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-        <path
-          d="M-12 458 C45 435, 92 412, 148 398"
-          fill="none"
-          strokeWidth="2.1"
-        />
-        <path
-          d="M18 446 C34 410, 62 394, 72 415 C54 432, 34 440, 18 446 Z"
-          strokeWidth="1.6"
-        />
-        <path
-          d="M66 424 C74 388, 102 372, 114 394 C98 412, 80 420, 66 424 Z"
-          strokeWidth="1.6"
-        />
-        <path
-          d="M112 406 C130 374, 158 368, 168 386 C148 400, 128 406, 112 406 Z"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M40 442 C46 474, 72 496, 86 474 C76 456, 58 444, 40 442 Z"
-          strokeWidth="1.6"
-        />
-        <path
-          d="M96 420 C110 454, 144 470, 156 446 C136 428, 114 420, 96 420 Z"
-          strokeWidth="1.6"
-        />
-
-        <g transform="translate(88 492) rotate(-14)">
-          <path d="M0 0 C-28 -44, -68 -36, -62 6 C-56 36, -24 38, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C-10 -56, 38 -64, 48 -24 C56 4, 24 22, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C44 -28, 72 16, 40 42 C18 58, -4 34, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C22 46, -28 66, -42 32 C-52 10, -24 -4, 0 0 Z" strokeWidth="1.8" />
-          <path d="M-26 -14 C-14 -8, -8 -4, -3 0 M18 -26 C12 -14, 6 -6, 2 0 M28 14 C16 10, 8 4, 2 0 M-14 26 C-8 16, -4 8, -1 2" fill="none" strokeWidth="1.1" />
-          <circle cx="0" cy="0" r="6" fill="currentColor" strokeWidth="1.2" />
-          <circle cx="-10" cy="-7" r="2" fill="currentColor" stroke="none" />
-          <circle cx="9" cy="-9" r="2" fill="currentColor" stroke="none" />
-          <circle cx="8" cy="9" r="2" fill="currentColor" stroke="none" />
-        </g>
-
-        <g transform="translate(174 366) rotate(12)">
-          <path d="M0 0 C-26 -38, -56 -24, -48 12 C-42 36, -16 30, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C-6 -48, 38 -48, 44 -14 C48 10, 20 18, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C38 -18, 56 24, 26 40 C6 50, -6 26, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C12 40, -30 48, -36 18 C-40 2, -16 -6, 0 0 Z" strokeWidth="1.8" />
-          <circle cx="0" cy="0" r="5" fill="currentColor" strokeWidth="1.2" />
-        </g>
-
-        <path
-          d="M148 398 C184 398, 214 408, 238 424"
-          fill="none"
-          strokeWidth="1.9"
-        />
-        <path
-          d="M188 404 C202 382, 224 378, 232 394 C216 402, 200 406, 188 404 Z"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M182 410 C186 436, 206 452, 222 440 C212 424, 198 414, 182 410 Z"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M72 522 C52 562, 34 592, 16 626"
-          fill="none"
-          strokeWidth="1.8"
-        />
-        <path
-          d="M44 568 C22 572, 6 594, 14 612 C32 602, 42 586, 44 568 Z"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M52 556 C72 574, 80 598, 64 612 C52 596, 48 576, 52 556 Z"
-          strokeWidth="1.5"
-        />
-
-        <path
-          d="M512 412 C456 410, 398 416, 336 426"
-          fill="none"
-          strokeWidth="2.1"
-        />
-        <path
-          d="M474 410 C456 376, 424 366, 412 388 C430 404, 452 412, 474 410 Z"
-          strokeWidth="1.6"
-        />
-        <path
-          d="M432 414 C420 384, 386 382, 376 404 C394 416, 414 418, 432 414 Z"
-          strokeWidth="1.6"
-        />
-        <path
-          d="M454 420 C442 454, 414 470, 400 448 C416 432, 434 422, 454 420 Z"
-          strokeWidth="1.6"
-        />
-        <path
-          d="M360 424 C346 446, 316 452, 302 436 C322 424, 342 420, 360 424 Z"
-          strokeWidth="1.5"
-        />
-
-        <g transform="translate(388 352) rotate(-18)">
-          <path d="M0 0 C-16 -54, 16 -70, 26 -24 C30 -4, 14 10, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C-56 -22, -58 -62, -16 -56 C2 -52, 8 -20, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C-62 10, -48 52, -12 32 C6 22, 8 6, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C22 -48, 66 -32, 46 6 C34 28, 12 16, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C44 10, 42 54, 4 38 C-14 30, -8 10, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 L-22 -30 M0 0 L12 -34 M0 0 L24 -4" fill="none" strokeWidth="1.2" />
-          <circle cx="-23" cy="-32" r="2.2" fill="currentColor" stroke="none" />
-          <circle cx="13" cy="-36" r="2.2" fill="currentColor" stroke="none" />
-          <circle cx="26" cy="-5" r="2.2" fill="currentColor" stroke="none" />
-        </g>
-
-        <g transform="translate(418 486) rotate(22)">
-          <path d="M0 0 C-18 -58, 18 -72, 28 -22 C32 0, 14 12, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C-62 -20, -64 -62, -18 -58 C4 -54, 10 -20, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C-64 14, -48 56, -12 34 C8 22, 8 6, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C24 -50, 70 -34, 48 8 C36 30, 14 16, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 C46 12, 42 58, 4 40 C-14 32, -8 10, 0 0 Z" strokeWidth="1.8" />
-          <path d="M0 0 L-24 -30 M0 0 L10 -36 M0 0 L26 -6" fill="none" strokeWidth="1.2" />
-          <circle cx="-25" cy="-32" r="2.2" fill="currentColor" stroke="none" />
-          <circle cx="11" cy="-38" r="2.2" fill="currentColor" stroke="none" />
-          <circle cx="28" cy="-7" r="2.2" fill="currentColor" stroke="none" />
-        </g>
-
-        <path
-          d="M338 426 C306 426, 282 418, 258 408"
-          fill="none"
-          strokeWidth="1.7"
-        />
-        <path
-          d="M286 418 C272 396, 254 396, 252 410 C264 418, 276 420, 286 418 Z"
-          strokeWidth="1.5"
-        />
-      </g>
-    </svg>
+      className="h-full w-full select-none object-contain object-center opacity-30 mix-blend-multiply"
+    />
   );
 }
 
@@ -174,6 +47,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
 
   const handleOpen = () => {
     if (opening) return;
+    playOpenCardSound();
     if (prefersReducedMotion) {
       onOpen();
       return;
@@ -199,7 +73,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
       }
       aria-label="Thiệp mời cưới"
     >
-      <motion.div
+      <m.div
         aria-hidden="true"
         initial={false}
         animate={
@@ -212,7 +86,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         transition={
           prefersReducedMotion
             ? { duration: 0.01 }
-            : { duration: 0.9, ease: DOOR_EASE }
+            : { duration: 0.8, ease: DOOR_EASE }
         }
         className="pointer-events-none absolute inset-y-0 left-0 z-20 w-[63.2%] will-change-transform"
       >
@@ -238,6 +112,19 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
                 : "h-[96px] w-[96px] sm:h-[108px] sm:w-[108px]",
           )}
         >
+          {!opening && (
+            <>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -inset-2.5 rounded-full border border-[#B89B72]/70 animate-luxury-ripple"
+              />
+              <span
+                aria-hidden="true"
+                style={{ animationDelay: "0.8s" }}
+                className="pointer-events-none absolute -inset-5 rounded-full border border-[#B89B72]/30 animate-luxury-ripple"
+              />
+            </>
+          )}
           <img
             src="/images/olive-wax-seal.webp"
             alt=""
@@ -250,9 +137,9 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
             className="h-full w-full select-none object-contain drop-shadow-[2px_5px_10px_color-mix(in_srgb,var(--inv-olive-deep)_42%,transparent)]"
           />
         </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div
+      <m.div
         aria-hidden="true"
         initial={false}
         animate={
@@ -265,7 +152,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         transition={
           prefersReducedMotion
             ? { duration: 0.01 }
-            : { duration: 0.9, ease: DOOR_EASE }
+            : { duration: 0.8, delay: DOOR_STAGGER, ease: DOOR_EASE }
         }
         className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[50%] overflow-hidden bg-inv-paper will-change-transform"
         style={{
@@ -276,7 +163,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         <div className="pointer-events-none absolute inset-y-0 right-0 w-[200%]">
           <BotanicalLineArt />
         </div>
-      </motion.div>
+      </m.div>
 
       <button
         type="button"
@@ -284,11 +171,13 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
         disabled={opening}
         aria-label={`${data.ui.tapHint} - ${data.ui.invitePrefix} ${displayName}`}
         className={cn(
-          "relative z-30 flex h-full w-full cursor-pointer flex-col items-center justify-between px-6 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-inv-olive-deep",
-          isContained ? "pt-[14%] pb-[9%]" : "pt-[13dvh] pb-[6dvh]",
+          "relative z-30 flex h-full w-full cursor-pointer flex-col items-center justify-between px-6 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-inv-olive-deep touch-manipulation select-none",
+          isContained
+            ? "pt-[14%] pb-[9%]"
+            : "pt-[max(13dvh,env(safe-area-inset-top))] pb-[max(6dvh,env(safe-area-inset-bottom))]",
         )}
       >
-        <motion.div
+        <m.div
           animate={opening ? { opacity: 0, y: -6 } : { opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
           className={cn(
@@ -311,9 +200,9 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
           >
             {displayName}
           </p>
-        </motion.div>
+        </m.div>
 
-        <motion.span
+        <m.span
           animate={opening ? { opacity: 0 } : { opacity: 1 }}
           transition={{ duration: 0.25 }}
           className="w-full"
@@ -321,7 +210,7 @@ export function Envelope({ guestName, onOpen, contained = false }: EnvelopeProps
           <span className="inline-block font-inv-serif text-[12px] tracking-[0.14em] uppercase text-inv-tap-hint [text-shadow:0_1px_4px_rgba(255,255,255,0.95),0_0_10px_rgba(255,255,255,0.85)] motion-safe:animate-[inv-tap-hint-pulse_2.4s_ease-in-out_infinite]">
             {data.ui.tapHint}
           </span>
-        </motion.span>
+        </m.span>
       </button>
     </div>
   );

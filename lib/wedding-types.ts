@@ -16,6 +16,9 @@ export const EVENT_ADDRESS_MAX_LENGTH = 300;
 export const EVENT_URL_MAX_LENGTH = 2000;
 
 export type WeddingGiftInfo = {
+  groomAccountLabel?: string;
+  brideAccountLabel?: string;
+  brideAccountEnabled?: boolean;
   groomBankName: string;
   groomAccountName: string;
   groomAccountNumber: string;
@@ -24,10 +27,41 @@ export type WeddingGiftInfo = {
   brideAccountNumber: string;
 };
 
+export type DesignerElementOverride = {
+  xPct?: number;
+  yPct?: number;
+  wPct?: number;
+  hPct?: number;
+  text?: string;
+  color?: string;
+  fontSize?: number;
+  radius?: number;
+  imageUrl?: string;
+  imageScale?: number;
+  imageX?: number;
+  imageY?: number;
+};
+
+export type WeddingTimelineItem = {
+  id?: string;
+  time: string;
+  label: string;
+};
+
+export type WeddingStoryMilestone = {
+  id?: string;
+  year?: string;
+  title: string;
+  content: string;
+  imageUrl?: string;
+};
+
 export type WeddingContent = {
   couple: {
     groomName: string;
     brideName: string;
+    groomTitle?: string;
+    brideTitle?: string;
     groomFullName: string;
     brideFullName: string;
     groomParents: string;
@@ -35,10 +69,50 @@ export type WeddingContent = {
   };
   date: string; // ISO, có +07:00
   quote: string; // lời dẫn ngắn, tối đa 200 ký tự
+  shareGuestName?: boolean; // in tên khách trên ảnh OG khi chia sẻ
+  showWishesOnCard?: boolean; // hiển thị lời chúc đã duyệt lên thiệp
+  wishApprovalMode?: "manual" | "auto"; // duyệt tay / duyệt tự động
+  wishDisplayStyle?: "box" | "overlay"; // ô cuối thiệp / overlay trên thiệp
   heroPhotoId: string | null;
   groomPhotoId: string | null;
   bridePhotoId: string | null;
   gift: WeddingGiftInfo;
+  /** Ảnh/giá trị khách điền cho các field designer đánh dấu (key = element id). */
+  designerFields?: Record<string, string>;
+  /** Ghi đè theo từng thiệp: vị trí khung, chữ, ảnh, zoom/pan ảnh. */
+  designerOverrides?: Record<string, DesignerElementOverride>;
+  dressCode?: string[];
+  hiddenSections?: string[];
+  sectionOrder?: string[];
+  hideCouplePhotos?: boolean;
+  hostFirst?: "groom" | "bride";
+  timeline?: WeddingTimelineItem[];
+  story?: WeddingStoryMilestone[];
+  castDossier?: {
+    groomRole?: string;
+    groomQuote?: string;
+    brideRole?: string;
+    brideQuote?: string;
+  };
+  musicPreset?:
+  | "default"
+  | "priority1"
+  | "prio2"
+  | "classic"
+  | "garden"
+  | "cheerful"
+  | "moonlight"
+  | "calm"
+  | "beginning"
+  | "sweet"
+  | "custom";
+  musicUrl?: string;
+  musicTitle?: string;
+  mealMode?: "meat" | "veg" | "both";
+  photoApprovalMode?: "manual" | "auto";
+  photoModeration?: Record<string, "pending" | "approved" | "hidden">;
+  sharePinEnabled?: boolean;
+  sharePin?: string;
 };
 
 export type WeddingEvent = {
@@ -58,6 +132,9 @@ export type WeddingPhoto = {
   kind: PhotoKind;
   url: string;
   position: number;
+  guestName?: string | null;
+  caption?: string | null;
+  createdAt?: string | null;
 };
 
 export type TemplatePhotoItem = {
@@ -74,6 +151,8 @@ export type TemplateData = {
   couple: {
     groomName: string;
     brideName: string;
+    groomTitle: string;
+    brideTitle: string;
     groomFullName: string;
     brideFullName: string;
     groomParents: string;
@@ -94,6 +173,22 @@ export type TemplateData = {
     brideQrUrl: string | null;
   };
   events: WeddingEvent[];
+  dressCode?: string[];
+  hiddenSections?: string[];
+  showWishesOnCard?: boolean;
+  wishDisplayStyle?: "box" | "overlay";
+  sectionOrder?: string[];
+  hideCouplePhotos?: boolean;
+  hostFirst?: "groom" | "bride";
+  timeline: WeddingTimelineItem[];
+  story?: WeddingStoryMilestone[];
+  castDossier?: {
+    groomRole?: string;
+    groomQuote?: string;
+    brideRole?: string;
+    brideQuote?: string;
+  };
+  mealMode: "meat" | "veg" | "both";
   music: {
     src: string;
     title: string;
@@ -214,6 +309,9 @@ const giftTextFieldSchema = (label: string, maxLength = GIFT_TEXT_MAX_LENGTH) =>
     );
 
 export const weddingGiftInputSchema = z.object({
+  groomAccountLabel: z.string().trim().max(40).optional(),
+  brideAccountLabel: z.string().trim().max(40).optional(),
+  brideAccountEnabled: z.boolean().optional(),
   groomBankName: giftTextFieldSchema("Ngân hàng nhà trai"),
   groomAccountName: giftTextFieldSchema("Tên tài khoản nhà trai"),
   groomAccountNumber: giftTextFieldSchema(
@@ -229,12 +327,45 @@ export const weddingGiftInputSchema = z.object({
 });
 
 export const emptyGiftInfo = (): WeddingGiftInfo => ({
+  groomAccountLabel: "",
+  brideAccountLabel: "",
+  brideAccountEnabled: false,
   groomBankName: "",
   groomAccountName: "",
   groomAccountNumber: "",
   brideBankName: "",
   brideAccountName: "",
   brideAccountNumber: "",
+});
+
+const designerOverrideSchema = z.object({
+  xPct: z.number().min(0).max(100).optional(),
+  yPct: z.number().min(0).max(100).optional(),
+  wPct: z.number().min(1).max(100).optional(),
+  hPct: z.number().min(1).max(100).optional(),
+  text: z.string().max(2000).optional(),
+  color: z.string().max(40).optional(),
+  fontSize: z.number().min(8).max(120).optional(),
+  radius: z.number().min(0).max(100).optional(),
+  imageUrl: z
+    .string()
+    .max(2_000_000)
+    .refine(
+      (val) => {
+        if (!val) return true;
+        if (val.startsWith("/media/")) return true;
+        if (isValidHttpsUrl(val)) return true;
+        if (val.startsWith("data:image/") && !val.startsWith("data:image/svg+xml")) {
+          return true;
+        }
+        return false;
+      },
+      "URL ảnh chỉ chấp nhận https://, /media/ hoặc ảnh data URI (ngoại trừ svg+xml).",
+    )
+    .optional(),
+  imageScale: z.number().min(0.5).max(4).optional(),
+  imageX: z.number().min(-100).max(100).optional(),
+  imageY: z.number().min(-100).max(100).optional(),
 });
 
 export const weddingContentInputSchema = z.object({
@@ -257,6 +388,8 @@ export const weddingContentInputSchema = z.object({
       .string()
       .trim()
       .max(NAME_MAX_LENGTH, `Họ tên đầy đủ cô dâu tối đa ${NAME_MAX_LENGTH} ký tự.`),
+    groomTitle: z.string().trim().max(40).optional(),
+    brideTitle: z.string().trim().max(40).optional(),
     groomParents: z
       .string()
       .trim()
@@ -278,10 +411,94 @@ export const weddingContentInputSchema = z.object({
     .string()
     .trim()
     .max(QUOTE_MAX_LENGTH, `Lời dẫn ngắn tối đa ${QUOTE_MAX_LENGTH} ký tự.`),
+  shareGuestName: z.boolean().optional().transform((val) => val ?? false),
+  showWishesOnCard: z.boolean().optional().transform((val) => val ?? false),
+  wishApprovalMode: z.enum(["manual", "auto"]).optional(),
+  wishDisplayStyle: z.enum(["box", "overlay"]).optional(),
   heroPhotoId: uuidOrNullSchema,
   groomPhotoId: uuidOrNullSchema,
   bridePhotoId: uuidOrNullSchema,
   gift: weddingGiftInputSchema.optional().transform((val) => val ?? emptyGiftInfo()),
+  designerFields: z
+    .record(z.string().max(100), z.string().max(2000))
+    .refine((rec) => Object.keys(rec).length <= 100, "Tối đa 100 trường tùy chỉnh.")
+    .optional(),
+  designerOverrides: z
+    .record(z.string().max(100), designerOverrideSchema)
+    .refine((rec) => Object.keys(rec).length <= 100, "Tối đa 100 phần tử ghi đè.")
+    .optional(),
+  dressCode: z.array(z.string().max(40)).max(3).optional(),
+  hiddenSections: z.array(z.string().max(40)).max(20).optional(),
+  sectionOrder: z.array(z.string().max(40)).max(20).optional(),
+  hideCouplePhotos: z.boolean().optional(),
+  hostFirst: z.enum(["groom", "bride"]).optional(),
+  musicPreset: z
+    .enum([
+      "default",
+      "priority1",
+      "prio2",
+      "classic",
+      "garden",
+      "cheerful",
+      "moonlight",
+      "calm",
+      "beginning",
+      "sweet",
+      "custom",
+    ])
+    .optional(),
+  musicUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (val) =>
+        !val ||
+        val.startsWith("/media/weddings/") ||
+        isValidHttpsUrl(val),
+      "Link nhạc phải bắt đầu bằng https:// hoặc file tải lên hệ thống.",
+    )
+    .optional(),
+  musicTitle: z.string().trim().max(120).optional(),
+  mealMode: z.enum(["meat", "veg", "both"]).optional(),
+  photoApprovalMode: z.enum(["manual", "auto"]).optional(),
+  photoModeration: z.record(z.string(), z.enum(["pending", "approved", "hidden"])).optional(),
+  sharePinEnabled: z.boolean().optional(),
+  sharePin: z
+    .string()
+    .trim()
+    .regex(/^\d{4}$/, "Mã PIN phải gồm đúng 4 chữ số.")
+    .optional()
+    .or(z.literal("")),
+  timeline: z
+    .array(
+      z.object({
+        time: z.string().trim().max(5),
+        label: z.string().trim().max(80),
+      }),
+    )
+    .max(6)
+    .optional(),
+  story: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        year: z.string().trim().max(30).optional(),
+        title: z.string().trim().max(120),
+        content: z.string().trim().max(1000),
+        imageUrl: z.string().trim().max(1000).optional(),
+      }),
+    )
+    .max(10)
+    .optional(),
+  castDossier: z
+    .object({
+      groomRole: z.string().trim().max(60).optional(),
+      groomQuote: z.string().trim().max(200).optional(),
+      brideRole: z.string().trim().max(60).optional(),
+      brideQuote: z.string().trim().max(200).optional(),
+    })
+    .optional(),
 });
 
 export const weddingContentPatchSchema = z.object({

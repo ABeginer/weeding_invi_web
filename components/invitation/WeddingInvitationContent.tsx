@@ -2,6 +2,7 @@
 
 import type { GuestDiet, GuestStatus } from "@/lib/types";
 import { Couple } from "./Couple";
+import "@/styles/invitation-templates.css";
 import { Countdown } from "./Countdown";
 import { EventDetails } from "./EventDetails";
 import { Families } from "./Families";
@@ -23,6 +24,8 @@ interface WeddingInvitationContentProps {
   initialStatus?: GuestStatus;
   initialPlusOnes?: number;
   initialDiet?: GuestDiet | null;
+  initialSongRequest?: string | null;
+  initialRideNeeded?: boolean;
   onOpenGift?: () => void;
 }
 
@@ -34,6 +37,8 @@ export function WeddingInvitationContent({
   initialStatus = "pending",
   initialPlusOnes = 0,
   initialDiet = null,
+  initialSongRequest = null,
+  initialRideNeeded = false,
   onOpenGift,
 }: WeddingInvitationContentProps) {
   const isContained = useInvitationContained();
@@ -45,21 +50,17 @@ export function WeddingInvitationContent({
       <MainTag className="relative z-10">
         {/* #1 Hero */}
         <Hero guestName={guestName} />
-        {/* #3 Gia đình hai bên */}
-        <Families />
-        {/* #4 Cô dâu chú rể */}
-        <Couple />
-        {/* #5 Lời mời */}
         <InvitationIntro guestName={guestName} />
-        {/* #6 Dải ba ảnh cưới */}
-        <PhotoTriptych />
-        {/* #7 Sự kiện */}
+        {/* #2 Gia đình hai bên & Cô dâu chú rể */}
+        <Families />
+        <Couple />
+        {/* #3 Lễ & Sự kiện */}
         <EventDetails />
-        {/* #8 Đếm ngược */}
+        {/* #6 Lịch cưới & Đếm ngược */}
         <Countdown />
-        {/* #9 Thư viện ảnh */}
-        <Gallery />
-        {/* #10 Xác nhận tham dự & Gửi lời chúc */}
+        {/* #7 Hộp quà mừng */}
+        <GiftQR onOpenGift={onOpenGift} />
+        {/* #8 Xác nhận tham dự */}
         <RsvpWishBlock
           slug={slug}
           weddingSlug={weddingSlug}
@@ -68,9 +69,12 @@ export function WeddingInvitationContent({
           initialStatus={initialStatus}
           initialPlusOnes={initialPlusOnes}
           initialDiet={initialDiet}
+          initialSongRequest={initialSongRequest}
+          initialRideNeeded={initialRideNeeded}
         />
-        {/* #11 Mừng cưới (sau khi xác nhận) */}
-        <GiftQR onOpenGift={onOpenGift} />
+        {/* #9 Album ảnh */}
+        <PhotoTriptych />
+        <Gallery />
       </MainTag>
       {/* #12 Lời cảm ơn */}
       <Footer />

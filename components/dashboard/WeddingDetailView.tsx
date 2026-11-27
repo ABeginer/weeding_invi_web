@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,26 +11,36 @@ import {
   CalendarHeart,
   Check,
   Copy,
+  Crown,
   ExternalLink,
   FileEdit,
   Image as ImageIcon,
   MailOpen,
   MessageSquareHeart,
   Smartphone,
+  ShieldCheck,
+  Tv,
   Users,
 } from "lucide-react";
 import { getPlanLabel } from "@/config/plans";
 import { ApiError, buildWeddingLink, getWedding, updateContent } from "@/lib/api";
 import type {
+  DesignerTemplateAssignmentResult,
   WeddingContent,
   WeddingDetail,
   WeddingEvent,
   WeddingPhoto,
 } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatWeddingDateParts } from "@/lib/utils";
+import { buildDesignerInviteValues } from "@/lib/designer-invite";
+import { collectDesignerImageFields } from "@/lib/designer-fields";
+import { DesignerInvitation } from "@/components/designer/designer-invitation";
+import type { DesignerCanvasContent, DesignerElement } from "@/components/ops/designer-types";
+import { DesignerPreviewEditor } from "./DesignerPreviewEditor";
 import { normalizeWeddingContent, toTemplateData } from "@/lib/wedding-data";
 import { weddingContentPatchSchema } from "@/lib/wedding-types";
 import { TemplatePreviewRenderer } from "@/templates/TemplatePreviewRenderer";
+import { MobilePreviewFrame } from "@/components/MobilePreviewFrame";
 import { PhoneFrame } from "@/components/landing/phone-frame";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -37,22 +48,46 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { EventsManager } from "./EventsManager";
-import { GuestTable } from "./GuestTable";
+import { getTemplateSections } from "@/config/template-sections";
+import { GuestTable, type QuickFilter } from "./GuestTable";
 import { PhotosManager } from "./PhotosManager";
 import { StatCards } from "./StatCards";
 import { WeddingInfoEditor } from "./WeddingInfoEditor";
 import { WishList } from "./WishList";
 
-type DetailTab = "info" | "events" | "photos" | "guests" | "wishes" | "stats" | "preview";
+const PhotoModerator = dynamic(
+  () => import("./PhotoModerator").then((m) => m.PhotoModerator),
+  { ssr: false },
+);
+const AssistantPinManager = dynamic(
+  () => import("./AssistantPinManager").then((m) => m.AssistantPinManager),
+  { ssr: false },
+);
+const UpgradeModal = dynamic(
+  () => import("./UpgradeModal").then((m) => m.UpgradeModal),
+  { ssr: false },
+);
+
+export type DetailTab =
+  | "info"
+  | "events"
+  | "photos"
+  | "moderation"
+  | "assistant"
+  | "guests"
+  | "wishes"
+  | "stats"
+  | "preview";
 
 interface WeddingDetailViewProps {
   weddingId: string;
 }
 
-const SIDEBAR_TABS: {
-  id: Exclude<DetailTab, "preview">;
+const CORE_SIDEBAR_TABS: {
+  id: Exclude<DetailTab, "preview" | "moderation" | "assistant">;
   label: string;
   Icon: typeof Users;
+  badge?: string;
 }[] = [
   { id: "info", label: "Thông tin cưới", Icon: FileEdit },
   { id: "events", label: "Lễ & địa điểm", Icon: CalendarHeart },
@@ -62,6 +97,18 @@ const SIDEBAR_TABS: {
   { id: "stats", label: "Thống kê", Icon: BarChart3 },
 ];
 
+const VIP_SIDEBAR_TABS: {
+  id: "moderation" | "assistant";
+  label: string;
+  Icon: typeof Users;
+  badge: string;
+}[] = [
+  { id: "moderation", label: "Duyệt ảnh LED", Icon: Tv, badge: "Pro" },
+  { id: "assistant", label: "Trợ lý & Check-in", Icon: ShieldCheck, badge: "Pro" },
+];
+
+const SIDEBAR_TABS = [...CORE_SIDEBAR_TABS, ...VIP_SIDEBAR_TABS];
+
 export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -70,12 +117,14 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   const [events, setEvents] = React.useState<WeddingEvent[]>([]);
   const [photos, setPhotos] = React.useState<WeddingPhoto[]>([]);
 
-  const [draftTemplateId, setDraftTemplateId] = React.useState("basic-1");
+  const [draftTemplateId, setDraftTemplateId] = React.useState("vuon-o-liu");
   const [draftContent, setDraftContent] = React.useState<WeddingContent | null>(null);
 
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState<DetailTab>("info");
+  const [guestFilter, setGuestFilter] = React.useState<QuickFilter>("all");
+  const [guestEventId, setGuestEventId] = React.useState<string>("all");
   const [copiedPublic, setCopiedPublic] = React.useState(false);
 
   const [savingInfo, setSavingInfo] = React.useState(false);
@@ -85,7 +134,11 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
   const [pendingTab, setPendingTab] = React.useState<DetailTab | null>(null);
   const [previewOpened, setPreviewOpened] = React.useState(false);
   const [statsRefreshSignal, setStatsRefreshSignal] = React.useState(0);
+  const [editingElement, setEditingElement] = React.useState<DesignerElement | null>(null);
   const phoneScrollRef = React.useRef<HTMLDivElement | null>(null);
+
+  const [upgradeModalOpen, setUpgradeModalOpen] = React.useState(false);
+  const [upgradeTargetPlan, setUpgradeTargetPlan] = React.useState<"pro" | "vip">("pro");
 
   const loadWedding = React.useCallback(async () => {
     setLoading(true);
@@ -117,6 +170,19 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
     loadWedding();
   }, [loadWedding]);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const search = window.location.search;
+    if (search.includes("payment=success")) {
+      showToast("Nâng cấp gói thành công!", "success");
+      loadWedding();
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (search.includes("payment=cancelled")) {
+      showToast("Đã hủy giao dịch thanh toán.", "info");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [loadWedding, showToast]);
+
   const isDirty = React.useMemo(() => {
     if (!wedding || !draftContent) return false;
     if (draftTemplateId !== wedding.templateId) return true;
@@ -133,14 +199,15 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
 
-  const handleSaveInfo = React.useCallback(async (): Promise<boolean> => {
-    if (!wedding || !draftContent) return false;
+  const handleSaveInfo = React.useCallback(async (contentOverride?: WeddingContent): Promise<boolean> => {
+    const targetContent = contentOverride ?? draftContent;
+    if (!wedding || !targetContent) return false;
     setFieldErrors({});
     setSaveError(null);
 
     const parsed = weddingContentPatchSchema.safeParse({
       templateId: draftTemplateId,
-      content: draftContent,
+      content: targetContent,
     });
 
     if (!parsed.success) {
@@ -168,12 +235,12 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       setWedding((prev) =>
         prev
           ? {
-              ...prev,
-              ...updated,
-              content: normalized,
-              events,
-              photos,
-            }
+            ...prev,
+            ...updated,
+            content: normalized,
+            events,
+            photos,
+          }
           : null,
       );
       setDraftTemplateId(updated.templateId);
@@ -206,13 +273,55 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
     setSaveError(null);
   };
 
+  const handleDesignerAssignment = React.useCallback(
+    (result: DesignerTemplateAssignmentResult) => {
+      // Chỉ cập nhật phần gán mẫu; không đụng vào draft nội dung đang sửa.
+      setWedding((prev) =>
+        prev
+          ? {
+            ...prev,
+            designerTemplateId: result.wedding.designerTemplateId,
+            designerTemplateVersion: result.wedding.designerTemplateVersion,
+            designerTemplate: result.designerTemplate,
+          }
+          : prev,
+      );
+      // Tải lại canvas mới nhất để preview + field ảnh cập nhật ngay.
+      void getWedding(result.wedding.id)
+        .then((next) =>
+          setWedding({
+            ...next,
+            content: normalizeWeddingContent(next.content),
+          }),
+        )
+        .catch(() => { });
+    },
+    [],
+  );
+
   const handleSelectTab = (nextTab: DetailTab) => {
     if (nextTab === activeTab) return;
-    if (activeTab === "info" && isDirty && nextTab !== "preview") {
+    if (isDirty && nextTab !== "preview" && nextTab !== "info") {
       setPendingTab(nextTab);
       return;
     }
     setActiveTab(nextTab);
+  };
+
+  const handleNavigateFromStats = (tab: DetailTab, filter?: QuickFilter, eventId?: string) => {
+    if (filter) {
+      setGuestFilter(filter);
+    }
+    if (eventId) {
+      setGuestEventId(eventId);
+    } else if (tab === "guests") {
+      setGuestEventId("all");
+    }
+    setActiveTab(tab);
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      const target = document.getElementById("dashboard-tab-content");
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const handleEventsChange = (nextEvents: WeddingEvent[]) => {
@@ -231,26 +340,28 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       setWedding((prev) =>
         prev
           ? {
-              ...prev,
-              photos: nextPhotos,
-              content: {
-                ...prev.content,
-                heroPhotoId: normalizedServer.heroPhotoId,
-                groomPhotoId: normalizedServer.groomPhotoId,
-                bridePhotoId: normalizedServer.bridePhotoId,
-              },
-            }
+            ...prev,
+            photos: nextPhotos,
+            content: {
+              ...prev.content,
+              heroPhotoId: normalizedServer.heroPhotoId,
+              groomPhotoId: normalizedServer.groomPhotoId,
+              bridePhotoId: normalizedServer.bridePhotoId,
+              designerFields: normalizedServer.designerFields,
+            },
+          }
           : null,
       );
       // Đồng bộ slot ảnh mà không làm mất các thay đổi chữ chưa lưu
       setDraftContent((prev) =>
         prev
           ? {
-              ...prev,
-              heroPhotoId: normalizedServer.heroPhotoId,
-              groomPhotoId: normalizedServer.groomPhotoId,
-              bridePhotoId: normalizedServer.bridePhotoId,
-            }
+            ...prev,
+            heroPhotoId: normalizedServer.heroPhotoId,
+            groomPhotoId: normalizedServer.groomPhotoId,
+            bridePhotoId: normalizedServer.bridePhotoId,
+            designerFields: normalizedServer.designerFields,
+          }
           : normalizedServer,
       );
     } else {
@@ -289,6 +400,28 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       photos,
     });
   }, [draftContent, draftTemplateId, events, photos, wedding]);
+
+  const designerValues = React.useMemo(() => {
+    if (!draftContent) return {};
+    return buildDesignerInviteValues({
+      groomName: draftContent.couple.groomName,
+      brideName: draftContent.couple.brideName,
+      dateLabel: formatWeddingDateParts(draftContent.date).dotDate,
+      dateIso: draftContent.date,
+      events,
+      guestName: null,
+      salutation: "Trân trọng kính mời",
+      designerFields: draftContent.designerFields,
+    });
+  }, [draftContent, events]);
+
+  const designerCanvas = wedding?.designerCanvas
+    ? (wedding.designerCanvas as unknown as DesignerCanvasContent)
+    : null;
+  const designerImageFields = React.useMemo(
+    () => collectDesignerImageFields(wedding?.designerCanvas),
+    [wedding?.designerCanvas],
+  );
 
   const showLivePhoneAside =
     activeTab === "info" || activeTab === "events" || activeTab === "photos";
@@ -343,38 +476,149 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setPreviewOpened((prev) => !prev);
-            phoneScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
-          }}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1 text-xs font-medium text-fg transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>{previewOpened ? "Đóng bì thư" : "Mở xem nội dung"}</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          {isDirty && (
+            <button
+              type="button"
+              onClick={() => void handleSaveInfo()}
+              disabled={savingInfo}
+              className="inline-flex h-8 items-center justify-center rounded-lg border border-accent bg-accent px-2.5 text-[11px] font-semibold text-accent-fg disabled:opacity-60"
+            >
+              {savingInfo ? "Đang lưu…" : "Lưu"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewOpened((prev) => !prev);
+              phoneScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+            }}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-bg px-2.5 py-1 text-xs font-medium text-fg transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <MailOpen className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{previewOpened ? "Đóng bì thư" : "Mở xem nội dung"}</span>
+          </button>
+        </div>
       </div>
 
       <div className="mx-auto w-full">
+        {Boolean(wedding.designerTemplateId) && (
+          <p className="mb-2 rounded-lg border border-accent/25 bg-accent-soft/40 px-3 py-2 text-center text-[11px] text-fg-muted">
+            Chạm vào tên hoặc ảnh trên thiệp để chỉnh nhanh.
+          </p>
+        )}
+        <details className="mb-2 rounded-xl border border-border bg-surface px-3 py-2">
+          <summary className="cursor-pointer text-[11px] font-semibold text-fg">
+            Hiện / ẩn phần trên thiệp
+          </summary>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {[
+              ["album", "Album"],
+              ["albumQr", "QR album"],
+              ["gift", "Hộp quà"],
+              ["calendar", "Lịch"],
+              ["map", "Sự kiện"],
+              ["family", "Gia đình"],
+              ["dresscode", "Dress code"],
+              ["rsvp", "Xác nhận"],
+              ["music", "Nhạc"],
+              ["story", "Chuyện chúng mình"],
+            ]
+              .filter(([key]) =>
+                getTemplateSections(draftTemplateId, wedding.plan).sections.includes(key),
+              )
+              .map(([key, label]) => {
+                const hidden = (draftContent.hiddenSections ?? []).includes(key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      setDraftContent((previous) => {
+                        if (!previous) return previous;
+                        const current = new Set(previous.hiddenSections ?? []);
+                        if (current.has(key)) current.delete(key);
+                        else current.add(key);
+                        return { ...previous, hiddenSections: Array.from(current) };
+                      })
+                    }
+                    className={cn(
+                      "rounded-full border px-2 py-1 text-[10px] font-medium",
+                      hidden
+                        ? "border-border bg-bg text-fg-muted line-through"
+                        : "border-accent/40 bg-accent-soft text-accent-text",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+          </div>
+        </details>
         <PhoneFrame
-          scrollRef={phoneScrollRef}
+          scrollRef={wedding.designerTemplate ? phoneScrollRef : undefined}
           enableFloat={false}
-          lockedScroll={!previewOpened}
+          lockedScroll={wedding.designerTemplate ? false : true}
           desktopOffsetPx={164}
           className="lg:w-full lg:max-w-[356px]"
         >
-          <TemplatePreviewRenderer
-            key={draftTemplateId}
-            templateId={draftTemplateId}
-            data={previewData}
-            mode="preview"
-            contained
-            viewport="phone"
-            isOpened={previewOpened}
-            onOpenedChange={setPreviewOpened}
-            externalMusicControl
-          />
+          {wedding.designerTemplate ? (
+            designerCanvas ? (
+              <DesignerInvitation
+                canvas={designerCanvas}
+                values={designerValues}
+                coupleLabel={`${draftContent.couple.groomName} & ${draftContent.couple.brideName}`}
+                showCover={false}
+                data={previewData ?? undefined}
+                weddingSlug={wedding.slug}
+                readOnly
+                plan={wedding.plan}
+                overrides={draftContent.designerOverrides}
+                editable
+                onElementClick={setEditingElement}
+                onElementMove={(id, patch) => {
+                  setDraftContent((previous) =>
+                    previous
+                      ? {
+                        ...previous,
+                        designerOverrides: {
+                          ...(previous.designerOverrides ?? {}),
+                          [id]: {
+                            ...(previous.designerOverrides?.[id] ?? {}),
+                            ...patch,
+                          },
+                        },
+                      }
+                      : previous,
+                  );
+                }}
+              />
+            ) : (
+              <iframe
+                key={`${wedding.designerTemplate.id}-${wedding.designerTemplate.latestVersion}`}
+                src={`/mau/designer/${wedding.designerTemplate.id}/embed`}
+                title="Xem trước mẫu thiết kế Designer"
+                className="h-full w-full border-0 bg-bg"
+              />
+            )
+          ) : (
+            <MobilePreviewFrame
+              scrollRef={phoneScrollRef}
+              lockedScroll={!previewOpened}
+            >
+              <TemplatePreviewRenderer
+                key={draftTemplateId}
+                templateId={draftTemplateId}
+                data={previewData}
+                mode="preview"
+                contained
+                viewport="phone"
+                isOpened={previewOpened}
+                onOpenedChange={setPreviewOpened}
+                externalMusicControl
+              />
+            </MobilePreviewFrame>
+          )}
         </PhoneFrame>
       </div>
     </div>
@@ -401,13 +645,26 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                 "rounded-full border px-2.5 py-0.5 text-xs font-medium",
                 wedding.plan === "free" && "border-sage bg-surface text-text",
                 wedding.plan === "pro" &&
-                  "border-accent bg-accent text-accent-fg font-semibold",
+                "border-accent bg-accent text-accent-fg font-semibold",
                 wedding.plan === "vip" &&
-                  "border-vip-border bg-vip-bg text-vip-fg font-semibold",
+                "border-vip-border bg-vip-bg text-vip-fg font-semibold",
               )}
             >
               Gói {getPlanLabel(wedding.plan)}
             </span>
+            {wedding.plan !== "vip" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setUpgradeTargetPlan(wedding.plan === "free" ? "pro" : "vip");
+                  setUpgradeModalOpen(true);
+                }}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#B89B72]/50 bg-[#F4EFEA] px-3 py-0.5 text-xs font-semibold text-[#7A1C24] transition hover:bg-[#FAF8F5]"
+              >
+                <Crown className="h-3.5 w-3.5 text-[#B89B72]" />
+                <span>Nâng cấp {wedding.plan === "free" ? "Standard / Pro" : "lên Pro"}</span>
+              </button>
+            )}
             {isDirty && (
               <span className="rounded-full border border-accent/50 bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-text">
                 Chưa lưu thay đổi
@@ -423,23 +680,49 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopyPublic}>
-            {copiedPublic ? (
-              <Check className="h-3.5 w-3.5 text-success-fg" aria-hidden="true" />
-            ) : (
-              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-            <span>{copiedPublic ? "Đã chép link chung" : "Sao chép link chung"}</span>
-          </Button>
-          <a
-            href={`/w/${wedding.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent-text"
-          >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Mở trang thiệp</span>
-          </a>
+          {wedding.plan === "free" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setUpgradeTargetPlan("pro");
+                setUpgradeModalOpen(true);
+              }}
+              className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#B89B72]/50 bg-[#F4EFEA] px-3 text-xs font-medium text-[#7A1C24] transition hover:bg-[#FAF8F5]"
+            >
+              <Crown className="h-3.5 w-3.5 text-[#B89B72]" />
+              <span>Link chung chỉ có ở gói Standard — Nâng cấp ngay</span>
+            </button>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={handleCopyPublic}>
+                {copiedPublic ? (
+                  <Check className="h-3.5 w-3.5 text-success-fg" aria-hidden="true" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                <span>{copiedPublic ? "Đã chép link chung" : "Sao chép link chung"}</span>
+              </Button>
+              <a
+                href={`/w/${wedding.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent-text"
+              >
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Mở trang thiệp</span>
+              </a>
+              <a
+                href={`/led/${wedding.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors hover:border-accent/60 hover:bg-surface-muted hover:text-accent-text"
+                title="Mở màn hình chiếu LED tiệc cưới"
+              >
+                <Tv className="h-3.5 w-3.5 text-accent-text" aria-hidden="true" />
+                <span>Màn hình LED</span>
+              </a>
+            </>
+          )}
         </div>
       </div>
 
@@ -449,34 +732,41 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
         className="-mx-4 overflow-x-auto border-b border-border px-4 lg:hidden"
       >
         <div className="flex min-w-max gap-1">
-          {[...SIDEBAR_TABS, { id: "preview" as const, label: "Xem trước", Icon: Smartphone }].map(
-            ({ id, label, Icon }) => {
-              const active = activeTab === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => handleSelectTab(id)}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "inline-flex cursor-pointer items-center gap-2 border-b-2 px-3.5 py-3 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm",
-                    active
-                      ? "border-accent text-accent-text"
-                      : "border-transparent text-fg-muted hover:border-border hover:text-fg",
-                  )}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  <span>{label}</span>
-                  {id === "info" && isDirty && (
-                    <span
-                      className="h-2 w-2 rounded-full bg-accent"
-                      aria-label="Có thay đổi chưa lưu"
-                    />
-                  )}
-                </button>
-              );
-            },
-          )}
+          {[
+            SIDEBAR_TABS[0],
+            { id: "preview" as const, label: "Xem trước", Icon: Smartphone, badge: undefined },
+            ...SIDEBAR_TABS.slice(1),
+          ].map(({ id, label, Icon, badge }) => {
+            const active = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleSelectTab(id)}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "inline-flex cursor-pointer items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm",
+                  active
+                    ? "border-accent text-accent-text"
+                    : "border-transparent text-fg-muted hover:border-border hover:text-fg",
+                )}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span>{label}</span>
+                {badge && (
+                  <span className="rounded bg-[#B89B72]/20 px-1.5 py-0.2 text-[9px] font-bold text-[#8A6D3B]">
+                    {badge}
+                  </span>
+                )}
+                {id === "info" && isDirty && (
+                  <span
+                    className="h-2 w-2 rounded-full bg-accent"
+                    aria-label="Có thay đổi chưa lưu"
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
 
@@ -494,7 +784,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
             aria-label="Mục quản lý thiệp"
             className="sticky top-16 space-y-1.5 rounded-2xl border border-border bg-surface p-2"
           >
-            {SIDEBAR_TABS.map(({ id, label, Icon }) => {
+            {CORE_SIDEBAR_TABS.map(({ id, label, Icon, badge }) => {
               const active = activeTab === id;
               return (
                 <button
@@ -513,42 +803,104 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{label}</span>
                   </span>
-                  {id === "info" && isDirty && (
-                    <span
-                      className={cn(
-                        "h-2 w-2 shrink-0 rounded-full",
-                        active ? "bg-accent-fg" : "bg-accent",
-                      )}
-                      aria-label="Chưa lưu"
-                    />
+                  <div className="flex items-center gap-1.5">
+                    {badge && (
+                      <span
+                        className={cn(
+                          "rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide",
+                          active
+                            ? "bg-white/20 text-white"
+                            : "bg-[#B89B72]/20 text-[#8A6D3B]",
+                        )}
+                      >
+                        {badge}
+                      </span>
+                    )}
+                    {id === "info" && isDirty && (
+                      <span
+                        className={cn(
+                          "h-2 w-2 shrink-0 rounded-full",
+                          active ? "bg-accent-fg" : "bg-accent",
+                        )}
+                        aria-label="Chưa lưu"
+                      />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Subtle Divider: Tính năng sảnh tiệc · Pro */}
+            <div className="pt-3 pb-1 px-3">
+              <div className="border-t border-border pt-2 text-[10px] font-semibold uppercase tracking-wider text-[#B89B72]">
+                Tính năng sảnh tiệc · Pro
+              </div>
+            </div>
+
+            {VIP_SIDEBAR_TABS.map(({ id, label, Icon, badge }) => {
+              const active = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => handleSelectTab(id)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors",
+                    active
+                      ? "bg-accent text-accent-fg font-semibold"
+                      : "text-fg-muted hover:bg-surface-muted hover:text-fg",
                   )}
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>{label}</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {badge && (
+                      <span
+                        className={cn(
+                          "rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide",
+                          active
+                            ? "bg-white/20 text-white"
+                            : "bg-[#B89B72]/20 text-[#8A6D3B]",
+                        )}
+                      >
+                        {badge}
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
           </nav>
         </aside>
 
-        <section className="min-w-0">
+        <section id="dashboard-tab-content" className="min-w-0">
           {activeTab === "info" && (
-            <WeddingInfoEditor
-              wedding={wedding}
-              draftContent={draftContent}
-              draftTemplateId={draftTemplateId}
-              photos={photos}
-              isDirty={isDirty}
-              saving={savingInfo}
-              saveError={saveError}
-              fieldErrors={fieldErrors}
-              onDraftChange={setDraftContent}
-              onTemplateChange={(tplId) => {
-                setDraftTemplateId(tplId);
-                setPreviewOpened(false);
-              }}
-              onPhotosStateChange={handlePhotosStateChange}
-              onSave={handleSaveInfo}
-              onResetDraft={handleResetDraft}
-              onDeleted={() => router.replace("/dashboard")}
-            />
+            <div className="space-y-6">
+              <WeddingInfoEditor
+                wedding={wedding}
+                draftContent={draftContent}
+                draftTemplateId={draftTemplateId}
+                designerCanvas={wedding.designerCanvas}
+                photos={photos}
+                isDirty={isDirty}
+                saving={savingInfo}
+                saveError={saveError}
+                fieldErrors={fieldErrors}
+                onDraftChange={setDraftContent}
+                onTemplateChange={(tplId) => {
+                  setDraftTemplateId(tplId);
+                  setPreviewOpened(false);
+                }}
+                onDesignerAssignment={handleDesignerAssignment}
+                onPhotosStateChange={handlePhotosStateChange}
+                onSave={handleSaveInfo}
+                onResetDraft={handleResetDraft}
+                onDeleted={() => router.replace("/dashboard")}
+              />
+            </div>
           )}
 
           {activeTab === "events" && (
@@ -563,11 +915,68 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
 
           {activeTab === "photos" && (
             <PhotosManager
+              templateId={wedding.templateId}
               weddingId={wedding.id}
+              weddingSlug={wedding.slug}
               plan={wedding.plan}
               content={draftContent}
               photos={photos}
+              designerImageFields={designerImageFields}
+              ledToken={wedding.ledToken}
               onPhotosStateChange={handlePhotosStateChange}
+            />
+          )}
+
+          {activeTab === "moderation" && (
+            <PhotoModerator
+              weddingSlug={wedding.slug}
+              weddingId={wedding.id}
+              plan={wedding.plan}
+              coupleTitle={
+                [draftContent.couple?.groomName, draftContent.couple?.brideName]
+                  .filter(Boolean)
+                  .join(" & ") || "Tiệc Cưới"
+              }
+              weddingDate={draftContent.date}
+              photos={photos}
+              initialApprovalMode={draftContent.photoApprovalMode}
+              initialModeration={draftContent.photoModeration}
+              onModerationChange={(nextMod, nextMode) => {
+                const next = {
+                  ...draftContent,
+                  photoModeration: nextMod,
+                  ...(nextMode ? { photoApprovalMode: nextMode } : {}),
+                };
+                setDraftContent(next);
+                setWedding((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        content: {
+                          ...prev.content,
+                          photoModeration: nextMod,
+                          ...(nextMode ? { photoApprovalMode: nextMode } : {}),
+                        },
+                      }
+                    : prev,
+                );
+              }}
+              onPhotoDeleted={(photoId) => {
+                setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+              }}
+            />
+          )}
+
+          {activeTab === "assistant" && (
+            <AssistantPinManager
+              weddingId={wedding.id}
+              weddingSlug={wedding.slug}
+              plan={wedding.plan}
+              content={draftContent}
+              onContentChange={(nextContent) => {
+                setDraftContent(nextContent);
+                setWedding((prev) => (prev ? { ...prev, content: nextContent } : prev));
+              }}
             />
           )}
 
@@ -576,14 +985,52 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               weddingId={wedding.id}
               plan={wedding.plan}
               events={events}
+              mealMode={draftContent.mealMode ?? "meat"}
+              onMealModeChange={(mode) => {
+                const next = { ...draftContent, mealMode: mode };
+                setDraftContent(next);
+                void handleSaveInfo(next);
+              }}
               onGuestsChanged={() => setStatsRefreshSignal((n) => n + 1)}
+              initialFilter={guestFilter}
+              initialEventId={guestEventId}
             />
           )}
 
-          {activeTab === "wishes" && <WishList weddingId={wedding.id} />}
+          {activeTab === "wishes" && (
+            <WishList
+              weddingId={wedding.id}
+              wishesHidden={(draftContent.hiddenSections ?? []).includes("rsvp")}
+              showOnCard={draftContent.showWishesOnCard === true}
+              approvalMode={draftContent.wishApprovalMode === "auto" ? "auto" : "manual"}
+              displayStyle={draftContent.wishDisplayStyle === "overlay" ? "overlay" : "box"}
+              onToggleShowOnCard={(next) => {
+                const updated = { ...draftContent, showWishesOnCard: next };
+                setDraftContent(updated);
+                void handleSaveInfo(updated);
+              }}
+              onApprovalModeChange={(mode) => {
+                setDraftContent((prev) =>
+                  prev ? { ...prev, wishApprovalMode: mode } : prev,
+                );
+                setWedding((prev) =>
+                  prev ? { ...prev, content: { ...prev.content, wishApprovalMode: mode } } : prev,
+                );
+              }}
+              onDisplayStyleChange={(style) => {
+                const updated = { ...draftContent, wishDisplayStyle: style };
+                setDraftContent(updated);
+                void handleSaveInfo(updated);
+              }}
+            />
+          )}
 
           {activeTab === "stats" && (
-            <StatCards weddingId={wedding.id} refreshSignal={statsRefreshSignal} />
+            <StatCards
+              weddingId={wedding.id}
+              refreshSignal={statsRefreshSignal}
+              onNavigate={handleNavigateFromStats}
+            />
           )}
 
           {activeTab === "preview" && (
@@ -641,6 +1088,32 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
           </Button>
         </div>
       </Dialog>
+
+      <DesignerPreviewEditor
+        element={editingElement}
+        content={draftContent}
+        events={events}
+        onClose={() => setEditingElement(null)}
+        onApply={async (next) => {
+          const ok = await handleSaveInfo(next);
+          if (ok) setEditingElement(null);
+          return ok;
+        }}
+      />
+
+      {wedding && (
+        <UpgradeModal
+          open={upgradeModalOpen}
+          currentPlan={wedding.plan}
+          weddingId={wedding.id}
+          initialTargetPlan={upgradeTargetPlan}
+          onClose={() => setUpgradeModalOpen(false)}
+          onSuccess={() => {
+            showToast("Nâng cấp gói thành công!", "success");
+            loadWedding();
+          }}
+        />
+      )}
     </div>
   );
 }

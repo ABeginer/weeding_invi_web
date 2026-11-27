@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn, resolveEventIso } from "@/lib/utils";
+import { getVisibleEvents, getNearestUpcomingEvent } from "@/lib/events";
 import { RevealSection } from "./RevealSection";
 import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
 
@@ -36,8 +37,9 @@ function padTwo(value: number): string {
 export function Countdown() {
   const data = useWeddingContent();
   const isContained = useInvitationContained();
-  const primaryEvent = data.events[0];
-  const rawDate = primaryEvent?.startsAt ?? data.date;
+  const visibleEvents = getVisibleEvents(data);
+  const targetEvent = getNearestUpcomingEvent(visibleEvents, data.date);
+  const rawDate = targetEvent?.startsAt ?? data.date;
   const targetIso = React.useMemo(
     () => (rawDate ? resolveEventIso(rawDate) : ""),
     [rawDate],

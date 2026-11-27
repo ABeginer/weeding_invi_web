@@ -3,7 +3,7 @@
 import { Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RevealSection } from "./RevealSection";
-import { useInvitationContained } from "./WeddingContentProvider";
+import { useInvitationContained, useWeddingContent } from "./WeddingContentProvider";
 
 interface GiftQRProps {
   onOpenGift?: () => void;
@@ -11,6 +11,8 @@ interface GiftQRProps {
 
 export function GiftQR({ onOpenGift }: GiftQRProps) {
   const isContained = useInvitationContained();
+  const data = useWeddingContent();
+  const isOliveGarden = data.templateId === "vuon-o-liu" || data.templateId === "basic-1";
 
   if (!onOpenGift) return null;
 
@@ -39,7 +41,7 @@ export function GiftQR({ onOpenGift }: GiftQRProps) {
               : "text-[clamp(30px,8.2vw,40px)]",
           )}
         >
-          Hộp Quà Mừng
+          {isOliveGarden ? "HỘP MỪNG CƯỚI" : "Hộp Quà Mừng"}
         </h2>
 
         <p
@@ -48,7 +50,9 @@ export function GiftQR({ onOpenGift }: GiftQRProps) {
             isContained ? "text-[12.5px]" : "text-[13.5px] sm:text-[14.5px]",
           )}
         >
-          Sự hiện diện của bạn là món quà quý giá nhất. Nếu muốn gửi thêm tấm lòng chúc phúc tới hai gia đình, hãy mở hộp quà bên dưới nhé.
+          {isOliveGarden
+            ? "Sự hiện diện của bạn là món quà Quý giá nhất đối với chúng tôi"
+            : "Sự hiện diện của bạn là món quà quý giá nhất. Nếu muốn gửi thêm tấm lòng chúc phúc tới hai gia đình, hãy mở hộp quà bên dưới nhé."}
         </p>
 
         <div className="mt-5">

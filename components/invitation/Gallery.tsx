@@ -120,7 +120,7 @@ export function Gallery() {
           <img
             src={activePhoto.url}
             alt={activePhoto.alt}
-            className="max-h-[64dvh] w-auto max-w-full rounded-lg object-contain select-none"
+            className="max-h-[64dvh] w-auto max-w-full rounded-lg object-contain select-none transition-opacity duration-500 ease-luxury"
           />
 
           <button
@@ -197,7 +197,9 @@ export function Gallery() {
         </h2>
 
         <p className="mx-auto mt-3 max-w-[380px] font-inv-serif text-[13.5px] leading-[1.6] text-inv-cream-text/90 sm:text-[14.5px]">
-          {data.ui.gallerySubtitle}
+          {data.templateId === "vuon-o-liu" || data.templateId === "basic-1"
+            ? "Những khung hình nhỏ giữ lại hành trình của chúng tôi — từ ánh mắt đầu tiên đến ngày cùng nhau về chung một nhà. Mời bạn cùng chúng tôi cất giữ những khoảnh khắc thật bình yên này."
+            : data.ui.gallerySubtitle}
         </p>
       </div>
 

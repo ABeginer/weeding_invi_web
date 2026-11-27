@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TemplateDemoViewer } from "@/components/demo/template-demo-viewer";
 import { SITE_NAME } from "@/config/site";
-import { getAuth0 } from "@/lib/auth0";
 import { getTemplateMeta } from "@/templates/registry";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ templateId: string }>;
+  searchParams: Promise<{ embed?: string; opened?: string; externalAudio?: string; silent?: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -29,36 +29,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function TemplateDemoPage({ params }: PageProps) {
+export default async function TemplateDemoPage({ params, searchParams }: PageProps) {
   const { templateId } = await params;
+  const { embed, opened, externalAudio } = await searchParams;
   const tpl = getTemplateMeta(templateId);
 
   if (!tpl) {
     notFound();
   }
 
-  let isAuthenticated = false;
-  let userEmail: string | null = null;
-  try {
-    const session = await getAuth0().getSession();
-    isAuthenticated = Boolean(session);
-    if (session?.user) {
-      const userObj = session.user as Record<string, unknown>;
-      const rawEmail = userObj.email ?? userObj["https://thiepcuoi/email"];
-      if (typeof rawEmail === "string" && rawEmail.trim()) {
-        userEmail = rawEmail.trim();
-      }
-    }
-  } catch {
-    isAuthenticated = false;
-    userEmail = null;
-  }
-
+  // Trạng thái đăng nhập được đọc nhẹ phía client qua useUser() trong TemplateDemoViewer,
+  // tránh chặn SSR/TTFB bởi Auth0 trên cả bản chính lẫn ?embed=1.
   return (
     <TemplateDemoViewer
       template={tpl}
-      isAuthenticated={isAuthenticated}
-      userEmail={userEmail}
+      isAuthenticated={false}
+      userEmail={null}
+      embed={embed === "1"}
+      initialOpened={opened === "1"}
+      externalAudio={externalAudio === "1" || embed === "1"}
     />
   );
 }

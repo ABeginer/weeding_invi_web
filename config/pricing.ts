@@ -1,13 +1,26 @@
 import type { WeddingPlan } from "@/lib/types";
+import { getTemplateCollection } from "@/templates/registry";
+
+const AVAILABLE_TEMPLATES = getTemplateCollection().filter(
+  (template) => !template.isPlaceholder,
+);
+const FREE_TEMPLATE_COUNT = AVAILABLE_TEMPLATES.filter(
+  (template) => template.plan === "free",
+).length;
+const TOTAL_TEMPLATE_COUNT = AVAILABLE_TEMPLATES.length;
 
 export interface PricingTier {
   id: WeddingPlan;
   name: string;
   price: string;
+  originalPrice?: string;
+  promoNote?: string;
   tagline: string;
   badge?: string;
   ctaLabel: string;
   highlighted?: boolean;
+  /** Ẩn khỏi bảng giá/CTA nhưng vẫn giữ dữ liệu cho khách VIP cũ. */
+  hidden?: boolean;
 }
 
 export interface PricingCell {
@@ -26,26 +39,33 @@ export const PRICING_TIERS: PricingTier[] = [
     id: "free",
     name: "Gói Miễn phí",
     price: "0đ",
-    tagline: "Dùng thử và đám cưới nhỏ.",
+    tagline: "Trải nghiệm đầy đủ trước khi quyết định.",
     ctaLabel: "Dùng miễn phí",
   },
   {
     id: "pro",
-    name: "Gói Tiêu chuẩn (Pro)",
-    price: "199.000đ",
-    tagline: "Đầy đủ tính năng cho ngày trọng đại.",
-    badge: "Phổ biến nhất",
-    ctaLabel: "Chọn gói Pro",
+    name: "Gói Standard",
+    price: "159.000đ",
+    originalPrice: "199.000đ",
+    promoNote: "Ưu đãi giai đoạn ra mắt",
+    tagline: "Trọn vẹn cho khâu mời cưới & chốt mâm tiệc.",
+    badge: "PHỔ BIẾN NHẤT",
+    ctaLabel: "Chọn gói Standard",
     highlighted: true,
   },
   {
     id: "vip",
-    name: "Gói Cao cấp (VIP)",
+    name: "Gói Pro",
     price: "399.000đ",
-    tagline: "Trọn bộ đặc quyền và mẫu độc quyền.",
-    ctaLabel: "Chọn gói VIP",
+    originalPrice: "499.000đ",
+    promoNote: "Ưu đãi giai đoạn ra mắt",
+    tagline: "Đẳng cấp & tương tác trực tiếp tại nhà hàng.",
+    badge: "TRẢI NGHIỆM SẢNH TIỆC",
+    ctaLabel: "Chọn gói Pro",
   },
 ];
+
+export const VIP_SALES_ENABLED = true;
 
 export const PRICING_ROWS: PricingRow[] = [
   {
@@ -61,18 +81,18 @@ export const PRICING_ROWS: PricingRow[] = [
     id: "templates",
     feature: "Mẫu thiệp",
     values: {
-      free: { text: "3 mẫu" },
-      pro: { text: "Tất cả mẫu Pro" },
-      vip: { text: "Tất cả mẫu + mẫu độc quyền" },
+      free: { text: `${FREE_TEMPLATE_COUNT} mẫu miễn phí` },
+      pro: { text: `Toàn bộ ${TOTAL_TEMPLATE_COUNT} mẫu hiện có` },
+      vip: { text: `Toàn bộ ${TOTAL_TEMPLATE_COUNT} mẫu hiện có` },
     },
   },
   {
     id: "music",
     feature: "Nhạc nền",
     values: {
-      free: { text: "3 bài có sẵn" },
-      pro: { text: "Tải nhạc MP3 lên" },
-      vip: { text: "Tải nhạc MP3 lên" },
+      free: { text: "Nhạc nền có sẵn theo mẫu" },
+      pro: { text: "Nhạc nền có sẵn theo mẫu" },
+      vip: { text: "Nhạc nền có sẵn theo mẫu" },
     },
   },
   {
@@ -80,8 +100,8 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Ảnh trên thiệp",
     values: {
       free: { text: "5 ảnh" },
-      pro: { text: "30 ảnh HD" },
-      vip: { text: "30 ảnh HD" },
+      pro: { text: "30 ảnh album cưới HD" },
+      vip: { text: "50 ảnh album cưới HD" },
     },
   },
   {
@@ -94,21 +114,21 @@ export const PRICING_ROWS: PricingRow[] = [
     },
   },
   {
-    id: "retention",
-    feature: "Lưu trữ",
+    id: "views",
+    feature: "Lượt xem thiệp",
     values: {
-      free: { text: "30 ngày" },
-      pro: { text: "1 năm" },
-      vip: { text: "Vĩnh viễn" },
+      free: { text: "Không giới hạn" },
+      pro: { text: "Không giới hạn" },
+      vip: { text: "Không giới hạn" },
     },
   },
   {
-    id: "branding",
-    feature: "Logo",
+    id: "retention",
+    feature: "Lưu trữ",
     values: {
-      free: { text: "Có logo chân trang" },
-      pro: { text: "Không logo" },
-      vip: { text: "Không logo" },
+      free: { text: "6 tháng" },
+      pro: { text: "1 năm" },
+      vip: { text: "2 năm" },
     },
   },
   {
@@ -116,8 +136,8 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Xuất danh sách khách ra Excel",
     values: {
       free: { text: "Không hỗ trợ" },
-      pro: { text: "Sắp có", comingSoon: true },
-      vip: { text: "Sắp có", comingSoon: true },
+      pro: { text: "CSV mở bằng Excel (UTF-8)" },
+      vip: { text: "CSV mở bằng Excel (UTF-8)" },
     },
   },
   {
@@ -125,8 +145,8 @@ export const PRICING_ROWS: PricingRow[] = [
     feature: "Mừng cưới QR",
     values: {
       free: { text: "Chỉ hiện thông tin chữ" },
-      pro: { text: "Sắp có", comingSoon: true },
-      vip: { text: "Sắp có", comingSoon: true },
+      pro: { text: "2 ảnh QR (nhà trai & nhà gái)" },
+      vip: { text: "2 ảnh QR (nhà trai & nhà gái)" },
     },
   },
 ];

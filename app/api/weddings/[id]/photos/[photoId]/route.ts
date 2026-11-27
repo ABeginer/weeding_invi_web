@@ -47,6 +47,12 @@ export const DELETE = authRoute<Ctx>(async (_req, user, { params }) => {
   }
 
   const currentContent = normalizeWeddingContent(wedding.content);
+  const nextModeration = { ...(currentContent.photoModeration || {}) };
+  const moderationChanged = Boolean(nextModeration[photoId]);
+  if (moderationChanged) {
+    delete nextModeration[photoId];
+  }
+
   const nextContent = {
     ...currentContent,
     heroPhotoId:
@@ -55,9 +61,11 @@ export const DELETE = authRoute<Ctx>(async (_req, user, { params }) => {
       currentContent.groomPhotoId === photoId ? null : currentContent.groomPhotoId,
     bridePhotoId:
       currentContent.bridePhotoId === photoId ? null : currentContent.bridePhotoId,
+    ...(moderationChanged ? { photoModeration: nextModeration } : {}),
   };
 
   if (
+    moderationChanged ||
     nextContent.heroPhotoId !== currentContent.heroPhotoId ||
     nextContent.groomPhotoId !== currentContent.groomPhotoId ||
     nextContent.bridePhotoId !== currentContent.bridePhotoId

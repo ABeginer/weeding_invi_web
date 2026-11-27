@@ -17,6 +17,16 @@ interface AddGuestDialogProps {
   onCreated: (guest: Guest) => void;
 }
 
+const ROLE_PILLS = [
+  { id: "close_friend", label: "Bạn thân", group: "close_friend" as const },
+  { id: "coworker", label: "Đồng nghiệp", group: "peer_formal" as const },
+  { id: "sibling", label: "Anh / Chị", group: "peer_formal" as const },
+  { id: "elder", label: "Cô / Chú", group: "elder" as const },
+  { id: "boss", label: "Sếp", group: "elder" as const },
+  { id: "family", label: "Gia đình", group: "family" as const },
+  { id: "vip_guest", label: "Khách quý", group: "elder" as const },
+];
+
 export function AddGuestDialog({
   weddingId,
   events,
@@ -26,6 +36,9 @@ export function AddGuestDialog({
 }: AddGuestDialogProps) {
   const { showToast } = useToast();
   const [name, setName] = React.useState("");
+  const [selectedRole, setSelectedRole] = React.useState<string | null>(null);
+  const [dietary, setDietary] = React.useState<"standard" | "vegetarian">("standard");
+  const [tableNumber, setTableNumber] = React.useState("");
   const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -33,6 +46,9 @@ export function AddGuestDialog({
   React.useEffect(() => {
     if (open) {
       setName("");
+      setSelectedRole(null);
+      setDietary("standard");
+      setTableNumber("");
       setSelectedEventIds([]);
       setError(null);
     }
@@ -67,7 +83,17 @@ export function AddGuestDialog({
 
     setSubmitting(true);
     try {
-      const created = await createGuest(weddingId, trimmedName);
+      const roleItem = ROLE_PILLS.find((r) => r.id === selectedRole);
+      const relationshipGroup = roleItem ? roleItem.group : null;
+      const trimmedTable = tableNumber.trim() || null;
+
+      const created = await createGuest(weddingId, {
+        name: trimmedName,
+        relationshipGroup,
+        tableNumber: trimmedTable,
+        dietaryPreference: dietary,
+      });
+
       if (selectedEventIds.length > 0) {
         try {
           const res = await setGuestEvents(weddingId, created.id, selectedEventIds);
@@ -115,6 +141,76 @@ export function AddGuestDialog({
           maxLength={100}
           autoFocus
         />
+
+        {/* Vai vế / Cách xưng hô pills */}
+        <div>
+          <label className="block text-xs font-medium text-[#1F1D1A] mb-1.5">
+            Vai vế / Cách xưng hô (tùy chọn)
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {ROLE_PILLS.map((pill) => {
+              const isSelected = selectedRole === pill.id;
+              return (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={() => setSelectedRole(isSelected ? null : pill.id)}
+                  className={cn(
+                    "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer",
+                    isSelected
+                      ? "border border-[#7A1C24] bg-[#7A1C24] text-white shadow-xs font-semibold"
+                      : "border border-[#E8E2D9] bg-[#FAF8F5] text-[#6B655E] hover:border-[#7A1C24]/40 hover:text-[#1F1D1A]",
+                  )}
+                >
+                  {pill.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Thực đơn & Số bàn */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-[#1F1D1A] mb-1.5">
+              Thực đơn đãi tiệc
+            </label>
+            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl border border-[#E8E2D9] bg-[#FAF8F5]">
+              <button
+                type="button"
+                onClick={() => setDietary("standard")}
+                className={cn(
+                  "rounded-lg py-1.5 text-xs font-medium transition-all cursor-pointer text-center",
+                  dietary === "standard"
+                    ? "bg-white text-[#1F1D1A] shadow-xs font-semibold"
+                    : "text-[#6B655E] hover:text-[#1F1D1A]",
+                )}
+              >
+                🍖 Ăn mặn
+              </button>
+              <button
+                type="button"
+                onClick={() => setDietary("vegetarian")}
+                className={cn(
+                  "rounded-lg py-1.5 text-xs font-medium transition-all cursor-pointer text-center",
+                  dietary === "vegetarian"
+                    ? "bg-[#2F6F4E] text-white shadow-xs font-semibold"
+                    : "text-[#6B655E] hover:text-[#1F1D1A]",
+                )}
+              >
+                🥗 Ăn chay
+              </button>
+            </div>
+          </div>
+
+          <Input
+            label="Số bàn tiệc (tùy chọn)"
+            placeholder="Ví dụ: Bàn 08"
+            value={tableNumber}
+            onChange={(e) => setTableNumber(e.target.value)}
+            maxLength={40}
+          />
+        </div>
 
         {events && events.length > 0 && (
           <div className="space-y-2 pt-1">
