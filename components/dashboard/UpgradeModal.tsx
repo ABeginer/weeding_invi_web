@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import QRCode from "qrcode";
+import { SITE_CONFIG, ZALO_SUPPORT_URL } from "@/config/site";
 import { createPayosOrder, getOrder } from "@/lib/api";
 import type { PayosOrderResponse, WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,7 @@ async function copyText(text: string): Promise<boolean> {
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch {}
+  } catch { }
   try {
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -163,9 +164,12 @@ export function UpgradeModal({
     };
   }, [order?.qrCode]);
 
+  const [pollTimedOut, setPollTimedOut] = React.useState(false);
+
   // Polling trạng thái đơn hàng mỗi 3 giây (giới hạn tối đa 100 lần ~ 5 phút, guard document.hidden)
   React.useEffect(() => {
     if (!order?.orderId || isPaid || !open) return;
+    setPollTimedOut(false);
 
     let pollCount = 0;
     const maxPolls = 100;
@@ -175,6 +179,7 @@ export function UpgradeModal({
       pollCount += 1;
       if (pollCount > maxPolls) {
         window.clearInterval(intervalId);
+        setPollTimedOut(true);
         return;
       }
       try {
@@ -501,6 +506,22 @@ export function UpgradeModal({
                     </div>
                   </div>
 
+                  {pollTimedOut && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                      Hết thời gian tự động kiểm tra (5 phút). Nếu bạn đã chuyển khoản cho mã đơn{" "}
+                      <strong>{order.description}</strong>, vui lòng tải lại trang hoặc nhắn{" "}
+                      <a
+                        href={ZALO_SUPPORT_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold underline"
+                      >
+                        Zalo hỗ trợ ({SITE_CONFIG.contactPhone})
+                      </a>{" "}
+                      để được kiểm tra ngay.
+                    </div>
+                  )}
+
                   {/* Link mở trang thanh toán payOS dự phòng */}
                   {order.checkoutUrl && (
                     <div className="text-center pt-1">
@@ -524,12 +545,12 @@ export function UpgradeModal({
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-[#E8E2D9] bg-white px-5 py-3 text-xs text-[#6B655E]">
           <a
-            href="https://zalo.me/0902955594"
+            href={ZALO_SUPPORT_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="transition hover:text-[#7A1C24] hover:underline"
           >
-            Cần hỗ trợ? Zalo: 0902 955 594
+            Cần hỗ trợ? Zalo: {SITE_CONFIG.contactPhone}
           </a>
           <button
             type="button"

@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   MapPin,
   ExternalLink,
-  Film,
 } from "lucide-react";
 import { m, useReducedMotion, AnimatePresence } from "motion/react";
 import { GiftModal } from "@/components/invitation/GiftModal";
@@ -18,7 +18,31 @@ import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
 import { FilmFrame35mm } from "../shared/FilmFrame35mm";
+import {
+  HkCharacterFlipCards,
+  HkCueSheetTimeline,
+  HkExtendedFilmStrip,
+  HkFilmStorySection,
+  HkScratchDateCard,
+  type HkStandardTheme,
+} from "../shared/HongKongStandardBlocks";
+import {
+  HkArtDeco3dDoorsOverlay,
+  type HkRevealPhase,
+} from "../shared/HongKongStandardCovers";
 import type { WeddingTemplateProps } from "../types";
+
+const HAO_QUANG_STANDARD_THEME: HkStandardTheme = {
+  accent: "#D8B15B",
+  accentLight: "#F1D693",
+  crimson: "#6E0F1D",
+  surfaceBg: "#0A090B",
+  cardBg: "#131114",
+  cardBorder: "rgba(216, 177, 91, 0.4)",
+  textPrimary: "#F4ECE0",
+  textMuted: "#C7BEB2",
+  foilStops: ["#8E6920", "#D8B15B", "#F6DF9C", "#BA913C", "#6E4F16"],
+};
 
 /* ============================================================
    BẢNG MÀU CHÍNH THỨC: HÀO QUANG HƯƠNG CẢNG (hao-quang-huong-cang)
@@ -77,65 +101,84 @@ export function HaoQuangHuongCangTemplate({
   const shouldReduceMotion = useReducedMotion();
 
   // -------------------------------------------------------------
-  // TRẠNG THÁI MỞ BÌA (Cover)
+  // TRẠNG THÁI MỞ BÌA (Cover Standard 3 Pha Live-Hero Reveal)
   // -------------------------------------------------------------
-  const [isOpening, setIsOpening] = React.useState(false);
-  const [neonFlash, setNeonFlash] = React.useState(false);
-  const [shutterCut, setShutterCut] = React.useState(false);
+  const [revealPhase, setRevealPhase] = React.useState<HkRevealPhase>("idle");
   const [coverGone, setCoverGone] = React.useState(Boolean(parentIsOpened));
   const parentOpenedRef = React.useRef(parentIsOpened);
+  const timersRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const isOpening = revealPhase !== "idle";
+  const isRevealing = revealPhase === "stage2" || revealPhase === "stage3";
+
+  React.useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+    };
+  }, []);
 
   React.useEffect(() => {
     if (parentIsOpened && !coverGone && !isOpening) {
       setCoverGone(true);
     } else if (parentIsOpened === false && parentOpenedRef.current === true) {
       setCoverGone(false);
-      setIsOpening(false);
-      setNeonFlash(false);
-      setShutterCut(false);
+      setRevealPhase("idle");
     }
     parentOpenedRef.current = parentIsOpened;
   }, [parentIsOpened, coverGone, isOpening]);
 
   const handleOpenInvitation = () => {
     if (isOpening || coverGone) return;
-    onOpenedChange?.(true);
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
     } catch { }
-    setIsOpening(true);
 
-    playCoverSfx("vhs-shutter");
+    playCoverSfx("artdeco-grand-doors");
 
     if (shouldReduceMotion) {
-      setTimeout(() => {
-        setCoverGone(true);
-        setIsOpening(false);
-        if (!contained && typeof window !== "undefined") {
-          window.scrollTo({ top: 0, behavior: "auto" });
-        }
-      }, 200);
+      setRevealPhase("stage3");
+      timersRef.current.push(
+        setTimeout(() => {
+          setCoverGone(true);
+          setRevealPhase("idle");
+          onOpenedChange?.(true);
+          if (!contained && typeof window !== "undefined") {
+            window.scrollTo({ top: 0, behavior: "auto" });
+          }
+        }, 320),
+      );
       return;
     }
 
-    // Giai đoạn A: Bật sáng đèn neon + chớp scanlines (0 - 450ms)
-    setNeonFlash(true);
+    // Pha 1 (0 - 900ms): 2 chùm đèn pha vàng quét chữ X + sóng hạt vàng kim
+    setRevealPhase("stage1");
 
-    // Giai đoạn B: Shutter cut chuyển cảnh trailer 90s (450ms - 900ms)
-    setTimeout(() => {
-      setShutterCut(true);
-    }, 450);
+    // Pha 2 (900 - 1880ms): Cổng Art Deco 3D khép + khe sáng vàng champagne, bật Hero bên dưới
+    timersRef.current.push(
+      setTimeout(() => {
+        setRevealPhase("stage2");
+      }, 900),
+    );
 
-    // Hoàn tất mở vào thân thiệp (900ms)
-    setTimeout(() => {
-      setCoverGone(true);
-      setIsOpening(false);
-      setNeonFlash(false);
-      setShutterCut(false);
-      if (!contained && typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "auto" });
-      }
-    }, 900);
+    // Pha 3 (1880 - 3120ms): 2 cánh cửa đại sảnh 3D xoay bản lề (rotateY ±88°) lộ trực tiếp Hero
+    timersRef.current.push(
+      setTimeout(() => {
+        setRevealPhase("stage3");
+      }, 1880),
+    );
+
+    // Hoàn tất mở vào thân thiệp
+    timersRef.current.push(
+      setTimeout(() => {
+        setCoverGone(true);
+        setRevealPhase("idle");
+        onOpenedChange?.(true);
+        if (!contained && typeof window !== "undefined") {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
+      }, 3120),
+    );
   };
 
   // -------------------------------------------------------------
@@ -148,7 +191,7 @@ export function HaoQuangHuongCangTemplate({
     handleGiftClick,
     handleCloseModal: handleCloseGiftModal,
   } = useGiftBoxInteraction({
-    sfxType: "box",
+    sfxType: "artdeco-box-luxury",
     delayMs: shouldReduceMotion ? 150 : 700,
   });
 
@@ -160,7 +203,7 @@ export function HaoQuangHuongCangTemplate({
   // -------------------------------------------------------------
   // DỮ LIỆU SỰ KIỆN & THỜI GIAN
   // -------------------------------------------------------------
-  const visibleEvents = getVisibleEvents(data);
+  const visibleEvents = React.useMemo(() => getVisibleEvents(data), [data]);
   const targetEvent = getNearestUpcomingEvent(visibleEvents, data.date);
   const eventDateStr = targetEvent?.startsAt || data.date;
   const dateParts = formatWeddingDateParts(eventDateStr);
@@ -200,26 +243,17 @@ export function HaoQuangHuongCangTemplate({
   const galleryPhotos = rawGallery.slice(0, galleryLimit);
 
   // Song thân
-  const [groomFather, groomMother] = parseParents(data.couple.groomParents);
-  const [brideFather, brideMother] = parseParents(data.couple.brideParents);
+  void parseParents;
 
   // Bảng màu Dress Code
   const dressColors = getDressColors(data);
 
   // Cấu hình ẩn/hiện section
   const hidden = new Set(data.hiddenSections || []);
-  const order = data.sectionOrder || [
-    "family",
-    "calendar",
-    "map",
-    "dresscode",
-    "album",
-    "albumQr",
-    "gift",
-    "rsvp",
-  ];
+  const resolvedWeddingSlug = weddingSlug || data.weddingSlug;
+  const order = data.sectionOrder?.length ? data.sectionOrder : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
-    const idx = order.indexOf(key as any);
+    const idx = (order as readonly string[]).indexOf(key);
     return idx === -1 ? 99 : idx;
   };
 
@@ -284,7 +318,7 @@ export function HaoQuangHuongCangTemplate({
       )}
 
       {/* Preload ảnh trạng thái mở hộp quà */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/hao-quang-huong-cang/deco_box_open.webp"
         className="hidden"
         aria-hidden="true"
@@ -292,7 +326,7 @@ export function HaoQuangHuongCangTemplate({
       />
 
       {/* =========================================================
-          BÌA POSTER TỐI GIẢN & HIỆU ỨNG MỞ ĐÈN NEON + TRAILER CŨ (COVER)
+          BÌA POSTER TỐI GIẢN & VŨ ĐẠO STANDARD 3 PHA (ĐÈN PHA + CỬA 3D ART DECO)
           ========================================================= */}
       <AnimatePresence>
         {!coverGone && (
@@ -300,20 +334,27 @@ export function HaoQuangHuongCangTemplate({
             initial={{ opacity: 1 }}
             exit={{
               opacity: 0,
-              scale: shouldReduceMotion ? 1 : 1.05,
-              transition: { duration: 0.45, ease: "easeInOut" },
+              transition: { duration: 0.25, ease: "easeOut" },
             }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
-            style={{ backgroundColor: COLOR_OBSIDIAN }}
+            className={cn(
+              "inset-0 z-50 flex items-center justify-center overflow-hidden",
+              contained ? "absolute" : "fixed",
+            )}
+            style={{ backgroundColor: isRevealing ? "transparent" : COLOR_OBSIDIAN }}
           >
             {/* z-0: Nền Poster Mobile / Desktop */}
-            <div className="absolute inset-0 z-0">
+            <div
+              className={cn(
+                "absolute inset-0 z-0 transition-opacity duration-200",
+                isRevealing ? "opacity-0" : "opacity-100",
+              )}
+            >
               <picture className="h-full w-full">
                 <source
                   media="(min-width: 640px)"
                   srcSet="/templates/hao-quang-huong-cang/bg_poster_desktop.webp"
                 />
-                <img
+                <img loading="eager" fetchPriority="high"
                   src="/templates/hao-quang-huong-cang/bg_poster_mobile.webp"
                   alt="Hào Quang Hương Cảng Poster Background"
                   className="h-full w-full object-cover object-center"
@@ -323,38 +364,32 @@ export function HaoQuangHuongCangTemplate({
 
             {/* z-[5]: Lớp hạt film grain siêu nhẹ + vầng sáng neon đáy */}
             <div
-              className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-t from-[#FF1E3C]/20 via-transparent to-transparent opacity-80"
+              className={cn(
+                "pointer-events-none absolute inset-0 z-[5] bg-gradient-to-t from-[#FF1E3C]/20 via-transparent to-transparent transition-opacity duration-200",
+                isRevealing ? "opacity-0" : "opacity-80",
+              )}
               aria-hidden="true"
             />
 
-            {/* Hiệu ứng nhấp nháy đèn Neon & Nhiễu VHS khi mở thiệp (Bước A: 0 - 450ms) */}
-            {neonFlash && !shouldReduceMotion && (
-              <div
-                className="pointer-events-none absolute inset-0 z-30 animate-pulse bg-gradient-to-r from-[#FF1E3C]/30 via-[#00D8B4]/25 to-[#FF1E3C]/30 mix-blend-screen"
-                style={{
-                  boxShadow: "inset 0 0 100px rgba(255, 30, 60, 0.4)",
-                }}
-                aria-hidden="true"
-              />
-            )}
-
-            {/* Hiệu ứng Chuyển cảnh Shutter Cut / Trailer Phim Cũ (Bước B: 450 - 900ms) */}
-            {shutterCut && !shouldReduceMotion && (
-              <m.div
-                initial={{ scaleY: 0 }}
-                animate={{ scaleY: 1 }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="pointer-events-none absolute inset-0 z-40 bg-[#0A090B]"
-                aria-hidden="true"
-              />
-            )}
+            {/* Vũ đạo Standard 3 pha: Đèn pha sân khấu chữ X + 2 cánh cửa 3D Art Deco xoay bản lề */}
+            <HkArtDeco3dDoorsOverlay
+              phase={revealPhase}
+              coupleLabel={`${data.couple.groomName} & ${data.couple.brideName}`}
+              titleFont={TITLE_FONT}
+              monoFont={MONO_FONT}
+            />
 
             {/* Container Khung Poster căn giữa hoàn hảo */}
-            <div className="relative z-10 flex h-full w-full max-w-[328px] sm:max-w-[388px] flex-col items-center justify-center p-3 text-center">
+            <div
+              className={cn(
+                "relative z-10 flex h-full w-full max-w-[328px] sm:max-w-[388px] flex-col items-center justify-center p-3 text-center transition-opacity duration-200",
+                isRevealing ? "pointer-events-none opacity-0" : "opacity-100",
+              )}
+            >
 
               {/* z-10: Khung viền vàng Art Deco ôm trọn tấm poster */}
               <div className="pointer-events-none absolute inset-1 sm:inset-2 z-10">
-                <img
+                <img loading="eager" fetchPriority="high"
                   src="/templates/hao-quang-huong-cang/deco_poster_border.webp"
                   alt="Khung viền vàng Art Deco"
                   className="h-full w-full object-contain"
@@ -365,25 +400,19 @@ export function HaoQuangHuongCangTemplate({
               <div
                 className={cn(
                   "relative z-20 flex w-full flex-col items-center justify-between py-6 px-4 sm:py-8 sm:px-6 transition-all duration-300",
-                  neonFlash && "brightness-125 contrast-125",
+                  revealPhase === "stage1" && "brightness-125 contrast-125",
                 )}
                 style={{ maxHeight: "88%" }}
               >
                 {/* Đỉnh khung: Biểu tượng Song Hỷ mạ vàng + Nhãn retro */}
                 <div className="flex flex-col items-center space-y-1">
                   <div className="relative h-12 w-12 sm:h-14 sm:w-14 transition-transform duration-300 hover:scale-105">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/hao-quang-huong-cang/emblem_song_hy_gold.webp"
                       alt="Chữ Hán Song Hỷ Vàng Kim"
                       className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(216,177,91,0.5)]"
                     />
                   </div>
-                  <p
-                    className="text-[9px] sm:text-[10px] font-bold tracking-[0.25em] text-[#D8B15B] uppercase"
-                    style={{ fontFamily: MONO_FONT }}
-                  >
-                    HỒNG KÔNG RETRO · 1990S
-                  </p>
                   <p className="text-[11px] sm:text-xs font-semibold tracking-[0.2em] text-[#F4ECE0]/90 uppercase">
                     TRÂN TRỌNG KÍNH MỜI
                   </p>
@@ -415,7 +444,7 @@ export function HaoQuangHuongCangTemplate({
                 <div className="flex w-full flex-col items-center space-y-3">
                   {/* Dải phân cách mây Art Deco */}
                   <div className="w-36 sm:w-44 opacity-85">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/hao-quang-huong-cang/divider_cloud_deco.webp"
                       alt="Dải mây Art Deco"
                       className="h-auto w-full object-contain"
@@ -432,7 +461,7 @@ export function HaoQuangHuongCangTemplate({
                     </p>
                     {/* Dấu triện đỏ góc tinh tế */}
                     <div className="relative h-7 w-7 sm:h-8 sm:w-8">
-                      <img
+                      <img loading="lazy" decoding="async"
                         src="/templates/hao-quang-huong-cang/stamp_red_chop.webp"
                         alt="Dấu Triện Đỏ"
                         className="h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(255,30,60,0.4)]"
@@ -471,7 +500,16 @@ export function HaoQuangHuongCangTemplate({
       {/* =========================================================
           THÂN THIỆP ĐỒ HỌA ART DECO & KHUNG FILM 35MM
           ========================================================= */}
-      <div className={cn("relative z-10 w-full transition-opacity duration-500", !coverGone && "hidden")}>
+      <div
+        className={cn(
+          "relative z-10 w-full transition-all duration-700 ease-out",
+          !coverGone && !isRevealing
+            ? "hidden pointer-events-none opacity-0"
+            : isRevealing
+              ? "opacity-100 scale-[1.03]"
+              : "opacity-100 scale-100",
+        )}
+      >
 
         {/* Nền toàn trang có vệt sáng đỏ rượu vang Art Deco */}
         <div
@@ -484,18 +522,18 @@ export function HaoQuangHuongCangTemplate({
           {/* =========================================================
               PHẦN 1: HERO KHUNG FILM 35MM TRẦM ẤM + CREDIT PHIM (hero)
               ========================================================= */}
-          <section className="space-y-5 text-center">
+          <section style={{ order: -1 }} className="space-y-5 text-center">
 
             {/* Huy hiệu đỉnh Hero */}
             <div className="flex flex-col items-center space-y-1">
               <span
-                className="text-[10px] sm:text-[11px] font-bold tracking-[0.25em] text-[#D8B15B] uppercase"
+                className="text-[10px] sm:text-[11px] font-bold tracking-[0.15em] text-[#D8B15B] uppercase"
                 style={{ fontFamily: MONO_FONT }}
               >
-                THIỆP BÁO HỶ
+                Thiệp mời tham dự lễ cưới
               </span>
               <div className="w-28 opacity-80">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/hao-quang-huong-cang/divider_cloud_deco.webp"
                   alt="Dải mây"
                   className="h-auto w-full object-contain"
@@ -505,27 +543,25 @@ export function HaoQuangHuongCangTemplate({
 
             {/* Khung Film 35mm chuẩn CSS/SVG không che mặt nhân vật */}
             <FilmFrame35mm
-              src={data.photos?.heroUrl || "/photos/hero2.webp"}
+              src={data.photos?.heroUrl || "/demo/hongkong/01_hero_neon_street.webp"}
               alt={`Ảnh cưới ${data.couple.groomName} và ${data.couple.brideName}`}
               aspectRatio="4/5"
               stampSrc="/templates/hao-quang-huong-cang/stamp_red_chop.webp"
               stampAlt="Dấu Triện Đỏ"
               stampPosition="bottom-right"
               stampClassName="w-11 sm:w-12 drop-shadow-[0_2px_8px_rgba(255,30,60,0.5)]"
-              filmBrand="KODAK VISION3 500T"
-              frameCode="FRAME #24A"
               borderColor="border-[#D8B15B]/40"
               accentColor="text-[#D8B15B]"
               imgClassName="contrast-[1.06] saturate-[0.92] sepia-[0.08]"
             />
 
-            {/* Khối Credit Phim Hồng Kông 90s */}
+            {/* Khối Tên Cặp Đôi & Ngày Cưới Hero */}
             <div className="mx-auto max-w-sm space-y-2 pt-2">
               <p
                 className="text-[10px] font-extrabold tracking-[0.28em] text-[#D8B15B] uppercase"
                 style={{ fontFamily: MONO_FONT }}
               >
-                STARRING
+                {data.ui?.invitePrefix || "TRÂN TRỌNG KÍNH MỜI"}
               </p>
 
               {/* Tên cặp đôi 3 dòng */}
@@ -545,12 +581,14 @@ export function HaoQuangHuongCangTemplate({
                 {data.couple.brideName}
               </h2>
 
-              <p
-                className="pt-1 text-[9px] sm:text-[10px] tracking-[0.22em] text-[#D8B15B]/80 uppercase"
-                style={{ fontFamily: MONO_FONT }}
-              >
-                A CINEMATIC WEDDING STORY · 35MM
-              </p>
+              {dateParts?.dotDate && (
+                <p
+                  className="pt-1 text-xs font-bold tracking-[0.26em] text-[#D8B15B] uppercase"
+                  style={{ fontFamily: MONO_FONT }}
+                >
+                  {dateParts.dotDate}
+                </p>
+              )}
 
               {/* Lời ngỏ yêu thương */}
               {data.quote && (
@@ -562,32 +600,23 @@ export function HaoQuangHuongCangTemplate({
           </section>
 
           {/* =========================================================
-              PHẦN 2: HAI BÊN GIA ĐÌNH & CHÂN DUNG (family, couple: true)
+              PHẦN 2: HAI BÊN GIA ĐÌNH & LẬT THẺ 3D (family)
               ========================================================= */}
           {!hidden.has("family") && (
             <section style={{ order: orderOf("family") }} className="space-y-4">
               <div className="text-center">
-                <span
-                  className="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-[#D8B15B] uppercase"
-                  style={{ fontFamily: MONO_FONT }}
-                >
-                  EDITORIAL · HỒ SƠ NHÂN VẬT
-                </span>
                 <h3
-                  className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
+                  className="text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
                   HAI BÊN GIA ĐÌNH
                 </h3>
               </div>
 
-              {/* Thẻ Gia Đình 2 Cột với biểu tượng bài Tây & mạt chược ở giữa */}
               <div className="relative rounded-2xl border border-[#D8B15B]/40 bg-[#131114] p-5 shadow-xl">
-
-                {/* Biểu tượng Bài Tây & Mạt Chược Art Deco trung tâm */}
                 <div className="mx-auto mb-4 flex justify-center">
                   <div className="relative h-14 w-14">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/hao-quang-huong-cang/emblem_card_mahjong.webp"
                       alt="Quân Bài Tây và Mạt Chược"
                       className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(216,177,91,0.4)]"
@@ -595,91 +624,45 @@ export function HaoQuangHuongCangTemplate({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  {/* Cột Nhà Trai */}
-                  <div className="flex flex-col items-center space-y-3 rounded-xl border border-[#D8B15B]/20 bg-[#0A090B]/60 p-4 text-center">
-                    {data.photos?.groomUrl && (
-                      <div className="relative aspect-[3/4] w-28 overflow-hidden rounded-lg border border-[#D8B15B]/40 shadow-md">
-                        <img
-                          src={data.photos.groomUrl}
-                          alt="Ảnh Chú Rể"
-                          className="h-full w-full object-cover contrast-[1.05]"
-                        />
-                      </div>
-                    )}
-                    <span
-                      className="text-[10px] font-bold tracking-[0.2em] text-[#D8B15B] uppercase"
-                      style={{ fontFamily: MONO_FONT }}
-                    >
-                      {data.couple.groomTitle || "TRƯỞNG NAM"}
-                    </span>
-                    <h4
-                      className="text-lg font-bold uppercase tracking-wide text-[#F4ECE0]"
-                      style={{ fontFamily: TITLE_FONT }}
-                    >
-                      {data.couple.groomName}
-                    </h4>
-
-                    {/* Song thân Nhà Trai tách 2 dòng không có & */}
-                    <div className="pt-2 text-xs leading-relaxed text-[#F4ECE0]/85 border-t border-[#D8B15B]/15 w-full">
-                      <p className="font-semibold text-[#D8B15B]/90 tracking-wider text-[11px] uppercase mb-1">
-                        NHÀ TRAI
-                      </p>
-                      {groomFather && <p>{groomFather}</p>}
-                      {groomMother && <p>{groomMother}</p>}
-                    </div>
-                  </div>
-
-                  {/* Cột Nhà Gái */}
-                  <div className="flex flex-col items-center space-y-3 rounded-xl border border-[#D8B15B]/20 bg-[#0A090B]/60 p-4 text-center">
-                    {data.photos?.brideUrl && (
-                      <div className="relative aspect-[3/4] w-28 overflow-hidden rounded-lg border border-[#D8B15B]/40 shadow-md">
-                        <img
-                          src={data.photos.brideUrl}
-                          alt="Ảnh Cô Dâu"
-                          className="h-full w-full object-cover contrast-[1.05]"
-                        />
-                      </div>
-                    )}
-                    <span
-                      className="text-[10px] font-bold tracking-[0.2em] text-[#D8B15B] uppercase"
-                      style={{ fontFamily: MONO_FONT }}
-                    >
-                      {data.couple.brideTitle || "ÁI NỮ"}
-                    </span>
-                    <h4
-                      className="text-lg font-bold uppercase tracking-wide text-[#F4ECE0]"
-                      style={{ fontFamily: TITLE_FONT }}
-                    >
-                      {data.couple.brideName}
-                    </h4>
-
-                    {/* Song thân Nhà Gái tách 2 dòng không có & */}
-                    <div className="pt-2 text-xs leading-relaxed text-[#F4ECE0]/85 border-t border-[#D8B15B]/15 w-full">
-                      <p className="font-semibold text-[#D8B15B]/90 tracking-wider text-[11px] uppercase mb-1">
-                        NHÀ GÁI
-                      </p>
-                      {brideFather && <p>{brideFather}</p>}
-                      {brideMother && <p>{brideMother}</p>}
-                    </div>
-                  </div>
-                </div>
+                <HkCharacterFlipCards
+                  theme={HAO_QUANG_STANDARD_THEME}
+                  data={data}
+                  groomPhotoFallback="/demo/hongkong/02_groom_solo_mercedes.webp"
+                  bridePhotoFallback="/demo/hongkong/03_bride_solo_neon_lounge.webp"
+                  groomBadge="CHÚ RỂ"
+                  brideBadge="CÔ DÂU"
+                />
               </div>
             </section>
           )}
 
           {/* =========================================================
-              PHẦN 3: LỊCH CƯỚI, ĐẾM NGƯỢC & ĐỊA ĐIỂM (calendar, map)
+              PHẦN 4 (STANDARD): CHUYỆN CHÚNG MÌNH (story)
               ========================================================= */}
-          {(!hidden.has("calendar") || !hidden.has("map")) && (
-            <section style={{ order: orderOf("calendar") }} className="space-y-6">
+          {!hidden.has("story") && (
+            <section style={{ order: orderOf("story") }}>
+              <HkFilmStorySection
+                theme={HAO_QUANG_STANDARD_THEME}
+                data={data}
+                galleryPhotos={galleryPhotos}
+                heading="CHUYỆN CHÚNG MÌNH"
+                eyebrow=""
+                onPhotoClick={(idx) => setLightboxIndex(idx)}
+              />
+            </section>
+          )}
 
+          {/* =========================================================
+              PHẦN 3: LỄ CƯỚI & SỰ KIỆN (map)
+              ========================================================= */}
+          {!hidden.has("map") && (
+            <section style={{ order: orderOf("map") }} className="space-y-5">
               <div className="text-center">
                 <h3
                   className="text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
-                  LỊCH CÔNG CHIẾU &amp; TIỆC CƯỚI
+                  LỄ CƯỚI &amp; SỰ KIỆN
                 </h3>
               </div>
 
@@ -692,6 +675,7 @@ export function HaoQuangHuongCangTemplate({
               >
                 {visibleEvents.map((evt, idx) => {
                   const evtDate = formatWeddingDateParts(evt.startsAt);
+                  const evtLunar = evt.lunarDate ? formatLunarDateClean(evt.lunarDate) : "";
                   const directionsUrl = getEventDirectionsUrl(evt);
                   return (
                     <div
@@ -700,7 +684,7 @@ export function HaoQuangHuongCangTemplate({
                     >
                       {/* Dải mây trang trí đỉnh thẻ */}
                       <div className="mx-auto w-32 opacity-70">
-                        <img
+                        <img loading="lazy" decoding="async"
                           src="/templates/hao-quang-huong-cang/divider_cloud_deco.webp"
                           alt=""
                           className="h-auto w-full object-contain"
@@ -740,14 +724,15 @@ export function HaoQuangHuongCangTemplate({
                         <p className="text-xs text-[#F4ECE0]/80 leading-relaxed max-w-xs mx-auto">
                           {evt.venueAddress}
                         </p>
-                        {/* Ngày âm lịch không lặp chữ ngày */}
-                        <p className="text-[11px] text-[#D8B15B]/85 italic">
-                          ({formatLunarDateClean(evt.startsAt)})
-                        </p>
+                        {evtLunar && (
+                          <p className="text-[11px] text-[#D8B15B]/85 italic">
+                            (Tức ngày {evtLunar})
+                          </p>
+                        )}
                       </div>
 
                       {/* Nút Chỉ đường trên Google Maps */}
-                      {!hidden.has("map") && directionsUrl && (
+                      {directionsUrl && (
                         <div className="pt-2">
                           <a
                             href={directionsUrl}
@@ -766,6 +751,37 @@ export function HaoQuangHuongCangTemplate({
                   );
                 })}
               </div>
+            </section>
+          )}
+
+          {/* =========================================================
+              PHẦN 6: LỊCH CƯỚI & ĐẾM NGƯỢC (calendar)
+              ========================================================= */}
+          {!hidden.has("calendar") && (
+            <section style={{ order: orderOf("calendar") }} className="space-y-6">
+              <div className="text-center">
+                <h3
+                  className="text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
+                  style={{ fontFamily: TITLE_FONT }}
+                >
+                  NGÀY CHUNG ĐÔI
+                </h3>
+              </div>
+
+              {dateParts && (
+                <HkScratchDateCard
+                  theme={HAO_QUANG_STANDARD_THEME}
+                  eyebrow=""
+                  foilHeading="CÀO NHŨ VÀNG XEM NGÀY CƯỚI"
+                  weekday={dateParts.weekday}
+                  time={dateParts.time}
+                  day={dateParts.day}
+                  month={dateParts.month}
+                  year={dateParts.year}
+                  lunarStr={targetEvent?.lunarDate ? formatLunarDateClean(targetEvent.lunarDate) : ""}
+                  venueName={targetEvent?.venueName}
+                />
+              )}
 
               {/* Bảng Đếm Ngược 4 Ô tối giản */}
               <div className="rounded-2xl border border-[#D8B15B]/30 bg-[#131114] p-4 text-center">
@@ -773,7 +789,7 @@ export function HaoQuangHuongCangTemplate({
                   className="mb-3 text-[10px] font-bold tracking-[0.25em] text-[#D8B15B] uppercase"
                   style={{ fontFamily: MONO_FONT }}
                 >
-                  COUNTDOWN · THỜI GIAN ĐẾM NGƯỢC
+                  ĐẾM NGƯỢC NGÀY VUI
                 </p>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   {[
@@ -863,21 +879,12 @@ export function HaoQuangHuongCangTemplate({
           {!hidden.has("dresscode") && dressColors.length > 0 && (
             <section style={{ order: orderOf("dresscode") }} className="space-y-4">
               <div className="text-center">
-                <span
-                  className="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-[#D8B15B] uppercase"
-                  style={{ fontFamily: MONO_FONT }}
-                >
-                  DRESS CODE · BẢNG MÀU THẢM ĐỎ
-                </span>
                 <h3
-                  className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
+                  className="text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
-                  TRANG PHỤC GỢI Ý
+                  LỊCH TRÌNH &amp; TRANG PHỤC
                 </h3>
-                <p className="mt-1 text-xs text-[#F4ECE0]/75">
-                  Gợi ý sắc màu trang phục lịch thiệp để quý khách cùng hòa nhịp vào đêm tiệc điện ảnh.
-                </p>
               </div>
 
               {/* Khung ô màu hình học Art Deco */}
@@ -891,20 +898,16 @@ export function HaoQuangHuongCangTemplate({
                       {/* Vệt sáng góc Art Deco */}
                       <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-tr from-black/30 via-transparent to-white/20" />
                     </div>
-                    <span
-                      className="text-[10px] font-bold tracking-widest text-[#D8B15B] uppercase"
-                      style={{ fontFamily: MONO_FONT }}
-                    >
-                      CODE {String(idx + 1).padStart(2, "0")}
-                    </span>
                   </div>
                 ))}
               </div>
+
+              <HkCueSheetTimeline theme={HAO_QUANG_STANDARD_THEME} data={data} />
             </section>
           )}
 
           {/* =========================================================
-              PHẦN 5: THƯỚC PHIM 35MM & LIGHTBOX (album, albumQr)
+              PHẦN 9: ALBUM ẢNH CƯỚI (album)
               ========================================================= */}
           {!hidden.has("album") && galleryPhotos.length > 0 && (
             <section style={{ order: orderOf("album") }} className="space-y-4">
@@ -913,7 +916,7 @@ export function HaoQuangHuongCangTemplate({
                   className="text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
-                  THƯỚC PHIM
+                  ALBUM ẢNH CƯỚI
                 </h3>
               </div>
 
@@ -926,9 +929,9 @@ export function HaoQuangHuongCangTemplate({
                   ))}
                 </div>
 
-                {/* Lưới ảnh khung phim */}
+                {/* Lưới ảnh khung phim (5 ảnh nổi bật đầu tiên) */}
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  {galleryPhotos.map((photo, idx) => (
+                  {galleryPhotos.slice(0, 5).map((photo, idx) => (
                     <div
                       key={photo.id || idx}
                       onClick={() => setLightboxIndex(idx)}
@@ -937,20 +940,13 @@ export function HaoQuangHuongCangTemplate({
                         idx === 0 ? "col-span-2 aspect-[16/10]" : "aspect-[4/5]",
                       )}
                     >
-                      <img
+                      <img decoding="async"
                         src={photo.url}
                         alt={photo.alt || `Khoảnh khắc #${idx + 1}`}
                         className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105 contrast-[1.05]"
                         loading="lazy"
                       />
-                      {/* Lớp gradient viền */}
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0A090B]/80 via-transparent to-transparent" />
-
-                      {/* Mã khung phim 35mm */}
-                      <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded bg-[#0A090B]/85 px-2 py-0.5 text-[9px] font-mono font-bold tracking-widest text-[#D8B15B]">
-                        <Film className="h-3 w-3 text-[#D8B15B]" />
-                        <span>KODAK · {String(idx + 1).padStart(2, "0")}A</span>
-                      </div>
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0A090B]/60 via-transparent to-transparent" />
                     </div>
                   ))}
                 </div>
@@ -963,23 +959,30 @@ export function HaoQuangHuongCangTemplate({
                 </div>
               </div>
 
-              {/* QR Album dành riêng cho gói Pro/VIP */}
-              {!hidden.has("albumQr") && plan !== "free" && weddingSlug && (
-                <div className="mt-4">
-                  <GuestAlbumQr
-                    slug={weddingSlug}
-                    accentColor="#D8B15B"
-                    textColor="#F4ECE0"
-                    mutedColor="#A89F91"
-                  />
-                </div>
-              )}
+              <HkExtendedFilmStrip
+                theme={HAO_QUANG_STANDARD_THEME}
+                photos={galleryPhotos}
+                onPhotoClick={(realIdx) => setLightboxIndex(realIdx)}
+              />
             </section>
           )}
 
           {/* =========================================================
-              PHẦN 6: HỘP QUÀ HỶ SỰ (gift)
-              * Hộp quà Art Deco 3 trạng thái căn đáy vật lý đồng bộ
+              PHẦN 10: QR ALBUM CHIA SẺ ẢNH TIỆC CƯỚI (albumQr)
+              ========================================================= */}
+          {!hidden.has("albumQr") && plan !== "free" && resolvedWeddingSlug && (
+            <section style={{ order: orderOf("albumQr") }} className="pt-2">
+              <GuestAlbumQr
+                slug={resolvedWeddingSlug}
+                accentColor="#D8B15B"
+                textColor="#F4ECE0"
+                mutedColor="#A89F91"
+              />
+            </section>
+          )}
+
+          {/* =========================================================
+              PHẦN 7: HỘP QUÀ MỪNG CƯỚI (gift)
               ========================================================= */}
           {!hidden.has("gift") && (
             <section style={{ order: orderOf("gift") }} className="space-y-4">
@@ -988,11 +991,8 @@ export function HaoQuangHuongCangTemplate({
                   className="text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
-                  HỘP QUÀ
+                  HỘP MỪNG CƯỚI
                 </h3>
-                <p className="mt-2 text-xs leading-relaxed text-[#F4ECE0]/75 max-w-sm mx-auto">
-                  Sự hiện diện của Quý khách là niềm vinh dự lớn nhất trong đêm tiệc này. Nếu ở xa không tiện ghé chung vui, Quý khách có thể chạm mở chiếc hộp bên dưới để gửi lời chúc phúc.
-                </p>
               </div>
 
               {/* Hộp quà Art Deco 3 trạng thái */}
@@ -1015,7 +1015,7 @@ export function HaoQuangHuongCangTemplate({
 
                   {/* Ảnh chiếc hộp quà 3 trạng thái căn đáy thẳng hàng tuyệt đối */}
                   <div className="relative z-10 h-44 w-44 sm:h-48 sm:w-48">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={
                         boxStage === "open"
                           ? "/templates/hao-quang-huong-cang/deco_box_open.webp"
@@ -1045,15 +1045,6 @@ export function HaoQuangHuongCangTemplate({
               ========================================================= */}
           {!hidden.has("rsvp") && (
             <section style={{ order: orderOf("rsvp") }} className="space-y-4">
-              <div className="text-center">
-                <h3
-                  className="text-2xl font-bold uppercase tracking-wider text-[#F4ECE0]"
-                  style={{ fontFamily: TITLE_FONT }}
-                >
-                  XÁC NHẬN THAM DỰ
-                </h3>
-              </div>
-
               {/* Form RSVP bọc trong card Dark Art Deco viền vàng kim */}
               <div
                 className="overflow-hidden rounded-2xl border border-[#D8B15B]/40 bg-[#131114] p-5 sm:p-6 shadow-xl"
@@ -1103,13 +1094,8 @@ export function HaoQuangHuongCangTemplate({
             >
               HẸN GẶP QUÝ KHÁCH TẠI ĐÊM ĐẠI TIỆC
             </p>
-            <p
-              className="text-[11px] tracking-[0.2em] text-[#D8B15B] uppercase font-mono"
-            >
-              A FILM BY LOVE · 35MM CINEMA
-            </p>
             <p className="text-[10px] text-[#A89F91] pt-2">
-              © {dateParts.year} {data.couple.groomName} &amp; {data.couple.brideName}. ALL RIGHTS RESERVED.
+              © {dateParts.year} {data.couple.groomName} &amp; {data.couple.brideName}
             </p>
           </div>
         </footer>

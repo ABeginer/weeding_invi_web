@@ -81,21 +81,36 @@ export const POST = authRoute<Ctx>(async (req, user, { params }) => {
   if (error) throw error;
   const createdRows = (data ?? []) as GuestRow[];
 
-  // Gán events nếu có
-  const eventIds = Array.isArray(body?.eventIds)
-    ? (body.eventIds as unknown[])
-        .map((e) => (typeof e === "string" ? e.trim() : ""))
-        .filter((e) => UUID_RE.test(e))
+  // Gán events nếu có — xác minh eventIds thuộc đúng thiệp hiện tại (chống IDOR xuyên tenant)
+  const requestedEventIds = Array.isArray(body?.eventIds)
+    ? Array.from(
+        new Set(
+          (body.eventIds as unknown[])
+            .map((e) => (typeof e === "string" ? e.trim() : ""))
+            .filter((e) => UUID_RE.test(e)),
+        ),
+      )
     : [];
 
-  if (eventIds.length > 0 && createdRows.length > 0) {
-    const eventRows = createdRows.flatMap((g) =>
-      eventIds.map((eId) => ({ guest_id: g.id, event_id: eId })),
-    );
-    await client.from("guest_events").insert(eventRows);
+  let validEventIds: string[] = [];
+  if (requestedEventIds.length > 0 && createdRows.length > 0) {
+    const { data: ownedEvents, error: eventsError } = await client
+      .from("events")
+      .select("id")
+      .eq("wedding_id", wedding.id)
+      .in("id", requestedEventIds);
+    if (eventsError) throw eventsError;
+
+    validEventIds = (ownedEvents ?? []).map((row) => String(row.id));
+    if (validEventIds.length > 0) {
+      const eventRows = createdRows.flatMap((g) =>
+        validEventIds.map((eId) => ({ guest_id: g.id, event_id: eId })),
+      );
+      await client.from("guest_events").insert(eventRows);
+    }
   }
 
-  return json(createdRows.map((row) => toGuest(row, eventIds)), 201);
+  return json(createdRows.map((row) => toGuest(row, validEventIds)), 201);
 });
 
 /** Xóa nhiều khách trong một lần — dùng cho thanh thao tác hàng loạt. */

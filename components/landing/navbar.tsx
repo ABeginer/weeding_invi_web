@@ -7,28 +7,46 @@ import { useUser } from "@auth0/nextjs-auth0";
 import { ProfileMenu } from "@/components/theme/ProfileMenu";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LANDING_COPY } from "@/config/landing";
-import { SITE_LINKS, SITE_NAME } from "@/config/site";
+import { AUTH0_EMAIL_CLAIM, SITE_LINKS, SITE_NAME } from "@/config/site";
 
 interface LandingNavbarProps {
   isAuthenticated?: boolean;
   userEmail?: string | null;
+  hideThemeToggle?: boolean;
+  revealMobileCtaOnScroll?: boolean;
 }
 
-export function LandingNavbar({
-  isAuthenticated: propIsAuthenticated,
-  userEmail: propUserEmail,
-}: LandingNavbarProps = {}) {
-  const { user } = useUser();
-  const sessionEmail = React.useMemo(() => {
-    const record = user as Record<string, unknown> | null | undefined;
-    const raw = record?.email ?? record?.["https://thiepcuoi/email"];
-    return typeof raw === "string" && raw.trim() ? raw.trim() : null;
-  }, [user]);
+interface LandingNavbarContentProps {
+  isAuthenticated: boolean;
+  userEmail: string | null;
+  hideThemeToggle?: boolean;
+  revealMobileCtaOnScroll?: boolean;
+}
 
-  const isAuthenticated =
-    propIsAuthenticated !== undefined ? propIsAuthenticated : Boolean(user);
-  const userEmail = propUserEmail !== undefined ? propUserEmail : sessionEmail;
+function LandingNavbarContent({
+  isAuthenticated,
+  userEmail,
+  hideThemeToggle = false,
+  revealMobileCtaOnScroll = false,
+}: LandingNavbarContentProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [scrolledPastHero, setScrolledPastHero] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!revealMobileCtaOnScroll || typeof window === "undefined") return;
+    const onScroll = () => {
+      const next = window.scrollY > 260;
+      setScrolledPastHero((prev) => (prev === next ? prev : next));
+    };
+    const rafId = window.requestAnimationFrame(onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [revealMobileCtaOnScroll]);
+
+  const showMobileCta = !revealMobileCtaOnScroll || scrolledPastHero;
 
   React.useEffect(() => {
     if (!menuOpen) return;
@@ -40,7 +58,7 @@ export function LandingNavbar({
   }, [menuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#E8E2D9] bg-[#FAF8F5]/85 backdrop-blur-md transition-colors duration-200">
+    <header className="sticky top-0 z-40 border-b border-[#E8E2D9] bg-[#FAF8F5]/95 transition-colors duration-200 md:bg-[#FAF8F5]/85 md:backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link
           href={SITE_LINKS.home}
@@ -75,7 +93,7 @@ export function LandingNavbar({
         </nav>
 
         <div className="hidden items-center gap-3.5 md:flex">
-          <ThemeToggle />
+          {!hideThemeToggle && <ThemeToggle />}
           {isAuthenticated ? (
             <ProfileMenu email={userEmail} />
           ) : (
@@ -94,10 +112,30 @@ export function LandingNavbar({
           </Link>
         </div>
 
-        {/* Điều khiển mobile: Theme / Profile + Nút mở menu */}
-        <div className="flex items-center gap-2 md:hidden">
-          <ThemeToggle />
-          {isAuthenticated && <ProfileMenu email={userEmail} />}
+        {/* Điều khiển mobile: Theme / Profile + CTA Tạo thiệp + Nút mở menu */}
+        <div className="flex items-center md:hidden">
+          {!hideThemeToggle && (
+            <div className="mr-2">
+              <ThemeToggle />
+            </div>
+          )}
+          {isAuthenticated && (
+            <div className="mr-2">
+              <ProfileMenu email={userEmail} />
+            </div>
+          )}
+          <Link
+            href={SITE_LINKS.createWedding}
+            aria-hidden={!showMobileCta}
+            tabIndex={showMobileCta ? 0 : -1}
+            className={`inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full bg-[#7A1C24] text-xs font-semibold text-white shadow-2xs transition-all duration-200 hover:bg-[#5E141B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7A1C24] ${
+              showMobileCta
+                ? "mr-2 max-w-[120px] translate-y-0 px-3.5 opacity-100 scale-100"
+                : "pointer-events-none mr-0 w-0 min-w-0 max-w-0 -translate-y-1 overflow-hidden border-0 px-0 opacity-0 scale-95"
+            }`}
+          >
+            Tạo thiệp
+          </Link>
 
           <button
             type="button"
@@ -174,5 +212,51 @@ export function LandingNavbar({
         </div>
       )}
     </header>
+  );
+}
+
+function LandingNavbarWithAuth({
+  userEmail: propUserEmail,
+  hideThemeToggle = false,
+  revealMobileCtaOnScroll = false,
+}: {
+  userEmail?: string | null;
+  hideThemeToggle?: boolean;
+  revealMobileCtaOnScroll?: boolean;
+}) {
+  const { user } = useUser();
+  const sessionEmail = React.useMemo(() => {
+    const record = user as Record<string, unknown> | null | undefined;
+    const raw = record?.email ?? record?.[AUTH0_EMAIL_CLAIM];
+    return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  }, [user]);
+
+  return (
+    <LandingNavbarContent
+      isAuthenticated={Boolean(user)}
+      userEmail={propUserEmail !== undefined ? propUserEmail : sessionEmail}
+      hideThemeToggle={hideThemeToggle}
+      revealMobileCtaOnScroll={revealMobileCtaOnScroll}
+    />
+  );
+}
+
+export function LandingNavbar(props: LandingNavbarProps = {}) {
+  if (props.isAuthenticated !== undefined) {
+    return (
+      <LandingNavbarContent
+        isAuthenticated={props.isAuthenticated}
+        userEmail={props.userEmail ?? null}
+        hideThemeToggle={props.hideThemeToggle}
+        revealMobileCtaOnScroll={props.revealMobileCtaOnScroll}
+      />
+    );
+  }
+  return (
+    <LandingNavbarWithAuth
+      userEmail={props.userEmail}
+      hideThemeToggle={props.hideThemeToggle}
+      revealMobileCtaOnScroll={props.revealMobileCtaOnScroll}
+    />
   );
 }

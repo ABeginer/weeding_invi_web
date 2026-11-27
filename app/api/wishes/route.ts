@@ -136,6 +136,9 @@ export const POST = route(async (req: Request) => {
  *   → { mine: { message, name } | null }
  */
 export const GET = route(async (req: Request) => {
+  const limited = rateLimit(req, "wishes-get", 60, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const url = new URL(req.url);
   const client = db();
 
@@ -168,6 +171,10 @@ export const GET = route(async (req: Request) => {
     weddingId = data.id;
   } else {
     return fail("Thiếu thông tin thiệp mời.", 400);
+  }
+
+  if (weddingId && (await isWeddingSuspended(weddingId))) {
+    return fail("Thiệp cưới này đang tạm khoá.", 403);
   }
 
   // Lời chúc của chính người đang xem (để điền sẵn và sửa lại).

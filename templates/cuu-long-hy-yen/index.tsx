@@ -1,31 +1,38 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import {
   MapPin,
-  Calendar as CalendarIcon,
   Clock,
   ExternalLink,
-  Camera,
-  Film,
   ChevronRight,
+  RotateCw,
 } from "lucide-react";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { m, useReducedMotion, AnimatePresence } from "motion/react";
 import { GiftModal } from "@/components/invitation/GiftModal";
 import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
-import { playCoverSfx } from "@/lib/sfx";
+import { playCoverSfx, playInteractionSfx } from "@/lib/sfx";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
   getEventDirectionsUrl,
 } from "@/lib/events";
-import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-types";
+import type {
+  TemplateData,
+  WeddingStoryMilestone,
+  WeddingTimelineItem,
+} from "@/lib/wedding-types";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
+import {
+  HkGoldenSparks,
+  HkKowloonVipDoorsOverlay,
+  type HkRevealPhase,
+} from "../shared/HongKongStandardCovers";
 import type { WeddingTemplateProps } from "../types";
 
 /* ============================================================
@@ -58,9 +65,422 @@ const BODY_FONT = "var(--font-be-vietnam), sans-serif";
 
 const DEFAULT_DRESS = ["#0B0D0E", "#C81E2B", "#D8AE56"];
 
+const DEFAULT_TIMELINE: WeddingTimelineItem[] = [
+  { time: "17:30", label: "Đón khách & Chụp ảnh thảm đỏ" },
+  { time: "18:30", label: "Khai màn Lễ Thành Hôn" },
+  { time: "19:00", label: "Nâng ly khai tiệc Cửu Long" },
+  { time: "20:00", label: "Âm nhạc & Giao lưu khách quý" },
+  { time: "21:30", label: "Tiễn khách & Lưu giữ kỷ niệm" },
+];
+
+const DEFAULT_STORY: WeddingStoryMilestone[] = [
+  {
+    year: "2022",
+    title: "Cảnh I · Lần Đầu Chạm Mặt",
+    content:
+      "Một buổi tối cuối tuần dưới ánh đèn phố cũ — cuộc trò chuyện tưởng chừng ngắn ngủi lại mở ra chương đẹp nhất của cả hai.",
+  },
+  {
+    year: "2024",
+    title: "Cảnh II · Đồng Hành Qua Bốn Mùa",
+    content:
+      "Cùng nhau đi qua những ngày nắng đẹp lẫn cơn mưa bất chợt, nhận ra bình yên lớn nhất chính là người ngồi bên cạnh.",
+  },
+  {
+    year: "2026",
+    title: "Cảnh III · Lời Hẹn Ước Trăm Năm",
+    content:
+      "Từ hai mảnh ghép riêng biệt nay chính thức về chung một nhà, mời những người thương yêu nhất đến chứng kiến đêm hỷ yến.",
+  },
+];
+
+const ROMAN_ACTS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+
 function getDressColors(data: TemplateData): string[] {
   const source = data.dressCode?.filter((color) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color));
   return source && source.length > 0 ? source.slice(0, 3) : DEFAULT_DRESS;
+}
+
+function getTimelineItems(data: TemplateData): WeddingTimelineItem[] {
+  const items = data.timeline?.filter((item) => item.time.trim() || item.label.trim());
+  return items && items.length > 0 ? items : DEFAULT_TIMELINE;
+}
+
+function getStoryItems(data: TemplateData): WeddingStoryMilestone[] {
+  const items = data.story?.filter(
+    (item) => (item.year?.trim() ?? "") || item.title.trim() || item.content.trim(),
+  );
+  return items && items.length > 0 ? items : DEFAULT_STORY;
+}
+
+/* ------------------------------------------------------------
+   TƯƠNG TÁC ĐỘC BẢN STANDARD #1: THẺ CÀO NHŨ VÀNG 24K TIẾT LỘ NGÀY CƯỚI
+   - Canvas nhẹ hỗ trợ touch Mobile + mouse Desktop
+   - Nút "Mở nhanh" cho người lớn tuổi hoặc reduced-motion
+   ------------------------------------------------------------ */
+function GoldenScratchCard({
+  weekday,
+  time,
+  day,
+  month,
+  year,
+  lunarStr,
+  venueName,
+}: {
+  weekday: string;
+  time: string;
+  day: string;
+  month: string;
+  year: string;
+  lunarStr: string;
+  venueName?: string | null;
+}) {
+  const reduce = useReducedMotion();
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = React.useRef(false);
+  const gridRef = React.useRef<Uint8Array>(new Uint8Array(12 * 6));
+  const [revealed, setRevealed] = React.useState(Boolean(reduce));
+  const [resetTick, setResetTick] = React.useState(0);
+
+  // Vẽ lớp nhũ vàng 24K lên canvas
+  React.useEffect(() => {
+    if (revealed) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const w = 340;
+    const h = 156;
+    canvas.width = w;
+    canvas.height = h;
+    gridRef.current = new Uint8Array(12 * 6);
+
+    ctx.globalCompositeOperation = "source-over";
+    const grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, "#9E7428");
+    grad.addColorStop(0.28, "#E5C16C");
+    grad.addColorStop(0.52, "#F6DF9A");
+    grad.addColorStop(0.75, "#C7973E");
+    grad.addColorStop(1, "#8C6320");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Đường vân sọc ánh kim nhẹ
+    ctx.strokeStyle = "rgba(255, 250, 224, 0.22)";
+    ctx.lineWidth = 1;
+    for (let x = -h; x < w + h; x += 14) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + h, h);
+      ctx.stroke();
+    }
+
+    // Viền trong khung thẻ cào
+    ctx.strokeStyle = "rgba(11, 13, 14, 0.35)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(10, 10, w - 20, h - 20);
+
+    // Dòng chữ dập nổi mời cào
+    ctx.fillStyle = "#1A1205";
+    ctx.font = "700 11px ui-monospace, SFMono-Regular, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("★  VIP GOLDEN PASS · STANDARD  ★", w / 2, h / 2 - 14);
+    ctx.font = "800 14px Georgia, serif";
+    ctx.fillText("CÀO NHŨ VÀNG MỞ GIỜ HOÀNG ĐẠO", w / 2, h / 2 + 12);
+    ctx.font = "600 10px ui-sans-serif, system-ui, sans-serif";
+    ctx.fillStyle = "rgba(26, 18, 5, 0.72)";
+    ctx.fillText("Chạm & kéo ngón tay lên lớp nhũ vàng", w / 2, h / 2 + 34);
+  }, [revealed, resetTick]);
+
+  const lastScratchSfxRef = React.useRef(0);
+
+  const scratchAt = (clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas || revealed) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const nowMs = Date.now();
+    if (nowMs - lastScratchSfxRef.current >= 95) {
+      lastScratchSfxRef.current = nowMs;
+      playInteractionSfx("scratch-tick");
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const x = ((clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((clientY - rect.top) / rect.height) * canvas.height;
+
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.arc(x, y, 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Đánh dấu ô lưới đã cào để tính % mở không tốn CPU
+    const col = Math.min(11, Math.max(0, Math.floor((x / canvas.width) * 12)));
+    const row = Math.min(5, Math.max(0, Math.floor((y / canvas.height) * 6)));
+    for (let dc = -1; dc <= 1; dc++) {
+      for (let dr = -1; dr <= 1; dr++) {
+        const nc = col + dc;
+        const nr = row + dr;
+        if (nc >= 0 && nc < 12 && nr >= 0 && nr < 6) {
+          gridRef.current[nr * 12 + nc] = 1;
+        }
+      }
+    }
+
+    let cleared = 0;
+    for (let i = 0; i < gridRef.current.length; i++) {
+      if (gridRef.current[i] === 1) cleared++;
+    }
+    if (cleared / gridRef.current.length >= 0.42) {
+      playInteractionSfx("scratch-reveal");
+      setRevealed(true);
+    }
+  };
+
+  return (
+    <div className="mx-auto mt-7 w-full max-w-[340px]">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <span
+          className="text-[10px] font-bold tracking-[0.22em] text-[#D8AE56] uppercase"
+          style={{ fontFamily: MONO_FONT }}
+        >
+          VIP SCRATCH · NGÀY TRỌNG ĐẠI
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            if (revealed) {
+              setRevealed(false);
+              setResetTick((t) => t + 1);
+            } else {
+              playInteractionSfx("scratch-reveal");
+              setRevealed(true);
+            }
+          }}
+          className="cursor-pointer text-[10px] font-semibold tracking-wider text-[#BFB6A4] underline underline-offset-4 transition-colors hover:text-[#D8AE56]"
+        >
+          {revealed ? "Cào lại" : "Mở nhanh"}
+        </button>
+      </div>
+
+      <div className="relative h-[156px] w-full overflow-hidden rounded-2xl border border-[#D8AE56]/60 bg-gradient-to-br from-[#141A18] via-[#0D1F19] to-[#0B0D0E] shadow-[0_12px_30px_rgba(0,0,0,0.85)]">
+        {/* Nội dung ngày cưới lộ ra bên dưới lớp nhũ */}
+        <div className="flex h-full w-full flex-col items-center justify-center px-4 text-center">
+          <div className="flex items-center gap-2">
+            <span className="rounded border border-[#C81E2B]/60 bg-[#C81E2B]/20 px-2 py-0.5 text-[9px] font-bold tracking-[0.2em] text-[#F2D488] uppercase">
+              ĐÃ ẤN ĐỊNH
+            </span>
+            <span
+              className="text-[10px] font-semibold tracking-[0.18em] text-[#D8AE56] uppercase"
+              style={{ fontFamily: MONO_FONT }}
+            >
+              {weekday} · {time || "18:00"}
+            </span>
+          </div>
+
+          <p
+            className="mt-2 text-3xl font-black tracking-[0.08em] text-[#F5EFE4]"
+            style={{ fontFamily: TITLE_FONT }}
+          >
+            {day} <span className="text-[#D8AE56]">.</span> {month}{" "}
+            <span className="text-[#D8AE56]">.</span> {year}
+          </p>
+
+          {lunarStr && (
+            <p className="mt-1 text-[11px] italic text-[#BFB6A4]">({lunarStr})</p>
+          )}
+          {venueName && (
+            <p className="mt-1 max-w-full truncate text-[10px] font-semibold tracking-wider text-[#D8AE56]/90 uppercase">
+              {venueName}
+            </p>
+          )}
+        </div>
+
+        {/* Lớp nhũ vàng 24K Canvas */}
+        <canvas
+          ref={canvasRef}
+          onPointerDown={(e) => {
+            drawingRef.current = true;
+            e.currentTarget.setPointerCapture(e.pointerId);
+            scratchAt(e.clientX, e.clientY);
+          }}
+          onPointerMove={(e) => {
+            if (!drawingRef.current) return;
+            scratchAt(e.clientX, e.clientY);
+          }}
+          onPointerUp={() => {
+            drawingRef.current = false;
+          }}
+          onPointerCancel={() => {
+            drawingRef.current = false;
+          }}
+          aria-label="Khu vực cào nhũ vàng để xem ngày cưới"
+          className={cn(
+            "absolute inset-0 z-10 h-full w-full touch-none select-none cursor-crosshair transition-opacity duration-500",
+            revealed ? "pointer-events-none opacity-0" : "opacity-100",
+          )}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------
+   TƯƠNG TÁC ĐỘC BẢN STANDARD #2: LẬT THẺ BÀI 3D HỒ SƠ K♥ & Q♥
+   - Không dùng backdrop-blur trong container 3D (chống flicker iOS)
+   ------------------------------------------------------------ */
+function RoyalFlipCard({
+  suitLabel,
+  roleLabel,
+  displayName,
+  fullName,
+  photoUrl,
+  hidePhoto,
+  familyHeading,
+  parentsList,
+  backQuote,
+}: {
+  suitLabel: "K ♥" | "Q ♥";
+  roleLabel: string;
+  displayName: string;
+  fullName: string;
+  photoUrl: string;
+  hidePhoto: boolean;
+  familyHeading: string;
+  parentsList: string[];
+  backQuote: string;
+}) {
+  const [flipped, setFlipped] = React.useState(false);
+
+  return (
+    <div className="relative min-h-[228px] [perspective:1000px]">
+      <div
+        className="relative h-full min-h-[228px] w-full transition-transform duration-700"
+        style={{
+          transformStyle: "preserve-3d",
+          transform: flipped ? "rotateY(180deg) translateZ(0)" : "rotateY(0deg) translateZ(0)",
+        }}
+      >
+        {/* MẶT TRƯỚC: Hồ sơ nhân vật & thông tin song thân */}
+        <div
+          className="relative flex h-full min-h-[228px] flex-col justify-between overflow-hidden rounded-xl border border-[#D8AE56]/40 bg-gradient-to-b from-[#141918] to-[#0E1211] p-5 shadow-[0_8px_20px_rgba(0,0,0,0.65)]"
+          style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+        >
+          <div
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-md border border-[#C81E2B]/55 bg-[#C81E2B]/15 text-sm font-extrabold text-[#C81E2B]"
+            style={{ fontFamily: TITLE_FONT }}
+          >
+            {suitLabel}
+          </div>
+
+          <div className="flex items-center gap-3.5 pr-9">
+            {!hidePhoto && (
+              <div className="relative h-18 w-18 shrink-0 overflow-hidden rounded-full border-2 border-[#D8AE56]/65 shadow-md">
+                <img
+                  loading="lazy"
+                  decoding="async"
+                  src={photoUrl}
+                  alt={`Ảnh ${displayName}`}
+                  className="h-full w-full object-cover object-center"
+                />
+              </div>
+            )}
+            <div className="min-w-0">
+              <span
+                className="text-[10px] font-semibold tracking-[0.2em] text-[#D8AE56] uppercase"
+                style={{ fontFamily: MONO_FONT }}
+              >
+                {roleLabel}
+              </span>
+              <h4
+                className="truncate text-lg font-bold leading-snug text-[#F5EFE4]"
+                style={{ fontFamily: TITLE_FONT }}
+              >
+                {displayName}
+              </h4>
+              {fullName && fullName !== displayName && (
+                <p className="truncate text-[11px] text-[#BFB6A4]">{fullName}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-[#D8AE56]/20 pt-3 text-xs leading-relaxed text-[#BFB6A4]">
+            <p className="mb-1 font-semibold tracking-wider text-[#D8AE56] uppercase">
+              {familyHeading}
+            </p>
+            {parentsList.length > 0 ? (
+              parentsList.map((pName, pIdx) => <p key={pIdx}>{pName}</p>)
+            ) : (
+              <p>Song thân hai họ</p>
+            )}
+          </div>
+
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                playInteractionSfx("card-flip");
+                setFlipped(true);
+              }}
+              className="inline-flex cursor-pointer touch-manipulation items-center gap-1.5 rounded-full border border-[#D8AE56]/45 bg-[#D8AE56]/10 px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-[#D8AE56] uppercase transition-colors hover:bg-[#D8AE56] hover:text-[#0B0D0E]"
+            >
+              <RotateCw className="h-3 w-3" aria-hidden="true" />
+              <span>Lật bài {suitLabel}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* MẶT SAU: Lưng lá bài Tây Hoàng Gia Hồng Kông */}
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-between overflow-hidden rounded-xl border border-[#D8AE56]/70 bg-gradient-to-br from-[#2B070B] via-[#17090B] to-[#0B0D0E] p-5 text-center shadow-[0_12px_28px_rgba(0,0,0,0.85)]"
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+          }}
+        >
+          {/* Khung viền kép lá bài */}
+          <div className="pointer-events-none absolute inset-2.5 rounded-lg border border-dashed border-[#D8AE56]/40" />
+
+          <div className="relative z-10 flex w-full items-center justify-between text-xs font-extrabold text-[#D8AE56]">
+            <span>{suitLabel}</span>
+            <span className="text-[9px] tracking-[0.24em] uppercase" style={{ fontFamily: MONO_FONT }}>
+              ROYAL DOSSIER
+            </span>
+            <span>{suitLabel}</span>
+          </div>
+
+          <div className="relative z-10 my-2 space-y-2 px-2">
+            <p
+              className="text-lg font-bold text-[#F2D488]"
+              style={{ fontFamily: TITLE_FONT }}
+            >
+              {fullName || displayName}
+            </p>
+            <p className="text-xs italic leading-relaxed text-[#F5EFE4]/90">
+              “{backQuote}”
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              playInteractionSfx("card-flip");
+              setFlipped(false);
+            }}
+            className="relative z-10 inline-flex cursor-pointer touch-manipulation items-center gap-1.5 rounded-full border border-[#D8AE56]/60 bg-[#0B0D0E]/80 px-3.5 py-1.5 text-[10px] font-bold tracking-[0.16em] text-[#D8AE56] uppercase transition-colors hover:bg-[#D8AE56] hover:text-[#0B0D0E]"
+          >
+            <RotateCw className="h-3 w-3" aria-hidden="true" />
+            <span>Quay lại mặt trước</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------
@@ -73,41 +493,63 @@ function KowloonCover({
   data,
   guestName,
   contained,
+  onRevealStart,
   onOpen,
 }: {
   data: TemplateData;
   guestName: string | null;
   contained?: boolean;
+  onRevealStart?: () => void;
   onOpen: () => void;
 }) {
   const reduce = useReducedMotion();
-  const [openingPhase, setOpeningPhase] = React.useState<"idle" | "flipping" | "opening-doors">("idle");
+  const [phase, setPhase] = React.useState<HkRevealPhase>("idle");
+  const timersRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  React.useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+    };
+  }, []);
 
   const handleOpenClick = () => {
-    if (openingPhase !== "idle") return;
-    playCoverSfx("mahjong");
+    if (phase !== "idle") return;
+    playCoverSfx("kowloon-vip-doors");
 
     if (reduce) {
-      setOpeningPhase("opening-doors");
-      setTimeout(() => {
-        onOpen();
-      }, 400);
+      onRevealStart?.();
+      setPhase("stage3");
+      timersRef.current.push(setTimeout(() => onOpen(), 380));
       return;
     }
 
-    // Phase 1: Lật quân mạt chược 3D (0 - 450ms)
-    setOpeningPhase("flipping");
+    // Pha 1 (0 - 960ms): Quân Mạt Chược xoay 3D 540° + vòng sóng vàng & 12 tia bụi vàng
+    setPhase("stage1");
 
-    // Phase 2: Cửa trượt mở sang 2 bên (450ms - 900ms)
-    setTimeout(() => {
-      setOpeningPhase("opening-doors");
-    }, 450);
+    // Pha 2 (960 - 1840ms): 2 cánh cửa VIP Cửu Long khép kín + khe sáng vàng xẻ dọc, bật Hero bên dưới
+    timersRef.current.push(
+      setTimeout(() => {
+        onRevealStart?.();
+        setPhase("stage2");
+      }, 960),
+    );
 
-    // Hoàn tất mở vào thân thiệp
-    setTimeout(() => {
-      onOpen();
-    }, 950);
+    // Pha 3 (1840 - 3040ms): 2 cánh cửa VIP trượt tách sang 2 bên để lộ trực tiếp Hero thật
+    timersRef.current.push(
+      setTimeout(() => {
+        setPhase("stage3");
+      }, 1840),
+    );
+
+    timersRef.current.push(
+      setTimeout(() => {
+        onOpen();
+      }, 3040),
+    );
   };
+
+  const hidePosterBehindDoors = phase === "stage2" || phase === "stage3";
 
   return (
     <div
@@ -115,18 +557,19 @@ function KowloonCover({
         "relative flex w-full flex-col items-center justify-center overflow-hidden px-4 select-none",
         contained ? "h-full min-h-full py-6" : "h-screen-dvh min-h-screen-dvh py-8",
       )}
-      style={{ backgroundColor: KOWLOON_OBSIDIAN }}
+      style={{ backgroundColor: hidePosterBehindDoors ? "transparent" : KOWLOON_OBSIDIAN }}
     >
       {/* Lớp z-0: Nền phòng VIP Cửu Long ánh neon đỏ vàng */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <picture>
-          {!contained && (
-            <source
-              media="(min-width: 768px)"
-              srcSet="/templates/cuu-long-hy-yen/bg_kowloon_desktop.webp"
-            />
-          )}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 z-0 overflow-hidden transition-opacity duration-200",
+          hidePosterBehindDoors ? "opacity-0" : "opacity-100",
+        )}
+      >
+        <picture className="block h-full w-full">
           <img
+            loading="eager"
+            fetchPriority="high"
             src="/templates/cuu-long-hy-yen/bg_kowloon_mobile.webp"
             alt="Kowloon VIP Neon Background"
             className="h-full w-full object-cover object-center"
@@ -136,7 +579,10 @@ function KowloonCover({
 
       {/* Lớp z-[5]: Lớp phủ gradient tối hai mép */}
       <div
-        className="pointer-events-none absolute inset-0 z-[5]"
+        className={cn(
+          "pointer-events-none absolute inset-0 z-[5] transition-opacity duration-200",
+          hidePosterBehindDoors ? "opacity-0" : "opacity-100",
+        )}
         style={{
           background:
             "linear-gradient(180deg, rgba(11,13,14,0.85) 0%, rgba(13,31,25,0.4) 40%, rgba(11,13,14,0.7) 75%, rgba(11,13,14,0.95) 100%)",
@@ -144,74 +590,60 @@ function KowloonCover({
         aria-hidden="true"
       />
 
-      {/* Lớp z-10: 2 cánh cửa thang máy phòng VIP Hồng Kông trượt sang hai bên */}
-      <AnimatePresence>
-        {openingPhase === "opening-doors" && (
-          <div className="pointer-events-none fixed inset-0 z-30 flex overflow-hidden">
-            {/* Cánh cửa bên trái */}
-            <m.div
-              className="h-full w-1/2 border-r border-[#D8AE56]/40 bg-[#0B0D0E]"
-              style={{
-                boxShadow: "inset -10px 0 30px rgba(0,0,0,0.8)",
-              }}
-              initial={{ x: "0%" }}
-              animate={{ x: "-100%" }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            />
-            {/* Cánh cửa bên phải */}
-            <m.div
-              className="h-full w-1/2 border-l border-[#D8AE56]/40 bg-[#0B0D0E]"
-              style={{
-                boxShadow: "inset 10px 0 30px rgba(0,0,0,0.8)",
-              }}
-              initial={{ x: "0%" }}
-              animate={{ x: "100%" }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Pha 1: Sóng xung kích vàng & 12 tia bụi vàng khi xoay quân Mạt Chược */}
+      <HkGoldenSparks active={phase === "stage1"} primaryColor="#F2D488" secondaryColor="#C81E2B" />
+
+      {/* Pha 2 & 3: Cửa thang máy phòng VIP Cửu Long + khe sáng vàng tách trực tiếp trên Hero */}
+      <HkKowloonVipDoorsOverlay
+        phase={phase}
+        coupleLabel={`${data.couple.groomName} & ${data.couple.brideName}`}
+      />
 
       {/* Lớp z-20: Khối trung tâm căn giữa tuyệt đối */}
-      <div className="relative z-20 mx-auto flex w-full max-w-[328px] sm:max-w-[380px] flex-col items-center text-center">
+      <div
+        className={cn(
+          "relative z-20 mx-auto flex w-full max-w-[328px] sm:max-w-[380px] flex-col items-center text-center transition-opacity duration-200",
+          hidePosterBehindDoors ? "pointer-events-none opacity-0" : "opacity-100",
+        )}
+      >
         {/* Nhãn VIP Đêm Tiệc */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#D8AE56]/50 bg-[#0B0D0E]/85 px-4 py-1 backdrop-blur-xs">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#D8AE56]/50 bg-[#0B0D0E]/85 px-4 py-1">
           <span className="h-2 w-2 rounded-full bg-[#C81E2B] animate-pulse" />
           <span
-            className="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-[#D8AE56] uppercase"
+            className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] text-[#D8AE56] uppercase"
             style={{ fontFamily: MONO_FONT }}
           >
-            CỬU LONG HỶ YẾN · VIP
+            Thiệp mời tham dự lễ cưới
           </span>
         </div>
 
-        {/* Quân bài Mạt Chược Song Hỷ lật 3D */}
+        {/* Quân bài Mạt Chược Song Hỷ lật 3D tốc độ cao */}
         <div className="my-5 flex items-center justify-center [perspective:1000px]">
           <m.button
             type="button"
             onClick={handleOpenClick}
-            disabled={openingPhase !== "idle"}
+            disabled={phase !== "idle"}
             className="relative cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 disabled:pointer-events-none"
             aria-label="Chạm quân mạt chược để mở tiệc"
             animate={
-              openingPhase === "flipping"
+              phase === "stage1"
                 ? {
-                  rotateY: [0, 180],
-                  scale: [1, 1.18, 1.1],
+                  rotateY: [0, 540],
+                  scale: [1, 1.32, 1.15],
                 }
                 : {}
             }
-            transition={{ duration: 0.5, ease: "easeInOut" }}
+            transition={{ duration: 0.96, ease: [0.22, 1, 0.36, 1] }}
           >
             {/* Hào quang vàng phía sau quân mạt chược */}
             <div
-              className="pointer-events-none absolute inset-0 -m-3 rounded-2xl bg-gradient-to-r from-[#C81E2B]/40 via-[#D8AE56]/50 to-[#14533C]/40 blur-md transition-opacity duration-300"
+              className="pointer-events-none absolute inset-0 -m-3 rounded-2xl bg-gradient-to-r from-[#C81E2B]/40 via-[#D8AE56]/60 to-[#14533C]/40 blur-md transition-opacity duration-300"
               style={{
-                opacity: openingPhase === "flipping" ? 1 : 0.6,
+                opacity: phase === "stage1" ? 1 : 0.6,
               }}
               aria-hidden="true"
             />
-            <img
+            <img loading="eager" fetchPriority="high"
               src="/templates/cuu-long-hy-yen/mahjong_song_hy.webp"
               alt="Quân Mạt Chược Song Hỷ"
               className="relative z-10 block h-auto w-24 sm:w-28 drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
@@ -249,7 +681,7 @@ function KowloonCover({
           </div>
           {/* Dải phân cách hoa văn Cửu Long Art Deco */}
           <div className="mx-auto mt-3 flex justify-center">
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/cuu-long-hy-yen/divider_kowloon_deco.webp"
               alt=""
               aria-hidden="true"
@@ -282,7 +714,7 @@ function KowloonCover({
           <button
             type="button"
             onClick={handleOpenClick}
-            disabled={openingPhase !== "idle"}
+            disabled={phase !== "idle"}
             className="group relative flex w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full border border-[#D8AE56] bg-gradient-to-r from-[#D8AE56] via-[#F2D488] to-[#D8AE56] px-7 py-3 text-xs sm:text-sm font-bold tracking-[0.2em] text-[#0B0D0E] uppercase shadow-[0_0_24px_rgba(216,174,86,0.45)] transition-all duration-300 hover:shadow-[0_0_32px_rgba(216,174,86,0.7)] active:scale-95 disabled:opacity-75"
           >
             <span>VÀO TIỆC CỬU LONG</span>
@@ -318,6 +750,7 @@ export function CuuLongHyYenTemplate({
 }: WeddingTemplateProps) {
   const [internalOpened, setInternalOpened] = React.useState(isOpened);
   const [coverGone, setCoverGone] = React.useState(isOpened);
+  const [isRevealing, setIsRevealing] = React.useState(false);
   const parentOpenedRef = React.useRef(isOpened);
 
   // Lightbox Modal
@@ -331,7 +764,7 @@ export function CuuLongHyYenTemplate({
     handleGiftClick,
     handleCloseModal,
   } = useGiftBoxInteraction({
-    sfxType: "briefcase",
+    sfxType: "briefcase-vip",
   });
 
   // Đồng bộ hai chiều `isOpened` với component cha
@@ -351,6 +784,7 @@ export function CuuLongHyYenTemplate({
   const handleOpenCover = React.useCallback(() => {
     setInternalOpened(true);
     setCoverGone(true);
+    setIsRevealing(false);
     onOpenedChange?.(true);
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
@@ -378,8 +812,12 @@ export function CuuLongHyYenTemplate({
   const brideParentsList = parseParents(data.couple.brideParents);
 
   const dressColors = getDressColors(data);
+  const timelineItems = getTimelineItems(data);
+  const storyItems = getStoryItems(data);
+  const hideCouplePhotos = Boolean(data.hideCouplePhotos);
+  const hostFirst = data.hostFirst ?? "groom";
 
-  // Gallery items (Free max 5)
+  // Gallery items (Free max 5, Standard/Pro lên đến 30-50 ảnh)
   const galleryPhotos = React.useMemo(() => {
     const raw = data.photos?.gallery ?? [];
     return data.plan === "free" ? raw.slice(0, 5) : raw;
@@ -387,16 +825,21 @@ export function CuuLongHyYenTemplate({
 
   // Hidden sections & Section Order
   const hidden = new Set(data.hiddenSections ?? []);
+  const resolvedWeddingSlug = weddingSlug || data.weddingSlug;
   const order = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = order.indexOf(key);
     return index < 0 ? 99 : index;
   };
 
   // Countdown timer logic
-  const targetDate = React.useMemo(() => new Date(targetDateStr), [targetDateStr]);
+  const targetDate = React.useMemo(() => {
+    const events = getVisibleEvents(data);
+    const ev = getNearestUpcomingEvent(events, data.date);
+    return new Date(ev.startsAt || data.date || "2027-03-20T10:00:00+07:00");
+  }, [data]);
   const [timeLeft, setTimeLeft] = React.useState<{ days: number; hours: number; minutes: number; seconds: number }>({
     days: 0,
     hours: 0,
@@ -438,6 +881,7 @@ export function CuuLongHyYenTemplate({
             data={data}
             guestName={guestName}
             contained={contained}
+            onRevealStart={() => setIsRevealing(true)}
             onOpen={handleOpenCover}
           />
         </div>
@@ -446,8 +890,12 @@ export function CuuLongHyYenTemplate({
       {/* ---------------- THÂN THIỆP CỬU LONG ---------------- */}
       <div
         className={cn(
-          "relative z-10 w-full transition-opacity duration-700",
-          !coverGone ? "hidden pointer-events-none opacity-0" : "opacity-100",
+          "relative z-10 w-full transition-all duration-700 ease-out",
+          !coverGone && !isRevealing
+            ? "hidden pointer-events-none opacity-0"
+            : isRevealing
+              ? "opacity-100 scale-[1.03]"
+              : "opacity-100 scale-100",
         )}
       >
         {/* Nút nhạc nền góc màn hình */}
@@ -461,12 +909,12 @@ export function CuuLongHyYenTemplate({
         )}
 
         {/* CONTAINER CHÍNH CĂN GIỮA ĐIỆN THOẠI / DESKTOP */}
-        <div className="mx-auto w-full max-w-[480px] sm:max-w-[540px] px-4 py-8 space-y-12 sm:space-y-16">
+        <div className="mx-auto flex w-full max-w-[480px] sm:max-w-[540px] flex-col gap-12 px-4 py-8 sm:gap-16">
 
           {/* =========================================================
               PHẦN 1: HERO POSTER ĐIỆN ẢNH CỬU LONG (Art-Deco Frame)
               ========================================================= */}
-          <section className="relative pt-4 text-center">
+          <section style={{ order: -1 }} className="relative pt-4 text-center">
             {/* Nhãn Đêm Tiệc Thành Hôn */}
             <div className="inline-flex items-center gap-2 rounded-full border border-[#D8AE56]/40 bg-[#121515]/90 px-3.5 py-1 backdrop-blur-xs">
               <span className="h-1.5 w-1.5 rounded-full bg-[#C81E2B]" />
@@ -482,7 +930,7 @@ export function CuuLongHyYenTemplate({
             <div className="relative mx-auto mt-6 w-full max-w-[340px] sm:max-w-[380px]">
               {/* Đôi lá bài King & Queen hoàng kim đặt phía trên đỉnh khung */}
               <div className="relative z-20 -mb-7 flex justify-center">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/cuu-long-hy-yen/cards_king_queen.webp"
                   alt="K♥ & Q♥ Royal Cards"
                   className="h-auto w-24 sm:w-28 drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]"
@@ -494,7 +942,10 @@ export function CuuLongHyYenTemplate({
                 {/* Ảnh cưới bên trong khung */}
                 <div className="absolute inset-[6.5%] overflow-hidden rounded-lg bg-[#121515]">
                   <img
-                    src={data.photos?.heroUrl || galleryPhotos[0]?.url || "/photos/hero2.webp"}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    src={data.photos?.heroUrl || galleryPhotos[0]?.url || "/demo/hongkong/01_hero_neon_street.webp"}
                     alt={data.photos?.heroAlt || `Ảnh cưới ${data.couple.groomName} và ${data.couple.brideName}`}
                     className="h-full w-full object-cover object-center"
                   />
@@ -503,7 +954,7 @@ export function CuuLongHyYenTemplate({
                 </div>
 
                 {/* Khung viền Art-Deco đè lên trên */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/cuu-long-hy-yen/kowloon_poster_frame.webp"
                   alt=""
                   aria-hidden="true"
@@ -534,122 +985,186 @@ export function CuuLongHyYenTemplate({
               </h2>
               {/* Dải phân cách hoa văn Cửu Long */}
               <div className="mx-auto mt-4 flex justify-center">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/cuu-long-hy-yen/divider_kowloon_deco.webp"
                   alt=""
                   aria-hidden="true"
                   className="h-auto w-36 max-w-full opacity-70"
                 />
               </div>
+              {dateParts?.dotDate && (
+                <p className="pt-2 text-xs font-bold tracking-[0.26em] text-[#D8AE56] uppercase" style={{ fontFamily: MONO_FONT }}>
+                  {dateParts.dotDate}
+                </p>
+              )}
             </div>
 
             {/* Lời dẫn duyên dáng, khí chất */}
             <p className="mx-auto mt-4 max-w-sm text-xs sm:text-sm leading-relaxed text-[#BFB6A4] italic">
-              “Giữa muôn vạn bước chân nơi đô thành náo nhiệt, gặp được một người cùng chung chí hướng, nắm tay đi trọn trăm năm là điều may mắn nhất đời này.”
+              “{data.quote?.trim() || "Giữa muôn vạn bước chân nơi đô thành náo nhiệt, gặp được một người cùng chung chí hướng, nắm tay đi trọn trăm năm là điều may mắn nhất đời này."}”
             </p>
           </section>
 
           {/* =========================================================
-              PHẦN 2: THẺ HỒ SƠ SONG HÙNG K ♥ & Q ♥ VÀ HAI GIA ĐÌNH (family)
+              PHẦN 2: THẺ BÀI 3D SONG HÙNG K ♥ & Q ♥ VÀ HAI GIA ĐÌNH (family)
               ========================================================= */}
           {!hidden.has("family") && (
             <section style={{ order: orderOf("family") }} className="space-y-4">
               <div className="text-center">
-                <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-[#D8AE56] uppercase" style={{ fontFamily: MONO_FONT }}>
-                  DOSSIER · NHÂN VẬT CHÍNH
-                </span>
-                <h3 className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
+                <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
                   HAI BÊN GIA ĐÌNH
                 </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Thẻ Chú Rể (K ♥) */}
-                <div className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-[#D8AE56]/35 bg-[#121515] p-5 shadow-[0_8px_20px_rgba(0,0,0,0.6)]">
-                  {/* Huy hiệu K ♥ góc trên phải */}
-                  <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-md border border-[#C81E2B]/50 bg-[#C81E2B]/15 text-sm font-extrabold text-[#C81E2B]" style={{ fontFamily: TITLE_FONT }}>
-                    K ♥
-                  </div>
+                {(hostFirst === "bride" ? ["bride", "groom"] : ["groom", "bride"]).map((side) =>
+                  side === "groom" ? (
+                    <RoyalFlipCard
+                      key="groom"
+                      suitLabel="K ♥"
+                      roleLabel={data.castDossier?.groomRole || data.couple.groomTitle || "TRƯỞNG NAM"}
+                      displayName={data.couple.groomName}
+                      fullName={data.couple.groomFullName || data.couple.groomName}
+                      photoUrl={data.photos?.groomUrl || "/demo/hongkong/02_groom_solo_mercedes.webp"}
+                      hidePhoto={hideCouplePhotos}
+                      familyHeading="NHÀ TRAI"
+                      parentsList={groomParentsList}
+                      backQuote={data.castDossier?.groomQuote || `Hạnh phúc lớn nhất của ${data.couple.groomName} là được nắm tay ${data.couple.brideName} bước vào chương mới của cuộc đời.`}
+                    />
+                  ) : (
+                    <RoyalFlipCard
+                      key="bride"
+                      suitLabel="Q ♥"
+                      roleLabel={data.castDossier?.brideRole || data.couple.brideTitle || "ÁI NỮ"}
+                      displayName={data.couple.brideName}
+                      fullName={data.couple.brideFullName || data.couple.brideName}
+                      photoUrl={data.photos?.brideUrl || "/demo/hongkong/03_bride_solo_neon_lounge.webp"}
+                      hidePhoto={hideCouplePhotos}
+                      familyHeading="NHÀ GÁI"
+                      parentsList={brideParentsList}
+                      backQuote={data.castDossier?.brideQuote || `Cảm ơn mọi người đã luôn thương yêu và có mặt trong đêm hỷ yến đáng nhớ nhất của ${data.couple.brideName} & ${data.couple.groomName}.`}
+                    />
+                  ),
+                )}
+              </div>
+            </section>
+          )}
 
-                  <div className="flex items-center gap-4">
-                    {/* Ảnh chân dung Chú rể */}
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-[#D8AE56]/60 shadow-md">
-                      <img
-                        src={data.photos?.groomUrl || "/photos/portrait_cr.webp"}
-                        alt="Ảnh Chú Rể"
-                        className="h-full w-full object-cover object-center"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] tracking-[0.2em] text-[#D8AE56] uppercase font-semibold" style={{ fontFamily: MONO_FONT }}>
-                        {data.couple.groomTitle || "TRƯỞNG NAM"}
-                      </span>
-                      <h4 className="text-lg font-bold text-[#F5EFE4] leading-snug" style={{ fontFamily: TITLE_FONT }}>
-                        {data.couple.groomName}
-                      </h4>
-                    </div>
-                  </div>
+          {/* =========================================================
+              PHẦN 2B (STANDARD): HỒI ỨC CỬU LONG — CUỘN PHIM 35MM (story)
+              ========================================================= */}
+          {!hidden.has("story") && storyItems.length > 0 && (
+            <section style={{ order: orderOf("story") }} className="space-y-5">
+              <div className="text-center">
+                <h3
+                  className="text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]"
+                  style={{ fontFamily: TITLE_FONT }}
+                >
+                  CHUYỆN CHÚNG MÌNH
+                </h3>
+              </div>
 
-                  {/* Thông tin song thân Nhà Trai */}
-                  <div className="mt-4 border-t border-[#D8AE56]/20 pt-3 text-xs leading-relaxed text-[#BFB6A4]">
-                    <p className="font-semibold text-[#D8AE56] tracking-wider uppercase mb-1">NHÀ TRAI</p>
-                    {groomParentsList.map((pName, pIdx) => (
-                      <p key={pIdx}>{pName}</p>
-                    ))}
-                  </div>
+              {/* Dải cuộn phim 35mm có lỗ đục hai bên */}
+              <div className="relative overflow-hidden rounded-2xl border border-[#D8AE56]/40 bg-[#0F1211] px-6 py-5 shadow-[0_14px_32px_rgba(0,0,0,0.85)]">
+                {/* Lỗ phim bên trái */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-3 left-1.5 flex w-2.5 flex-col justify-between"
+                >
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="h-2.5 w-2 rounded-[2px] border border-[#D8AE56]/30 bg-[#050606]"
+                    />
+                  ))}
+                </div>
+                {/* Lỗ phim bên phải */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-3 right-1.5 flex w-2.5 flex-col justify-between"
+                >
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="h-2.5 w-2 rounded-[2px] border border-[#D8AE56]/30 bg-[#050606]"
+                    />
+                  ))}
                 </div>
 
-                {/* Thẻ Cô Dâu (Q ♥) */}
-                <div className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-[#D8AE56]/35 bg-[#121515] p-5 shadow-[0_8px_20px_rgba(0,0,0,0.6)]">
-                  {/* Huy hiệu Q ♥ góc trên phải */}
-                  <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-md border border-[#C81E2B]/50 bg-[#C81E2B]/15 text-sm font-extrabold text-[#C81E2B]" style={{ fontFamily: TITLE_FONT }}>
-                    Q ♥
-                  </div>
+                <div className="space-y-4">
+                  {storyItems.map((milestone, idx) => {
+                    const milestonePhoto = milestone.imageUrl?.trim();
+                    return (
+                      <div
+                        key={milestone.id || idx}
+                        className="rounded-xl border border-[#D8AE56]/25 bg-gradient-to-br from-[#151A18] to-[#0D1311] p-4"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className="inline-flex items-center gap-1 rounded bg-[#C81E2B] px-2 py-0.5 text-[10px] font-bold tracking-[0.18em] text-[#F5EFE4]"
+                            style={{ fontFamily: MONO_FONT }}
+                          >
+                            {milestone.year || `202${idx + 3}`}
+                          </span>
+                          <span
+                            className="text-[10px] font-bold tracking-[0.22em] text-[#D8AE56]/80"
+                            style={{ fontFamily: MONO_FONT }}
+                          >
+                            REEL {String(idx + 1).padStart(2, "0")}
+                          </span>
+                        </div>
 
-                  <div className="flex items-center gap-4">
-                    {/* Ảnh chân dung Cô dâu */}
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-[#D8AE56]/60 shadow-md">
-                      <img
-                        src={data.photos?.brideUrl || "/photos/portrait_cd.webp"}
-                        alt="Ảnh Cô Dâu"
-                        className="h-full w-full object-cover object-center"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] tracking-[0.2em] text-[#D8AE56] uppercase font-semibold" style={{ fontFamily: MONO_FONT }}>
-                        {data.couple.brideTitle || "ÁI NỮ"}
-                      </span>
-                      <h4 className="text-lg font-bold text-[#F5EFE4] leading-snug" style={{ fontFamily: TITLE_FONT }}>
-                        {data.couple.brideName}
-                      </h4>
-                    </div>
-                  </div>
+                        <h4
+                          className="mt-2.5 text-base font-bold text-[#F2D488]"
+                          style={{ fontFamily: TITLE_FONT }}
+                        >
+                          {milestone.title}
+                        </h4>
 
-                  {/* Thông tin song thân Nhà Gái */}
-                  <div className="mt-4 border-t border-[#D8AE56]/20 pt-3 text-xs leading-relaxed text-[#BFB6A4]">
-                    <p className="font-semibold text-[#D8AE56] tracking-wider uppercase mb-1">NHÀ GÁI</p>
-                    {brideParentsList.map((pName, pIdx) => (
-                      <p key={pIdx}>{pName}</p>
-                    ))}
-                  </div>
+                        {milestone.content && (
+                          <p className="mt-1.5 text-xs leading-relaxed text-[#BFB6A4]">
+                            {milestone.content}
+                          </p>
+                        )}
+
+                        {milestonePhoto && (
+                          <div
+                            className="mt-3 block w-full overflow-hidden rounded-lg border border-[#D8AE56]/30 bg-[#0B0D0E] text-left"
+                          >
+                            <div className="relative aspect-[16/9] w-full overflow-hidden">
+                              <img
+                                loading="lazy"
+                                decoding="async"
+                                src={milestonePhoto}
+                                alt={milestone.title}
+                                className="h-full w-full object-cover"
+                              />
+                              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B0D0E]/65 via-transparent to-transparent" />
+                              <span
+                                className="absolute right-2 bottom-1.5 text-[9px] font-bold tracking-[0.2em] text-[#D8AE56]"
+                                style={{ fontFamily: MONO_FONT }}
+                              >
+                                FRAME {String(idx + 1).padStart(2, "0")}A
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </section>
           )}
 
           {/* =========================================================
-              PHẦN 3: GIỜ VÀNG KHAI TIỆC & BÀN LỊCH MẠT CHƯỢC (calendar, map)
-              * LẦN 1 XUẤT HIỆN NGÀY CƯỚI: Thẻ VIP sự kiện
-              * LẦN 2 XUẤT HIỆN NGÀY CƯỚI: Bàn Lịch Tháng Mạt Chược
+              PHẦN 3: LỄ CƯỚI & SỰ KIỆN (map)
               ========================================================= */}
-          {(!hidden.has("calendar") || !hidden.has("map")) && visibleEvents.length > 0 && (
-            <section style={{ order: orderOf("calendar") }} className="space-y-5">
+          {!hidden.has("map") && visibleEvents.length > 0 && (
+            <section style={{ order: orderOf("map") }} className="space-y-5">
               <div className="text-center">
-                <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-[#D8AE56] uppercase" style={{ fontFamily: MONO_FONT }}>
-                  TIMETABLE · GIỜ VÀNG KHAI TIỆC
-                </span>
-                <h3 className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
-                  LỊCH HẸN TRĂM NĂM
+                <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
+                  LỄ CƯỚI &amp; SỰ KIỆN
                 </h3>
               </div>
 
@@ -665,7 +1180,6 @@ export function CuuLongHyYenTemplate({
                       key={evt.id || idx}
                       className="relative overflow-hidden rounded-2xl border border-[#D8AE56]/45 bg-gradient-to-b from-[#121515] to-[#0D1F19] p-6 shadow-[0_12px_28px_rgba(0,0,0,0.85)] flex flex-col justify-between"
                     >
-                      {/* Viền hoa văn vàng trang trí góc */}
                       <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full bg-[#D8AE56]/10 blur-xl" />
 
                       <div>
@@ -676,9 +1190,6 @@ export function CuuLongHyYenTemplate({
                               {evt.title || `LỄ HÔN PHỐI #${idx + 1}`}
                             </span>
                           </div>
-                          <span className="text-[11px] font-mono tracking-wider text-[#BFB6A4]">
-                            VIP PASS
-                          </span>
                         </div>
 
                         {/* Khối Ngày / Tháng / Năm lớn */}
@@ -718,29 +1229,52 @@ export function CuuLongHyYenTemplate({
                       </div>
 
                       {/* Nút chỉ đường Google Maps */}
-                      {!hidden.has("map") && (
-                        <div className="mt-4 flex justify-center">
-                          <a
-                            href={directionsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-full border border-[#D8AE56]/60 bg-[#D8AE56]/15 px-4 py-2 text-xs font-bold tracking-wider text-[#D8AE56] transition-colors hover:bg-[#D8AE56] hover:text-[#0B0D0E]"
-                          >
-                            <MapPin className="h-3.5 w-3.5" />
-                            <span>CHỈ ĐƯỜNG TRÊN GOOGLE MAPS</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </div>
-                      )}
+                      <div className="mt-4 flex justify-center">
+                        <a
+                          href={directionsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[#D8AE56]/60 bg-[#D8AE56]/15 px-4 py-2 text-xs font-bold tracking-wider text-[#D8AE56] transition-colors hover:bg-[#D8AE56] hover:text-[#0B0D0E]"
+                        >
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span>CHỈ ĐƯỜNG TRÊN GOOGLE MAPS</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
                     </div>
                   );
                 })}
               </div>
+            </section>
+          )}
+
+          {/* =========================================================
+              PHẦN 6: LỊCH CƯỚI & ĐẾM NGƯỢC (calendar)
+              ========================================================= */}
+          {!hidden.has("calendar") && (
+            <section style={{ order: orderOf("calendar") }} className="space-y-5">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
+                  NGÀY CHUNG ĐÔI
+                </h3>
+              </div>
+
+              {dateParts && (
+                <GoldenScratchCard
+                  weekday={dateParts.weekday}
+                  time={dateParts.time}
+                  day={dateParts.day}
+                  month={dateParts.month}
+                  year={dateParts.year}
+                  lunarStr={lunarStr}
+                  venueName={targetEvent.venueName}
+                />
+              )}
 
               {/* 4 ô đồng hồ đếm ngược số cơ khí */}
               <div className="rounded-2xl border border-[#D8AE56]/30 bg-[#0D1F19]/80 p-5 shadow-lg max-w-xl mx-auto">
                 <p className="text-center text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-[#D8AE56] uppercase mb-4" style={{ fontFamily: MONO_FONT }}>
-                  COUNTDOWN · CÙNG ĐẾM NGƯỢC
+                  ĐẾM NGƯỢC NGÀY VUI
                 </p>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   {[
@@ -831,21 +1365,15 @@ export function CuuLongHyYenTemplate({
           {!hidden.has("dresscode") && dressColors.length > 0 && (
             <section style={{ order: orderOf("dresscode") }} className="space-y-4 text-center">
               <div>
-                <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-[#D8AE56] uppercase" style={{ fontFamily: MONO_FONT }}>
-                  DRESS CODE · QUY CHUẨN ĐÊM TIỆC
-                </span>
-                <h3 className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
-                  LUẬT CHƠI ĐÊM TIỆC
+                <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
+                  LỊCH TRÌNH &amp; TRANG PHỤC
                 </h3>
-                <p className="mx-auto mt-2 max-w-sm text-xs text-[#BFB6A4]">
-                  Gợi ý sắc màu trang phục để cả bàn tiệc cùng lên hình thật chất.
-                </p>
               </div>
 
               {/* Các chip phỉnh Casino viền khía vàng */}
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-2">
                 {dressColors.map((hex, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-2">
+                  <div key={idx} className="flex flex-col items-center">
                     <div
                       className="relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full border-2 border-dashed border-[#D8AE56] shadow-[0_0_16px_rgba(216,174,86,0.25)] transition-transform hover:scale-110"
                       style={{
@@ -857,29 +1385,65 @@ export function CuuLongHyYenTemplate({
                       {/* Vòng viền vàng trong hạt phỉnh */}
                       <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border border-[#D8AE56]/60 pointer-events-none" />
                     </div>
-                    <span className="text-[10px] font-semibold tracking-wider text-[#D8AE56] uppercase font-mono">
-                      TONE {String(idx + 1).padStart(2, "0")}
-                    </span>
                   </div>
                 ))}
               </div>
+
+              {/* LỊCH TRÌNH ĐÊM TIỆC */}
+              {timelineItems.length > 0 && (
+                <div className="mt-6 rounded-2xl border border-[#D8AE56]/35 bg-gradient-to-b from-[#131817] to-[#0D1311] p-5 text-left shadow-[0_12px_28px_rgba(0,0,0,0.8)]">
+                  <div className="mb-4 flex items-center justify-between border-b border-[#D8AE56]/25 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-[#D8AE56]" aria-hidden="true" />
+                      <span
+                        className="text-[11px] font-bold tracking-[0.2em] text-[#D8AE56] uppercase"
+                        style={{ fontFamily: MONO_FONT }}
+                      >
+                        LỊCH TRÌNH ĐÊM TIỆC
+                      </span>
+                    </div>
+                  </div>
+
+                  <ol className="relative space-y-3.5 pl-5 before:absolute before:top-2 before:bottom-2 before:left-[7px] before:w-px before:bg-gradient-to-b before:from-[#D8AE56] before:via-[#D8AE56]/45 before:to-transparent">
+                    {timelineItems.map((item, idx) => (
+                      <li key={item.id || idx} className="relative flex items-baseline gap-3">
+                        <span
+                          aria-hidden="true"
+                          className="absolute -left-5 top-1.5 h-3.5 w-3.5 rounded-full border-2 border-[#D8AE56] bg-[#C81E2B]"
+                        />
+                        <span
+                          className="w-12 shrink-0 text-xs font-bold text-[#F2D488]"
+                          style={{ fontFamily: MONO_FONT }}
+                        >
+                          {item.time || "--:--"}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs sm:text-sm font-medium text-[#F5EFE4]">
+                            {item.label}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </section>
           )}
 
           {/* =========================================================
-              PHẦN 5: HỒ SƠ ẢNH ĐÊM CỬU LONG & LIGHTBOX (album, albumQr)
+              PHẦN 9: ALBUM ẢNH CƯỚI (album)
               ========================================================= */}
           {!hidden.has("album") && galleryPhotos.length > 0 && (
             <section style={{ order: orderOf("album") }} className="space-y-4">
               <div className="text-center">
                 <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
-                  THƯỚC PHIM
+                  ALBUM ẢNH CƯỚI
                 </h3>
               </div>
 
-              {/* Lưới ảnh phong cách khung phim TVB đánh số 01, 02... */}
+              {/* Lưới ảnh (5 ảnh nổi bật đầu tiên) */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {galleryPhotos.map((photo, idx) => (
+                {galleryPhotos.slice(0, 5).map((photo, idx) => (
                   <div
                     key={photo.id || idx}
                     onClick={() => setLightboxIndex(idx)}
@@ -888,57 +1452,83 @@ export function CuuLongHyYenTemplate({
                       idx === 0 ? "col-span-2 aspect-[16/10]" : "aspect-[4/5]",
                     )}
                   >
-                    <img
+                    <img decoding="async"
                       src={photo.url}
                       alt={photo.alt || `Khoảnh khắc #${idx + 1}`}
                       className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
-                    {/* Lớp gradient viền */}
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B0D0E]/80 via-transparent to-transparent" />
-
-                    {/* Số khung phim góc dưới */}
-                    <div className="absolute bottom-2 left-2.5 flex items-center gap-1 rounded bg-[#0B0D0E]/85 px-2 py-0.5 text-[10px] font-mono font-bold tracking-widest text-[#D8AE56]">
-                      <Film className="h-3 w-3 text-[#D8AE56]" />
-                      <span>SCENE {String(idx + 1).padStart(2, "0")}</span>
-                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* QR chia sẻ ảnh khách chụp (gói Pro/VIP) */}
-              {data.plan !== "free" && !hidden.has("albumQr") && weddingSlug && (
-                <div className="mt-6 flex justify-center border-t border-[#D8AE56]/20 pt-6">
-                  <GuestAlbumQr
-                    slug={weddingSlug}
-                    accentColor="#D8AE56"
-                    textColor="#F5EFE4"
-                    mutedColor="#BFB6A4"
-                  />
+              {/* Dải cuộn ngang cho ảnh mở rộng */}
+              {galleryPhotos.length > 5 && (
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between px-1">
+                    <span
+                      className="text-[10px] font-bold tracking-[0.2em] text-[#D8AE56] uppercase"
+                      style={{ fontFamily: MONO_FONT }}
+                    >
+                      ALBUM MỞ RỘNG ({galleryPhotos.length - 5} ẢNH)
+                    </span>
+                    <span className="text-[10px] text-[#BFB6A4]">Vuốt ngang →</span>
+                  </div>
+                  <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto rounded-xl border border-[#D8AE56]/30 bg-[#0F1211] p-3">
+                    {galleryPhotos.slice(5).map((photo, offsetIdx) => {
+                      const realIdx = offsetIdx + 5;
+                      return (
+                        <button
+                          key={photo.id || realIdx}
+                          type="button"
+                          onClick={() => setLightboxIndex(realIdx)}
+                          className="group relative aspect-[3/4] w-36 shrink-0 snap-start cursor-pointer overflow-hidden rounded-lg border border-[#D8AE56]/35 bg-[#121515] transition-all hover:border-[#D8AE56]"
+                        >
+                          <img
+                            loading="lazy"
+                            decoding="async"
+                            src={photo.url}
+                            alt={photo.alt || `Khoảnh khắc #${realIdx + 1}`}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </section>
           )}
 
           {/* =========================================================
-              PHẦN 6: VALI HỶ SỰ - MỪNG CƯỚI 3 TRẠNG THÁI (gift)
-              * normal -> glow -> open (briefcase_3states)
+              PHẦN 10: QR ALBUM CHIA SẺ ẢNH TIỆC CƯỚI (albumQr)
+              ========================================================= */}
+          {data.plan !== "free" && !hidden.has("albumQr") && resolvedWeddingSlug && (
+            <section style={{ order: orderOf("albumQr") }} className="flex justify-center pt-2">
+              <GuestAlbumQr
+                slug={resolvedWeddingSlug}
+                accentColor="#D8AE56"
+                textColor="#F5EFE4"
+                mutedColor="#BFB6A4"
+              />
+            </section>
+          )}
+
+          {/* =========================================================
+              PHẦN 7: VALI HỶ SỰ - MỪNG CƯỚI 3 TRẠNG THÁI (gift)
               ========================================================= */}
           {!hidden.has("gift") && (
             <section style={{ order: orderOf("gift") }} className="space-y-4 text-center">
               <div>
                 <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
-                  HỘP QUÀ
+                  HỘP MỪNG CƯỚI
                 </h3>
-                <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[#BFB6A4]">
-                  Sự hiện diện của Quý khách là điều đáng quý nhất trong đêm tiệc này. Nếu ở xa chưa thể ghé chung vui, Quý khách có thể chạm mở chiếc vali nhỏ bên dưới để gửi lời chúc phúc.
-                </p>
               </div>
 
               {/* Nút Vali Đen Khóa Vàng 3 Trạng Thái */}
               <div className="flex flex-col items-center justify-center pt-2">
                 {/* Preload ảnh trạng thái open chống giật layout */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/cuu-long-hy-yen/briefcase_open.webp"
                   className="hidden"
                   aria-hidden="true"
@@ -963,7 +1553,7 @@ export function CuuLongHyYenTemplate({
 
                   {/* Ảnh chiếc vali 3 trạng thái căn đáy thẳng hàng */}
                   <div className="relative z-10 h-44 w-44 sm:h-48 sm:w-48">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={
                         briefcaseStage === "open"
                           ? "/templates/cuu-long-hy-yen/briefcase_open.webp"
@@ -990,12 +1580,6 @@ export function CuuLongHyYenTemplate({
               ========================================================= */}
           {!hidden.has("rsvp") && (
             <section style={{ order: orderOf("rsvp") }} className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
-                  XÁC NHẬN THAM DỰ
-                </h3>
-              </div>
-
               {/* Form RSVP bọc trong card Obsidian viền vàng 24K */}
               <div
                 className="overflow-hidden rounded-2xl border border-[#D8AE56]/40 bg-[#121615] p-5 sm:p-6 shadow-[0_12px_28px_rgba(0,0,0,0.85)]"
@@ -1041,7 +1625,7 @@ export function CuuLongHyYenTemplate({
           <div className="mx-auto max-w-sm px-4 space-y-2">
             {/* Dải phân cách hoa văn Cửu Long */}
             <div className="flex justify-center mb-3">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/cuu-long-hy-yen/divider_kowloon_deco.webp"
                 alt=""
                 aria-hidden="true"
@@ -1049,13 +1633,10 @@ export function CuuLongHyYenTemplate({
               />
             </div>
             <p className="text-sm font-bold uppercase tracking-widest text-[#F5EFE4]" style={{ fontFamily: TITLE_FONT }}>
-              HẸN GẶP QUÝ KHÁCH TẠI ĐÊM TIỆC CỬU LONG
-            </p>
-            <p className="text-[11px] tracking-[0.2em] text-[#D8AE56] uppercase font-mono">
-              CỬU LONG HỶ YẾN · VIP PASSION 1990S
+              HẸN GẶP QUÝ KHÁCH TẠI TIỆC CƯỚI
             </p>
             <p className="text-[10px] text-[#737882] pt-2">
-              © {dateParts.year} {data.couple.groomName} &amp; {data.couple.brideName}. ALL RIGHTS RESERVED.
+              © {dateParts.year} {data.couple.groomName} &amp; {data.couple.brideName}
             </p>
           </div>
         </footer>

@@ -311,8 +311,16 @@ export async function submitWish(input: {
 export function verifySharePin(
   slug: string,
   pin: string,
+  turnstileToken?: string | null,
 ): Promise<{ ok: boolean; error?: string }> {
-  return request("/api/share/verify-pin", post({ slug, pin }));
+  return request(
+    "/api/share/verify-pin",
+    post({
+      slug,
+      pin,
+      ...(turnstileToken ? { turnstileToken } : {}),
+    }),
+  );
 }
 
 export function moderatePhoto(
@@ -545,6 +553,23 @@ export function uploadPhoto(
   }
   return authFormRequest(
     `/api/weddings/${encodeURIComponent(weddingId)}/photos`,
+    formData,
+  );
+}
+
+export function uploadStoryPhoto(
+  weddingId: string,
+  file: File | Blob,
+  fileName?: string,
+): Promise<{ url: string }> {
+  const formData = new FormData();
+  if (file instanceof File) {
+    formData.append("file", file);
+  } else {
+    formData.append("file", file, fileName ?? "story.webp");
+  }
+  return authFormRequest(
+    `/api/weddings/${encodeURIComponent(weddingId)}/story-photo`,
     formData,
   );
 }

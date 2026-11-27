@@ -178,6 +178,19 @@ export function TurnstileWidget({
 
   return (
     <div className={className}>
+      {status === "loading" && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-center gap-2 py-2 text-xs text-text-muted"
+        >
+          <span
+            aria-hidden="true"
+            className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+          />
+          <span>Đang tải xác thực bảo mật...</span>
+        </div>
+      )}
       <div ref={containerRef} />
       {status === "error" && (
         <div role="alert" className="w-full text-center">

@@ -14,6 +14,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
@@ -21,9 +22,14 @@ import {
 } from "@/lib/events";
 import type {
   TemplateData,
-  WeddingEvent,
   TemplatePhotoItem,
 } from "@/lib/wedding-types";
+import {
+  ImperialReveal,
+  HeroReveal,
+  GoldButtonShimmer,
+  IMPERIAL_EASE,
+} from "../shared/ImperialMotion";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
@@ -31,43 +37,28 @@ import type { WeddingTemplateProps } from "../types";
 
 /* ============================================================
    BẢNG MÀU CHÍNH THỨC: CHU SA LONG PHỤNG (chu-sa-long-phung)
-   - Đỏ Chu Sa Hoàng Cung (Imperial Cinnabar Crimson): #6B0C14 (sâu #42060B, hover #82111B)
-   - Vàng 24K Cung Đình (24K Imperial Gold): #D4AF6A (sáng #F2DCA6, trầm #A6833E)
-   - Kem Hoàng Gia (Warm Royal Ivory): #FAF5EC (thẻ phụ #FFFFFF, thẻ ấm #F3EAE0)
-   - Chữ chính trên nền kem: #5A0B12 (tiêu đề) / #3A2522 (nội dung, tương phản cao)
-   - Dress Code mặc định: #6B0C14 (Đỏ chu sa), #D4AF6A (Vàng 24K), #FAF5EC (Kem hoàng gia)
    ============================================================ */
 
-const CINNABAR_MAIN = "#6B0C14";
 const CINNABAR_DEEP = "#42060B";
 const CINNABAR_CARD = "rgba(107, 12, 20, 0.94)";
 
 const GOLD_24K = "#D4AF6A";
 const GOLD_LIGHT = "#F2DCA6";
-const GOLD_DEEP = "#A6833E";
 
 const IVORY_ROYAL = "#FAF5EC";
-const IVORY_CARD = "#FFFFFF";
 
-const TEXT_TITLE_RED = "#F2DCA6";
 const TEXT_BODY_RED = "#FAF5EC";
-const TEXT_MUTED_RED = "#E0C8BA";
-
-const TEXT_TITLE_IVORY = "#5A0B12";
 const TEXT_BODY_IVORY = "#3A2522";
-const TEXT_MUTED_IVORY = "#6E5A57";
 
 const TITLE_FONT = "var(--font-playfair), Georgia, serif";
 const NAME_FONT = "var(--font-cormorant), Georgia, serif";
 const BODY_FONT = "var(--font-be-vietnam), sans-serif";
 
-const EASE_IMPERIAL = [0.22, 1, 0.36, 1] as const;
-
 const DEFAULT_TIMELINE = [
-  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm tại tiền sảnh Chu Sa Long Phụng" },
-  { time: "17:30", label: "Nghi thức Thành Hôn Long Phụng Hòa Minh & Trao lời hẹn ước sắt son" },
-  { time: "18:00", label: "Khai tiệc hoàng gia & Nâng ly rượu nồng giao bôi chúc phúc" },
-  { time: "19:30", label: "Giai điệu cung đình hoàng gia & Gắn kết thân tình hai họ" },
+  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
+  { time: "17:30", label: "Cử hành Lễ Thành Hôn & Trao lời hẹn ước sắt son" },
+  { time: "18:00", label: "Khai tiệc chung vui & Nâng ly chúc phúc" },
+  { time: "19:30", label: "Âm nhạc & Gắn kết thân tình hai họ" },
   { time: "20:30", label: "Tiễn khách & Trao quà cảm tạ tri ân" },
 ];
 
@@ -156,40 +147,67 @@ export default function ChuSaLongPhungTemplate({
   initialSongRequest = "",
   initialRideNeeded = false,
 }: WeddingTemplateProps) {
+  const reduce = useReducedMotion();
   const [isOpen, setIsOpen] = React.useState(isOpened);
-  const [isOpening, setIsOpening] = React.useState(false);
+  const [coverPhase, setCoverPhase] = React.useState<"idle" | "seal" | "gates">("idle");
   const [coverGone, setCoverGone] = React.useState(isOpened);
+  const [prevIsOpened, setPrevIsOpened] = React.useState(isOpened);
+  const timeoutsRef = React.useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
-  // 2-way sync với parent frame
-  const parentOpenedRef = React.useRef(isOpened);
-  React.useEffect(() => {
-    if (isOpened && !isOpen) {
+  if (isOpened !== prevIsOpened) {
+    setPrevIsOpened(isOpened);
+    if (isOpened) {
       setIsOpen(true);
       setCoverGone(true);
-    } else if (!isOpened && parentOpenedRef.current) {
+      setCoverPhase("idle");
+    } else {
       setIsOpen(false);
       setCoverGone(false);
-      setIsOpening(false);
+      setCoverPhase("idle");
     }
-    parentOpenedRef.current = isOpened;
-  }, [isOpened, isOpen]);
+  }
+
+  React.useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((id) => clearTimeout(id));
+      timeoutsRef.current = [];
+    };
+  }, []);
+
+  const isOpening = coverPhase === "seal" || coverPhase === "gates";
+  const showBody = coverGone || coverPhase === "gates";
 
   const handleOpenCover = () => {
     if (isOpen || isOpening) return;
-    onOpenedChange?.(true);
-    try {
-      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
-    } catch { }
-    setIsOpening(true);
     playOpenCardSound();
-    setTimeout(() => {
+
+    if (reduce) {
       setIsOpen(true);
       setCoverGone(true);
-      setIsOpening(false);
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch {}
+      return;
+    }
+
+    setCoverPhase("seal");
+    const t1 = setTimeout(() => {
+      setCoverPhase("gates");
+    }, 750);
+    const t2 = setTimeout(() => {
+      setIsOpen(true);
+      setCoverGone(true);
+      setCoverPhase("idle");
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch {}
       if (!contained && typeof window !== "undefined") {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
-    }, 700);
+    }, 2000);
+    timeoutsRef.current.push(t1, t2);
   };
 
   // Gift modal state & Parcel hover
@@ -215,16 +233,14 @@ export default function ChuSaLongPhungTemplate({
   const lunarDateClean = targetEvent.lunarDate ? formatLunarDateClean(targetEvent.lunarDate) : "Ngày Hoàng Đạo";
 
   // Countdown timer an toàn hydration
-  const [mounted, setMounted] = React.useState(false);
-  const [timeLeft, setTimeLeft] = React.useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
+  const [timeLeft, setTimeLeft] = React.useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  } | null>(null);
 
   React.useEffect(() => {
-    setMounted(true);
     const target = new Date(eventDateStr).getTime();
 
     const calcTime = () => {
@@ -238,14 +254,19 @@ export default function ChuSaLongPhungTemplate({
       });
     };
 
-    calcTime();
+    const boot = setTimeout(calcTime, 0);
     const timer = setInterval(calcTime, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(boot);
+      clearInterval(timer);
+    };
   }, [eventDateStr]);
 
   // Calendar month days calculation
   const calendarData = React.useMemo(() => {
-    const d = new Date(eventDateStr);
+    const events = getVisibleEvents(data);
+    const ev = getNearestUpcomingEvent(events, data.date);
+    const d = new Date(ev.startsAt || data.date || "2026-12-18");
     const year = d.getFullYear() || 2026;
     const month = d.getMonth() || 11;
     const currentDay = d.getDate() || 18;
@@ -265,26 +286,14 @@ export default function ChuSaLongPhungTemplate({
       currentDay,
       monthYear: `THÁNG ${month + 1} / ${year}`,
     };
-  }, [eventDateStr]);
+  }, [data]);
 
   // Section order & hidden sections
   const hiddenSections = React.useMemo(() => {
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const defaultOrder = React.useMemo(
-    () => [
-      "family",
-      "map",
-      "album",
-      "albumQr",
-      "calendar",
-      "dresscode",
-      "gift",
-      "rsvp",
-    ],
-    []
-  );
+  const defaultOrder = CANONICAL_SECTION_ORDER;
 
   const sectionOrder = React.useMemo(() => {
     const order = data.sectionOrder || defaultOrder;
@@ -331,7 +340,7 @@ export default function ChuSaLongPhungTemplate({
       }}
     >
       {/* ============================================================
-          MÀN HÌNH BÌA MỞ THIỆP — "KIM ẤN KHAI TRIỀU"
+          MÀN HÌNH BÌA MỞ THIỆP — "BÁT GIÁC ẤN KHAI CỔNG CUNG ĐÌNH" (~2.0s)
           ============================================================ */}
       <AnimatePresence>
         {!coverGone && (
@@ -350,124 +359,160 @@ export default function ChuSaLongPhungTemplate({
               backgroundPosition: "center",
             }}
             initial={{ opacity: 1 }}
+            animate={
+              coverPhase === "gates"
+                ? { opacity: 0, transition: { duration: 0.6, delay: 0.7, ease: IMPERIAL_EASE } }
+                : { opacity: 1 }
+            }
             exit={{
               opacity: 0,
-              scale: 0.96,
-              transition: { duration: 0.65, ease: EASE_IMPERIAL },
+              transition: { duration: 0.35, ease: IMPERIAL_EASE },
             }}
           >
             {/* Hiệu ứng bụi vàng cung đình */}
             <ImperialGoldDust count={16} />
 
-            {/* Màn gấm đỏ chu sa tách cánh khi bấm Mở Thiệp (z-[5] pointer-events-none) */}
-            {isOpening && (
-              <div className="pointer-events-none absolute inset-0 z-[5] flex overflow-hidden">
+            {/* Tia sáng vàng 24K quét dọc khe cổng trong Pha 1 + Hai cánh cổng son cung đình mở tách đôi trong Pha 2 */}
+            {isOpening && !reduce && (
+              <div className="pointer-events-none absolute inset-0 z-10 flex overflow-hidden">
                 <m.div
-                  className="w-1/2 h-full bg-[#6B0C14] shadow-2xl"
-                  initial={{ x: 0 }}
-                  animate={{ x: "-100%" }}
-                  transition={{ duration: 0.65, ease: EASE_IMPERIAL }}
+                  className="w-1/2 h-full bg-gradient-to-r from-[#42060B] via-[#6B0C14] to-[#7D121B] border-r-2 border-[#D4AF6A]/65 shadow-2xl"
+                  initial={{ x: "0%" }}
+                  animate={coverPhase === "gates" ? { x: "-105%" } : { x: "0%" }}
+                  transition={{ duration: 1.15, ease: IMPERIAL_EASE }}
                 />
                 <m.div
-                  className="w-1/2 h-full bg-[#6B0C14] shadow-2xl"
-                  initial={{ x: 0 }}
-                  animate={{ x: "100%" }}
-                  transition={{ duration: 0.65, ease: EASE_IMPERIAL }}
+                  className="w-1/2 h-full bg-gradient-to-l from-[#42060B] via-[#6B0C14] to-[#7D121B] border-l-2 border-[#D4AF6A]/65 shadow-2xl"
+                  initial={{ x: "0%" }}
+                  animate={coverPhase === "gates" ? { x: "105%" } : { x: "0%" }}
+                  transition={{ duration: 1.15, ease: IMPERIAL_EASE }}
                 />
+                {coverPhase === "seal" && (
+                  <m.div
+                    aria-hidden="true"
+                    className="absolute inset-y-0 left-1/2 w-[3px] -translate-x-1/2 bg-gradient-to-b from-transparent via-[#F2DCA6] to-transparent shadow-[0_0_24px_#F2DCA6]"
+                    initial={{ scaleY: 0, opacity: 0 }}
+                    animate={{ scaleY: 1, opacity: [0, 1, 0.9] }}
+                    transition={{ duration: 0.65, ease: IMPERIAL_EASE }}
+                  />
+                )}
               </div>
             )}
 
             {/* Thẻ Gấm Đỏ Chu Sa Trung Tâm (z-20) */}
             <m.div
-              className="relative w-full max-w-[328px] sm:max-w-[380px] mx-auto my-auto flex flex-col items-center text-center rounded-3xl p-6 sm:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.85)] border border-[#D4AF6A]/50 backdrop-blur-md overflow-hidden z-20"
+              className="relative w-full max-w-[328px] sm:max-w-[380px] mx-auto my-auto flex flex-col items-center text-center rounded-3xl p-6 sm:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.85)] border border-[#D4AF6A]/55 overflow-hidden z-20"
               style={{ backgroundColor: CINNABAR_CARD }}
               initial={{ scale: 0.95, opacity: 0, y: 15 }}
               animate={
-                isOpening
-                  ? { scale: 1.03, opacity: 0, y: -25, transition: { duration: 0.65, ease: EASE_IMPERIAL } }
-                  : { scale: 1, opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_IMPERIAL } }
+                coverPhase === "gates"
+                  ? { scale: 0.94, opacity: 0, y: -24, transition: { duration: 0.65, ease: IMPERIAL_EASE } }
+                  : { scale: 1, opacity: 1, y: 0, transition: { duration: 0.6, ease: IMPERIAL_EASE } }
               }
             >
               {/* Viền chỉ vàng cổ lồng bên trong */}
-              <div className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#D4AF6A]/35" />
+              <div className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#D4AF6A]/40" />
 
               {/* 4 Góc Hoa Văn Hoàng Cung corner-palace.webp */}
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/chu-sa-long-phung/corner-palace.webp"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute top-3 left-3 w-10 sm:w-12 object-contain opacity-80 z-10"
+                className="pointer-events-none absolute top-3 left-3 w-10 sm:w-12 object-contain opacity-85 z-10"
               />
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/chu-sa-long-phung/corner-palace.webp"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute top-3 right-3 w-10 sm:w-12 object-contain opacity-80 -scale-x-100 z-10"
+                className="pointer-events-none absolute top-3 right-3 w-10 sm:w-12 object-contain opacity-85 -scale-x-100 z-10"
               />
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/chu-sa-long-phung/corner-palace.webp"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute bottom-3 left-3 w-10 sm:w-12 object-contain opacity-80 -scale-y-100 z-10"
+                className="pointer-events-none absolute bottom-3 left-3 w-10 sm:w-12 object-contain opacity-85 -scale-y-100 z-10"
               />
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/chu-sa-long-phung/corner-palace.webp"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute bottom-3 right-3 w-10 sm:w-12 object-contain opacity-80 -scale-100 z-10"
+                className="pointer-events-none absolute bottom-3 right-3 w-10 sm:w-12 object-contain opacity-85 -scale-100 z-10"
               />
 
-              {/* Linh vật Rồng & Phượng chầu ở lớp nền (z-0) với hiệu ứng Tách Cánh khi mở */}
+              {/* Linh vật Rồng & Phượng chầu ở lớp nền (z-0) nghiêng chầu rồi dạt cánh khi mở */}
               <m.img
+                loading="eager"
+                decoding="async"
                 src="/templates/chu-sa-long-phung/dragon-left.webp"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-20 sm:w-28 object-contain opacity-25 sm:opacity-35 z-0"
+                className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-20 sm:w-24 object-contain z-0"
                 animate={
-                  isOpening
-                    ? { x: -80, opacity: 0, transition: { duration: 0.55, ease: EASE_IMPERIAL } }
-                    : { x: 0, opacity: 0.3 }
+                  coverPhase === "gates"
+                    ? { x: -100, rotate: -9, opacity: 0, transition: { duration: 0.9, ease: IMPERIAL_EASE } }
+                    : { x: 0, rotate: 0, opacity: 0.42 }
                 }
               />
               <m.img
+                loading="eager"
+                decoding="async"
                 src="/templates/chu-sa-long-phung/phoenix-right.webp"
                 alt=""
                 aria-hidden="true"
-                className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 w-20 sm:w-28 object-contain opacity-25 sm:opacity-35 z-0"
+                className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 w-20 sm:w-24 object-contain z-0"
                 animate={
-                  isOpening
-                    ? { x: 80, opacity: 0, transition: { duration: 0.55, ease: EASE_IMPERIAL } }
-                    : { x: 0, opacity: 0.3 }
+                  coverPhase === "gates"
+                    ? { x: 100, rotate: 9, opacity: 0, transition: { duration: 0.9, ease: IMPERIAL_EASE } }
+                    : { x: 0, rotate: 0, opacity: 0.42 }
                 }
               />
 
-              {/* Kim Ấn Bát Giác Song Hỷ 囍 vàng 24K nền đỏ chu sa ở đỉnh (relative z-20) */}
+              {/* Kim Ấn Bát Giác Song Hỷ 囍 vàng 24K xoay 45 độ & tỏa sóng sáng Pha 1 */}
               <div className="relative mt-2 mb-3 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center z-20">
-                <m.div
-                  className="pointer-events-none absolute inset-0 rounded-full"
-                  style={{
-                    background: "radial-gradient(circle, rgba(212,175,106,0.45) 0%, transparent 70%)",
-                    filter: "blur(8px)",
-                  }}
-                  animate={
-                    isOpening
-                      ? { scale: [1, 1.8], opacity: [0.5, 1], rotate: [0, 45], transition: { duration: 0.4 } }
-                      : { scale: [1, 1.12, 1], opacity: [0.4, 0.7, 0.4], transition: { duration: 3, repeat: Infinity, ease: "easeInOut" } }
-                  }
-                />
-                <img
+                {!reduce && (
+                  <m.div
+                    className="pointer-events-none absolute inset-0 rounded-full"
+                    style={{
+                      background: "radial-gradient(circle, rgba(212,175,106,0.48) 0%, transparent 70%)",
+                      filter: "blur(8px)",
+                    }}
+                    animate={
+                      coverPhase === "seal"
+                        ? { scale: [1, 1.85], opacity: [0.55, 1], transition: { duration: 0.65 } }
+                        : { scale: [1, 1.15, 1], opacity: [0.45, 0.78, 0.45], transition: { duration: 3, repeat: Infinity, ease: "easeInOut" } }
+                    }
+                  />
+                )}
+                {coverPhase === "seal" && !reduce && (
+                  <m.span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute h-16 w-16 rounded-full border border-[#F2DCA6]/85"
+                    initial={{ scale: 0.7, opacity: 0.9 }}
+                    animate={{ scale: 2.8, opacity: 0 }}
+                    transition={{ duration: 0.9, ease: IMPERIAL_EASE }}
+                  />
+                )}
+                <m.img
+                  loading="eager"
+                  decoding="async"
                   src="/templates/chu-sa-long-phung/seal-octagon.webp"
                   alt="Kim Ấn Bát Giác Song Hỷ"
                   className="relative z-20 w-full h-full object-contain drop-shadow-lg"
+                  animate={
+                    coverPhase === "seal"
+                      ? { rotate: 45, scale: 1.12 }
+                      : { rotate: 0, scale: 1 }
+                  }
+                  transition={{ duration: 0.7, ease: IMPERIAL_EASE }}
                 />
               </div>
 
               {/* Dòng kính mời */}
               <p
-                className="relative z-20 text-[11px] uppercase tracking-[0.3em] text-[#D4AF6A] font-semibold mb-2"
+                className="relative z-20 text-[11px] uppercase tracking-[0.28em] text-[#D4AF6A] font-semibold mb-1.5"
                 style={{ fontFamily: BODY_FONT }}
               >
-                {guestName ? `Trân Trọng Kính Mời ${guestName}` : data.ui?.eyebrow || "Trân Trọng Kính Mời"}
+                {guestName ? `Trân Trọng Kính Mời ${guestName}` : "Trân Trọng Kính Mời"}
               </p>
 
               {/* Tên cặp đôi 3 dòng Ánh Vàng Champagne #F2DCA6 sắc nét */}
@@ -484,34 +529,46 @@ export default function ChuSaLongPhungTemplate({
 
               {/* Dải phân cách hoa văn mây hoàng cung */}
               <div className="relative z-20 my-2.5 w-36 sm:w-44 flex justify-center">
-                <img
+                <img loading="eager" decoding="async"
                   src="/templates/chu-sa-long-phung/divider-palace.webp"
                   alt=""
                   aria-hidden="true"
-                  className="w-full object-contain opacity-85"
+                  className="w-full object-contain opacity-90"
                 />
               </div>
 
-              {/* Lời trân quý */}
-              <p className="relative z-20 text-xs sm:text-sm text-[#E0C8BA] max-w-[280px] leading-relaxed mb-6 font-light">
-                {data.ui?.heroSubtitle || "Hỷ sự tương phùng • Uyên ương hòa hợp"}
-              </p>
+              {/* Ngày cưới & Âm lịch chuẩn thiệp cưới (thay hoàn toàn đoạn mô tả quảng cáo thừa) */}
+              <div className="relative z-20 mt-1 mb-5 space-y-1">
+                <p
+                  className="text-xs sm:text-sm font-semibold tracking-[0.22em] uppercase text-[#F2DCA6]"
+                  style={{ fontFamily: TITLE_FONT }}
+                >
+                  {dateParts.weekday} · {dateParts.dotDate}
+                </p>
+                {lunarDateClean && (
+                  <p className="text-[11px] text-[#E0C8BA] tracking-wide">
+                    (Tức ngày {lunarDateClean})
+                  </p>
+                )}
+              </div>
 
-              {/* Nút bấm mở thiệp vàng 24K */}
+              {/* Nút bấm mở thiệp vàng 24K + hiệu ứng ánh kim */}
               <m.button
+                type="button"
                 onClick={handleOpenCover}
                 disabled={isOpening}
-                className="relative z-20 px-8 py-3 rounded-full text-xs sm:text-sm font-serif tracking-widest font-bold uppercase shadow-2xl transition-all cursor-pointer select-none active:scale-95"
+                className="relative overflow-hidden z-20 px-9 py-2.5 rounded-full text-xs sm:text-sm font-serif tracking-[0.2em] font-bold uppercase shadow-2xl transition-all cursor-pointer select-none active:scale-95"
                 style={{
                   background: "linear-gradient(135deg, #D4AF6A 0%, #F2DCA6 50%, #D4AF6A 100%)",
                   color: "#42060B",
                   boxShadow: "0 10px 25px rgba(212,175,106,0.45)",
                 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={reduce ? undefined : { scale: 1.04 }}
+                whileTap={reduce ? undefined : { scale: 0.96 }}
               >
-                <span className="flex items-center justify-center">
-                  <span>{isOpening ? "Đang Mở..." : "Mở Thiệp"}</span>
+                <GoldButtonShimmer active={!isOpening} />
+                <span className="relative z-10 flex items-center justify-center">
+                  <span>{isOpening ? "Đang Khai Ấn..." : "Mở Thiệp"}</span>
                 </span>
               </m.button>
             </m.div>
@@ -533,12 +590,12 @@ export default function ChuSaLongPhungTemplate({
 
       {/* ============================================================
           RUỘT THIỆP CHÍNH (Đỏ Chu Sa & Thẻ Kem Hoàng Gia #FAF5EC)
-          - Chỉ hiện khi coverGone = true (Chống trôi layout)
+          - Hiện mượt khi Pha 2 (gates) bắt đầu mở
           ============================================================ */}
       <div
         className={cn(
           "w-full transition-opacity duration-700",
-          !coverGone && "hidden pointer-events-none"
+          !showBody && "hidden pointer-events-none"
         )}
       >
         {/* Nền gấm hoàng cung chìm toàn trang */}
@@ -561,25 +618,25 @@ export default function ChuSaLongPhungTemplate({
             <ImperialGoldDust count={12} />
 
             {/* 4 Góc Hoa Văn Hoàng Cung */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/chu-sa-long-phung/corner-palace.webp"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute top-3 left-3 w-10 sm:w-12 object-contain opacity-75 z-10"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/chu-sa-long-phung/corner-palace.webp"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute top-3 right-3 w-10 sm:w-12 object-contain opacity-75 -scale-x-100 z-10"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/chu-sa-long-phung/corner-palace.webp"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute bottom-3 left-3 w-10 sm:w-12 object-contain opacity-75 -scale-y-100 z-10"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/chu-sa-long-phung/corner-palace.webp"
               alt=""
               aria-hidden="true"
@@ -587,55 +644,67 @@ export default function ChuSaLongPhungTemplate({
             />
 
             {/* Kim Ấn Bát Giác Song Hỷ ở đỉnh */}
-            <div className="relative mb-3 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center z-10">
-              <img
+            <HeroReveal showBody={showBody} delay={0.1} scale={0.92} className="relative mb-3 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center z-10">
+              <img loading="eager" decoding="async"
                 src="/templates/chu-sa-long-phung/seal-octagon.webp"
                 alt="Kim Ấn Song Hỷ"
                 className="w-full h-full object-contain drop-shadow-md"
               />
-            </div>
+            </HeroReveal>
 
-            <p
-              className="text-[11px] uppercase tracking-[0.25em] text-[#D4AF6A] font-semibold mb-2 z-10"
-              style={{ fontFamily: BODY_FONT }}
-            >
-              {data.ui?.eyebrow || "Lễ Thành Hôn"}
-            </p>
+            <HeroReveal showBody={showBody} delay={0.2} y={12}>
+              <p
+                className="text-[11px] uppercase tracking-[0.25em] text-[#D4AF6A] font-semibold mb-2 z-10"
+                style={{ fontFamily: BODY_FONT }}
+              >
+                {data.ui?.eyebrow || "Lễ Thành Hôn"}
+              </p>
+            </HeroReveal>
 
-            <h2
-              className="text-2xl sm:text-3xl md:text-4xl text-[#F2DCA6] font-normal tracking-wide my-1 z-10"
-              style={{ fontFamily: TITLE_FONT }}
-            >
-              <span className="block leading-tight">{groomDisplayName}</span>
-              <span className="block text-[#D4AF6A] text-xl sm:text-2xl my-1 font-serif italic">&amp;</span>
-              <span className="block leading-tight">{brideDisplayName}</span>
-            </h2>
+            <HeroReveal showBody={showBody} delay={0.3} y={16}>
+              <h2
+                className="text-2xl sm:text-3xl md:text-4xl text-[#F2DCA6] font-normal tracking-wide my-1 z-10"
+                style={{ fontFamily: TITLE_FONT }}
+              >
+                <span className="block leading-tight">{groomDisplayName}</span>
+                <span className="block text-[#D4AF6A] text-xl sm:text-2xl my-1 font-serif italic">&amp;</span>
+                <span className="block leading-tight">{brideDisplayName}</span>
+              </h2>
+            </HeroReveal>
 
-            <div className="w-36 sm:w-44 my-3 flex justify-center z-10">
-              <img
+            <HeroReveal showBody={showBody} delay={0.42} scale={0.94} className="w-36 sm:w-44 my-3 flex justify-center z-10">
+              <img loading="eager" decoding="async"
                 src="/templates/chu-sa-long-phung/divider-palace.webp"
                 alt=""
                 aria-hidden="true"
                 className="w-full object-contain opacity-85"
               />
-            </div>
+            </HeroReveal>
 
-            <p className="text-xs sm:text-sm text-[#FAF5EC] max-w-[260px] sm:max-w-[340px] md:max-w-[420px] leading-relaxed font-light z-10 mb-4">
-              Trân trọng kính mời quý khách đến chung vui cùng gia đình chúng tôi trong ngày lễ thành hôn thiêng liêng.
-            </p>
+            <HeroReveal showBody={showBody} delay={0.52} y={14}>
+              <p className="text-xs sm:text-sm text-[#FAF5EC] max-w-[260px] sm:max-w-[340px] md:max-w-[420px] leading-relaxed font-light z-10 mb-4">
+                Trân trọng kính mời quý khách đến chung vui cùng gia đình chúng tôi trong ngày lễ thành hôn thiêng liêng.
+              </p>
+            </HeroReveal>
 
             {/* Đôi linh vật Long - Phụng chầu đối xứng 2 góc đáy (Chống va chạm trên Mobile) */}
-            <img
+            <m.img loading="eager" decoding="async"
               src="/templates/chu-sa-long-phung/dragon-left.webp"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-0 w-20 sm:w-28 md:w-36 object-contain opacity-65 drop-shadow-md z-0"
+              initial={reduce ? false : { x: -24, opacity: 0 }}
+              animate={showBody ? { x: 0, opacity: 0.65 } : { x: -24, opacity: 0 }}
+              transition={{ duration: 0.9, delay: 0.35, ease: IMPERIAL_EASE }}
+              className="pointer-events-none absolute bottom-0 left-0 w-20 sm:w-28 md:w-36 object-contain drop-shadow-md z-0"
             />
-            <img
+            <m.img loading="eager" decoding="async"
               src="/templates/chu-sa-long-phung/phoenix-right.webp"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 right-0 w-20 sm:w-28 md:w-36 object-contain opacity-65 drop-shadow-md z-0"
+              initial={reduce ? false : { x: 24, opacity: 0 }}
+              animate={showBody ? { x: 0, opacity: 0.65 } : { x: 24, opacity: 0 }}
+              transition={{ duration: 0.9, delay: 0.35, ease: IMPERIAL_EASE }}
+              className="pointer-events-none absolute bottom-0 right-0 w-20 sm:w-28 md:w-36 object-contain drop-shadow-md z-0"
             />
           </section>
 
@@ -654,53 +723,56 @@ export default function ChuSaLongPhungTemplate({
                   style={{ backgroundColor: IVORY_ROYAL, color: TEXT_BODY_IVORY }}
                 >
                   {/* 4 Góc Hoa Văn Hoàng Cung */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute top-3 left-3 w-10 sm:w-12 object-contain opacity-85 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute top-3 right-3 w-10 sm:w-12 object-contain opacity-85 -scale-x-100 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute bottom-3 left-3 w-10 sm:w-12 object-contain opacity-85 -scale-y-100 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute bottom-3 right-3 w-10 sm:w-12 object-contain opacity-85 -scale-100 z-10"
                   />
 
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#6B0C14] font-semibold mb-1">
-                    Hôn Phối Châu Loan
-                  </span>
-                  <h3
-                    className="text-2xl sm:text-3xl text-[#5A0B12] font-normal mb-2"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Hai Bên Gia Đình
-                  </h3>
+                  <ImperialReveal direction="up" className="flex flex-col items-center">
+                    <span className="text-[11px] uppercase tracking-[0.25em] text-[#6B0C14] font-semibold mb-1">
+                      Hôn Phối Châu Loan
+                    </span>
+                    <h3
+                      className="text-2xl sm:text-3xl text-[#5A0B12] font-normal mb-2"
+                      style={{ fontFamily: TITLE_FONT }}
+                    >
+                      Hai Bên Gia Đình
+                    </h3>
 
-                  <div className="w-32 sm:w-40 my-2 flex justify-center">
-                    <img
-                      src="/templates/chu-sa-long-phung/divider-palace.webp"
-                      alt=""
-                      aria-hidden="true"
-                      className="w-full object-contain opacity-80"
-                    />
-                  </div>
+                    <div className="w-32 sm:w-40 my-2 flex justify-center">
+                      <img loading="lazy" decoding="async"
+                        src="/templates/chu-sa-long-phung/divider-palace.webp"
+                        alt=""
+                        aria-hidden="true"
+                        className="w-full object-contain opacity-80"
+                      />
+                    </div>
+                  </ImperialReveal>
 
                   {/* 2 Cột Gia Đình bằng nhau (items-stretch, h-full) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 w-full mt-6 items-stretch">
                     {/* Nhà Trai */}
+                    <ImperialReveal direction="left" delay={0.08} className="h-full">
                     <div className="h-full flex flex-col justify-between rounded-2xl bg-[#FFFFFF] border border-[#D4AF6A]/35 p-6 shadow-sm">
                       <div className="flex flex-col items-center">
                         <span className="text-xs uppercase tracking-widest text-[#6B0C14] font-bold mb-2">
@@ -724,8 +796,10 @@ export default function ChuSaLongPhungTemplate({
                         </span>
                       </div>
                     </div>
+                    </ImperialReveal>
 
                     {/* Nhà Gái */}
+                    <ImperialReveal direction="right" delay={0.14} className="h-full">
                     <div className="h-full flex flex-col justify-between rounded-2xl bg-[#FFFFFF] border border-[#D4AF6A]/35 p-6 shadow-sm">
                       <div className="flex flex-col items-center">
                         <span className="text-xs uppercase tracking-widest text-[#6B0C14] font-bold mb-2">
@@ -749,13 +823,31 @@ export default function ChuSaLongPhungTemplate({
                         </span>
                       </div>
                     </div>
+                    </ImperialReveal>
                   </div>
 
-                  {/* Khối Lễ Cưới Chi Tiết (Hỗ trợ 1..N buổi lễ) */}
-                  <div className="w-full mt-8 pt-6 border-t border-[#D4AF6A]/35 flex flex-col items-center">
-                    <span className="text-xs uppercase tracking-widest text-[#6B0C14] font-bold mb-3">
-                      Thời Gian &amp; Địa Điểm Hôn Lễ
-                    </span>
+                </section>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------
+                3. LỄ CƯỚI CHI TIẾT & ĐỊA ĐIỂM (map)
+                ------------------------------------------------------------ */}
+            {!hiddenSections.has("map") && (
+              <div style={{ order: orderOf("map") }}>
+                <section
+                  className="relative w-full rounded-3xl border border-[#D4AF6A]/50 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.5)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden"
+                  style={{ backgroundColor: IVORY_ROYAL, color: TEXT_BODY_IVORY }}
+                >
+                  <div className="w-full flex flex-col items-center">
+                    <ImperialReveal direction="up">
+                      <h3
+                        className="text-2xl sm:text-3xl text-[#5A0B12] font-normal mb-6"
+                        style={{ fontFamily: TITLE_FONT }}
+                      >
+                        Sự Kiện Cưới
+                      </h3>
+                    </ImperialReveal>
 
                     <div className={visibleEvents.length > 1 ? "w-full grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6" : "w-full max-w-xl mx-auto space-y-4"}>
                       {visibleEvents.map((evt, idx) => {
@@ -764,9 +856,9 @@ export default function ChuSaLongPhungTemplate({
                         const directionsUrl = getEventDirectionsUrl(evt);
 
                         return (
+                          <ImperialReveal key={evt.id || idx} direction="up" delay={idx * 0.1} className="h-full">
                           <div
-                            key={evt.id || idx}
-                            className="flex flex-col items-center justify-between rounded-2xl bg-[#FFFDF8] border border-[#D4AF6A]/40 p-5 shadow-xs text-center"
+                            className="h-full flex flex-col items-center justify-between rounded-2xl bg-[#FFFDF8] border border-[#D4AF6A]/40 p-5 shadow-xs text-center"
                           >
                             <div className="w-full">
                               <span className="inline-block text-[10px] font-bold tracking-[0.2em] text-[#6B0C14] uppercase border-b border-[#D4AF6A]/30 pb-1 mb-2">
@@ -822,6 +914,7 @@ export default function ChuSaLongPhungTemplate({
                               </a>
                             </div>
                           </div>
+                          </ImperialReveal>
                         );
                       })}
                     </div>
@@ -838,28 +931,31 @@ export default function ChuSaLongPhungTemplate({
                 <section className="relative w-full rounded-3xl bg-[#6B0C14]/94 border border-[#D4AF6A]/50 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.6)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
                   <ImperialGoldDust count={12} />
 
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#D4AF6A] font-semibold mb-1">
-                    Khoảnh Khắc Hạnh Phúc
-                  </span>
-                  <h3
-                    className="text-2xl sm:text-3xl text-[#F2DCA6] font-normal mb-2"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Album Ảnh Cưới
-                  </h3>
+                  <ImperialReveal direction="up" className="flex flex-col items-center">
+                    <span className="text-[11px] uppercase tracking-[0.25em] text-[#D4AF6A] font-semibold mb-1">
+                      Khoảnh Khắc Hạnh Phúc
+                    </span>
+                    <h3
+                      className="text-2xl sm:text-3xl text-[#F2DCA6] font-normal mb-2"
+                      style={{ fontFamily: TITLE_FONT }}
+                    >
+                      Album Ảnh Cưới
+                    </h3>
 
-                  <div className="w-32 sm:w-40 my-2 flex justify-center">
-                    <img
-                      src="/templates/chu-sa-long-phung/divider-palace.webp"
-                      alt=""
-                      aria-hidden="true"
-                      className="w-full object-contain opacity-85"
-                    />
-                  </div>
+                    <div className="w-32 sm:w-40 my-2 flex justify-center">
+                      <img loading="lazy" decoding="async"
+                        src="/templates/chu-sa-long-phung/divider-palace.webp"
+                        alt=""
+                        aria-hidden="true"
+                        className="w-full object-contain opacity-85"
+                      />
+                    </div>
+                  </ImperialReveal>
 
                   {/* Carousel ảnh cưới viền vàng */}
+                  <ImperialReveal direction="up" delay={0.1} scale={0.97} className="w-full flex justify-center">
                   <div className="relative w-full max-w-[540px] aspect-[4/5] sm:aspect-[3/4] mt-6 rounded-2xl overflow-hidden border-2 border-[#D4AF6A]/60 shadow-2xl group cursor-pointer">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={albumPhotos[activePhotoIdx]?.url}
                       alt={albumPhotos[activePhotoIdx]?.alt || `Ảnh cưới ${activePhotoIdx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -896,6 +992,7 @@ export default function ChuSaLongPhungTemplate({
                       {activePhotoIdx + 1} / {albumPhotos.length}
                     </div>
                   </div>
+                  </ImperialReveal>
 
                   {/* Thumbnail gallery thu nhỏ */}
                   {albumPhotos.length > 1 && (
@@ -911,7 +1008,7 @@ export default function ChuSaLongPhungTemplate({
                               : "border-[#D4AF6A]/40 opacity-70 hover:opacity-100"
                           )}
                         >
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={photo.url}
                             alt=""
                             className="w-full h-full object-cover"
@@ -921,17 +1018,20 @@ export default function ChuSaLongPhungTemplate({
                     </div>
                   )}
 
-                  {/* QR Album dành cho gói Pro/VIP */}
-                  {data.plan !== "free" && !hiddenSections.has("albumQr") && weddingSlug && (
-                    <div className="mt-8 pt-6 border-t border-[#D4AF6A]/30 w-full flex justify-center">
-                      <GuestAlbumQr
-                        slug={weddingSlug}
-                        accentColor="#D4AF6A"
-                        textColor="#FAF5EC"
-                        mutedColor="#E0C8BA"
-                      />
-                    </div>
-                  )}
+                </section>
+              </div>
+            )}
+
+            {/* QR Album dành cho gói Pro/VIP */}
+            {data.plan !== "free" && !hiddenSections.has("albumQr") && weddingSlug && (
+              <div style={{ order: orderOf("albumQr") }}>
+                <section className="relative w-full rounded-3xl bg-[#6B0C14]/94 border border-[#D4AF6A]/50 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.6)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
+                  <GuestAlbumQr
+                    slug={weddingSlug}
+                    accentColor="#D4AF6A"
+                    textColor="#FAF5EC"
+                    mutedColor="#E0C8BA"
+                  />
                 </section>
               </div>
             )}
@@ -947,55 +1047,58 @@ export default function ChuSaLongPhungTemplate({
                   style={{ backgroundColor: IVORY_ROYAL, color: TEXT_BODY_IVORY }}
                 >
                   {/* 4 Góc Hoa Văn Hoàng Cung */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute top-3 left-3 w-10 sm:w-12 object-contain opacity-85 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute top-3 right-3 w-10 sm:w-12 object-contain opacity-85 -scale-x-100 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute bottom-3 left-3 w-10 sm:w-12 object-contain opacity-85 -scale-y-100 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute bottom-3 right-3 w-10 sm:w-12 object-contain opacity-85 -scale-100 z-10"
                   />
 
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#6B0C14] font-semibold mb-1">
-                    Ghi Dấu Ngày Chung Đôi
-                  </span>
-                  <h3
-                    className="text-2xl sm:text-3xl text-[#5A0B12] font-normal mb-2"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Lịch Ngày Vui
-                  </h3>
+                  <ImperialReveal direction="up" className="flex flex-col items-center">
+                    <span className="text-[11px] uppercase tracking-[0.25em] text-[#6B0C14] font-semibold mb-1">
+                      Ghi Dấu Ngày Chung Đôi
+                    </span>
+                    <h3
+                      className="text-2xl sm:text-3xl text-[#5A0B12] font-normal mb-2"
+                      style={{ fontFamily: TITLE_FONT }}
+                    >
+                      Lịch Ngày Vui
+                    </h3>
 
-                  <div className="w-32 sm:w-40 my-2 flex justify-center">
-                    <img
-                      src="/templates/chu-sa-long-phung/divider-palace.webp"
-                      alt=""
-                      aria-hidden="true"
-                      className="w-full object-contain opacity-80"
-                    />
-                  </div>
+                    <div className="w-32 sm:w-40 my-2 flex justify-center">
+                      <img loading="lazy" decoding="async"
+                        src="/templates/chu-sa-long-phung/divider-palace.webp"
+                        alt=""
+                        aria-hidden="true"
+                        className="w-full object-contain opacity-80"
+                      />
+                    </div>
 
-                  <p className="text-xs text-[#6E5A57] italic mb-6">
-                    {dateParts.weekday}, Ngày {dateParts.day} Tháng {dateParts.month} Năm {dateParts.year}
-                  </p>
+                    <p className="text-xs text-[#6E5A57] italic mb-6">
+                      {dateParts.weekday}, Ngày {dateParts.day} Tháng {dateParts.month} Năm {dateParts.year}
+                    </p>
+                  </ImperialReveal>
 
                   {/* Khung Lịch Tháng */}
+                  <ImperialReveal direction="up" delay={0.1} className="w-full flex justify-center">
                   <div className="relative w-full max-w-[340px] rounded-2xl bg-[#FFFFFF] border border-[#D4AF6A]/45 p-5 shadow-sm">
                     <p className="text-sm font-bold tracking-widest uppercase text-[#5A0B12] mb-4">
                       {calendarData.monthYear}
@@ -1039,13 +1142,11 @@ export default function ChuSaLongPhungTemplate({
                       })()}
                     </div>
                   </div>
+                  </ImperialReveal>
 
                   {/* Đồng hồ đếm ngược 4 ô */}
-                  {mounted && (
-                    <div className="mt-8 flex flex-col items-center">
-                      <span className="text-xs uppercase tracking-widest text-[#6B0C14] font-semibold mb-3">
-                        Cùng Đếm Ngược Từng Khoảnh Khắc
-                      </span>
+                  {timeLeft && (
+                    <ImperialReveal direction="up" delay={0.14} className="mt-8 flex flex-col items-center">
                       <div className="grid grid-cols-4 gap-2.5 sm:gap-4 max-w-[340px] w-full">
                         <div className="flex flex-col items-center rounded-xl bg-[#FFFFFF] border border-[#D4AF6A]/35 py-2.5 px-1 shadow-sm">
                           <span className="text-xl sm:text-2xl font-bold text-[#5A0B12]">
@@ -1080,12 +1181,12 @@ export default function ChuSaLongPhungTemplate({
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </ImperialReveal>
                   )}
 
                   {/* Nút chỉ đường Map */}
                   {visibleEvents.length > 0 && (
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                    <ImperialReveal direction="up" delay={0.16} className="mt-8 flex flex-wrap items-center justify-center gap-3">
                       {visibleEvents.map((evt, idx) => {
                         const directionsUrl = getEventDirectionsUrl(evt);
                         return (
@@ -1101,7 +1202,7 @@ export default function ChuSaLongPhungTemplate({
                           </a>
                         );
                       })}
-                    </div>
+                    </ImperialReveal>
                   )}
                 </section>
               </div>
@@ -1118,73 +1219,74 @@ export default function ChuSaLongPhungTemplate({
                   style={{ backgroundColor: IVORY_ROYAL, color: TEXT_BODY_IVORY }}
                 >
                   {/* 4 Góc Hoa Văn Hoàng Cung */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute top-3 left-3 w-10 sm:w-12 object-contain opacity-85 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute top-3 right-3 w-10 sm:w-12 object-contain opacity-85 -scale-x-100 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute bottom-3 left-3 w-10 sm:w-12 object-contain opacity-85 -scale-y-100 z-10"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/chu-sa-long-phung/corner-palace.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute bottom-3 right-3 w-10 sm:w-12 object-contain opacity-85 -scale-100 z-10"
                   />
 
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#6B0C14] font-semibold mb-1">
-                    Trang Phục Gợi Ý
-                  </span>
-                  <h3
-                    className="text-2xl sm:text-3xl text-[#5A0B12] font-normal mb-2"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Dress Code
-                  </h3>
+                  <ImperialReveal direction="up" className="flex flex-col items-center">
+                    <span className="text-[11px] uppercase tracking-[0.25em] text-[#6B0C14] font-semibold mb-1">
+                      Trang Phục Gợi Ý
+                    </span>
+                    <h3
+                      className="text-2xl sm:text-3xl text-[#5A0B12] font-normal mb-2"
+                      style={{ fontFamily: TITLE_FONT }}
+                    >
+                      Trang Phục Gợi Ý
+                    </h3>
 
-                  <div className="w-32 sm:w-40 my-2 flex justify-center">
-                    <img
-                      src="/templates/chu-sa-long-phung/divider-palace.webp"
-                      alt=""
-                      aria-hidden="true"
-                      className="w-full object-contain opacity-80"
-                    />
-                  </div>
-
-                  <p className="text-xs text-[#6E5A57] max-w-[360px] leading-relaxed mb-6 font-light">
-                    Kính mong quý khách diện trang phục mang sắc màu gợi ý để những khung hình kỷ niệm thêm phần trọn vẹn và trang trọng.
-                  </p>
+                    <div className="w-32 sm:w-40 my-2 flex justify-center">
+                      <img loading="lazy" decoding="async"
+                        src="/templates/chu-sa-long-phung/divider-palace.webp"
+                        alt=""
+                        aria-hidden="true"
+                        className="w-full object-contain opacity-80"
+                      />
+                    </div>
+                  </ImperialReveal>
 
                   {/* 3 Vòng tròn Swatch màu trực quan (TUYỆT ĐỐI KHÔNG in mã hex hoặc tên màu) */}
                   <div className="flex items-center justify-center gap-6 sm:gap-8 my-2">
                     {getDressColors(data).map((color, idx) => (
-                      <div
-                        key={idx}
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#D4AF6A] shadow-md transition-transform hover:scale-110"
-                        style={{ backgroundColor: color }}
-                      />
+                      <ImperialReveal key={idx} direction="up" delay={0.08 + idx * 0.08} scale={0.85} blur={false}>
+                        <div
+                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#D4AF6A] shadow-md transition-transform hover:scale-110"
+                          style={{ backgroundColor: color }}
+                        />
+                      </ImperialReveal>
                     ))}
                   </div>
 
                   {/* Timeline dọc chỉ vàng 24K */}
                   <div className="w-full max-w-[460px] mt-10 pt-6 border-t border-[#D4AF6A]/30">
-                    <span className="text-xs uppercase tracking-widest text-[#6B0C14] font-bold mb-4 block">
-                      Lịch Trình Tiệc Cưới
-                    </span>
+                    <ImperialReveal direction="up">
+                      <span className="text-xs uppercase tracking-widest text-[#6B0C14] font-bold mb-4 block">
+                        Lịch Trình Tiệc Cưới
+                      </span>
+                    </ImperialReveal>
                     <div className="relative flex flex-col gap-6 text-left pl-6 border-l-2 border-[#D4AF6A]/50 ml-6">
                       {getTimeline(data).map((item, idx) => (
-                        <div key={idx} className="relative flex flex-col">
+                        <ImperialReveal key={idx} direction="up" delay={idx * 0.08} className="relative flex flex-col">
                           {/* Chấm tròn đỏ chu sa đồng trục */}
                           <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-[#6B0C14] border-2 border-[#D4AF6A] shadow-sm" />
                           <span className="text-xs font-bold text-[#6B0C14] tracking-wider">
@@ -1193,7 +1295,7 @@ export default function ChuSaLongPhungTemplate({
                           <span className="text-xs sm:text-sm text-[#3A2522] mt-0.5 leading-relaxed">
                             {item.label}
                           </span>
-                        </div>
+                        </ImperialReveal>
                       ))}
                     </div>
                   </div>
@@ -1209,30 +1311,29 @@ export default function ChuSaLongPhungTemplate({
                 <section className="relative w-full rounded-3xl bg-[#6B0C14]/94 border border-[#D4AF6A]/50 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.6)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
                   <ImperialGoldDust count={12} />
 
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#D4AF6A] font-semibold mb-1">
-                    Gửi Lời Chúc Phúc
-                  </span>
-                  <h3
-                    className="text-2xl sm:text-3xl text-[#F2DCA6] font-normal mb-2"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Hộp Mừng Cưới
-                  </h3>
+                  <ImperialReveal direction="up" className="flex flex-col items-center">
+                    <span className="text-[11px] uppercase tracking-[0.25em] text-[#D4AF6A] font-semibold mb-1">
+                      Gửi Lời Chúc Phúc
+                    </span>
+                    <h3
+                      className="text-2xl sm:text-3xl text-[#F2DCA6] font-normal mb-2"
+                      style={{ fontFamily: TITLE_FONT }}
+                    >
+                      Hộp Mừng Cưới
+                    </h3>
 
-                  <div className="w-32 sm:w-40 my-2 flex justify-center">
-                    <img
-                      src="/templates/chu-sa-long-phung/divider-palace.webp"
-                      alt=""
-                      aria-hidden="true"
-                      className="w-full object-contain opacity-85"
-                    />
-                  </div>
-
-                  <p className="text-xs sm:text-sm text-[#FAF5EC] max-w-[420px] mb-8 font-light">
-                    Sự hiện diện của quý khách là món quà quý giá nhất. Quý khách cũng có thể gửi quà mừng chúc phúc từ phương xa bằng cách chạm vào phong bì bên dưới:
-                  </p>
+                    <div className="w-32 sm:w-40 my-2 flex justify-center">
+                      <img loading="lazy" decoding="async"
+                        src="/templates/chu-sa-long-phung/divider-palace.webp"
+                        alt=""
+                        aria-hidden="true"
+                        className="w-full object-contain opacity-85"
+                      />
+                    </div>
+                  </ImperialReveal>
 
                   {/* Bao lì xì dập kim 3 trạng thái tương tác */}
+                  <ImperialReveal direction="up" delay={0.12} scale={0.95} className="flex flex-col items-center">
                   <div
                     className="relative w-64 sm:w-72 aspect-[320/596] flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
                     onMouseEnter={() => setActiveParcel("hover")}
@@ -1249,7 +1350,7 @@ export default function ChuSaLongPhungTemplate({
                         filter: "blur(12px)",
                       }}
                     />
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={`/templates/chu-sa-long-phung/gift-${activeParcel}.webp`}
                       alt="Bao lì xì hoàng cung"
                       className="relative z-10 w-full h-full object-contain drop-shadow-2xl"
@@ -1262,6 +1363,7 @@ export default function ChuSaLongPhungTemplate({
                   >
                     Gửi Mừng Cưới
                   </button>
+                  </ImperialReveal>
                 </section>
               </div>
             )}
@@ -1271,6 +1373,7 @@ export default function ChuSaLongPhungTemplate({
                 ------------------------------------------------------------ */}
             {!hiddenSections.has("rsvp") && (
               <div style={{ order: orderOf("rsvp") }}>
+                <ImperialReveal direction="up">
                 <section
                   className="relative w-full rounded-3xl border border-[#D4AF6A]/50 p-4 sm:p-8 shadow-[0_16px_40px_rgba(0,0,0,0.5)] backdrop-blur-md flex flex-col items-center"
                   style={{ backgroundColor: IVORY_ROYAL, color: TEXT_BODY_IVORY }}
@@ -1306,6 +1409,7 @@ export default function ChuSaLongPhungTemplate({
                     initialRideNeeded={initialRideNeeded}
                   />
                 </section>
+                </ImperialReveal>
               </div>
             )}
           </div>
@@ -1315,15 +1419,16 @@ export default function ChuSaLongPhungTemplate({
               (Tuyệt đối KHÔNG lặp lại ngày cưới)
               ============================================================ */}
           <footer className="w-full flex flex-col items-center text-center pt-8 pb-12 border-t border-[#D4AF6A]/30">
+            <ImperialReveal direction="up" className="flex flex-col items-center">
             <div className="w-12 h-12 mb-3 opacity-80">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/chu-sa-long-phung/seal-octagon.webp"
                 alt="Song Hỷ"
                 className="w-full h-full object-contain"
               />
             </div>
             <div className="w-32 sm:w-40 mb-3 flex justify-center">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/chu-sa-long-phung/divider-palace.webp"
                 alt=""
                 aria-hidden="true"
@@ -1339,6 +1444,7 @@ export default function ChuSaLongPhungTemplate({
             <p className="text-xs sm:text-sm text-[#E0C8BA] italic max-w-[420px] leading-relaxed">
               Sự hiện diện và lời chúc phúc của quý khách là niềm vinh hạnh lớn nhất của gia đình chúng tôi!
             </p>
+            </ImperialReveal>
           </footer>
         </div>
       </div>

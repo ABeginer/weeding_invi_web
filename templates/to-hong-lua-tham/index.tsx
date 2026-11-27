@@ -15,6 +15,7 @@ import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playCoverSfx } from "@/lib/sfx";
 import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
@@ -63,11 +64,11 @@ const BODY_FONT = "var(--font-be-vietnam), sans-serif";
 const EASE_IMPERIAL = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_TIMELINE = [
-  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm tại tiền sảnh Tơ Hồng Lụa Thắm" },
-  { time: "17:30", label: "Nghi thức Kết Nút Đồng Tâm & Trao lời hẹn ước trăm năm" },
-  { time: "18:00", label: "Khai tiệc mừng se duyên & Nâng ly chúc phúc đôi uyên ương" },
-  { time: "19:30", label: "Giai điệu lụa đỏ thính phòng & Gắn kết thân tình hai họ" },
-  { time: "20:30", label: "Tiễn khách & Trao túi gấm cảm tạ tri ân" },
+  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
+  { time: "17:30", label: "Cử hành Lễ Thành Hôn & Trao lời hẹn ước trăm năm" },
+  { time: "18:00", label: "Khai tiệc mừng se duyên & Nâng ly chúc phúc" },
+  { time: "19:30", label: "Âm nhạc & Gắn kết thân tình hai họ" },
+  { time: "20:30", label: "Tiễn khách & Trao quà cảm tạ tri ân" },
 ];
 
 const DEFAULT_DRESS = [
@@ -288,19 +289,7 @@ export default function ToHongLuaThamTemplate({
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const defaultOrder = React.useMemo(
-    () => [
-      "family",
-      "calendar",
-      "map",
-      "dresscode",
-      "album",
-      "albumQr",
-      "gift",
-      "rsvp",
-    ],
-    []
-  );
+  const defaultOrder = CANONICAL_SECTION_ORDER;
 
   const sectionOrder = React.useMemo(() => {
     const order = data.sectionOrder || defaultOrder;
@@ -387,7 +376,7 @@ export default function ToHongLuaThamTemplate({
               animate={isOpening ? { x: "-100%" } : { x: 0 }}
               transition={{ duration: 0.9, ease: EASE_IMPERIAL }}
             >
-              <img
+              <img decoding="async"
                 src="/templates/to-hong-lua-tham/curtain_silk_left.webp"
                 alt="Rèm lụa thắm trái"
                 className="w-full h-full object-cover object-right"
@@ -406,7 +395,7 @@ export default function ToHongLuaThamTemplate({
               animate={isOpening ? { x: "100%" } : { x: 0 }}
               transition={{ duration: 0.9, ease: EASE_IMPERIAL }}
             >
-              <img
+              <img decoding="async"
                 src="/templates/to-hong-lua-tham/curtain_silk_left.webp"
                 alt="Rèm lụa thắm phải"
                 className="w-full h-full object-cover object-right scale-x-[-1]"
@@ -439,16 +428,10 @@ export default function ToHongLuaThamTemplate({
             >
               {/* Lời dẫn tao nhã */}
               <p
-                className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E8C987] font-semibold mb-1 drop-shadow-md"
+                className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E8C987] font-semibold mb-3 drop-shadow-md"
                 style={{ fontFamily: BODY_FONT }}
               >
                 Trân Trọng Kính Mời
-              </p>
-              <p
-                className="text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-[#DFC4B8] mb-3 drop-shadow-sm"
-                style={{ fontFamily: BODY_FONT }}
-              >
-                Tơ Hồng Lụa Thắm
               </p>
 
               {/* Tên cặp đôi 3 dòng chuẩn với break-words */}
@@ -531,7 +514,7 @@ export default function ToHongLuaThamTemplate({
       >
         {/* Nền Texture lụa thắm toàn thân */}
         <div className="fixed inset-0 pointer-events-none z-0">
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/to-hong-lua-tham/bg_crimson_editorial.webp"
             alt=""
             className="w-full h-full object-cover opacity-60"
@@ -582,16 +565,16 @@ export default function ToHongLuaThamTemplate({
             {/* Khung Tròn Dải Lụa Đỏ 3D ôm ảnh cưới */}
             <div className="relative w-full max-w-[320px] sm:max-w-[360px] aspect-[680/1000] mx-auto flex items-center justify-center">
               {/* Lõi bên trong: Ảnh cặp đôi bo tròn lồng tâm dải lụa bay */}
-              <div className="absolute w-[58%] aspect-square rounded-full overflow-hidden border-2 border-[#E8C987]/60 shadow-[0_12px_36px_rgba(0,0,0,0.6)] top-[27%] left-[21%] bg-[#350812]">
+              <div className="absolute w-[72%] aspect-square rounded-full overflow-hidden border-2 border-[#E8C987]/60 shadow-[0_12px_36px_rgba(0,0,0,0.6)] top-[51.5%] left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#350812]">
                 {heroPhotoUrl ? (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={heroPhotoUrl}
                     alt={`${groomDisplayName} & ${brideDisplayName}`}
                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-[#350812] to-[#1E040A]">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/to-hong-lua-tham/silk_knot_clasp.webp"
                       alt="Tơ Hồng"
                       className="w-14 h-auto mb-2 opacity-85 drop-shadow-md"
@@ -600,14 +583,14 @@ export default function ToHongLuaThamTemplate({
                       className="text-[#E8C987] text-xs font-serif tracking-wider font-medium"
                       style={{ fontFamily: TITLE_FONT }}
                     >
-                      Tơ Hồng Lụa Thắm
+                      Lễ Thành Hôn
                     </p>
                   </div>
                 )}
               </div>
 
               {/* Lớp dải lụa bay 3D đè lên trên (pointer-events-none) */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/to-hong-lua-tham/silk_ribbon_halo.webp"
                 alt="Vòng Lụa Bay 3D"
                 aria-hidden="true"
@@ -616,7 +599,7 @@ export default function ToHongLuaThamTemplate({
             </div>
 
             {/* Dải phân cách dưới Hero */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/to-hong-lua-tham/silk_thread_knot.webp"
               alt=""
               aria-hidden="true"
@@ -684,7 +667,7 @@ export default function ToHongLuaThamTemplate({
                     {/* Ảnh bầu dục viền vàng champagne */}
                     <div className="relative w-28 h-36 sm:w-32 sm:h-40 rounded-full p-1 border-2 border-[#E8C987] shadow-[0_4px_16px_rgba(232,201,135,0.25)] mb-4 bg-[#1E040A] overflow-hidden">
                       {groomPhotoUrl ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={groomPhotoUrl}
                           alt={groomDisplayName}
                           className="w-full h-full object-cover rounded-full"
@@ -729,7 +712,7 @@ export default function ToHongLuaThamTemplate({
                     {/* Ảnh bầu dục viền vàng champagne */}
                     <div className="relative w-28 h-36 sm:w-32 sm:h-40 rounded-full p-1 border-2 border-[#E8C987] shadow-[0_4px_16px_rgba(232,201,135,0.25)] mb-4 bg-[#1E040A] overflow-hidden">
                       {bridePhotoUrl ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={bridePhotoUrl}
                           alt={brideDisplayName}
                           className="w-full h-full object-cover rounded-full"
@@ -772,7 +755,7 @@ export default function ToHongLuaThamTemplate({
 
                 {/* Dải phân cách Nút Thắt Duyên ở chân phần gia đình */}
                 <div className="mt-14 flex justify-center">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/to-hong-lua-tham/silk_thread_knot.webp"
                     alt=""
                     aria-hidden="true"
@@ -783,38 +766,29 @@ export default function ToHongLuaThamTemplate({
             )}
 
             {/* ----------------------------------------------------
-                SECTION: LỊCH CƯỚI TẠP CHÍ & ĐẾM NGƯỢC NGANG (calendar, map)
-                Kiểu Tờ Lịch Xé Khổ Lớn & Thanh Đếm Ngược Ngang Tối Giản
+                SECTION: SỰ KIỆN & ĐỊA ĐIỂM (map)
                 ---------------------------------------------------- */}
-            {!hiddenSections.has("calendar") && (
+            {!hiddenSections.has("map") && visibleEvents.length > 0 && (
               <section
-                style={{ order: orderOf("calendar") }}
+                style={{ order: orderOf("map") }}
                 className="relative rounded-3xl p-6 sm:p-8 bg-[#350812]/85 border border-[#E8C987]/35 shadow-[0_16px_40px_rgba(0,0,0,0.5)] overflow-hidden"
               >
                 <div
                   className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#E8C987]/25"
                   aria-hidden="true"
                 />
-
                 <div className="relative z-10 text-center mb-8">
-                  <span
-                    className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E8C987] font-semibold"
-                    style={{ fontFamily: BODY_FONT }}
-                  >
-                    Ngày Chung Đôi
-                  </span>
                   <h3
-                    className="text-2xl sm:text-3xl text-[#FDF5EE] font-serif mt-1"
+                    className="text-2xl sm:text-3xl text-[#FDF5EE] font-serif"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    Hôn Lễ Trân Quý
+                    Sự Kiện Cưới
                   </h3>
                 </div>
-
                 {/* TỜ LỊCH XÉ TẠP CHÍ KHỔ LỚN (hỗ trợ đa lễ) */}
                 <div
                   className={cn(
-                    "relative z-10 w-full grid gap-6 mb-8",
+                    "relative z-10 w-full grid gap-6",
                     visibleEvents.length === 1 ? "max-w-lg mx-auto" : "grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto"
                   )}
                 >
@@ -872,18 +846,16 @@ export default function ToHongLuaThamTemplate({
 
                             {/* Nút chỉ đường & Thêm vào lịch */}
                             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
-                              {!hiddenSections.has("map") && (
-                                <a
-                                  href={directionsUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#E8C987] text-[#2A060E] text-[11px] font-semibold tracking-wider uppercase transition-transform active:scale-95 hover:brightness-110 shadow-sm"
-                                  style={{ fontFamily: BODY_FONT }}
-                                >
-                                  <MapPin className="w-3 h-3" />
-                                  <span>Chỉ Đường</span>
-                                </a>
-                              )}
+                              <a
+                                href={directionsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#E8C987] text-[#2A060E] text-[11px] font-semibold tracking-wider uppercase transition-transform active:scale-95 hover:brightness-110 shadow-sm"
+                                style={{ fontFamily: BODY_FONT }}
+                              >
+                                <MapPin className="w-3 h-3" />
+                                <span>Chỉ Đường</span>
+                              </a>
                               <a
                                 href={calendarLinks.google}
                                 target="_blank"
@@ -900,6 +872,36 @@ export default function ToHongLuaThamTemplate({
                       </div>
                     );
                   })}
+                </div>
+              </section>
+            )}
+
+            {/* ----------------------------------------------------
+                SECTION: LỊCH CƯỚI TẠP CHÍ & ĐẾM NGƯỢC NGANG (calendar)
+                ---------------------------------------------------- */}
+            {!hiddenSections.has("calendar") && (
+              <section
+                style={{ order: orderOf("calendar") }}
+                className="relative rounded-3xl p-6 sm:p-8 bg-[#350812]/85 border border-[#E8C987]/35 shadow-[0_16px_40px_rgba(0,0,0,0.5)] overflow-hidden"
+              >
+                <div
+                  className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#E8C987]/25"
+                  aria-hidden="true"
+                />
+
+                <div className="relative z-10 text-center mb-8">
+                  <span
+                    className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E8C987] font-semibold"
+                    style={{ fontFamily: BODY_FONT }}
+                  >
+                    Ngày Chung Đôi
+                  </span>
+                  <h3
+                    className="text-2xl sm:text-3xl text-[#FDF5EE] font-serif mt-1"
+                    style={{ fontFamily: TITLE_FONT }}
+                  >
+                    Hôn Lễ Trân Quý
+                  </h3>
                 </div>
 
                 {/* THANH ĐẾM NGƯỢC NGANG TỐI GIẢN */}
@@ -1070,7 +1072,7 @@ export default function ToHongLuaThamTemplate({
                       className="sm:col-span-2 aspect-[3/4] rounded-2xl overflow-hidden border border-[#E8C987]/40 shadow-lg cursor-pointer group bg-[#1E040A] relative"
                       onClick={() => setLightboxIndex(0)}
                     >
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={albumPhotos[0]?.url}
                         alt={albumPhotos[0]?.alt || "Ảnh cưới chính"}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1090,7 +1092,7 @@ export default function ToHongLuaThamTemplate({
                           className="aspect-[3/4] sm:aspect-auto sm:h-[calc(50%-6px)] rounded-xl overflow-hidden border border-[#E8C987]/30 shadow-md cursor-pointer group bg-[#1E040A] relative"
                           onClick={() => setLightboxIndex(pIdx + 1)}
                         >
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={photo.url}
                             alt=""
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1111,7 +1113,7 @@ export default function ToHongLuaThamTemplate({
                           onClick={() => setLightboxIndex(fIdx + 3)}
                           className="w-24 h-32 sm:w-28 sm:h-36 rounded-xl overflow-hidden border border-[#E8C987]/35 shadow-md shrink-0 cursor-pointer transition-transform hover:scale-105"
                         >
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={photo.url}
                             alt=""
                             className="w-full h-full object-cover"
@@ -1122,17 +1124,21 @@ export default function ToHongLuaThamTemplate({
                   )}
                 </div>
 
-                {/* QR Album dành cho khách tải ảnh lên (chỉ hiện khi có url & không phải gói Free) */}
-                {data.plan !== "free" && !hiddenSections.has("albumQr") && (
-                  <div className="mt-8 pt-6 border-t border-[#E8C987]/30 flex flex-col items-center">
-                    <GuestAlbumQr
-                      slug={inviteSlug || weddingSlug}
-                      accentColor="#E8C987"
-                      textColor="#FDF5EE"
-                      mutedColor="#DFC4B8"
-                    />
-                  </div>
-                )}
+              </section>
+            )}
+
+            {/* QR Album dành cho khách tải ảnh lên (chỉ hiện khi có url & không phải gói Free) */}
+            {data.plan !== "free" && !hiddenSections.has("albumQr") && (inviteSlug || weddingSlug) && (
+              <section
+                style={{ order: orderOf("albumQr") }}
+                className="relative rounded-3xl p-6 sm:p-8 bg-[#350812]/85 border border-[#E8C987]/35 shadow-[0_16px_40px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col items-center"
+              >
+                <GuestAlbumQr
+                  slug={inviteSlug || weddingSlug}
+                  accentColor="#E8C987"
+                  textColor="#FDF5EE"
+                  mutedColor="#DFC4B8"
+                />
               </section>
             )}
 
@@ -1160,17 +1166,14 @@ export default function ToHongLuaThamTemplate({
                     Gửi Gắm Yêu Thương
                   </span>
                   <h3
-                    className="text-2xl sm:text-3xl text-[#FDF5EE] font-serif mt-1 mb-2"
+                    className="text-2xl sm:text-3xl text-[#FDF5EE] font-serif mt-1 mb-4"
                     style={{ fontFamily: TITLE_FONT }}
                   >
                     Túi Gấm Chúc Phúc
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#DFC4B8] leading-relaxed mb-4">
-                    Sự hiện diện của Quý khách là món quà trân quý nhất trong ngày vui của hai gia đình. Nếu ở xa không tiện ghé chung vui, Quý khách có thể gửi lời chúc qua chiếc túi gấm nhỏ bên dưới.
-                  </p>
 
                   {/* Preload ảnh pouch_open chống giật/nháy */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/to-hong-lua-tham/pouch_open.webp"
                     className="hidden"
                     aria-hidden="true"
@@ -1185,7 +1188,7 @@ export default function ToHongLuaThamTemplate({
                     onMouseEnter={() => !isPouchOpening && setPouchState("glow")}
                     onMouseLeave={() => !isPouchOpening && pouchState !== "open" && setPouchState("normal")}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={
                         pouchState === "open"
                           ? "/templates/to-hong-lua-tham/pouch_open.webp"
@@ -1260,7 +1263,7 @@ export default function ToHongLuaThamTemplate({
               Lời cảm ơn ấm áp, không lặp lại ngày cưới
               ======================================================== */}
           <footer className="relative z-10 text-center pt-8 sm:pt-12 pb-16 border-t border-[#E8C987]/30">
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/to-hong-lua-tham/silk_knot_clasp.webp"
               alt="Tơ Hồng Lụa Thắm"
               className="w-10 sm:w-12 h-auto mx-auto mb-4 opacity-85"
@@ -1301,9 +1304,9 @@ export default function ToHongLuaThamTemplate({
 
         {/* Nút Nhạc Nền Nổi (LiveMusicFloatingButton) */}
         <LiveMusicFloatingButton
-          src={data.music?.src || "/media/priority1.mp3"}
+          src={(data.hiddenSections ?? []).includes("music") ? undefined : (data.music?.src || "/media/priority1.mp3")}
           title={data.music?.title || "Dải Lụa Đỏ & Nút Thắt Đồng Tâm"}
-          visible={isOpen || coverGone}
+          visible={(isOpen || coverGone) && !(data.hiddenSections ?? []).includes("music")}
           tone="velvet"
         />
       </div>

@@ -23,6 +23,7 @@ import { resolveDesignerText } from "@/lib/designer-text";
 import { getTextEffectStyles } from "./designer-fonts";
 import { sortDesignerElementsByLayer } from "./layer-order";
 import { ElementAnimator } from "./element-animator";
+import "@/styles/invitation-templates.css";
 import { FallingEffectCanvas } from "./falling-effect-canvas";
 
 export type DesignerPreviewValues = Record<string, string>;

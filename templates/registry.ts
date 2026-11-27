@@ -387,14 +387,21 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     name: "Hạc Vũ Lưu Ly",
     subtitle: "Pháp Lam Đêm Trăng",
     description:
-      "Thiệp cưới Pháp Lam Đêm Trăng & Kiêu Kỳ Quý Tộc với sắc xanh lam lưu ly đêm trăng, vàng bạch kim, quạt xếp cung đình, cổng Nguyệt Môn tròn và khánh ngọc lưu ly.",
-    plan: "free",
+      "Thiệp cưới Pháp Lam Đêm Trăng chuẩn Standard với nghi thức mở quạt xếp 60fps cùng âm thanh đàn hạc độc quyền, thẻ lật chân dung 3D, thẻ cào ánh trăng, thước phim 35mm và rương sính lễ lưu ly.",
+    plan: "pro",
     coverImage: "/templates/hac-vu-luu-ly/cover.webp",
     defaultMusic: {
       src: "/media/co-dien.mp3",
       title: "Khúc Vũ Lưu Ly",
     },
     hasAdvancedEffects: true,
+    extraFeatureIds: [
+      "sfx-harp-fan",
+      "scratch-moonlight",
+      "flip-cards-3d",
+      "story-film-35mm",
+      "gift-enamel-casket",
+    ],
     accentSwatch: "#0B192C",
     tone: "dark",
     category: "traditional",
@@ -445,7 +452,8 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
     subtitle: "Mật Thư Cổ Điển",
     description:
       "Thiệp cưới Vintage Châu Âu Cổ Điển & Mật Thư Nâu Espresso: nắp phong thư 3D trượt ảnh uyên ương, ấn sáp đồng cổ, cành lá ép khô và hộp bưu kiện 3 trạng thái.",
-    plan: "free",
+    plan: "pro",
+    extraFeatureIds: ["amber-envelope-glide", "tear-calendar", "sfx-amber-letter", "amber-parcel-gift"],
     coverImage: "/templates/ho-phach-mat-thu/cover.webp",
     defaultMusic: {
       src: "/media/moonlight.mp3",
@@ -651,111 +659,178 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
   {
     id: "ban-sac-huong-cang",
     name: "Bản Sắc Hương Cảng",
-    subtitle: "Khí Chất Ông Trùm 1980s · Noir Điện Ảnh",
+    subtitle: "Khí Chất Ông Trùm 1980s",
     description:
-      "Tuyệt tác phong cách Hong Kong Gangster thập niên 80–90: sắc lạnh, quyền lực, đậm chất điện ảnh với Mercedes-Benz W126 cổ giữa phố đêm mưa, biển neon rực sáng và thước phim tình yêu kinh điển.",
-    plan: "free",
+      "Tuyệt tác Standard phong cách Hong Kong Gangster 1980s–1990s: mưa đêm phố cũ, Thẻ Cào Nhũ Champagne tiết lộ ngày cưới, Lật Thẻ Nhân Vật 3D, Chuyện Chúng Mình cuộn phim 35mm, Kịch Bản Đêm Tiệc và Hộp Quà Hỷ Sự ánh kim.",
+    plan: "pro",
     coverImage: "/templates/ban-sac-huong-cang/cover.webp",
     defaultMusic: {
-      src: "/media/priority1.mp3",
-      title: "Bản Tình Ca Hương Cảng",
+      src: "/media/truyen-thuyet-nguoi-va-rong.mp3",
+      title: "Truyền Thuyết Người Và Rồng",
     },
     hasAdvancedEffects: true,
     accentSwatch: "#8F1524",
     tone: "dark",
     category: "hongkong",
     color: "red",
-    styleTags: ["Hong Kong Gangster 80s–90s", "Noir", "Lạnh lùng", "Điện ảnh TVB", "Sang trọng"],
+    extraFeatureIds: [
+      "sfx-cinema-clapper",
+      "scratch-date",
+      "flip-cards-3d-hk",
+      "story-film-35mm",
+      "cinema-timeline",
+    ],
+    styleTags: ["Hong Kong Gangster 80s–90s", "Standard", "Noir", "Điện ảnh TVB", "Sang trọng"],
   },
   {
     id: "cuu-long-hy-yen",
     name: "Cửu Long Hỷ Yến",
-    subtitle: "Đêm Tiệc Cửu Long · Phong Cách 1990s",
+    subtitle: "Đêm Tiệc Cửu Long",
     description:
-      "Tuyệt tác phong cách Anh Đại – Chị Đại Hồng Kông thập niên 1990: bá khí, lịch lãm, đậm chất VIP đêm Cửu Long với Quân Mạt Chược Song Hỷ lật 3D, Đôi Lá Bài K♥ – Q♥ mạ vàng, Bàn Lịch Mạt Chược và Vali Đen Khóa Vàng bung ánh hỷ sự.",
-    plan: "free",
+      "Tuyệt tác Standard phong cách điện ảnh Hồng Kông 1990s: Quân Mạt Chược Song Hỷ lật 3D, Thẻ Cào Nhũ Vàng 24K tiết lộ ngày cưới, Lật Thẻ Bài 3D K♥ – Q♥, Chuyện Chúng Mình cuộn phim 35mm, Kịch Bản Đêm Tiệc và Vali Đen Khóa Vàng bung ánh hỷ sự.",
+    plan: "pro",
     coverImage: "/templates/cuu-long-hy-yen/cover.webp",
     defaultMusic: {
-      src: "/media/priority1.mp3",
-      title: "Bản Tình Ca Cửu Long",
+      src: "/media/truyen-thuyet-nguoi-va-rong.mp3",
+      title: "Truyền Thuyết Người Và Rồng",
     },
     hasAdvancedEffects: true,
     accentSwatch: "#D8AE56",
     tone: "dark",
     category: "hongkong",
     color: "red",
-    styleTags: ["Hồng Kông 90s", "Anh Đại Chị Đại", "Nổi loạn", "Đêm VIP", "Thần Bài", "Điện ảnh"],
+    extraFeatureIds: [
+      "sfx-kowloon-doors",
+      "scratch-gold-24k",
+      "flip-cards-3d-poker",
+      "story-film-35mm",
+      "cinema-timeline",
+      "gift-briefcase",
+    ],
+    styleTags: ["Hồng Kông 90s", "Anh Đại Chị Đại", "Standard", "Đêm VIP", "Thần Bài", "Điện ảnh"],
   },
   {
     id: "da-anh-huong-cang",
     name: "Dạ Ảnh Hương Cảng",
-    subtitle: "Điện Ảnh Hồng Kông 90s · Street Editorial Zine",
+    subtitle: "Điện Ảnh Hồng Kông 90s",
     description:
-      "Tuyệt tác kết hợp chất điện ảnh Vương Gia Vệ đêm mưa neon và Street Editorial Zine: Xé Vé Vào Rạp xem phim, khung phim 35mm, Polaroid nghiêng đối đầu mực tàu, Bảng Lịch Báo In và Hộp Thiếc Hương Cảng bung ánh sáng.",
-    plan: "free",
+      "Tuyệt tác Standard kết hợp chất điện ảnh Vương Gia Vệ và Street Editorial Zine: Xé Vé Vào Rạp, Thẻ Cào Hổ Phách tiết lộ ngày cưới, Lật Thẻ Nhân Vật 3D, Chuyện Chúng Mình cuộn phim 35mm, Kịch Bản Đêm Tiệc và Hộp Thiếc Hương Cảng.",
+    plan: "pro",
     coverImage: "/templates/da-anh-huong-cang/cover.webp",
     defaultMusic: {
-      src: "/media/priority1.mp3",
-      title: "Bản Tình Ca Dạ Ảnh Hương Cảng",
+      src: "/media/truyen-thuyet-nguoi-va-rong.mp3",
+      title: "Truyền Thuyết Người Và Rồng",
     },
     hasAdvancedEffects: true,
     accentSwatch: "#C81E2B",
     tone: "dark",
     category: "hongkong",
     color: "neutral",
-    styleTags: ["Hồng Kông 90s", "Nổi loạn", "Điện ảnh", "Cá tính", "Vương Gia Vệ", "Zine"],
+    extraFeatureIds: [
+      "sfx-cinema-ticket",
+      "scratch-date",
+      "flip-cards-3d-hk",
+      "story-film-35mm",
+      "cinema-timeline",
+    ],
+    styleTags: ["Hồng Kông 90s", "Standard", "Điện ảnh", "Cá tính", "Vương Gia Vệ", "Zine"],
   },
   {
     id: "hao-quang-huong-cang",
     name: "Hào Quang Hương Cảng",
-    subtitle: "Poster Đồ Họa Hồng Kông 1990s · Art Deco",
+    subtitle: "Poster Đồ Họa Hồng Kông 1990s",
     description:
-      "Tuyệt tác poster điện ảnh Hồng Kông thập niên 90 kết hợp hình học Art Deco: mạnh mẽ, nam tính, lịch lãm, tên cặp đôi nổi bật trung tâm, khung ảnh film 35mm, bàn lịch báo in và hộp quà hỷ sự bung ánh hào quang.",
-    plan: "free",
+      "Tuyệt tác Standard poster điện ảnh Hồng Kông Art Deco: Thẻ Cào Vàng Art Deco tiết lộ ngày cưới, Lật Thẻ Nhân Vật 3D, Chuyện Chúng Mình cuộn phim 35mm, Kịch Bản Đêm Tiệc và Hộp Quà Hỷ Sự bung ánh hào quang.",
+    plan: "pro",
     coverImage: "/templates/hao-quang-huong-cang/cover.webp",
     defaultMusic: {
-      src: "/media/priority1.mp3",
-      title: "Bản Tình Ca Hào Quang Hương Cảng",
+      src: "/media/truyen-thuyet-nguoi-va-rong.mp3",
+      title: "Truyền Thuyết Người Và Rồng",
     },
     hasAdvancedEffects: true,
     accentSwatch: "#D8B15B",
     tone: "dark",
     category: "hongkong",
     color: "black-gold",
-    styleTags: ["Hồng Kông 90s", "Art Deco", "Poster Điện Ảnh", "Lịch Lãm", "Nam Tính", "Vương Gia Vệ"],
+    extraFeatureIds: [
+      "sfx-artdeco-doors",
+      "scratch-date",
+      "flip-cards-3d-hk",
+      "story-film-35mm",
+      "cinema-timeline",
+    ],
+    styleTags: ["Hồng Kông 90s", "Standard", "Art Deco", "Poster Điện Ảnh", "Lịch Lãm", "Vương Gia Vệ"],
+  },
+  {
+    id: "sen-ngoc-tram-nam",
+    name: "Sen Ngọc Trăm Năm",
+    subtitle: "Phong Bì Xanh Rêu & Sen Hồng",
+    description:
+      "Thiệp cưới truyền thống Việt Nam sang trọng: bìa phong bì chữ V xanh rêu con dấu sáp vàng, vân mây cổ điển, khung ảnh chân dung lật 3D lời tự bạch, lịch tháng đính tim vàng, hộp mừng cưới hoa sen Song Hỷ và âm thanh đàn tranh ngũ cung độc bản.",
+    plan: "pro",
+    coverImage: "/templates/sen-ngoc-tram-nam/cover.webp",
+    defaultMusic: {
+      src: "/media/priority1.mp3",
+      title: "Giai điệu Sen Ngọc Trăm Năm",
+    },
+    hasAdvancedEffects: true,
+    accentSwatch: "#3A4932",
+    tone: "bright",
+    category: "traditional",
+    color: "green",
+    extraFeatureIds: [
+      "sfx-lotus-envelope",
+      "flip-cards-3d",
+      "story-lotus",
+      "gift-lotus-box",
+    ],
+    styleTags: ["Truyền thống", "Standard", "Xanh rêu", "Hoa sen", "Song Hỷ", "Sang trọng"],
   },
   {
     id: "huong-cang-dem-neon",
     name: "Hương Cảng Đêm Neon",
-    subtitle: "Thước Phim VHS Phố Đêm Hong Kong 1990s",
+    subtitle: "Thước Phim VHS Mong Kok 1990s",
     description:
-      "Tái hiện trọn vẹn thước phim tình yêu Hong Kong thập niên 90: phố đêm Mong Kok neon rực rỡ, HUD VHS cổ điển, xe taxi đỏ, máy ảnh film 35mm, cuộn phim kỷ niệm và hộp băng VHS Collector 3 trạng thái độc bản.",
-    plan: "free",
+      "Tuyệt tác Standard phố đêm Mong Kok neon rực rỡ: HUD VHS cổ điển, Thẻ Cào Neon tiết lộ ngày cưới, Lật Thẻ Cast 3D, Chuyện Chúng Mình cuộn phim 35mm, Kịch Bản Đêm Tiệc và Hộp Băng VHS Collector 3 trạng thái.",
+    plan: "pro",
     coverImage: "/templates/huong-cang-dem-neon/cover.webp",
     defaultMusic: {
-      src: "/media/priority1.mp3",
-      title: "Khúc Dạ Hành Hương Cảng Đêm Neon",
+      src: "/media/truyen-thuyet-nguoi-va-rong.mp3",
+      title: "Truyền Thuyết Người Và Rồng",
     },
     hasAdvancedEffects: true,
     accentSwatch: "#FF2D78",
     tone: "dark",
     category: "hongkong",
     color: "red",
-    styleTags: ["Hồng Kông 90s", "Phố Đêm Neon", "Thước Phim VHS", "Lãng Mạn", "Vương Gia Vệ", "Mong Kok"],
+    extraFeatureIds: [
+      "sfx-neon-vhs",
+      "scratch-date",
+      "flip-cards-3d-hk",
+      "story-film-35mm",
+      "cinema-timeline",
+    ],
+    styleTags: ["Hồng Kông 90s", "Standard", "Phố Đêm Neon", "Thước Phim VHS", "Vương Gia Vệ", "Mong Kok"],
   },
   {
     id: "nhat-ky-mua-yeu",
     name: "Nhật Ký Mùa Yêu",
-    subtitle: "Analog Scrapbook · Our Little Story",
+    subtitle: "Nhật Ký Sổ Tay",
     description:
-      "Tái hiện trọn vẹn cuốn sổ lưu bút tình yêu ngẫu hứng và ấm áp: trang giấy kem vintage, khung ảnh Polaroid nghiêng, washi tape đa sắc, vé kỷ niệm, dấu ngày film 35mm và gói quà giấy kraft 3 trạng thái độc bản.",
-    plan: "free",
-    coverImage: "/templates/nhat-ky-mua-yeu/cover.webp",
+      "Thiệp sổ tay kỷ niệm chuẩn Standard: mở bìa bung băng keo rơi xoay 3D trong gió lộ mặt sau Hero, hiệu ứng dán washi tape lên từng khung ảnh và chồng giấy Chuyện Chúng Mình kéo tay 60fps.",
+    plan: "pro",
+    coverImage: "/templates/nhat-ky-mua-yeu/cover.webp?v=2",
     defaultMusic: {
       src: "/media/priority1.mp3",
       title: "Giai Điệu Nhật Ký Mùa Yêu",
     },
     hasAdvancedEffects: true,
+    extraFeatureIds: [
+      "diary-tape-fall-cover",
+      "washi-tape-reveal",
+      "story-paper-pull",
+      "sfx-diary-scrapbook",
+    ],
     accentSwatch: "#B85042",
     tone: "bright",
     category: "romantic",
@@ -775,6 +850,13 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
       title: "Giai Điệu Cổ Điển",
     },
     hasAdvancedEffects: true,
+    extraFeatureIds: [
+      "sfx-vintage-envelope",
+      "tear-calendar",
+      "polaroid-flip-3d",
+      "story-journal",
+      "polaroid-scrapbook",
+    ],
     accentSwatch: "#7C3629",
     tone: "bright",
     category: "romantic",
@@ -803,8 +885,8 @@ export const TEMPLATE_REGISTRY: WeddingTemplateMeta[] = [
 ];
 
 export const HERO_PREVIEW_TEMPLATES: WeddingTemplateMeta[] = [
-  ...TEMPLATE_REGISTRY.filter((tpl) => tpl.id === "long-phung"),
-  ...TEMPLATE_REGISTRY.filter((tpl) => tpl.id !== "long-phung" && !tpl.isPlaceholder),
+  ...TEMPLATE_REGISTRY.filter((tpl) => tpl.id === "ho-phach-mat-thu"),
+  ...TEMPLATE_REGISTRY.filter((tpl) => tpl.id !== "ho-phach-mat-thu" && !tpl.isPlaceholder),
 ];
 
 /** Mẫu đã đủ dữ liệu để hiển thị trong bộ sưu tập (kèm đường dẫn ảnh mặc định). */
@@ -836,45 +918,7 @@ export const SELECTABLE_DASHBOARD_TEMPLATES: WeddingTemplateMeta[] =
 
 export function getTemplateMeta(templateId: string): WeddingTemplateMeta | undefined {
   const normalizedId =
-    templateId === "basic-1"
-      ? "vuon-o-liu"
-      : templateId === "bach_nguyet"
-        ? "bach-nguyet"
-        : templateId === "lam_hoa_vien"
-          ? "lam-hoa-vien"
-          : templateId === "hac_vu_luu_ly"
-            ? "hac-vu-luu-ly"
-            : templateId === "diem_phan_kim_to"
-              ? "diem-phan-kim-to"
-              : templateId === "phi_thuy_dong_duong"
-                ? "phi-thuy-dong-duong"
-                : templateId === "ho_phach_mat_thu"
-                  ? "ho-phach-mat-thu"
-                  : templateId === "lam_tu_ngoc_suong"
-                    ? "lam-tu-ngoc-suong"
-                    : templateId === "tu_dang_da_khuc"
-                      ? "tu-dang-da-khuc"
-                      : templateId === "huyen_kim_long_phung"
-                        ? "huyen-kim-long-phung"
-                        : templateId === "hac_kim_nhat_thuc"
-                          ? "hac-kim-nhat-thuc"
-                          : templateId === "da_yen_pha_le"
-                            ? "da-yen-pha-le"
-                            : templateId === "mac_lam_kim_tuyen"
-                              ? "mac-lam-kim-tuyen"
-                              : templateId === "ban_sac_huong_cang"
-                                ? "ban-sac-huong-cang"
-                                : templateId === "cuu_long_hy_yen"
-                                  ? "cuu-long-hy-yen"
-                                  : templateId === "da_anh_huong_cang"
-                                    ? "da-anh-huong-cang"
-                                    : templateId === "hao_quang_huong_cang"
-                                      ? "hao-quang-huong-cang"
-                                      : templateId === "huong_cang_dem_neon"
-                                        ? "huong-cang-dem-neon"
-                                        : templateId === "nhat_ky_mua_yeu"
-                                          ? "nhat-ky-mua-yeu"
-                                          : templateId;
+    templateId === "basic-1" ? "vuon-o-liu" : templateId.replace(/_/g, "-");
   return TEMPLATE_REGISTRY.find((tpl) => tpl.id === normalizedId);
 }
 

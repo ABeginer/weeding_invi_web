@@ -209,25 +209,25 @@ function EnvelopeCover({
       <div className="pointer-events-none absolute inset-4 rounded-xl border border-[#D4AF37]/40 md:inset-8">
         <div className="absolute inset-1 rounded-lg border border-[#D4AF37]/20" />
         {/* 4 Góc hoa văn hoàng gia ôm sát đúng 4 đỉnh khung viền */}
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep3/corner-tl.webp"
           alt=""
           className="pointer-events-none absolute left-0 top-0 h-auto w-10 opacity-80 sm:w-12 md:w-14"
           aria-hidden="true"
         />
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep3/corner-tr.webp"
           alt=""
           className="pointer-events-none absolute right-0 top-0 h-auto w-10 opacity-80 sm:w-12 md:w-14"
           aria-hidden="true"
         />
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep3/corner-bl.webp"
           alt=""
           className="pointer-events-none absolute bottom-0 left-0 h-auto w-10 opacity-80 sm:w-12 md:w-14"
           aria-hidden="true"
         />
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep3/corner-br.webp"
           alt=""
           className="pointer-events-none absolute bottom-0 right-0 h-auto w-10 opacity-80 sm:w-12 md:w-14"
@@ -320,7 +320,7 @@ function EnvelopeCover({
             }
             transition={{ duration: 0.6, ease: EASE_ROYAL }}
           >
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/long-phung-ep3/seal-gold.webp"
               alt="Hoàng gia Song Hỷ"
               className="h-full w-full object-contain drop-shadow-[0_4px_16px_rgba(212,175,55,0.55)]"
@@ -374,7 +374,7 @@ function EnvelopeCover({
         </div>
 
         {/* Dải phân cách mây sen vàng */}
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep3/divider-ribbon.webp"
           alt=""
           className="my-2 h-auto w-40 opacity-80"
@@ -450,13 +450,13 @@ function HeroSection({
       <GoldDustParticles count={20} />
 
       {/* Viền hoa văn 2 góc trên */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute left-2 top-2 h-auto w-10 opacity-75 sm:left-4 sm:top-4 sm:w-12 md:left-6 md:top-6 md:w-16"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-tr.webp"
         alt=""
         className="pointer-events-none absolute right-2 top-2 h-auto w-10 opacity-75 sm:right-4 sm:top-4 sm:w-12 md:right-6 md:top-6 md:w-16"
@@ -486,7 +486,7 @@ function HeroSection({
           rotate: { duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.3 },
         }}
       >
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep3/dragon.webp"
           alt=""
           className="h-auto w-full object-contain drop-shadow-[0_4px_16px_rgba(212,175,55,0.35)]"
@@ -517,7 +517,7 @@ function HeroSection({
           rotate: { duration: 7.5, repeat: Infinity, ease: "easeInOut", delay: 1.4 },
         }}
       >
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep3/phoenix.webp"
           alt=""
           className="h-auto w-full object-contain drop-shadow-[0_4px_16px_rgba(212,175,55,0.35)]"
@@ -534,7 +534,7 @@ function HeroSection({
           animate={isOpened ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep3/arch-gold.webp"
             alt=""
             className="mx-auto h-auto w-full drop-shadow-[0_2px_10px_rgba(212,175,55,0.35)]"
@@ -613,7 +613,7 @@ function HeroSection({
           animate={isOpened ? { scaleX: 1, opacity: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.75, ease: EASE_ROYAL }}
         >
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep3/divider-lotus.webp"
             alt=""
             className="h-auto w-52 md:w-64"
@@ -679,25 +679,25 @@ function InvitationSection({
   return (
     <section className="relative overflow-hidden bg-[#FAF6F0] px-4 py-16 text-[#062119] md:py-24">
       {/* 4 Góc hoa văn vàng kim viền quanh thiệp kem */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute left-2 top-2 h-auto w-10 opacity-60 sm:left-4 sm:top-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-tr.webp"
         alt=""
         className="pointer-events-none absolute right-2 top-2 h-auto w-10 opacity-60 sm:right-4 sm:top-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-bl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 left-2 h-auto w-10 opacity-60 sm:bottom-4 sm:left-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-br.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 right-2 h-auto w-10 opacity-60 sm:bottom-4 sm:right-4 sm:w-12 md:w-14"
@@ -713,7 +713,7 @@ function InvitationSection({
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep3/seal-gold.webp"
             alt="Song Hỷ"
             className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(212,175,55,0.4)]"
@@ -747,7 +747,7 @@ function InvitationSection({
 
         {/* Dải phân cách hoa văn lụa */}
         <div className="my-6 flex justify-center">
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep3/divider-ribbon.webp"
             alt=""
             className="h-auto w-44 opacity-85"
@@ -961,7 +961,7 @@ function GallerySection({
                       : "0 6px 16px rgba(0,0,0,0.5)",
                   }}
                 >
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={photo.url}
                     alt={photo.alt || `Ảnh cưới ${idx + 1}`}
                     className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
@@ -1112,25 +1112,25 @@ function CalendarCountdownSection({
   return (
     <section className="relative overflow-hidden bg-[#FAF6F0] px-4 py-16 text-[#062119] md:py-24">
       {/* 4 Góc hoa văn hoàng gia trang trí lịch cưới */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute left-2 top-2 h-auto w-10 opacity-60 sm:left-4 sm:top-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-tr.webp"
         alt=""
         className="pointer-events-none absolute right-2 top-2 h-auto w-10 opacity-60 sm:right-4 sm:top-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-bl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 left-2 h-auto w-10 opacity-60 sm:bottom-4 sm:left-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-br.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 right-2 h-auto w-10 opacity-60 sm:bottom-4 sm:right-4 sm:w-12 md:w-14"
@@ -1444,25 +1444,25 @@ function GiftSection({
   return (
     <section className="relative overflow-hidden bg-[#FAF6F0] px-4 py-16 text-[#062119] md:py-24">
       {/* 4 Góc hoa văn hoàng gia trang trí hộp mừng */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute left-2 top-2 h-auto w-10 opacity-60 sm:left-4 sm:top-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-tr.webp"
         alt=""
         className="pointer-events-none absolute right-2 top-2 h-auto w-10 opacity-60 sm:right-4 sm:top-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-bl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 left-2 h-auto w-10 opacity-60 sm:bottom-4 sm:left-4 sm:w-12 md:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep3/corner-br.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 right-2 h-auto w-10 opacity-60 sm:bottom-4 sm:right-4 sm:w-12 md:w-14"
@@ -1513,7 +1513,7 @@ function GiftSection({
 
             {/* Ảnh Hộp Quà 3 Trạng Thái */}
             <div className="relative h-[240px] w-[132px] md:h-[300px] md:w-[165px]">
-              <img
+              <img loading="lazy" decoding="async"
                 src={
                   boxState === "active"
                     ? "/templates/long-phung-ep3/gift-active.webp"

@@ -42,7 +42,9 @@ import {
   createWedding,
   listWeddings,
   syncMe,
+  uploadPhoto,
 } from "@/lib/api";
+import { globalAudio } from "@/lib/global-audio";
 import {
   compressImageToWebP,
   formatFileSize,
@@ -157,11 +159,9 @@ const MUSIC_TRACKS = [
   },
 ] as const;
 
-function resolveFreeTemplateId(candidate?: string): string {
+function resolveInitialTemplateId(candidate?: string): string {
   if (candidate) {
-    const matched = HERO_PREVIEW_TEMPLATES.find(
-      (tpl) => tpl.id === candidate && isTemplateAllowedForPlan("free", tpl.plan),
-    );
+    const matched = HERO_PREVIEW_TEMPLATES.find((tpl) => tpl.id === candidate);
     if (matched) return matched.id;
   }
   return "nau-toi-gian";
@@ -183,7 +183,7 @@ export function CreateWeddingBuilder({
 
   // Template state
   const [templateId, setTemplateId] = React.useState(() =>
-    resolveFreeTemplateId(initialTemplateId),
+    resolveInitialTemplateId(initialTemplateId),
   );
   const [designerTemplateId, setDesignerTemplateId] = React.useState<string | undefined>(
     initialDesignerTemplateId,
@@ -228,8 +228,14 @@ export function CreateWeddingBuilder({
   const audioPreviewRef = React.useRef<HTMLAudioElement | null>(null);
 
   React.useEffect(() => {
+    const unsub = globalAudio.subscribe((state) => {
+      if (!state.isPlaying) {
+        setPlayingTrackId(null);
+      }
+    });
     return () => {
-      audioPreviewRef.current?.pause();
+      unsub();
+      globalAudio.stop();
     };
   }, []);
 
@@ -238,22 +244,19 @@ export function CreateWeddingBuilder({
       e.preventDefault();
       e.stopPropagation();
       if (playingTrackId === track.id) {
-        audioPreviewRef.current?.pause();
+        globalAudio.pause();
         setPlayingTrackId(null);
       } else {
-        if (audioPreviewRef.current) {
-          audioPreviewRef.current.pause();
-        }
-        const audio = new Audio(track.src);
-        audio.onended = () => setPlayingTrackId(null);
-        audio.onerror = () => setPlayingTrackId(null);
-        audio.play().catch(() => setPlayingTrackId(null));
-        audioPreviewRef.current = audio;
+        void globalAudio.play(track.src);
         setPlayingTrackId(track.id);
       }
     },
     [playingTrackId],
   );
+
+  const [eventTitle, setEventTitle] = React.useState("Lễ Thành Hôn & Tiệc Cưới");
+  const coverPhotoFileRef = React.useRef<File | null>(null);
+  const albumPhotoFilesRef = React.useRef<File[]>([]);
 
   const [bank, setBank] = React.useState("");
   const [accountNumber, setAccountNumber] = React.useState("");
@@ -360,7 +363,7 @@ export function CreateWeddingBuilder({
     if (!saved) return;
 
     if (!initialTemplateId) {
-      setTemplateId(resolveFreeTemplateId(saved.templateId));
+      setTemplateId(resolveInitialTemplateId(saved.templateId));
     }
     if (saved.groomName) setGroomName(saved.groomName);
     if (saved.brideName) setBrideName(saved.brideName);
@@ -593,6 +596,7 @@ export function CreateWeddingBuilder({
       }
       const result = await compressImageToWebP(file);
       const url = URL.createObjectURL(result.file);
+      coverPhotoFileRef.current = result.file;
       setCoverPhotoUrl(url);
       setCompressionToast(result.savedText);
       setTimeout(() => setCompressionToast(null), 4000);
@@ -610,24 +614,25 @@ export function CreateWeddingBuilder({
 
     try {
       setCompressing(true);
+      const maxAlbum = userPlan === "free" ? 5 : 10;
+      const remaining = Math.max(0, maxAlbum - albumPhotos.length);
       const newUrls: string[] = [];
-      let totalSaved = 0;
-      let totalOriginal = 0;
+      const newFiles: File[] = [];
 
-      for (let i = 0; i < Math.min(files.length, 6); i++) {
+      for (let i = 0; i < Math.min(files.length, remaining); i++) {
         const file = files[i];
         const validationError = validateImageFile(file);
         if (validationError) continue;
         const res = await compressImageToWebP(file);
         newUrls.push(URL.createObjectURL(res.file));
-        totalOriginal += res.originalSize;
-        totalSaved += res.compressedSize;
+        newFiles.push(res.file);
       }
 
       if (newUrls.length > 0) {
-        setAlbumPhotos((prev) => [...prev, ...newUrls].slice(0, 10));
+        albumPhotoFilesRef.current = [...albumPhotoFilesRef.current, ...newFiles].slice(0, maxAlbum);
+        setAlbumPhotos((prev) => [...prev, ...newUrls].slice(0, maxAlbum));
         setCompressionToast(
-          `${newUrls.length} ảnh đã sẵn sàng hiển thị sắc nét`,
+          `${newUrls.length} ảnh đã sẵn sàng tải lên cùng thiệp`,
         );
         setTimeout(() => setCompressionToast(null), 4000);
       }
@@ -667,6 +672,17 @@ export function CreateWeddingBuilder({
     setFieldErrors({});
     setSubmitError(null);
 
+    const activeMeta = HERO_PREVIEW_TEMPLATES.find((tpl) => tpl.id === templateId);
+    const activePlan = designerTemplateId
+      ? (designerPlan ?? "free")
+      : (activeMeta?.plan ?? "free");
+    if (!isTemplateAllowedForPlan("free", activePlan)) {
+      setSubmitError(
+        `Mẫu "${designerTemplateId ? (designerName ?? "Mẫu này") : (activeMeta?.name ?? "này")}" thuộc gói ${getPlanLabel(activePlan)}. Bạn có thể xem trước miễn phí tại đây, hoặc chuyển sang mẫu Miễn phí để tạo thiệp rồi nâng cấp gói ${getPlanLabel(activePlan)} trong Dashboard.`,
+      );
+      return;
+    }
+
     const nextErrors: Record<string, string> = {};
     const cleanGroom = groomName.trim();
     const cleanBride = brideName.trim();
@@ -684,7 +700,11 @@ export function CreateWeddingBuilder({
 
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
-      setActiveTab("info");
+      if (nextErrors.groomName || nextErrors.brideName || nextErrors.slug) {
+        setActiveTab("info");
+      } else if (nextErrors.date) {
+        setActiveTab("event");
+      }
       return;
     }
 
@@ -699,6 +719,7 @@ export function CreateWeddingBuilder({
       slug: slugCheck.slug,
       groomParents: groomParents.trim(),
       brideParents: brideParents.trim(),
+      eventTitle: eventTitle.trim() || "Lễ Thành Hôn & Tiệc Cưới",
       eventLocation: eventLocation.trim(),
       eventAddress: eventAddress.trim(),
       mapUrl: mapUrl.trim(),
@@ -760,7 +781,7 @@ export function CreateWeddingBuilder({
       if (draft.eventLocation) {
         try {
           await createEvent(created.id, {
-            title: "Lễ Thành Hôn & Tiệc Cưới",
+            title: draft.eventTitle,
             startsAt: draft.date,
             venueName: draft.eventLocation,
             venueAddress: draft.eventAddress || undefined,
@@ -768,6 +789,24 @@ export function CreateWeddingBuilder({
           });
         } catch {
           // Event creation optional on first step
+        }
+      }
+
+      // Upload ảnh bìa & ảnh album đã chọn ngay sau khi tạo thiệp
+      if (coverPhotoFileRef.current) {
+        try {
+          await uploadPhoto(created.id, coverPhotoFileRef.current, "banner", "hero");
+        } catch {
+          // Người dùng có thể tải lại trong Dashboard nếu gặp lỗi mạng
+        }
+      }
+      if (albumPhotoFilesRef.current.length > 0) {
+        for (const albumFile of albumPhotoFilesRef.current) {
+          try {
+            await uploadPhoto(created.id, albumFile, "gallery");
+          } catch {
+            // Tiếp tục tải các ảnh còn lại
+          }
         }
       }
 
@@ -805,6 +844,11 @@ export function CreateWeddingBuilder({
   };
 
   const selectedTemplate = HERO_PREVIEW_TEMPLATES.find((tpl) => tpl.id === templateId);
+  const selectedPlan = designerTemplateId
+    ? (designerPlan ?? "free")
+    : (selectedTemplate?.plan ?? "free");
+  const isPaidTemplateSelected = selectedPlan !== "free";
+  const selectedPlanLabel = getPlanLabel(selectedPlan);
   const displayName = designerTemplateId
     ? designerName ?? "Mẫu Designer"
     : selectedTemplate?.name ?? "Chọn mẫu thiệp";
@@ -847,6 +891,11 @@ export function CreateWeddingBuilder({
           >
             <Palette className="h-3.5 w-3.5 text-[#7A1C24]" />
             <span className="max-w-[130px] truncate sm:max-w-xs">{displayName}</span>
+            {isPaidTemplateSelected && (
+              <span className="rounded-full border border-[#C8AD7F] bg-[#1F1D1A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#F2D488]">
+                {selectedPlanLabel}
+              </span>
+            )}
             <ChevronDown className="h-3 w-3 text-[#6B655E]" />
           </button>
         </div>
@@ -972,6 +1021,59 @@ export function CreateWeddingBuilder({
           {/* Form Scroll Viewport */}
           <div className="flex-1 overflow-y-auto px-4 py-6 pb-28 sm:px-6 lg:pb-8">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {isAuthenticated && reachedFreeLimit && (
+                <div className="flex items-start gap-2.5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                  <div className="space-y-1">
+                    <p className="font-semibold">{getWeddingLimitMessage("free")}</p>
+                    <p>
+                      Bạn có thể chỉnh sửa thiệp hiện có trong{" "}
+                      <Link href={SITE_LINKS.dashboard} className="font-semibold underline">
+                        Trang quản lý thiệp
+                      </Link>{" "}
+                      hoặc nâng cấp gói Standard / Pro để tạo thêm không giới hạn.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {isPaidTemplateSelected && (
+                <div className="flex items-start gap-2.5 rounded-2xl border border-[#C8AD7F] bg-[#FFFDF7] p-4 text-xs text-[#4A3720]">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#9A6F26]" />
+                  <div className="space-y-2">
+                    <p className="font-semibold text-[#1F1D1A]">
+                      Mẫu <span className="text-[#7A1C24]">{displayName}</span> thuộc gói{" "}
+                      <span className="rounded-full bg-[#1F1D1A] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#F2D488]">
+                        {selectedPlanLabel}
+                      </span>
+                    </p>
+                    <p className="leading-relaxed text-[#6B655E]">
+                      Bạn có thể nhập tên &amp; xem trước miễn phí tại đây. Để lưu và xuất bản thiệp dùng mẫu này, cần mua gói{" "}
+                      <strong className="text-[#1F1D1A]">{selectedPlanLabel}</strong> (hoặc tạo bằng mẫu Miễn phí trước rồi nâng cấp trong Dashboard).
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-0.5">
+                      <Link
+                        href="/thiep-cuoi#bang-gia"
+                        className="inline-flex h-8 items-center rounded-full bg-[#7A1C24] px-3.5 text-[11px] font-semibold text-white transition-colors hover:bg-[#5E141B]"
+                      >
+                        Xem bảng giá {selectedPlanLabel}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTemplateId("nau-toi-gian");
+                          setDesignerTemplateId(undefined);
+                          setSubmitError(null);
+                        }}
+                        className="inline-flex h-8 cursor-pointer items-center rounded-full border border-[#E8E2D9] bg-white px-3.5 text-[11px] font-medium text-[#1F1D1A] transition-colors hover:bg-[#F4EFEA]"
+                      >
+                        Đổi sang mẫu Miễn phí
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {submitError && (
                 <div className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -1159,6 +1261,43 @@ export function CreateWeddingBuilder({
                     </div>
                   </div>
 
+                  {/* Tên nghi lễ */}
+                  <div>
+                    <label className="block text-xs font-medium text-[#1F1D1A]">
+                      Tên nghi lễ
+                    </label>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {[
+                        "Lễ Thành Hôn & Tiệc Cưới",
+                        "Lễ Vu Quy & Tiệc Cưới",
+                        "Lễ Đính Hôn",
+                        "Tiệc Báo Hỷ",
+                      ].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setEventTitle(preset)}
+                          className={cn(
+                            "cursor-pointer rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                            eventTitle === preset
+                              ? "border-[#7A1C24] bg-[#7A1C24] text-white"
+                              : "border-[#E8E2D9] bg-white text-[#6B655E] hover:border-[#B89B72]",
+                          )}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={eventTitle}
+                      onChange={(e) => setEventTitle(e.target.value)}
+                      maxLength={80}
+                      placeholder="Lễ Thành Hôn & Tiệc Cưới"
+                      className="mt-2 h-10 w-full rounded-xl border border-[#E8E2D9] bg-white px-3.5 text-sm text-[#1F1D1A] outline-none focus:border-[#7A1C24] focus:ring-1 focus:ring-[#7A1C24]"
+                    />
+                  </div>
+
                   {/* Tên địa điểm */}
                   <div>
                     <label className="block text-xs font-medium text-[#1F1D1A]">
@@ -1226,6 +1365,12 @@ export function CreateWeddingBuilder({
                     </div>
                   )}
 
+                  {!isAuthenticated && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                      Lưu ý: Bạn chưa đăng nhập — ảnh tải ở đây chỉ xem trước tạm thời. Sau bước đăng nhập, bạn có thể tải ảnh ngay trong trang quản lý thiệp.
+                    </div>
+                  )}
+
                   {/* Cover Photo Upload Box */}
                   <div>
                     <label className="block text-xs font-medium text-[#1F1D1A]">
@@ -1280,9 +1425,9 @@ export function CreateWeddingBuilder({
 
                   {/* Album ảnh cưới */}
                   <div>
-                    <label className="block text-xs font-medium text-[#1F1D1A]">
-                      Album ảnh kỷ niệm ({albumPhotos.length}/10)
-                    </label>
+                      <label className="block text-xs font-medium text-[#1F1D1A]">
+                        Album ảnh kỷ niệm ({albumPhotos.length}/{userPlan === "free" ? 5 : 10})
+                      </label>
                     <p className="mt-0.5 text-[11px] text-[#6B655E]">
                       Chọn nhiều ảnh cùng lúc, hệ thống sẽ tự động nén tối ưu.
                     </p>
@@ -1397,6 +1542,11 @@ export function CreateWeddingBuilder({
                                 loading="lazy"
                                 className="h-full w-full object-cover transition-transform duration-500 ease-luxury group-hover:scale-105"
                               />
+                              {tpl.plan !== "free" && (
+                                <span className="pointer-events-none absolute top-1.5 left-1.5 rounded-full border border-[#D8B15B]/75 bg-[#1F1D1A]/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#F2D488]">
+                                  {getPlanLabel(tpl.plan)}
+                                </span>
+                              )}
                               {isSelected && (
                                 <div className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#7A1C24] text-white">
                                   <Check className="h-3 w-3" />

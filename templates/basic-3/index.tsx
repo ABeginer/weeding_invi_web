@@ -124,7 +124,7 @@ function SunsetSectionTitle({
       <div className="mt-2.5 flex items-center justify-center gap-2">
         <span className="h-px w-10 sm:w-14" style={{ backgroundColor: ROSE_BORDER }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/basic-3/divider-floral-wine.webp"
           alt=""
           aria-hidden="true"
@@ -158,7 +158,7 @@ function SectionReveal({
       {showLaurel && (
         <div className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 opacity-35">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/basic-3/laurel-pair.webp"
             alt=""
             aria-hidden="true"
@@ -306,13 +306,13 @@ function Basic3Cover({
           }}
         />
 
-        {/* Khối tiêu đề: SAVE THE DATE */}
+        {/* Khối tiêu đề bìa */}
         <div className="relative mt-2">
           <p
-            className="text-[10px] font-semibold tracking-[0.24em] uppercase sm:text-xs"
+            className="text-[10px] font-semibold tracking-[0.14em] uppercase sm:text-xs"
             style={{ color: ROSE_COPPER, fontFamily: SERIF }}
           >
-            SAVE THE DATE
+            Thiệp mời tham dự lễ cưới
           </p>
         </div>
 
@@ -354,7 +354,7 @@ function Basic3Cover({
         {/* Dấu triện Monogram tròn hoa văn nguyệt quế */}
         <div className="relative my-3 flex h-14 w-14 items-center justify-center sm:my-4 sm:h-16 sm:w-16">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/basic-3/monogram-wine.webp"
             alt=""
             aria-hidden="true"
@@ -761,10 +761,10 @@ export default function Basic3Template({
           <SectionReveal>
             <div className="mx-auto max-w-xs">
               <p
-                className="text-xs font-semibold uppercase tracking-[0.3em]"
+                className="text-xs font-semibold uppercase tracking-[0.16em]"
                 style={{ color: ROSE_COPPER, fontFamily: SERIF }}
               >
-                SAVE THE DATE
+                Thiệp mời tham dự lễ cưới
               </p>
               <h1
                 className="mt-3 text-3xl font-semibold tracking-wide sm:text-4xl"
@@ -789,7 +789,7 @@ export default function Basic3Template({
             {/* Dải phân cách hoa văn thanh lịch */}
             <div className="relative mx-auto mt-4 flex justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/basic-3/divider-branch-gold.webp"
                 alt=""
                 aria-hidden="true"
@@ -801,7 +801,7 @@ export default function Basic3Template({
             <div className="relative mx-auto mt-6 w-full max-w-[320px] sm:max-w-[340px]">
               {/* Bó hoa dại trang trí góc trái */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/basic-3/sprig-flower.webp"
                 alt=""
                 aria-hidden="true"
@@ -817,7 +817,7 @@ export default function Basic3Template({
               >
                 {data.photos.heroUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={data.photos.heroUrl}
                     alt="Ảnh cưới"
                     className="h-full w-full object-cover object-center"
@@ -847,7 +847,7 @@ export default function Basic3Template({
         {!hidden.has("calendar") && (
           <section className="mt-16">
             <SectionReveal>
-              <SunsetSectionTitle sub="Save Our Date" title="Thời Khắc Hạnh Phúc" />
+              <SunsetSectionTitle title="Lịch cưới & Đếm ngược" />
 
               <div className="mt-6">
                 <CountdownBlock targetDateIso={targetDateIso} />
@@ -979,7 +979,7 @@ export default function Basic3Template({
                       <div className="aspect-[3/4] overflow-hidden rounded-xl bg-[#F5E0D5]/30">
                         {p.url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={p.url}
                             alt={p.name}
                             className="h-full w-full object-cover object-[center_20%]"
@@ -1161,7 +1161,7 @@ export default function Basic3Template({
                       }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={photo.url}
                         alt={`Ảnh cưới ${i + 1}`}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-108"
@@ -1240,7 +1240,7 @@ export default function Basic3Template({
 
                       {/* Hộp quà rượu vang nơ vàng */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <img loading="lazy" decoding="async"
                         src="/templates/basic-3/gift-box.webp"
                         alt="Hộp quà mừng cưới"
                         className={cn(
@@ -1336,7 +1336,7 @@ export default function Basic3Template({
         <footer className="mt-20 text-center">
           <div className="mx-auto flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/basic-3/divider-branch-gold.webp"
               alt=""
               aria-hidden="true"

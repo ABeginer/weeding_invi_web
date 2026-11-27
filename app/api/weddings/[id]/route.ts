@@ -4,13 +4,14 @@ import { authRoute, fail, json, readBody, text } from "@/lib/server/http";
 import { getWeddingDesignerTemplateInfo, getPinnedDesignerTemplate } from "@/lib/server/designer";
 import { toWedding, type WeddingRow } from "@/lib/server/mappers";
 import { deletePhotoObject } from "@/lib/server/storage";
+import { collectMediaUrlsFromContent, safeRemoveStorageObjects } from "@/lib/server/storage-cleanup";
 import { db } from "@/lib/server/supabase";
 import {
   getOwnedWedding,
   listWeddingEvents,
   listWeddingPhotos,
 } from "@/lib/server/weddings";
-import { weddingContentInputSchema } from "@/lib/wedding-types";
+import { normalizeWeddingContent } from "@/lib/wedding-data";
 import { getTemplateMeta } from "@/templates/registry";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -69,13 +70,10 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   }
 
   if (body.content !== undefined) {
-    const parsed = weddingContentInputSchema.safeParse(body.content);
-    if (!parsed.success) {
-      return fail(
-        parsed.error.issues[0]?.message ?? "Nội dung thiệp không hợp lệ.",
-      );
-    }
-    patch.content = parsed.data;
+    return fail(
+      "Vui lòng cập nhật nội dung thiệp qua endpoint /api/weddings/[id]/content.",
+      400,
+    );
   }
 
   if (Object.keys(patch).length === 0) {
@@ -117,6 +115,12 @@ export const DELETE = authRoute<Ctx>(async (_req, user, { params }) => {
     await Promise.allSettled(
       photoRows.map((row) => deletePhotoObject(String(row.storage_key))),
     );
+  }
+
+  // Dọn cả file nhạc MP3 / media riêng lưu trong content (nếu có)
+  const mediaKeys = collectMediaUrlsFromContent(normalizeWeddingContent(wedding.content));
+  if (mediaKeys.size > 0) {
+    await safeRemoveStorageObjects(Array.from(mediaKeys)).catch(() => undefined);
   }
 
   const { error } = await client

@@ -1,10 +1,16 @@
 import { getUser } from "@/lib/server/auth";
-import { fail, json, readBody, route } from "@/lib/server/http";
+import { fail, json, readBody, route, UUID_RE } from "@/lib/server/http";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { db } from "@/lib/server/supabase";
+import { isWeddingSuspendedRow } from "@/lib/server/weddings";
 import { verifyShareCookieValue } from "@/lib/share-pin";
+import { normalizeWeddingContent } from "@/lib/wedding-data";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 export const POST = route(async (req: Request) => {
+  const limited = rateLimit(req, "share-check-in", 60, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const body = await readBody(req);
   if (!body) return fail("Dữ liệu không hợp lệ.");
 
@@ -23,29 +29,40 @@ export const POST = route(async (req: Request) => {
     return fail("Cần cung cấp mã khách mời để check-in.", 400);
   }
 
+  if (guestId && !UUID_RE.test(guestId)) {
+    return fail("Mã khách mời không hợp lệ.", 400);
+  }
+
   const client = db();
   const { data: wedding, error: weddingError } = await client
     .from("weddings")
-    .select("id, slug, owner_id, plan")
+    .select("id, slug, owner_id, plan, content, suspended")
     .eq("slug", slug)
     .maybeSingle();
 
   if (weddingError) throw weddingError;
-  if (!wedding) {
+  if (!wedding || isWeddingSuspendedRow(wedding)) {
     return fail("Không tìm thấy tiệc cưới.", 404);
   }
 
   if (wedding.plan !== "vip") {
-    return fail("Tính năng chỉ dành cho gói VIP.", 403);
+    return fail("Tính năng chỉ dành cho gói Pro.", 403);
   }
 
-  // 1. Kiểm tra xác thực: Cookie mã PIN hợp lệ HOẶC chủ sở hữu đã đăng nhập Auth0
+  const content = normalizeWeddingContent(wedding.content);
+
+  // 1. Kiểm tra xác thực: Cookie mã PIN hợp lệ (khi đang bật và khớp PIN hiện tại) HOẶC chủ sở hữu đã đăng nhập Auth0
   let isAuthorized = false;
   const cookiesHeader = req.headers.get("cookie") ?? "";
-  const cookieMatch = cookiesHeader.match(new RegExp(`inviwedd_share_${slug}=([^;]+)`));
+  const cookieMatch = cookiesHeader.match(new RegExp(`(?:^|;\\s*)inviwedd_share_${slug}=([^;]+)`));
   const shareCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
 
-  if (shareCookie && (await verifyShareCookieValue(slug, shareCookie))) {
+  if (
+    shareCookie &&
+    content.sharePinEnabled === true &&
+    content.sharePin &&
+    (await verifyShareCookieValue(slug, shareCookie, content.sharePin))
+  ) {
     isAuthorized = true;
   } else {
     const user = await getUser(req);

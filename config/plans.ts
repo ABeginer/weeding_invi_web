@@ -59,7 +59,7 @@ export const PLAN_LIMITS: Record<WeddingPlan, PlanLimits> = {
     photos: {
       banner: 1,
       couple: 2,
-      gallery: 30,
+      gallery: 50,
       album: 300,
       og: 1,
       gift: 2,

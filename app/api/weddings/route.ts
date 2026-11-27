@@ -135,14 +135,17 @@ export const POST = authRoute(async (req, user) => {
   if (countError) throw countError;
 
   const weddingsList = existing ?? [];
-  const freeMaxWeddings = getPlanLimits("free").weddings;
+  const freeMaxWeddings = getPlanLimits("free").weddings ?? 1;
+  const freeWeddingsCount = weddingsList.filter((w) => w.plan === "free").length;
   const hasPaidPlan = weddingsList.some((w) => w.plan === "pro" || w.plan === "vip");
-  if (
-    !hasPaidPlan &&
-    freeMaxWeddings !== null &&
-    weddingsList.length >= freeMaxWeddings
-  ) {
-    return fail(getWeddingLimitMessage("free"), 403);
+  const maxAllowedUnpaidFree = hasPaidPlan ? Math.max(2, freeMaxWeddings) : freeMaxWeddings;
+  if (freeWeddingsCount >= maxAllowedUnpaidFree) {
+    return fail(
+      hasPaidPlan
+        ? `Mỗi tài khoản chỉ được giữ tối đa ${maxAllowedUnpaidFree} thiệp đang ở gói Miễn phí chưa nâng cấp. Vui lòng nâng cấp hoặc xóa bớt thiệp Miễn phí cũ.`
+        : getWeddingLimitMessage("free"),
+      403,
+    );
   }
 
   const { data, error } = await client

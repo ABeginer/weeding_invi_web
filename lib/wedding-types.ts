@@ -53,6 +53,7 @@ export type WeddingStoryMilestone = {
   year?: string;
   title: string;
   content: string;
+  imageUrl?: string;
 };
 
 export type WeddingContent = {
@@ -87,6 +88,12 @@ export type WeddingContent = {
   hostFirst?: "groom" | "bride";
   timeline?: WeddingTimelineItem[];
   story?: WeddingStoryMilestone[];
+  castDossier?: {
+    groomRole?: string;
+    groomQuote?: string;
+    brideRole?: string;
+    brideQuote?: string;
+  };
   musicPreset?:
   | "default"
   | "priority1"
@@ -175,6 +182,12 @@ export type TemplateData = {
   hostFirst?: "groom" | "bride";
   timeline: WeddingTimelineItem[];
   story?: WeddingStoryMilestone[];
+  castDossier?: {
+    groomRole?: string;
+    groomQuote?: string;
+    brideRole?: string;
+    brideQuote?: string;
+  };
   mealMode: "meat" | "veg" | "both";
   music: {
     src: string;
@@ -336,14 +349,18 @@ const designerOverrideSchema = z.object({
   radius: z.number().min(0).max(100).optional(),
   imageUrl: z
     .string()
-    .max(5_000_000)
+    .max(2_000_000)
     .refine(
-      (val) =>
-        !val ||
-        val.startsWith("/media/") ||
-        isValidHttpsUrl(val) ||
-        val.startsWith("data:image/"),
-      "Định dạng URL ảnh không hợp lệ.",
+      (val) => {
+        if (!val) return true;
+        if (val.startsWith("/media/")) return true;
+        if (isValidHttpsUrl(val)) return true;
+        if (val.startsWith("data:image/") && !val.startsWith("data:image/svg+xml")) {
+          return true;
+        }
+        return false;
+      },
+      "URL ảnh chỉ chấp nhận https://, /media/ hoặc ảnh data URI (ngoại trừ svg+xml).",
     )
     .optional(),
   imageScale: z.number().min(0.5).max(4).optional(),
@@ -402,8 +419,14 @@ export const weddingContentInputSchema = z.object({
   groomPhotoId: uuidOrNullSchema,
   bridePhotoId: uuidOrNullSchema,
   gift: weddingGiftInputSchema.optional().transform((val) => val ?? emptyGiftInfo()),
-  designerFields: z.record(z.string(), z.string()).optional(),
-  designerOverrides: z.record(z.string(), designerOverrideSchema).optional(),
+  designerFields: z
+    .record(z.string().max(100), z.string().max(2000))
+    .refine((rec) => Object.keys(rec).length <= 100, "Tối đa 100 trường tùy chỉnh.")
+    .optional(),
+  designerOverrides: z
+    .record(z.string().max(100), designerOverrideSchema)
+    .refine((rec) => Object.keys(rec).length <= 100, "Tối đa 100 phần tử ghi đè.")
+    .optional(),
   dressCode: z.array(z.string().max(40)).max(3).optional(),
   hiddenSections: z.array(z.string().max(40)).max(20).optional(),
   sectionOrder: z.array(z.string().max(40)).max(20).optional(),
@@ -463,9 +486,18 @@ export const weddingContentInputSchema = z.object({
         year: z.string().trim().max(30).optional(),
         title: z.string().trim().max(120),
         content: z.string().trim().max(1000),
+        imageUrl: z.string().trim().max(1000).optional(),
       }),
     )
     .max(10)
+    .optional(),
+  castDossier: z
+    .object({
+      groomRole: z.string().trim().max(60).optional(),
+      groomQuote: z.string().trim().max(200).optional(),
+      brideRole: z.string().trim().max(60).optional(),
+      brideQuote: z.string().trim().max(200).optional(),
+    })
     .optional(),
 });
 

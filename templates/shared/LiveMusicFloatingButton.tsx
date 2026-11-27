@@ -13,12 +13,7 @@ interface LiveMusicFloatingButtonProps {
   tone?: TemplateTone;
 }
 
-export function LiveMusicFloatingButton({
-  src,
-  title = "Nhạc nền",
-  visible,
-  tone = "obsidian",
-}: LiveMusicFloatingButtonProps) {
+export function LiveMusicFloatingButton(props: LiveMusicFloatingButtonProps) {
   const exp = useInvitationExperience();
   // Nếu đã nằm trong InvitationExperienceProvider, Provider quản lý tập trung
   // 1 thẻ <audio> duy nhất và FloatingExperienceControls (gồm cả nút Nhạc + nút Auto-Scroll),
@@ -27,6 +22,15 @@ export function LiveMusicFloatingButton({
     return null;
   }
 
+  return <StandaloneLiveMusicFloatingButton {...props} />;
+}
+
+function StandaloneLiveMusicFloatingButton({
+  src,
+  title = "Nhạc nền",
+  visible,
+  tone = "obsidian",
+}: LiveMusicFloatingButtonProps) {
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [available, setAvailable] = React.useState(Boolean(src));
   const [playing, setPlaying] = React.useState(false);

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  Camera,
   CheckCircle2,
   Clock,
   QrCode,
@@ -40,11 +39,16 @@ export function InteractiveFeatureBento() {
 
   const handleSelectRole = (chip: RoleChipOption) => {
     setSelectedRole(chip);
-    setGuestName(chip.defaultName);
+    const trimmed = guestName.trim();
+    const isPresetOrEmpty =
+      trimmed.length === 0 || ROLE_CHIPS.some((c) => c.defaultName === trimmed);
+    if (isPresetOrEmpty) {
+      setGuestName(chip.defaultName);
+    }
   };
 
   const salutation = buildSalutation({
-    guestName: guestName || "Khách quý",
+    guestName: guestName.trim() || "Khách quý",
     relationshipGroup: selectedRole.relationship,
   });
 
@@ -74,7 +78,7 @@ export function InteractiveFeatureBento() {
                 <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-0.5 text-[11px] font-medium text-emerald-800">
                   Thời gian thực
                 </span>
-                <span className="text-[11px] font-semibold text-[#B89B72] tracking-wider uppercase">
+                <span className="text-[11px] font-semibold text-[#8A6838] tracking-wider uppercase">
                   RSVP
                 </span>
               </div>
@@ -125,7 +129,7 @@ export function InteractiveFeatureBento() {
                       <XCircle className="h-3.5 w-3.5 text-rose-500" />
                       Bận không tham dự
                     </span>
-                    <span className="font-semibold text-rose-600">{RSVP_STATS.declined} khách</span>
+                    <span className="font-semibold text-rose-700">{RSVP_STATS.declined} khách</span>
                   </div>
                   <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-white border border-[#E8E2D9]/70">
                     <div
@@ -166,7 +170,7 @@ export function InteractiveFeatureBento() {
                 <span className="rounded-full bg-[#FAF8F5] border border-[#E8E2D9] px-2.5 py-0.5 text-[11px] font-medium text-[#7A1C24]">
                   Thư viện ảnh
                 </span>
-                <span className="text-[11px] font-semibold text-[#B89B72] tracking-wider uppercase">
+                <span className="text-[11px] font-semibold text-[#8A6838] tracking-wider uppercase">
                   Gallery &amp; QR
                 </span>
               </div>
@@ -181,8 +185,10 @@ export function InteractiveFeatureBento() {
               {/* Left Photo */}
               <div className="absolute left-4 top-4 w-28 sm:w-32 -rotate-6 rounded-2xl bg-white p-2 shadow-md border border-[#E8E2D9] transition-transform hover:scale-105 duration-300">
                 <img
-                  src="/photos/1.webp"
+                  src="/photos/bento-1.webp"
                   alt="Ảnh cưới"
+                  width={240}
+                  height={240}
                   loading="lazy"
                   decoding="async"
                   className="aspect-square w-full rounded-xl object-cover"
@@ -192,8 +198,10 @@ export function InteractiveFeatureBento() {
               {/* Center Photo */}
               <div className="absolute top-1 z-10 w-32 sm:w-36 rotate-2 rounded-2xl bg-white p-2 shadow-xl border border-[#E8E2D9] transition-transform hover:scale-105 duration-300">
                 <img
-                  src="/photos/2.webp"
+                  src="/photos/bento-2.webp"
                   alt="Ảnh cưới"
+                  width={240}
+                  height={240}
                   loading="lazy"
                   decoding="async"
                   className="aspect-square w-full rounded-xl object-cover"
@@ -203,8 +211,10 @@ export function InteractiveFeatureBento() {
               {/* Right Photo */}
               <div className="absolute right-4 top-5 w-28 sm:w-32 rotate-6 rounded-2xl bg-white p-2 shadow-md border border-[#E8E2D9] transition-transform hover:scale-105 duration-300">
                 <img
-                  src="/photos/3.webp"
+                  src="/photos/bento-3.webp"
                   alt="Ảnh cưới"
+                  width={240}
+                  height={240}
                   loading="lazy"
                   decoding="async"
                   className="aspect-square w-full rounded-xl object-cover"
@@ -212,7 +222,7 @@ export function InteractiveFeatureBento() {
               </div>
 
               {/* QR Scan Pill */}
-              <div className="absolute bottom-1 z-20 flex items-center gap-2 rounded-full border border-[#E8E2D9] bg-white/95 px-4 py-2 shadow-sm backdrop-blur-md">
+              <div className="absolute bottom-1 z-20 flex items-center gap-2 rounded-full border border-[#E8E2D9] bg-white px-4 py-2 shadow-sm">
                 <QrCode className="h-4 w-4 text-[#7A1C24]" />
                 <span className="text-xs font-medium text-[#1F1D1A]">
                   Quét QR gửi &amp; xem album cưới
@@ -228,7 +238,7 @@ export function InteractiveFeatureBento() {
                 <span className="rounded-full bg-[#FAF8F5] border border-[#E8E2D9] px-3 py-0.5 text-[11px] font-medium text-[#7A1C24]">
                   Cá nhân hóa
                 </span>
-                <span className="text-[11px] font-semibold text-[#B89B72] tracking-wider uppercase">
+                <span className="text-[11px] font-semibold text-[#8A6838] tracking-wider uppercase">
                   Zalo Link
                 </span>
               </div>
@@ -260,6 +270,18 @@ export function InteractiveFeatureBento() {
                 })}
               </div>
 
+              <div>
+                <input
+                  type="text"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  maxLength={40}
+                  aria-label="Nhập tên khách mời để xem thử xưng hô"
+                  placeholder="Gõ tên khách (vd: Chú Bảy, Lan Anh)..."
+                  className="h-10 w-full rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] px-3.5 text-[16px] text-[#1F1D1A] placeholder:text-[#6B655E]/70 focus:border-[#7A1C24] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1C24]/20 sm:text-xs"
+                />
+              </div>
+
               <div className="rounded-2xl border border-[#E8E2D9] bg-[#FAF8F5] p-4">
                 <div className="flex items-center gap-2 border-b border-[#E8E2D9]/70 pb-2.5">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0068FF] text-white text-[11px] font-bold">
@@ -275,7 +297,7 @@ export function InteractiveFeatureBento() {
                   <p className="mt-1 text-xs leading-relaxed text-[#1F1D1A]">
                     {salutation.zaloMessage}
                   </p>
-                  <div className="mt-2.5 flex items-center justify-between border-t border-[#E8E2D9]/60 pt-2 text-[11px] text-[#B89B72]">
+                  <div className="mt-2.5 flex items-center justify-between border-t border-[#E8E2D9]/60 pt-2 text-[11px] text-[#8A6838]">
                     <span className="font-serif italic">inviwedd.date/m/7a8f12...</span>
                     <span className="text-[#6B655E]">Xem thiệp riêng →</span>
                   </div>
@@ -291,7 +313,7 @@ export function InteractiveFeatureBento() {
                 <span className="rounded-full bg-[#FAF8F5] border border-[#E8E2D9] px-2.5 py-0.5 text-[11px] font-medium text-[#7A1C24]">
                   Tiện ích đón tiếp
                 </span>
-                <span className="text-[11px] font-semibold text-[#B89B72] tracking-wider uppercase">
+                <span className="text-[11px] font-semibold text-[#8A6838] tracking-wider uppercase">
                   Boarding Pass &amp; VietQR
                 </span>
               </div>
@@ -307,7 +329,7 @@ export function InteractiveFeatureBento() {
                 {/* Left Body */}
                 <div className="p-4 sm:p-5 md:col-span-8">
                   <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-2">
-                    <span className="text-[10px] font-semibold tracking-widest text-[#B89B72] uppercase">
+                    <span className="text-[10px] font-semibold tracking-widest text-[#8A6838] uppercase">
                       WEDDING BOARDING PASS
                     </span>
                     <span className="text-[10px] text-[#6B655E]">HẠNG THƯƠNG GIA</span>

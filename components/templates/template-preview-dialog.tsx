@@ -5,8 +5,11 @@ import { useUser } from "@auth0/nextjs-auth0";
 import { ArrowRight, Check, ExternalLink, Music2, Pause, Play, X } from "lucide-react";
 import { PLAN_LABELS, getTemplateFeatures, type TemplateFeature } from "@/config/template-features";
 import { SITE_LINKS } from "@/config/site";
+import { globalAudio } from "@/lib/global-audio";
+import { saveCatalogReturnState } from "@/lib/demo-return";
 import { cn } from "@/lib/utils";
-import { frameOffsetMax, setFrameOffset } from "@/lib/frame-scroll";
+import { findFrameScroller, frameOffsetMax, setFrameOffset } from "@/lib/frame-scroll";
+import { getTemplateMeta } from "@/templates/registry";
 import type { CollectionTemplate } from "./types";
 
 interface TemplatePreviewDialogProps {
@@ -80,7 +83,7 @@ export function TemplatePreviewDialog({
   const frameRef = React.useRef<HTMLDivElement | null>(null);
   const imgRef = React.useRef<HTMLImageElement | null>(null);
   const liveFrameRef = React.useRef<HTMLIFrameElement | null>(null);
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const currentOffsetRef = React.useRef<number>(0);
   const openerRef = React.useRef<Element | null>(null);
   const closingRef = React.useRef(false);
   const titleId = React.useId();
@@ -90,7 +93,12 @@ export function TemplatePreviewDialog({
   const [closing, setClosing] = React.useState(false);
   const [paused, setPaused] = React.useState(false);
   const [liveReady, setLiveReady] = React.useState(false);
-  const [musicOn, setMusicOn] = React.useState(true);
+  const [iframeOpened, setIframeOpened] = React.useState(false);
+  const [musicOn, setMusicOn] = React.useState(false);
+  const pausedRef = React.useRef(false);
+  React.useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
   const [snapshotState, setSnapshotState] = React.useState<
     "loading" | "ready" | "error"
   >("loading");
@@ -98,6 +106,8 @@ export function TemplatePreviewDialog({
 
   const features = getTemplateFeatures(template.plan, template.extraFeatureIds);
   const planLabel = PLAN_LABELS[template.plan];
+  const musicSrc =
+    getTemplateMeta(template.id)?.defaultMusic?.src ?? "/media/priority1.mp3";
 
   const requestClose = React.useCallback(() => {
     if (closingRef.current) return;
@@ -138,33 +148,100 @@ export function TemplatePreviewDialog({
   }, []);
 
   React.useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = 0.45;
-    audio.play().catch(() => setMusicOn(false));
+    const unsubscribe = globalAudio.subscribe((state) => {
+      setMusicOn(state.isPlaying);
+    });
+    void globalAudio.play(musicSrc, { volume: 0.45 });
     return () => {
-      audio.pause();
+      unsubscribe();
+      globalAudio.stop();
     };
-  }, []);
+  }, [musicSrc]);
 
-  const liveUrl =
+  const baseLiveUrl =
     template.embedUrl ??
     (template.demoUrl ? `${template.demoUrl}?embed=1` : null);
+  const liveUrl = baseLiveUrl
+    ? `${baseLiveUrl}${baseLiveUrl.includes("?") ? "&" : "?"}externalAudio=1`
+    : null;
+
+  // Reset vị trí cuộn & đồng bộ thông điệp từ iframe (code template tự cuộn qua InvitationExperienceProvider)
+  React.useEffect(() => {
+    currentOffsetRef.current = 0;
+    const frame = liveFrameRef.current;
+    return () => {
+      currentOffsetRef.current = 0;
+      if (frame) setFrameOffset(frame, 0);
+    };
+  }, [liveUrl]);
 
   React.useEffect(() => {
-    if (!liveUrl || !liveReady || paused) return;
+    if (!liveUrl || template.kind === "designer") return;
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "inviwedd:demo:opened") {
+        const opened = Boolean(event.data.opened);
+        setIframeOpened(opened);
+        if (opened && pausedRef.current) {
+          try {
+            liveFrameRef.current?.contentWindow?.postMessage(
+              { type: "inviwedd:preview:set-autoscroll", paused: true },
+              "*",
+            );
+          } catch { }
+        }
+      } else if (event.data?.type === "inviwedd:demo:autoscroll") {
+        if (event.data.isAutoScrolling) {
+          setPaused(false);
+        } else if (event.data.manual) {
+          setPaused(true);
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [liveUrl, template.kind]);
+
+  // Fallback cuộn tự động chỉ dành cho mẫu designer (không bọc InvitationExperienceProvider)
+  React.useEffect(() => {
+    if (template.kind !== "designer" || !liveUrl || !liveReady || paused) return;
     const frame = liveFrameRef.current;
     if (!frame) return;
     let raf = 0;
     let started = 0;
+    let scroller = findFrameScroller(frame);
+    const prevBehavior = scroller?.element.style.scrollBehavior;
+    if (scroller) {
+      scroller.element.style.scrollBehavior = "auto";
+    }
+    const startOffset = currentOffsetRef.current;
     const tick = (now: number) => {
       try {
-        const max = frameOffsetMax(frame);
-        if (!max) return;
+        if (!scroller) {
+          scroller = findFrameScroller(frame);
+          if (scroller) scroller.element.style.scrollBehavior = "auto";
+        }
+        const max = scroller ? scroller.max : frameOffsetMax(frame);
+        if (!max) {
+          raf = window.requestAnimationFrame(tick);
+          return;
+        }
+        const clampedStart = Math.min(startOffset, max);
+        const remaining = max - clampedStart;
+        if (remaining <= 1) {
+          currentOffsetRef.current = max;
+          return;
+        }
         if (!started) started = now;
-        const duration = Math.min(30_000, Math.max(12_000, max * 9));
+        const fullDuration = Math.min(30_000, Math.max(12_000, max * 9));
+        const duration = Math.max(1_000, fullDuration * (remaining / max));
         const progress = Math.min(1, (now - started) / duration);
-        setFrameOffset(frame, max * progress);
+        const nextOffset = clampedStart + remaining * progress;
+        currentOffsetRef.current = nextOffset;
+        if (scroller) {
+          scroller.element.scrollTop = nextOffset;
+        } else {
+          setFrameOffset(frame, nextOffset);
+        }
         if (progress < 1) raf = window.requestAnimationFrame(tick);
       } catch {
         raf = window.requestAnimationFrame(tick);
@@ -173,19 +250,27 @@ export function TemplatePreviewDialog({
     raf = window.requestAnimationFrame(tick);
     return () => {
       window.cancelAnimationFrame(raf);
-      setFrameOffset(frame, 0);
+      if (scroller && prevBehavior !== undefined) {
+        scroller.element.style.scrollBehavior = prevBehavior;
+      }
     };
-  }, [liveReady, liveUrl, paused]);
+  }, [liveReady, liveUrl, paused, template.kind]);
+
+  const handleToggleAutoScroll = () => {
+    const nextPaused = !paused;
+    setPaused(nextPaused);
+    if (template.kind !== "designer" && liveFrameRef.current?.contentWindow && (iframeOpened || nextPaused)) {
+      try {
+        liveFrameRef.current.contentWindow.postMessage(
+          { type: "inviwedd:preview:set-autoscroll", paused: nextPaused },
+          "*",
+        );
+      } catch { }
+    }
+  };
 
   const toggleMusic = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (audio.paused) {
-      audio.play().then(() => setMusicOn(true)).catch(() => setMusicOn(false));
-    } else {
-      audio.pause();
-      setMusicOn(false);
-    }
+    void globalAudio.toggle(musicSrc, { volume: 0.45 });
   };
 
   React.useEffect(() => {
@@ -271,11 +356,25 @@ export function TemplatePreviewDialog({
         {/* Top Header */}
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#E8E2D9] bg-white px-6 py-4">
           <div className="min-w-0">
-            <h2 id={titleId} className="truncate font-serif text-2xl font-normal text-[#1F1D1A]">
-              {template.name}
-            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 id={titleId} className="truncate font-serif text-2xl font-normal text-[#1F1D1A]">
+                {template.name}
+              </h2>
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                  template.plan === "free"
+                    ? "border border-[#E8E2D9] bg-[#F4EFEA] text-[#6B655E]"
+                    : template.plan === "vip"
+                      ? "border border-[#D8B15B]/80 bg-[#141210] text-[#F2D488]"
+                      : "border border-[#C8AD7F] bg-[#1F1D1A] text-[#F2D488]",
+                )}
+              >
+                {planLabel}
+              </span>
+            </div>
             <p className="truncate text-xs text-[#6B655E] mt-0.5">
-              <span className="font-semibold text-[#7A1C24]">{planLabel}</span> · {template.subtitle}
+              {template.subtitle}
             </p>
           </div>
           <button
@@ -347,7 +446,7 @@ export function TemplatePreviewDialog({
             <div className="mt-3 flex shrink-0 flex-wrap justify-center gap-2">
               <button
                 type="button"
-                onClick={() => setPaused((current) => !current)}
+                onClick={handleToggleAutoScroll}
                 aria-pressed={paused}
                 className="inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-3 text-xs font-medium text-[#1F1D1A] shadow-2xs transition-colors hover:bg-[#F4EFEA]"
               >
@@ -389,6 +488,15 @@ export function TemplatePreviewDialog({
                     href={template.demoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => {
+                      globalAudio.stop();
+                      if (
+                        typeof window !== "undefined" &&
+                        window.location.pathname === "/thiep-cuoi"
+                      ) {
+                        saveCatalogReturnState();
+                      }
+                    }}
                     className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#E8E2D9] bg-white px-4 text-xs font-semibold text-[#1F1D1A] transition-colors hover:bg-[#F4EFEA]"
                   >
                     <span>Mở toàn màn hình</span>
@@ -399,15 +507,24 @@ export function TemplatePreviewDialog({
                   href={useHref}
                   className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[#7A1C24] px-5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#5E141B]"
                 >
-                  <span>Dùng mẫu này</span>
+                  <span>
+                    {template.plan === "free"
+                      ? "Dùng mẫu này"
+                      : `Dùng thử mẫu ${planLabel}`}
+                  </span>
                   <ArrowRight className="h-4 w-4" />
                 </a>
               </div>
+              {template.plan !== "free" && (
+                <p className="mt-2 text-center text-[11px] text-[#6B655E]">
+                  Xem trước miễn phí với tên &amp; ảnh của bạn · Cần gói{" "}
+                  <strong className="font-semibold text-[#7A1C24]">{planLabel}</strong>{" "}
+                  khi lưu &amp; xuất bản thiệp.
+                </p>
+              )}
             </div>
           </div>
         </div>
-
-        <audio ref={audioRef} src="/media/wedding.mp3" loop preload="auto" />
       </div>
     </div>
   );

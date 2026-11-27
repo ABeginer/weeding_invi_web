@@ -1,10 +1,16 @@
 import { getUser } from "@/lib/server/auth";
 import { fail, json, route } from "@/lib/server/http";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { db } from "@/lib/server/supabase";
+import { isWeddingSuspendedRow } from "@/lib/server/weddings";
 import { verifyShareCookieValue } from "@/lib/share-pin";
+import { normalizeWeddingContent } from "@/lib/wedding-data";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 export const GET = route(async (req: Request) => {
+  const limited = rateLimit(req, "share-guests", 60, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const url = new URL(req.url);
   const slug = url.searchParams.get("slug")?.trim() || "";
 
@@ -16,26 +22,33 @@ export const GET = route(async (req: Request) => {
   const client = db();
   const { data: wedding, error: weddingError } = await client
     .from("weddings")
-    .select("id, slug, owner_id, plan")
+    .select("id, slug, owner_id, plan, content, suspended")
     .eq("slug", slug)
     .maybeSingle();
 
   if (weddingError) throw weddingError;
-  if (!wedding) {
+  if (!wedding || isWeddingSuspendedRow(wedding)) {
     return fail("Không tìm thấy tiệc cưới.", 404);
   }
 
   if (wedding.plan !== "vip") {
-    return fail("Tính năng chỉ dành cho gói VIP.", 403);
+    return fail("Tính năng chỉ dành cho gói Pro.", 403);
   }
 
-  // Xác thực quyền PIN hoặc Owner
+  const content = normalizeWeddingContent(wedding.content);
+
+  // Xác thực quyền PIN (khi đang bật và khớp PIN hiện tại) hoặc Owner
   let isAuthorized = false;
   const cookiesHeader = req.headers.get("cookie") ?? "";
-  const cookieMatch = cookiesHeader.match(new RegExp(`inviwedd_share_${slug}=([^;]+)`));
+  const cookieMatch = cookiesHeader.match(new RegExp(`(?:^|;\\s*)inviwedd_share_${slug}=([^;]+)`));
   const shareCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
 
-  if (shareCookie && (await verifyShareCookieValue(slug, shareCookie))) {
+  if (
+    shareCookie &&
+    content.sharePinEnabled === true &&
+    content.sharePin &&
+    (await verifyShareCookieValue(slug, shareCookie, content.sharePin))
+  ) {
     isAuthorized = true;
   } else {
     const user = await getUser(req);

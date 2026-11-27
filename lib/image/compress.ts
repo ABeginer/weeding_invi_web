@@ -118,8 +118,15 @@ export async function compressImage(
     targetWidth = 1200;
     targetHeight = 630;
   } else {
-    // 1600px đủ nét trên điện thoại và nhẹ hơn 2048px ~35%.
-    const maxDimension = 1600;
+    // Tối ưu kích thước cạnh lớn nhất theo đúng mục đích hiển thị để tải nhanh trên Mobile 4G
+    const maxByKind: Record<Exclude<CompressKind, "og">, number> = {
+      banner: 1600,
+      gallery: 1280,
+      album: 1280,
+      couple: 1000,
+      gift: 800,
+    };
+    const maxDimension = maxByKind[kind] ?? 1280;
     const longerSide = Math.max(sourceWidth, sourceHeight);
 
     if (longerSide > maxDimension) {

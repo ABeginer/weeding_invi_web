@@ -27,12 +27,13 @@ export type SaveWishResult = {
   id: string | null;
 };
 
-const AUTHOR_KEY_RE = /^(guest|anon):[A-Za-z0-9-]{6,64}$/;
+// Client chỉ được gửi khóa ẩn danh (anon:...); khóa guest:<id> chỉ do server tự sinh.
+const CLIENT_AUTHOR_KEY_RE = /^anon:[A-Za-z0-9-]{6,64}$/;
 
 export function normalizeAuthorKey(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
-  return AUTHOR_KEY_RE.test(trimmed) ? trimmed : null;
+  return CLIENT_AUTHOR_KEY_RE.test(trimmed) ? trimmed : null;
 }
 
 function isMissingAuthorKey(error: { code?: string; message?: string } | null): boolean {
@@ -86,8 +87,11 @@ export async function saveWishOnce(
   }
 
   if (existing) {
-    const patch: Record<string, unknown> = { message, name };
-    if (autoApprove && existing.approved !== true) patch.approved = true;
+    const patch: Record<string, unknown> = {
+      message,
+      name,
+      approved: autoApprove,
+    };
     const { error } = await client.from("wishes").update(patch).eq("id", existing.id);
     if (error) throw error;
     return { saved: true, updated: true, id: existing.id };
@@ -104,10 +108,10 @@ export async function saveWishOnce(
 
   const { data, error } = await client.from("wishes").insert(row).select("id").maybeSingle();
   if (error && isUniqueViolation(error) && authorKey) {
-    // Hai request đồng thời: bản ghi đã được request kia tạo → cập nhật.
+    // Hai request đồng thời: bản ghi đã được request kia tạo → cập nhật (reset approved theo autoApprove).
     const { error: updateError } = await client
       .from("wishes")
-      .update({ message, name })
+      .update({ message, name, approved: autoApprove })
       .eq("wedding_id", weddingId)
       .eq("author_key", authorKey);
     if (updateError) throw updateError;

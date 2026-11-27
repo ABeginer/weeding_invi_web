@@ -15,6 +15,7 @@ import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playCoverSfx } from "@/lib/sfx";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type {
   TemplateData,
@@ -270,7 +271,7 @@ export default function BachLanLuaNgaTemplate({
     const map = new Map<string, number>();
     const orderList = data.sectionOrder && data.sectionOrder.length > 0
       ? data.sectionOrder
-      : ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+      : CANONICAL_SECTION_ORDER;
     orderList.forEach((key, idx) => map.set(key, idx + 1));
     return map;
   }, [data.sectionOrder]);
@@ -353,7 +354,7 @@ export default function BachLanLuaNgaTemplate({
                 srcSet="/templates/bach-lan-lua-nga/bg_desktop.webp"
               />
             )}
-            <img
+            <img decoding="async"
               src="/templates/bach-lan-lua-nga/bg_mobile.webp"
               alt="Bạch Lan Lụa Ngà"
               className="w-full h-full object-cover object-center"
@@ -372,13 +373,13 @@ export default function BachLanLuaNgaTemplate({
             className="relative z-20 w-full max-w-[328px] sm:max-w-[380px] mx-auto rounded-3xl border border-[#E5D8BF] bg-white/94 p-6 sm:p-8 text-center shadow-[0_24px_60px_rgba(58,50,44,0.08)] backdrop-blur-sm"
           >
             {/* Nhánh lan góc trang trí đối xứng (trên-trái & dưới-phải lật 180°) */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/bach-lan-lua-nga/orchid_sprig_corner.webp"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute -top-3 -left-3 w-14 sm:w-16 object-contain z-10 opacity-90 drop-shadow-sm"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/bach-lan-lua-nga/orchid_sprig_corner.webp"
               alt=""
               aria-hidden="true"
@@ -387,7 +388,7 @@ export default function BachLanLuaNgaTemplate({
 
             {/* Con dấu sáp ngọc trai Bạch Lan ở đỉnh */}
             <div className="relative mx-auto mb-3 w-16 h-16 sm:w-20 sm:h-20">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/bach-lan-lua-nga/wax_seal_pearl.webp"
                 alt="Con Dấu Ngọc Trai Bạch Lan"
                 className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(200,173,127,0.22)]"
@@ -436,7 +437,7 @@ export default function BachLanLuaNgaTemplate({
 
             {/* Dải phân cách ngọc trai champagne */}
             <div className="my-3">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                 alt=""
                 aria-hidden="true"
@@ -534,7 +535,7 @@ export default function BachLanLuaNgaTemplate({
 
             {/* Dải phân cách ngọc trai */}
             <div className="my-4">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                 alt=""
                 aria-hidden="true"
@@ -547,7 +548,7 @@ export default function BachLanLuaNgaTemplate({
               {/* Lớp ảnh cặp đôi đặt bên dưới */}
               {heroPhotoUrl ? (
                 <div className="absolute inset-[5%_7%_4%_7%] rounded-t-[140px] sm:rounded-t-[175px] overflow-hidden shadow-inner bg-[#F3EDE2]">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={heroPhotoUrl}
                     alt="Ảnh cưới đôi uyên ương"
                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
@@ -555,7 +556,7 @@ export default function BachLanLuaNgaTemplate({
                 </div>
               ) : (
                 <div className="absolute inset-[5%_7%_4%_7%] rounded-t-[140px] sm:rounded-t-[175px] overflow-hidden flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#FFFFFF] to-[#F3EDE2] text-center border border-[#E5D8BF]">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/bach-lan-lua-nga/wax_seal_pearl.webp"
                     alt=""
                     className="w-16 h-16 sm:w-20 sm:h-20 opacity-85 mb-3"
@@ -567,13 +568,13 @@ export default function BachLanLuaNgaTemplate({
                     {groomName} &amp; {brideName}
                   </p>
                   <p className="mt-1 text-xs text-[#786D63] font-serif italic">
-                    Bạch Lan Lụa Ngà
+                    Lễ Thành Hôn
                   </p>
                 </div>
               )}
 
               {/* Lớp vòm orchid_arch_frame.webp nằm trên ảnh */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/bach-lan-lua-nga/orchid_arch_frame.webp"
                 alt="Khung Vòm Bạch Lan"
                 className="pointer-events-none absolute inset-0 w-full h-full object-contain z-10 drop-shadow-[0_10px_24px_rgba(58,50,44,0.08)]"
@@ -602,13 +603,13 @@ export default function BachLanLuaNgaTemplate({
                 {/* Phần thông tin gia đình hai bên */}
                 <div className="relative rounded-3xl border border-[#E5D8BF] bg-white/85 p-6 sm:p-10 shadow-[0_12px_36px_rgba(58,50,44,0.05)] backdrop-blur-sm">
                   {/* Góc hoa lan trang trí */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/bach-lan-lua-nga/orchid_sprig_corner.webp"
                     alt=""
                     aria-hidden="true"
                     className="pointer-events-none absolute top-2 left-2 w-10 sm:w-12 object-contain opacity-70"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/bach-lan-lua-nga/orchid_sprig_corner.webp"
                     alt=""
                     aria-hidden="true"
@@ -629,7 +630,7 @@ export default function BachLanLuaNgaTemplate({
                       Trong niềm hân hoan và sự chúc phúc trọn vẹn
                     </p>
                     <div className="my-3">
-                      <img
+                      <img loading="lazy" decoding="async"
                         src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                         alt=""
                         aria-hidden="true"
@@ -753,7 +754,7 @@ export default function BachLanLuaNgaTemplate({
                       Nhân Duyên Tốt Lành
                     </h2>
                     <div className="my-3">
-                      <img
+                      <img loading="lazy" decoding="async"
                         src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                         alt=""
                         aria-hidden="true"
@@ -768,7 +769,7 @@ export default function BachLanLuaNgaTemplate({
                           {bridePhotoUrl && (
                             <div className="flex flex-col items-center">
                               <div className="relative aspect-[3/4] w-48 sm:w-56 rounded-t-[120px] overflow-hidden border-2 border-[#E5D8BF] p-1.5 bg-[#FBF9F4] shadow-md">
-                                <img
+                                <img loading="lazy" decoding="async"
                                   src={bridePhotoUrl}
                                   alt={brideName}
                                   className="w-full h-full object-cover rounded-t-[115px]"
@@ -789,7 +790,7 @@ export default function BachLanLuaNgaTemplate({
                           {groomPhotoUrl && (
                             <div className="flex flex-col items-center">
                               <div className="relative aspect-[3/4] w-48 sm:w-56 rounded-t-[120px] overflow-hidden border-2 border-[#E5D8BF] p-1.5 bg-[#FBF9F4] shadow-md">
-                                <img
+                                <img loading="lazy" decoding="async"
                                   src={groomPhotoUrl}
                                   alt={groomName}
                                   className="w-full h-full object-cover rounded-t-[115px]"
@@ -813,7 +814,7 @@ export default function BachLanLuaNgaTemplate({
                           {groomPhotoUrl && (
                             <div className="flex flex-col items-center">
                               <div className="relative aspect-[3/4] w-48 sm:w-56 rounded-t-[120px] overflow-hidden border-2 border-[#E5D8BF] p-1.5 bg-[#FBF9F4] shadow-md">
-                                <img
+                                <img loading="lazy" decoding="async"
                                   src={groomPhotoUrl}
                                   alt={groomName}
                                   className="w-full h-full object-cover rounded-t-[115px]"
@@ -834,7 +835,7 @@ export default function BachLanLuaNgaTemplate({
                           {bridePhotoUrl && (
                             <div className="flex flex-col items-center">
                               <div className="relative aspect-[3/4] w-48 sm:w-56 rounded-t-[120px] overflow-hidden border-2 border-[#E5D8BF] p-1.5 bg-[#FBF9F4] shadow-md">
-                                <img
+                                <img loading="lazy" decoding="async"
                                   src={bridePhotoUrl}
                                   alt={brideName}
                                   className="w-full h-full object-cover rounded-t-[115px]"
@@ -877,7 +878,7 @@ export default function BachLanLuaNgaTemplate({
                   Đếm Ngược Tới Ngày Chung Đôi
                 </h2>
                 <div className="my-3">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                     alt=""
                     aria-hidden="true"
@@ -999,7 +1000,7 @@ export default function BachLanLuaNgaTemplate({
                     Sự Kiện &amp; Chỉ Đường
                   </h2>
                   <div className="my-3">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                       alt=""
                       aria-hidden="true"
@@ -1097,7 +1098,7 @@ export default function BachLanLuaNgaTemplate({
                     Sắc Màu Đồng Điệu
                   </h2>
                   <div className="my-3">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                       alt=""
                       aria-hidden="true"
@@ -1176,7 +1177,7 @@ export default function BachLanLuaNgaTemplate({
                   Khoảnh Khắc Lưu Giữ
                 </h2>
                 <div className="my-3">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                     alt=""
                     aria-hidden="true"
@@ -1189,7 +1190,7 @@ export default function BachLanLuaNgaTemplate({
                     onClick={() => setLightboxIndex(activePhotoIdx)}
                     className="group relative aspect-[3/2] sm:aspect-[16/10] overflow-hidden rounded-2xl border border-[#E5D8BF] bg-[#F3EDE2] shadow-md cursor-pointer"
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={albumPhotos[activePhotoIdx]?.url}
                       alt={albumPhotos[activePhotoIdx]?.alt || `Ảnh kỷ niệm ${activePhotoIdx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1283,17 +1284,13 @@ export default function BachLanLuaNgaTemplate({
                   Hộp Quà Chúc Phúc
                 </h2>
                 <div className="my-3">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                     alt=""
                     aria-hidden="true"
                     className="mx-auto w-32 sm:w-40 object-contain opacity-70"
                   />
                 </div>
-                <p className="mx-auto max-w-md text-xs sm:text-sm text-[#786D63] italic font-serif leading-relaxed">
-                  &ldquo;Sự hiện diện của Quý khách là niềm hạnh phúc trọn vẹn nhất của hai gia đình. Nếu ở xa không tiện ghé chung vui, Quý khách có thể gửi lời chúc qua hộp quà nhỏ bên dưới.&rdquo;
-                </p>
-
                 {/* Hộp Quà Lụa Tương Tác 3 Trạng Thái */}
                 <div className="relative mx-auto mt-6 max-w-[260px] sm:max-w-[300px]">
                   <div
@@ -1302,7 +1299,7 @@ export default function BachLanLuaNgaTemplate({
                     onClick={handleGiftClick}
                     className="group cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={
                         activeGiftState === "open"
                           ? "/templates/bach-lan-lua-nga/gift_box_open.webp"
@@ -1333,29 +1330,6 @@ export default function BachLanLuaNgaTemplate({
                 className="relative rounded-3xl border border-[#E5D8BF] bg-white/85 p-6 sm:p-10 shadow-[0_12px_36px_rgba(58,50,44,0.05)] backdrop-blur-sm"
               >
                 <span id="rsvp-section" className="sr-only" />
-                <div className="text-center mb-6">
-                  <p className="text-[11px] sm:text-xs uppercase tracking-[0.26em] font-medium text-[#C8AD7F]">
-                    HỒI ĐÁP THÂN TÌNH
-                  </p>
-                  <h2
-                    className="text-2xl sm:text-3xl font-normal text-[#3A322C] mt-1"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Xác Nhận Tham Dự &amp; Gửi Lời Chúc
-                  </h2>
-                  <div className="my-3">
-                    <img
-                      src="/templates/bach-lan-lua-nga/divider_pearl.webp"
-                      alt=""
-                      aria-hidden="true"
-                      className="mx-auto w-32 sm:w-40 object-contain opacity-70"
-                    />
-                  </div>
-                  <p className="text-xs sm:text-sm text-[#786D63] italic font-serif">
-                    Để gia đình chuẩn bị chu đáo nhất cho sự hiện diện của Quý khách
-                  </p>
-                </div>
-
                 <div className="[&_select]:!bg-white [&_select]:!text-[#3A322C] [&_option]:!bg-white [&_option]:!text-[#3A322C] [&_input]:!bg-[#FAF8F5] [&_input]:!text-[#3A322C] [&_textarea]:!bg-[#FAF8F5] [&_textarea]:!text-[#3A322C]">
                   <TemplateRsvpSection
                     data={data}
@@ -1394,7 +1368,7 @@ export default function BachLanLuaNgaTemplate({
               ------------------------------------------------------------ */}
           <footer className="pt-8 sm:pt-12 pb-4 text-center">
             <div className="mb-4">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/bach-lan-lua-nga/divider_pearl.webp"
                 alt=""
                 aria-hidden="true"

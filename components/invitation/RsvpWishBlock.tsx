@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
+import { Check, CheckCircle2, Lock, Send, X, XCircle } from "lucide-react";
 import { getWishes, submitRsvp, submitWish } from "@/lib/api";
 import { getWishAuthorKey } from "@/lib/wish-author";
 import type { GuestDiet, GuestStatus } from "@/lib/types";
@@ -46,7 +46,6 @@ export function RsvpWishBlock({
   const data = useWeddingContent();
   const isContained = useInvitationContained();
   const isReadOnlyPreview = useInvitationReadOnly();
-  const isOliveGarden = data.templateId === "vuon-o-liu" || data.templateId === "basic-1";
   const mealMode = data.mealMode ?? "meat";
   const dietOptions =
     mealMode === "both"
@@ -85,7 +84,10 @@ export function RsvpWishBlock({
   const [authorKey, setAuthorKey] = React.useState<string | undefined>(undefined);
   const [hasExistingWish, setHasExistingWish] = React.useState(false);
   const [honeypot, setHoneypot] = React.useState("");
-  const formLoadedAtRef = React.useRef<number>(Date.now());
+  const formLoadedAtRef = React.useRef<number>(0);
+  React.useEffect(() => {
+    formLoadedAtRef.current = Date.now();
+  }, []);
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
 
@@ -380,14 +382,6 @@ export function RsvpWishBlock({
             >
               Gửi Lời Chúc
             </h2>
-            <p
-              className={cn(
-                "mx-auto mt-2.5 max-w-[390px] font-inv-serif leading-[1.55] text-inv-olive-btn",
-                isContained ? "text-[13px]" : "text-[14px] sm:text-[15px]",
-              )}
-            >
-              Gửi đôi lời yêu thương để cùng lưu giữ những kỷ niệm đẹp nhất trong ngày cưới của chúng mình.
-            </p>
           </div>
 
           {publicWishSent ? (
@@ -549,18 +543,8 @@ export function RsvpWishBlock({
                 : "text-[clamp(32px,8.8vw,46px)]",
             )}
           >
-            {isOliveGarden ? "Xác nhận Tham Dự" : "Xác Nhận Tham Dự"}
+            Xác nhận tham dự
           </h2>
-          <p
-            className={cn(
-              "mx-auto mt-2.5 max-w-[390px] font-inv-serif leading-[1.55] text-inv-olive-btn",
-              isContained ? "text-[13px]" : "text-[14px] sm:text-[15px]",
-            )}
-          >
-            {isOliveGarden
-              ? "Sự có mặt của quý khách là niềm vui lớn của gia đình chúng tôi. Xin dành chút thời gian xác nhận để chúng tôi chuẩn bị đón tiếp thật chu đáo. Trân trọng!"
-              : "Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới."}
-          </p>
         </div>
 
         {showSavedSummary && activeChoice ? (
@@ -710,7 +694,7 @@ export function RsvpWishBlock({
                 role="group"
                 aria-label="Lựa chọn tham dự"
                 className={cn(
-                  "grid grid-cols-1 gap-2",
+                  "grid grid-cols-1 gap-2.5",
                   !isContained && "sm:grid-cols-2",
                 )}
               >
@@ -723,13 +707,15 @@ export function RsvpWishBlock({
                     setSelectedChoice("accepted");
                   }}
                   className={cn(
-                    "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                    "flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-solid px-4 py-2 text-center font-inv-serif text-sm font-medium shadow-sm transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                     selectedChoice === "accepted"
                       ? "border-inv-olive-deep bg-inv-olive-btn font-semibold text-white"
                       : "border-inv-olive-btn bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                    selectedChoice === null && submitting === null && "rsvp-choice-nudge",
                   )}
                 >
-                  Tôi sẽ tham dự
+                  <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Tôi sẽ tham dự</span>
                 </button>
                 <button
                   type="button"
@@ -740,13 +726,17 @@ export function RsvpWishBlock({
                     setSelectedChoice("declined");
                   }}
                   className={cn(
-                    "flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-4 py-2 text-center font-inv-serif text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
+                    "flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border-[1.5px] border-solid px-4 py-2 text-center font-inv-serif text-sm font-medium shadow-sm transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inv-olive",
                     selectedChoice === "declined"
                       ? "border-inv-olive-deep bg-inv-olive-deep font-semibold text-white"
                       : "border-inv-olive/50 bg-inv-bg text-inv-olive-deep hover:bg-inv-tint",
+                    selectedChoice === null &&
+                      submitting === null &&
+                      "rsvp-choice-nudge rsvp-choice-nudge-delayed",
                   )}
                 >
-                  {isOliveGarden ? "Tiếc quá, tôi bận mất rồi" : "Tiếc quá, mình bận mất rồi"}
+                  <X className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Tiếc quá, tôi bận mất rồi</span>
                 </button>
               </div>
             </div>

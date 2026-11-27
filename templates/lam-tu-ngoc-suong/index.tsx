@@ -14,6 +14,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-types";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -54,7 +55,7 @@ const BODY_FONT = "var(--font-be-vietnam), sans-serif";
 const EASE_PEARL = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_TIMELINE = [
-  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm tại tiền sảnh Tú Cầu Sương Ngọc" },
+  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
   { time: "17:30", label: "Nghi lễ Khai Hoa trao lời hẹn ước trăm năm" },
   { time: "18:00", label: "Khai tiệc mừng uyên ương & Nâng ly chúc phúc" },
   { time: "19:30", label: "Vũ điệu tình yêu & Những thanh âm lãng mạn" },
@@ -237,7 +238,7 @@ export function LamTuNgocSuongTemplate({
   );
   const eventDateStr = targetEvent?.startsAt || data.date || "2027-03-20T10:00:00+07:00";
   const dateParts = formatWeddingDateParts(eventDateStr);
-  const lunarClean = formatLunarDateClean(eventDateStr);
+  const lunarClean = targetEvent?.lunarDate ? formatLunarDateClean(targetEvent.lunarDate) : "";
 
   const eventDays = React.useMemo(() => {
     const set = new Set<number>();
@@ -334,16 +335,9 @@ export function LamTuNgocSuongTemplate({
   };
 
   // Thứ tự hiển thị các khối section
-  const sectionOrder = data.sectionOrder ?? [
-    "family",
-    "calendar",
-    "map",
-    "dresscode",
-    "album",
-    "albumQr",
-    "gift",
-    "rsvp",
-  ];
+  const sectionOrder = data.sectionOrder?.length
+    ? data.sectionOrder
+    : CANONICAL_SECTION_ORDER;
   const hiddenSections = new Set(data.hiddenSections ?? []);
 
   const orderOf = (key: string) => {
@@ -402,13 +396,13 @@ export function LamTuNgocSuongTemplate({
               <div className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#C4D2E3]/60" />
 
               {/* Hoa tú cầu góc bất đối xứng trên-trái & dưới-phải (180deg, z-10) */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/lam-tu-ngoc-suong/corner-hydrangea.webp"
                 alt=""
                 aria-hidden="true"
                 className="pointer-events-none absolute -top-3 -left-3 w-16 sm:w-20 object-contain drop-shadow-sm z-10"
               />
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/lam-tu-ngoc-suong/corner-hydrangea.webp"
                 alt=""
                 aria-hidden="true"
@@ -425,7 +419,7 @@ export function LamTuNgocSuongTemplate({
                     filter: "blur(6px)",
                   }}
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/lam-tu-ngoc-suong/wax-seal.webp"
                   alt="Con Dấu Pha Lê Tú Cầu"
                   className="relative z-10 w-full h-full object-contain drop-shadow-md"
@@ -434,10 +428,10 @@ export function LamTuNgocSuongTemplate({
 
               {/* Phụ đề phong cách */}
               <p
-                className="relative z-20 text-[11px] uppercase tracking-[0.3em] text-[#4E74A6] font-semibold mb-2"
+                className="relative z-20 text-[11px] uppercase tracking-[0.15em] text-[#4E74A6] font-semibold mb-2"
                 style={{ fontFamily: BODY_FONT }}
               >
-                {data.ui?.eyebrow || "The Wedding Invitation"}
+                {data.ui?.eyebrow || "Thiệp mời tham dự lễ cưới"}
               </p>
 
               {/* Tên cặp đôi 3 dòng Xanh Lam Hoàng Gia #14325C sắc nét */}
@@ -454,7 +448,7 @@ export function LamTuNgocSuongTemplate({
 
               {/* Dải phân cách hoa tú cầu & hạt ngọc trai */}
               <div className="relative z-20 my-2.5 w-36 sm:w-44 flex justify-center">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/lam-tu-ngoc-suong/divider-pearl.webp"
                   alt=""
                   aria-hidden="true"
@@ -509,21 +503,19 @@ export function LamTuNgocSuongTemplate({
               ============================================================ */}
           <section className="relative w-full flex flex-col items-center text-center pt-4">
             <span
-              className="text-xs uppercase tracking-[0.3em] text-[#4E74A6] font-semibold mb-2"
+              className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-[#4E74A6] font-semibold mb-2"
               style={{ fontFamily: BODY_FONT }}
             >
-              {data.ui?.eyebrow || "The Wedding Invitation"}
+              {data.ui?.eyebrow || "Thiệp mời tham dự lễ cưới"}
             </span>
-            <p className="text-xs sm:text-sm tracking-[0.2em] text-[#6B88AE] uppercase font-serif mb-6">
-              Trân Trọng Báo Tin Lễ Thành Hôn
-            </p>
+            {/* subtitle trimmed for clarity */}
 
             {/* Khung Vòm Pha Lê crystal-arch.webp lồng ảnh uyên ương */}
             <div className="relative w-full max-w-[380px] sm:max-w-[420px] aspect-[580/742] mx-auto my-2 flex items-center justify-center">
               {/* Lớp ảnh cặp đôi nằm bên trong vòm */}
-              <div className="absolute inset-x-12 sm:inset-x-14 top-14 sm:top-16 bottom-20 rounded-t-full overflow-hidden shadow-inner">
+              <div className="absolute inset-x-[14.5%] top-[2.2%] bottom-[12%] rounded-t-[999px] rounded-b-[45%] overflow-hidden shadow-inner">
                 {heroPhotoUrl ? (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={heroPhotoUrl}
                     alt="Ảnh cưới uyên ương"
                     className="w-full h-full object-cover"
@@ -538,7 +530,7 @@ export function LamTuNgocSuongTemplate({
               </div>
 
               {/* Khung vòm pha lê tú cầu đè lên ngoài */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/lam-tu-ngoc-suong/crystal-arch.webp"
                 alt="Khung Vòm Pha Lê Tú Cầu"
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none z-10 drop-shadow-xl"
@@ -559,7 +551,7 @@ export function LamTuNgocSuongTemplate({
 
             {/* Dải phân cách hoa tú cầu */}
             <div className="w-full max-w-[280px] sm:max-w-[340px] mx-auto mt-6">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/lam-tu-ngoc-suong/divider-pearl.webp"
                 alt="Divider"
                 className="w-full object-contain opacity-85"
@@ -576,13 +568,13 @@ export function LamTuNgocSuongTemplate({
               <div style={{ order: orderOf("family") }}>
                 <section className="relative w-full rounded-3xl bg-[#F8FBFF]/94 border border-[#C4D2E3]/90 p-6 sm:p-10 shadow-md backdrop-blur-md overflow-hidden">
                   {/* Hoa tú cầu trang trí góc */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/lam-tu-ngoc-suong/corner-hydrangea.webp"
                     alt=""
                     aria-hidden="true"
                     className="absolute -top-3 -left-3 w-20 sm:w-24 object-contain pointer-events-none opacity-40"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/lam-tu-ngoc-suong/corner-hydrangea.webp"
                     alt=""
                     aria-hidden="true"
@@ -594,14 +586,11 @@ export function LamTuNgocSuongTemplate({
                       Hai Bên Gia Đình
                     </span>
                     <h2
-                      className="text-xl sm:text-2xl text-[#14325C] font-normal mb-2"
+                      className="text-xl sm:text-2xl text-[#14325C] font-normal mb-6"
                       style={{ fontFamily: TITLE_FONT }}
                     >
                       Thông Tin Gia Đình
                     </h2>
-                    <p className="text-xs sm:text-sm text-[#4E74A6] italic mb-8 max-w-[500px]">
-                      Trân trọng báo tin lễ thành hôn của con chúng tôi
-                    </p>
 
                     <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-6 items-stretch">
                       {/* Nhà Trai */}
@@ -688,7 +677,7 @@ export function LamTuNgocSuongTemplate({
                       const evtDateParts = formatWeddingDateParts(evtDateStr);
                       const evtLunar = evt.lunarDate
                         ? formatLunarDateClean(evt.lunarDate)
-                        : formatLunarDateClean(evtDateStr);
+                        : "";
                       const directionsUrl = getEventDirectionsUrl(evt);
 
                       return (
@@ -912,7 +901,7 @@ export function LamTuNgocSuongTemplate({
 
                   {/* Coverflow / Carousel */}
                   <div className="relative w-full max-w-[520px] aspect-[4/3] sm:aspect-[16/10] rounded-2xl overflow-hidden shadow-[0_16px_36px_rgba(20,50,92,0.18)] border-4 border-[#FFFFFF]">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={albumPhotos[activePhotoIdx]?.url}
                       alt="Ảnh kỷ niệm"
                       className="w-full h-full object-cover transition-all duration-500 hover:scale-105 cursor-pointer"
@@ -958,22 +947,25 @@ export function LamTuNgocSuongTemplate({
                             : "border-transparent opacity-60 hover:opacity-100"
                         )}
                       >
-                        <img src={p.url} alt="" className="w-full h-full object-cover" />
+                        <img loading="lazy" decoding="async" src={p.url} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
 
-                  {/* Gói Free giới hạn tối đa 5 ảnh, ẩn QR album */}
-                  {!isFree && !hiddenSections.has("albumQr") && weddingSlug && (
-                    <div className="mt-6 w-full flex justify-center">
-                      <GuestAlbumQr
-                        slug={weddingSlug}
-                        accentColor="#14325C"
-                        textColor="#14325C"
-                        mutedColor="#4E74A6"
-                      />
-                    </div>
-                  )}
+                </section>
+              </div>
+            )}
+
+            {/* QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
+            {!isFree && !hiddenSections.has("albumQr") && weddingSlug && (
+              <div style={{ order: orderOf("albumQr") }}>
+                <section className="relative w-full rounded-3xl bg-[#F8FBFF]/94 border border-[#C4D2E3]/90 p-6 sm:p-10 shadow-md backdrop-blur-md flex flex-col items-center text-center">
+                  <GuestAlbumQr
+                    slug={weddingSlug}
+                    accentColor="#14325C"
+                    textColor="#14325C"
+                    mutedColor="#4E74A6"
+                  />
                 </section>
               </div>
             )}
@@ -986,14 +978,11 @@ export function LamTuNgocSuongTemplate({
                     Trang Phục Gợi Ý
                   </span>
                   <h2
-                    className="text-2xl sm:text-3xl text-[#14325C] font-normal mb-4"
+                    className="text-2xl sm:text-3xl text-[#14325C] font-normal mb-8"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    Dress Code &amp; Lịch Trình
+                    Lịch Trình &amp; Trang Phục
                   </h2>
-                  <p className="text-xs sm:text-sm text-[#4E74A6] italic mb-8 max-w-[480px]">
-                    Sự hiện diện của quý vị trong trang phục tông màu gợi ý sẽ giúp không gian tiệc thêm phần trọn vẹn
-                  </p>
 
                   {/* 3 vòng tròn màu Dress Code */}
                   <div className="flex items-center justify-center gap-4 sm:gap-6 mb-12">
@@ -1041,14 +1030,11 @@ export function LamTuNgocSuongTemplate({
                     Gửi Lời Chúc Phúc
                   </span>
                   <h2
-                    className="text-2xl sm:text-3xl text-[#14325C] font-normal mb-2"
+                    className="text-2xl sm:text-3xl text-[#14325C] font-normal mb-6"
                     style={{ fontFamily: TITLE_FONT }}
                   >
                     Hộp Quà Mừng Cưới
                   </h2>
-                  <p className="text-xs sm:text-sm text-[#4E74A6] italic mb-8 max-w-[480px]">
-                    Sự hiện diện và lời chúc phúc của quý khách là món quà quý giá nhất dành cho chúng tôi
-                  </p>
 
                   {/* Hộp quà pha lê nhung xanh 3 trạng thái */}
                   <div
@@ -1064,7 +1050,7 @@ export function LamTuNgocSuongTemplate({
                       }, 280);
                     }}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={`/templates/lam-tu-ngoc-suong/gift-${activeParcel}.webp`}
                       alt="Hộp Trang Sức Pha Lê"
                       className="w-full h-full object-contain drop-shadow-xl"
@@ -1128,7 +1114,7 @@ export function LamTuNgocSuongTemplate({
               ============================================================ */}
           <footer className="w-full flex flex-col items-center text-center pt-8 pb-12 border-t border-[#C4D2E3]/60">
             <div className="w-full max-w-[240px] sm:max-w-[300px] mb-4">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/lam-tu-ngoc-suong/divider-pearl.webp"
                 alt="Divider"
                 className="w-full object-contain opacity-80"

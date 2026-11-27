@@ -6,7 +6,6 @@ import {
   SITE_COPYRIGHT,
   SITE_LINKS,
   SITE_NAME,
-  SUPPORT_EMAIL,
   ZALO_SUPPORT_URL,
 } from "@/config/site";
 import { LEGAL_INFO, LEGAL_POLICIES } from "@/lib/legal-config";
@@ -120,7 +119,7 @@ export function LandingFooter() {
                   <FooterLink href={policy.href}>{policy.title}</FooterLink>
                 </li>
               ))}
-              <li className="pt-1">
+              <li className="pt-1" data-nosnippet>
                 <a
                   href={`mailto:${LEGAL_INFO.email}`}
                   className="text-text-muted transition-colors hover:text-accent-text"
@@ -128,7 +127,7 @@ export function LandingFooter() {
                   Email: {LEGAL_INFO.email}
                 </a>
               </li>
-              <li>
+              <li data-nosnippet>
                 <a
                   href={LEGAL_INFO.hotlineHref}
                   className="text-text-muted transition-colors hover:text-accent-text"
@@ -139,13 +138,9 @@ export function LandingFooter() {
               {hasContact && (
                 <>
                   {SITE_CONFIG.contactZalo && (
-                    <li>
+                    <li data-nosnippet>
                       <a
-                        href={
-                          SITE_CONFIG.contactZalo.startsWith("http")
-                            ? SITE_CONFIG.contactZalo
-                            : `https://zalo.me/${SITE_CONFIG.contactZalo}`
-                        }
+                        href={ZALO_SUPPORT_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-text-muted transition-colors hover:text-accent-text"
@@ -155,7 +150,7 @@ export function LandingFooter() {
                     </li>
                   )}
                   {SITE_CONFIG.contactFacebook && (
-                    <li>
+                    <li data-nosnippet>
                       <a
                         href={SITE_CONFIG.contactFacebook}
                         target="_blank"
@@ -173,7 +168,10 @@ export function LandingFooter() {
         </div>
 
         {/* Legal & MoIT Compliance Info Block */}
-        <div className="mt-8 rounded-2xl border border-border/80 bg-surface/50 p-4 sm:p-5 text-xs text-text-muted">
+        <div
+          data-nosnippet
+          className="mt-8 rounded-2xl border border-border/80 bg-surface/50 p-4 sm:p-5 text-xs text-text-muted"
+        >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1">
               <p className="font-semibold text-text">
@@ -212,10 +210,11 @@ export function LandingFooter() {
                   className="inline-block transition-opacity hover:opacity-80"
                   title="Đã thông báo Bộ Công Thương"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={LEGAL_INFO.moitBadgeUrl}
                     alt="Đã thông báo Bộ Công Thương"
+                    loading="lazy"
+                    decoding="async"
                     className="h-10 w-auto object-contain"
                   />
                 </a>

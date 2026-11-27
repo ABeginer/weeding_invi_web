@@ -11,6 +11,7 @@ import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playCoverSfx } from "@/lib/sfx";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent } from "@/lib/wedding-types";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -37,11 +38,11 @@ const BODY_FONT = "var(--font-be-vietnam), 'Be Vietnam Pro', sans-serif";
 const EASE_EDITORIAL = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_TIMELINE = [
-  { time: "10:30", label: "Đón tiếp quan khách & Chụp ảnh kỷ niệm tại tiền sảnh Mặc Lam" },
-  { time: "11:30", label: "Nghi thức Lễ Thành Hôn dưới vòm lá ô liu hoàng gia" },
-  { time: "12:00", label: "Khai tiệc mừng cưới & Nâng ly chúc phúc tình yêu son sắt" },
-  { time: "13:30", label: "Hòa tấu thính phòng & Lời cảm tạ tri ân sâu sắc" },
-  { time: "14:30", label: "Tiễn khách & Trao kỷ vật tri ân ngày chung đôi" },
+  { time: "10:30", label: "Đón tiếp quan khách & Chụp ảnh kỷ niệm" },
+  { time: "11:30", label: "Cử hành nghi thức Lễ Thành Hôn" },
+  { time: "12:00", label: "Khai tiệc mừng cưới & Nâng ly chúc phúc" },
+  { time: "13:30", label: "Hòa tấu âm nhạc & Lời cảm tạ tri ân" },
+  { time: "14:30", label: "Tiễn khách & Trao quà cảm ơn" },
 ];
 
 const DEFAULT_DRESS = ["#3D2919", "#6D543E", "#EFE2D0"];
@@ -414,15 +415,22 @@ export function MacLamKimTuyenTemplate({
     ? formatLunarDateClean(targetEvent.lunarDate)
     : "";
 
-  const targetDateObj = React.useMemo(() => new Date(eventDateStr), [eventDateStr]);
+  const targetDateObj = React.useMemo(() => {
+    const events = getVisibleEvents(data);
+    const ev = getNearestUpcomingEvent(events, data.date);
+    return new Date(ev?.startsAt || data.date || "2027-03-20T10:00:00+07:00");
+  }, [data]);
   const calYear = targetDateObj.getFullYear();
   const calMonth = targetDateObj.getMonth();
   const eventDays = React.useMemo(() => {
+    const events = getVisibleEvents(data);
+    const y = targetDateObj.getFullYear();
+    const m = targetDateObj.getMonth();
     const days = new Set<number>();
-    visibleEvents.forEach((evt) => {
+    events.forEach((evt) => {
       if (evt.startsAt) {
         const d = new Date(evt.startsAt);
-        if (d.getFullYear() === calYear && d.getMonth() === calMonth) {
+        if (d.getFullYear() === y && d.getMonth() === m) {
           days.add(d.getDate());
         }
       }
@@ -431,7 +439,7 @@ export function MacLamKimTuyenTemplate({
       days.add(targetDateObj.getDate());
     }
     return days;
-  }, [visibleEvents, calYear, calMonth, targetDateObj]);
+  }, [data, targetDateObj]);
 
   // Album ảnh cưới
   const isFree = (data.plan ?? "free") === "free";
@@ -443,15 +451,7 @@ export function MacLamKimTuyenTemplate({
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const sectionOrder = data.sectionOrder || [
-    "family",
-    "calendar",
-    "map",
-    "dresscode",
-    "album",
-    "gift",
-    "rsvp",
-  ];
+  const sectionOrder = data.sectionOrder?.length ? data.sectionOrder : CANONICAL_SECTION_ORDER;
   const orderOf = (name: string) => {
     const idx = sectionOrder.indexOf(name);
     return idx === -1 ? 99 : idx + 1;
@@ -507,13 +507,13 @@ export function MacLamKimTuyenTemplate({
             {/* Lớp z-0: Ảnh nền sắc nét 100%, TUYỆT ĐỐI KHÔNG BỊ BLUR HOẶC VEIL CHE KHI CHỜ */}
             <div className="absolute inset-0 z-0 pointer-events-none">
               {/* Mobile background */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/mac-lam-kim-tuyen/background-mobile.webp"
                 alt="Background Mobile"
                 className="h-full w-full object-cover md:hidden"
               />
               {/* Desktop background */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/mac-lam-kim-tuyen/background.webp"
                 alt="Background Desktop"
                 className="hidden h-full w-full object-cover md:block"
@@ -546,22 +546,22 @@ export function MacLamKimTuyenTemplate({
               <div className="relative w-full max-w-[420px] h-full max-h-[820px] border border-[#D8B878]/50 rounded-2xl p-3 sm:p-5">
                 <div className="w-full h-full border border-dashed border-[#D8B878]/30 rounded-xl relative">
                   {/* 4 Góc nghệ thuật */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/mac-lam-kim-tuyen/corner-minimal.webp"
                     alt="Corner TL"
                     className="absolute -top-1 -left-1 w-14 sm:w-16 h-auto"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/mac-lam-kim-tuyen/corner-minimal.webp"
                     alt="Corner TR"
                     className="absolute -top-1 -right-1 w-14 sm:w-16 h-auto -scale-x-100"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/mac-lam-kim-tuyen/corner-minimal.webp"
                     alt="Corner BL"
                     className="absolute -bottom-1 -left-1 w-14 sm:w-16 h-auto -scale-y-100"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/mac-lam-kim-tuyen/corner-minimal.webp"
                     alt="Corner BR"
                     className="absolute -bottom-1 -right-1 w-14 sm:w-16 h-auto -scale-x-100 -scale-y-100"
@@ -584,9 +584,6 @@ export function MacLamKimTuyenTemplate({
                   className="flex flex-col items-center"
                 >
                   <span className="text-[11px] sm:text-xs tracking-[0.35em] text-[#F1DDB0] uppercase font-medium">
-                    SAVE THE DATE
-                  </span>
-                  <span className="text-[10px] tracking-[0.25em] text-[#D8B878]/80 uppercase mt-1">
                     TRÂN TRỌNG BÁO HỶ
                   </span>
                 </m.div>
@@ -729,7 +726,7 @@ export function MacLamKimTuyenTemplate({
             </AlternatingSlideText>
 
             <AlternatingSlideText direction="right" delay={0.2} className="my-3">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/mac-lam-kim-tuyen/botanical-crown.webp"
                 alt="Botanical Crown"
                 className="w-44 sm:w-56 h-auto opacity-90 mx-auto"
@@ -765,7 +762,7 @@ export function MacLamKimTuyenTemplate({
             </AlternatingSlideText>
 
             <AlternatingSlideText direction="right" delay={0.6} className="mt-4">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/mac-lam-kim-tuyen/divider-minimal.webp"
                 alt="Divider"
                 className="w-40 sm:w-48 h-auto opacity-75 mx-auto"
@@ -1001,11 +998,8 @@ export function MacLamKimTuyenTemplate({
                       className="text-xl sm:text-2xl font-serif font-semibold text-[#F1DDB0] tracking-wider"
                       style={{ fontFamily: TITLE_FONT }}
                     >
-                      QUY CHUẨN TRANG PHỤC &amp; LỊCH TRÌNH
+                      TRANG PHỤC &amp; LỊCH TRÌNH
                     </h2>
-                    <p className="text-[11px] tracking-widest text-[#C3CAD6] uppercase mt-1">
-                      DRESS CODE &amp; WEDDING TIMELINE
-                    </p>
                   </AlternatingSlideText>
 
                   {/* Dress code swatches */}
@@ -1086,7 +1080,7 @@ export function MacLamKimTuyenTemplate({
                           onClick={() => setLightboxIndex(idx)}
                           className="group relative aspect-[3/4] rounded-xl overflow-hidden border border-[#D8B878]/30 bg-[#0B2042] cursor-pointer shadow-sm hover:border-[#D8B878] transition-all duration-300"
                         >
-                          <img
+                          <img decoding="async"
                             src={photo.url}
                             alt={photo.alt || `Photo ${idx + 1}`}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1098,12 +1092,15 @@ export function MacLamKimTuyenTemplate({
                     ))}
                   </div>
 
-                  {/* QR Album dành cho khách */}
-                  {!isFree && (
-                    <div className="mt-6">
-                      <GuestAlbumQr />
-                    </div>
-                  )}
+                </section>
+              </div>
+            )}
+
+            {/* QR Album dành cho khách */}
+            {!isFree && !hiddenSections.has("albumQr") && weddingSlug && (
+              <div style={{ order: orderOf("albumQr") }}>
+                <section className="relative overflow-x-clip">
+                  <GuestAlbumQr slug={weddingSlug} />
                 </section>
               </div>
             )}
@@ -1132,7 +1129,7 @@ export function MacLamKimTuyenTemplate({
 
                       onClick={handleGiftClick}
                     >
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={`/templates/mac-lam-kim-tuyen/gift-${(activeParcel === "open" || activeParcel === "active") ? "active" : (activeParcel === "glow" || activeParcel === "hover") ? "hover" : "normal"}.webp`}
                         alt="Gift Box"
                         className="w-48 sm:w-56 h-auto mx-auto transition-transform duration-300 hover:scale-105"
@@ -1160,18 +1157,6 @@ export function MacLamKimTuyenTemplate({
                 <section className="relative overflow-x-clip">
                   <AlternatingSlideText direction="left" delay={0.1}>
                     <div className="rounded-2xl border border-[#D8B878]/30 bg-[#0B2042]/70 p-5 sm:p-7 backdrop-blur-sm">
-                      <div className="text-center mb-6">
-                        <span className="text-[11px] uppercase tracking-[0.25em] text-[#D8B878] font-semibold">
-                          PHÚC ĐÁP
-                        </span>
-                        <h2
-                          className="text-2xl sm:text-3xl text-[#F1DDB0] font-normal mt-1 tracking-wide uppercase"
-                          style={{ fontFamily: TITLE_FONT }}
-                        >
-                          Xác Nhận Tham Dự
-                        </h2>
-                      </div>
-
                       <TemplateRsvpSection
                         data={data}
                         mode={mode}
@@ -1199,7 +1184,7 @@ export function MacLamKimTuyenTemplate({
         {/* 9. FOOTER (Lời Tri Ân - Đặt ngoài flex ordered để chống lỗi layout) */}
         <footer className="w-full border-t border-[#D8B878]/25 bg-[#040E21] py-12 px-6 text-center text-xs text-[#C3CAD6]">
           <div className="max-w-md mx-auto flex flex-col items-center gap-3">
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/mac-lam-kim-tuyen/crest-olive.webp"
               alt="Crest"
               className="w-12 h-auto opacity-75 mb-1"

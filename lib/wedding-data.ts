@@ -60,10 +60,29 @@ function normalizeStory(raw: unknown): WeddingStoryMilestone[] | undefined {
       year: clampString(item.year, 30),
       title: clampString(item.title, 120),
       content: clampString(item.content, 1000),
+      imageUrl:
+        typeof item.imageUrl === "string" && item.imageUrl.trim().length > 0
+          ? clampString(item.imageUrl.trim(), 1000)
+          : undefined,
     }))
     .filter((item) => item.title || item.content)
     .slice(0, 10);
   return items.length > 0 ? items : undefined;
+}
+
+function normalizeCastDossier(raw: unknown): WeddingContent["castDossier"] {
+  if (!isRecord(raw)) return undefined;
+  const groomRole = clampString(raw.groomRole, 60);
+  const groomQuote = clampString(raw.groomQuote, 200);
+  const brideRole = clampString(raw.brideRole, 60);
+  const brideQuote = clampString(raw.brideQuote, 200);
+  if (!groomRole && !groomQuote && !brideRole && !brideQuote) return undefined;
+  return {
+    groomRole: groomRole || undefined,
+    groomQuote: groomQuote || undefined,
+    brideRole: brideRole || undefined,
+    brideQuote: brideQuote || undefined,
+  };
 }
 
 function normalizeGiftInfo(rawGift: unknown): WeddingGiftInfo {
@@ -203,6 +222,7 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
       hostFirst: raw.hostFirst === "bride" ? "bride" : "groom",
       timeline: normalizeTimeline(raw.timeline),
       story: normalizeStory(raw.story),
+      castDossier: normalizeCastDossier(raw.castDossier),
       musicPreset:
         raw.musicPreset === "priority1" ||
           raw.musicPreset === "prio2" ||
@@ -277,6 +297,7 @@ export function normalizeWeddingContent(raw: unknown): WeddingContent {
     hostFirst: raw.hostFirst === "bride" ? "bride" : "groom",
     timeline: normalizeTimeline(raw.timeline),
     story: normalizeStory(raw.story),
+    castDossier: normalizeCastDossier(raw.castDossier),
     mealMode: "meat",
     photoApprovalMode: raw.photoApprovalMode === "auto" ? "auto" : "manual",
     photoModeration: normalizePhotoModeration(raw.photoModeration),
@@ -338,9 +359,11 @@ export function toTemplateData({
     ? photoById.get(content.bridePhotoId) ?? null
     : null;
 
+  const maxGallery = plan === "free" ? 5 : plan === "pro" ? 30 : 50;
   const gallery = photos
     .filter((p) => p.kind === "gallery")
     .sort((a, b) => a.position - b.position)
+    .slice(0, maxGallery)
     .map((p, index) => ({
       id: p.id,
       url: p.url,
@@ -348,8 +371,9 @@ export function toTemplateData({
       position: p.position,
     }));
 
-  const giftPhotos = photos.filter((p) => p.kind === "gift");
-  const allowQrPhotos = plan !== "free";
+  const isGiftHidden = Array.isArray(content.hiddenSections) && content.hiddenSections.includes("gift");
+  const giftPhotos = isGiftHidden ? [] : photos.filter((p) => p.kind === "gift");
+  const allowQrPhotos = plan !== "free" && !isGiftHidden;
   const groomQrPhoto = allowQrPhotos
     ? giftPhotos.find((p) => p.position === 0) ?? null
     : null;
@@ -390,11 +414,17 @@ export function toTemplateData({
       brideUrl: bridePhoto?.url ?? null,
       gallery,
     },
-    gift: {
-      ...normalizeGiftInfo(content.gift),
-      groomQrUrl: groomQrPhoto?.url ?? null,
-      brideQrUrl: brideQrPhoto?.url ?? null,
-    },
+    gift: isGiftHidden
+      ? {
+        ...emptyGiftInfo(),
+        groomQrUrl: null,
+        brideQrUrl: null,
+      }
+      : {
+        ...normalizeGiftInfo(content.gift),
+        groomQrUrl: groomQrPhoto?.url ?? null,
+        brideQrUrl: brideQrPhoto?.url ?? null,
+      },
     events: sortedEvents,
     dressCode: content.dressCode,
     hiddenSections: content.hiddenSections,
@@ -405,10 +435,11 @@ export function toTemplateData({
     hostFirst: content.hostFirst === "bride" ? "bride" : "groom",
     timeline: content.timeline ?? [],
     story: content.story,
+    castDossier: content.castDossier,
     mealMode: content.mealMode === "veg" || content.mealMode === "both" ? content.mealMode : "meat",
     music: {
       src:
-        content.musicPreset === "custom" && content.musicUrl
+        plan !== "free" && content.musicPreset === "custom" && content.musicUrl
           ? content.musicUrl
           : content.musicPreset === "priority1"
             ? "/media/priority1.mp3"
@@ -454,7 +485,7 @@ export function toTemplateData({
                           : musicOverrides?.title ?? "Giai điệu ngày cưới"),
     },
     ui: {
-      eyebrow: uiOverrides?.eyebrow ?? "Save The Date",
+      eyebrow: uiOverrides?.eyebrow ?? "Thiệp mời tham dự lễ cưới",
       heroSubtitle:
         uiOverrides?.heroSubtitle ?? "Hân hạnh đón tiếp trong ngày chung đôi",
       invitationNote:
@@ -474,7 +505,7 @@ export function toTemplateData({
       countdownTitle: uiOverrides?.countdownTitle ?? "Đến Ngày Chung Đôi",
       countdownFinished:
         uiOverrides?.countdownFinished ?? "Lễ cưới đã diễn ra tốt đẹp",
-      thankYouHeading: uiOverrides?.thankYouHeading ?? "Thank You",
+      thankYouHeading: uiOverrides?.thankYouHeading ?? "Trân Trọng Cảm Ơn",
       thankYouTitle: uiOverrides?.thankYouTitle ?? "Trân Trọng Cảm Ơn",
       thankYouBody:
         uiOverrides?.thankYouBody ??

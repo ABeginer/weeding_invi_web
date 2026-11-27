@@ -95,8 +95,8 @@ export function OliveGardenHero({ guestName }: OliveGardenHeroProps) {
 
 
       <div className="relative z-10 mx-auto flex w-full max-w-[430px] flex-col items-center">
-        <m.p variants={itemVariants} className="text-[11px] font-semibold uppercase tracking-[0.34em]" style={{ color: OLIVE }}>
-          {data.ui.eyebrow || "SAVE THE DATE"}
+        <m.p variants={itemVariants} className="text-[11px] font-semibold uppercase tracking-[0.18em] text-center" style={{ color: OLIVE }}>
+          {data.ui.eyebrow || "Thiệp mời tham dự lễ cưới"}
         </m.p>
 
         <m.h1

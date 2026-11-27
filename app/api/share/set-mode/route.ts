@@ -1,12 +1,17 @@
 import { getUser } from "@/lib/server/auth";
 import { fail, json, readBody, route } from "@/lib/server/http";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { db } from "@/lib/server/supabase";
+import { isWeddingSuspendedRow } from "@/lib/server/weddings";
 import { canUseFeature } from "@/lib/plans";
 import { verifyShareCookieValue } from "@/lib/share-pin";
 import { normalizeWeddingContent } from "@/lib/wedding-data";
 import { validateWeddingSlug } from "@/lib/wedding-slug";
 
 export const POST = route(async (req: Request) => {
+  const limited = rateLimit(req, "share-set-mode", 30, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const body = await readBody(req);
   if (!body) return fail("Dữ liệu không hợp lệ.");
 
@@ -25,23 +30,38 @@ export const POST = route(async (req: Request) => {
   const client = db();
   const { data: wedding, error } = await client
     .from("weddings")
-    .select("id, slug, owner_id, plan, content")
+    .select("id, slug, owner_id, plan, content, suspended")
     .eq("slug", slug)
     .maybeSingle();
 
   if (error) throw error;
-  if (!wedding) {
+  if (!wedding || isWeddingSuspendedRow(wedding)) {
     return fail("Không tìm thấy thiệp cưới.", 404);
   }
 
-  // Kiểm tra quyền: Cookie mã PIN hợp lệ HOẶC chủ sở hữu đã đăng nhập Auth0
+  if (wedding.plan !== "vip") {
+    return fail("Tính năng chỉ dành cho gói Pro.", 403);
+  }
+
+  const rawPrevContent =
+    wedding.content && typeof wedding.content === "object"
+      ? (wedding.content as Record<string, unknown>)
+      : {};
+  const content = normalizeWeddingContent(wedding.content);
+
+  // Kiểm tra quyền: Cookie mã PIN hợp lệ (khi đang bật và khớp PIN hiện tại) HOẶC chủ sở hữu đã đăng nhập Auth0
   let isAuthorized = false;
 
   const cookiesHeader = req.headers.get("cookie") ?? "";
-  const cookieMatch = cookiesHeader.match(new RegExp(`inviwedd_share_${slug}=([^;]+)`));
+  const cookieMatch = cookiesHeader.match(new RegExp(`(?:^|;\\s*)inviwedd_share_${slug}=([^;]+)`));
   const shareCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
 
-  if (shareCookie && (await verifyShareCookieValue(slug, shareCookie))) {
+  if (
+    shareCookie &&
+    content.sharePinEnabled === true &&
+    content.sharePin &&
+    (await verifyShareCookieValue(slug, shareCookie, content.sharePin))
+  ) {
     isAuthorized = true;
   } else {
     const user = await getUser(req);
@@ -58,10 +78,18 @@ export const POST = route(async (req: Request) => {
     return fail("Tính năng tự động duyệt ảnh chỉ khả dụng cho thiệp cưới gói VIP.", 403);
   }
 
-  const content = normalizeWeddingContent(wedding.content);
-  const nextContent = {
+  const nextContent: Record<string, unknown> = {
     ...content,
     photoApprovalMode: mode as "manual" | "auto",
+    ...(typeof rawPrevContent.suspended === "boolean"
+      ? { suspended: rawPrevContent.suspended }
+      : {}),
+    ...(typeof rawPrevContent.sharePinFailCount === "number"
+      ? { sharePinFailCount: rawPrevContent.sharePinFailCount }
+      : {}),
+    ...(typeof rawPrevContent.sharePinLockedUntil === "string"
+      ? { sharePinLockedUntil: rawPrevContent.sharePinLockedUntil }
+      : {}),
   };
 
   const { error: updateError } = await client

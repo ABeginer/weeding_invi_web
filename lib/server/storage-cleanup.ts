@@ -1,7 +1,7 @@
 import type { WeddingContent } from "@/lib/wedding-types";
 
 export const MEDIA_KEY_RE =
-  /^weddings\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(banner|couple|gallery|og|gift|album)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/i;
+  /^weddings\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(banner|couple|gallery|og|gift|album|story)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/i;
 
 export const DESIGNER_MEDIA_KEY_RE = /^designer\/[0-9a-f-]{36}\.webp$/i;
 
@@ -181,6 +181,18 @@ export function collectMediaUrlsFromContent(
     for (const val of Object.values(raw.designerFields as Record<string, unknown>)) {
       if (typeof val === "string" && val.startsWith("/media/")) {
         urls.add(val);
+      }
+    }
+  }
+
+  // Chuyện chúng mình (Story milestones)
+  if (Array.isArray(raw.story)) {
+    for (const item of raw.story) {
+      if (item && typeof item === "object") {
+        const img = (item as Record<string, unknown>).imageUrl;
+        if (typeof img === "string" && img.startsWith("/media/")) {
+          urls.add(img);
+        }
       }
     }
   }

@@ -39,7 +39,7 @@ REVOKE ALL ON TABLE public.audit_logs FROM anon, authenticated;
 
 -- Bảng weddings: kiểm soát tên, trạng thái khoá và ghim designer template
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS suspended boolean NOT NULL DEFAULT false;
-ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS designer_template_id text;
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS designer_template_id uuid REFERENCES public.designer_templates(id) ON DELETE SET NULL;
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS designer_template_version integer;
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS groom_name_changes integer NOT NULL DEFAULT 0;
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS bride_name_changes integer NOT NULL DEFAULT 0;
@@ -70,10 +70,10 @@ ALTER TABLE public.designer_templates ADD COLUMN IF NOT EXISTS display_title tex
 -- 3. CHECK CONSTRAINTS
 -- ==============================================================================
 
--- Đảm bảo photos hỗ trợ loại ảnh 'album' (khách tải ảnh tiệc cưới)
+-- Đảm bảo photos hỗ trợ đầy đủ 6 loại ảnh (bao gồm 'og' và 'album')
 ALTER TABLE public.photos DROP CONSTRAINT IF EXISTS photos_kind_check;
 ALTER TABLE public.photos ADD CONSTRAINT photos_kind_check
-  CHECK (kind IN ('banner', 'gallery', 'couple', 'gift', 'album'));
+  CHECK (kind IN ('banner', 'gallery', 'couple', 'og', 'gift', 'album'));
 
 -- ==============================================================================
 -- 4. FUNCTIONS & TRIGGERS
@@ -99,6 +99,7 @@ GRANT EXECUTE ON FUNCTION public.track_guest_view_open(uuid) TO service_role;
 CREATE OR REPLACE FUNCTION public.set_responded_at()
 RETURNS trigger
 LANGUAGE plpgsql
+SET search_path = ''
 AS $$
 BEGIN
   IF NEW.status <> OLD.status AND NEW.status <> 'pending' AND OLD.status = 'pending' THEN

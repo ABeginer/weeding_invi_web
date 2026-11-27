@@ -7,6 +7,7 @@ import { m, useReducedMotion } from "motion/react"; import { GiftModal } from "@
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent } from "@/lib/wedding-types";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
@@ -268,7 +269,7 @@ function Cover({
             className="minred-wipe mt-1 text-[9px] uppercase tracking-[0.34em]"
             style={{ color: MUTED, animationDelay: "0.5s" }}
           >
-            The wedding of
+            Lễ Thành Hôn
           </p>
 
           <h1 className="mt-4" style={{ fontFamily: NAME_FONT, color: GOLD }}>
@@ -342,7 +343,7 @@ function Hero({ data, guestName }: { data: TemplateData; guestName: string }) {
   return (
     <section className="px-5 pt-12 pb-8 text-center">
       <p className="text-[9px] uppercase tracking-[0.34em]" style={{ color: GOLD }}>
-        {data.ui.eyebrow || "Welcome to our wedding"}
+        {data.ui.eyebrow || "Trân Trọng Kính Mời"}
       </p>
 
       <h1 className="mt-4" style={{ fontFamily: NAME_FONT, color: GOLD }}>
@@ -727,11 +728,7 @@ function DressAndTimeline({ data }: { data: TemplateData }) {
         <GoldTitle>Trang phục</GoldTitle>
 
         <div className="mt-5 text-center">
-          <p className="text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD }}>
-            Dress code
-          </p>
-          <p className="mt-1 text-[11px]" style={{ color: MUTED }}>Trang phục dự tiệc</p>
-          <div className="mt-3 flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3">
             {colors.map((color) => (
               <span
                 key={color}
@@ -882,7 +879,7 @@ function AlbumGrid({ data }: { data: TemplateData }) {
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src={photos[lightbox].url}
             alt={photos[lightbox].alt}
             className="max-h-[86vh] max-w-full rounded-lg object-contain"
@@ -1005,7 +1002,7 @@ export default function DoTruyenThongTemplate({
   const hidden = new Set(data.hiddenSections ?? []);
   const order = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "map", "calendar", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = order.indexOf(key);
     return index < 0 ? 99 : index;
@@ -1065,7 +1062,9 @@ export default function DoTruyenThongTemplate({
       data-template-id="minimal-red"
       className={cn(
         "relative min-w-0 overflow-x-hidden antialiased",
-        contained ? "min-h-full" : "min-h-screen-dvh",
+        contained
+          ? (!coverGone ? "h-full overflow-hidden" : "min-h-full")
+          : (!coverGone ? "h-screen-dvh max-h-full overflow-hidden" : "min-h-screen-dvh"),
         viewport === "desktop" && !contained && "mx-auto w-full max-w-[820px]",
       )}
       style={{
@@ -1087,7 +1086,10 @@ export default function DoTruyenThongTemplate({
       )}
 
       <m.div
-        className="mx-auto w-full"
+        className={cn(
+          "mx-auto w-full",
+          !coverGone && !closing && "hidden pointer-events-none",
+        )}
         initial={false}
         animate={{ scale: closing || coverGone ? 1 : 0.96 }}
         transition={{ duration: 0.7, ease: EASE }}
@@ -1172,7 +1174,7 @@ export default function DoTruyenThongTemplate({
             {data.couple.groomName} &amp; {data.couple.brideName}
           </p>
           <p className="mt-1 text-[10px] uppercase tracking-[0.24em]" style={{ color: MUTED }}>
-            {data.ui.thankYouHeading || "Thank you for celebrating with us"}
+            {data.ui.thankYouHeading || "Trân trọng cảm ơn"}
           </p>
         </footer>
       </m.div>

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { generateLedToken, verifyLedToken } from "../lib/led-token.ts";
 import { createShareCookieValue, verifyShareCookieValue } from "../lib/share-pin.ts";
 import { safeEqual } from "../lib/safe-equal.ts";
+import { normalizeAuthorKey } from "../lib/server/wishes.ts";
 
 test("lib/led-token.ts — Tokenized LED Link", async (t) => {
   await t.test("sinh token 12 ký tự hex nhất quán theo slug", async () => {
@@ -59,6 +60,23 @@ test("lib/share-pin.ts — 4-Digit PIN Cookie Token", async (t) => {
 
     const invalidFormat = await verifyShareCookieValue(slug, "invalidcookie");
     assert.equal(invalidFormat, false, "Phải từ chối định dạng không hợp lệ");
+  });
+
+  await t.test("thu hồi cookie ngay lập tức khi đổi mã PIN", async () => {
+    const slug = "family-wedding-2026";
+    const cookieOldPin = await createShareCookieValue(slug, "1234");
+
+    assert.equal(await verifyShareCookieValue(slug, cookieOldPin, "1234"), true);
+    assert.equal(await verifyShareCookieValue(slug, cookieOldPin, "5678"), false);
+  });
+});
+
+test("lib/server/wishes.ts — normalizeAuthorKey chống IDOR prefix guest:", async (t) => {
+  await t.test("chỉ chấp nhận prefix anon: từ client, từ chối guest:", () => {
+    assert.equal(normalizeAuthorKey("anon:abcdef123456"), "anon:abcdef123456");
+    assert.equal(normalizeAuthorKey("guest:11111111-2222-3333-4444-555555555555"), null);
+    assert.equal(normalizeAuthorKey("guest:abcdef"), null);
+    assert.equal(normalizeAuthorKey("invalid:123456"), null);
   });
 });
 

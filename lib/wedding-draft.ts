@@ -15,6 +15,7 @@ export interface WeddingDraft {
   slug: string;
   groomParents?: string;
   brideParents?: string;
+  eventTitle?: string;
   eventLocation?: string;
   eventAddress?: string;
   mapUrl?: string;
@@ -60,6 +61,7 @@ export function readWeddingDraft(templateSlug?: string): WeddingDraft | null {
       slug: obj.slug,
       groomParents: typeof obj.groomParents === "string" ? obj.groomParents : undefined,
       brideParents: typeof obj.brideParents === "string" ? obj.brideParents : undefined,
+      eventTitle: typeof obj.eventTitle === "string" ? obj.eventTitle : undefined,
       eventLocation: typeof obj.eventLocation === "string" ? obj.eventLocation : undefined,
       eventAddress: typeof obj.eventAddress === "string" ? obj.eventAddress : undefined,
       mapUrl: typeof obj.mapUrl === "string" ? obj.mapUrl : undefined,

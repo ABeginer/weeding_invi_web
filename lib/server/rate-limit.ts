@@ -42,7 +42,10 @@ export function rateLimit(
       for (const [storedKey, stored] of buckets) {
         if (stored.resetAt <= now) buckets.delete(storedKey);
       }
-      if (buckets.size >= MAX_KEYS) buckets.clear();
+      if (buckets.size >= MAX_KEYS) {
+        const oldestKey = buckets.keys().next().value;
+        if (oldestKey !== undefined) buckets.delete(oldestKey);
+      }
     }
     buckets.set(key, { count: 1, resetAt: now + windowMs });
     return { ok: true, retryAfterSec: 0 };

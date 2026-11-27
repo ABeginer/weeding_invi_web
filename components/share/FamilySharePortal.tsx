@@ -61,12 +61,14 @@ interface FamilySharePortalProps {
   wedding: PublicWeddingData;
   guests: FamilyShareGuest[];
   photos: WeddingPhoto[];
+  initialModeration?: Record<string, "pending" | "approved" | "hidden">;
 }
 
 export function FamilySharePortal({
   wedding,
   guests,
   photos,
+  initialModeration,
 }: FamilySharePortalProps) {
   const { slug, content, events } = wedding;
   const couple = [content.couple.groomName, content.couple.brideName]
@@ -454,7 +456,7 @@ export function FamilySharePortal({
               weddingSlug={slug}
               photos={photos}
               initialApprovalMode={content.photoApprovalMode}
-              initialModeration={content.photoModeration}
+              initialModeration={initialModeration ?? content.photoModeration}
             />
           </div>
         )}

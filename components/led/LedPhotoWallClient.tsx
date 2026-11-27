@@ -20,20 +20,9 @@ interface LedPhotoWallClientProps {
 
 function filterApprovedPhotos(
   allPhotos: WeddingPhoto[],
-  content: PublicWeddingData["content"],
 ): WeddingPhoto[] {
-  const approvalMode = content.photoApprovalMode ?? "manual";
-  const moderation = content.photoModeration ?? {};
-
-  const albumPhotos = allPhotos.filter((p) => {
-    if (p.kind !== "album") return false;
-    const status = moderation[p.id];
-    if (approvalMode === "auto") {
-      return status !== "hidden";
-    }
-    return status === "approved";
-  });
-
+  // Ảnh album đã được lọc nghiêm ngặt ở server (chỉ trả ảnh đã duyệt / không bị ẩn)
+  const albumPhotos = allPhotos.filter((p) => p.kind === "album");
   if (albumPhotos.length > 0) return albumPhotos;
 
   // Fallback sang ảnh couple / banner nếu chưa có ảnh album đã duyệt
@@ -48,7 +37,7 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
 
   // Initial photos: ưu tiên ảnh album đã duyệt, fallback sang ảnh cưới hoặc cache offline
   const [photos, setPhotos] = React.useState<WeddingPhoto[]>(() => {
-    const liveFiltered = filterApprovedPhotos(wedding.photos || [], wedding.content);
+    const liveFiltered = filterApprovedPhotos(wedding.photos || []);
     if (liveFiltered.length > 0) return liveFiltered;
 
     if (typeof window !== "undefined") {
@@ -137,12 +126,17 @@ export function LedPhotoWallClient({ wedding }: LedPhotoWallClientProps) {
         const res = await fetch(`/api/public/wedding/${encodeURIComponent(slug)}`, {
           cache: "no-store",
         });
+        if (res.status === 404 || res.status === 403) {
+          setPhotos([]);
+          try {
+            localStorage.removeItem(`inviwedd_led_cache_${slug}`);
+          } catch {}
+          return;
+        }
         if (res.ok) {
           const data: PublicWeddingData = await res.json();
-          const nextList = filterApprovedPhotos(data.photos || [], data.content);
-          if (nextList.length > 0) {
-            setPhotos(nextList);
-          }
+          const nextList = filterApprovedPhotos(data.photos || []);
+          setPhotos(nextList);
         }
       } catch {
         // Mạng sảnh tiệc chập chờn / rớt Wi-Fi: im lặng bỏ qua, tiếp tục phát ảnh từ state / cache

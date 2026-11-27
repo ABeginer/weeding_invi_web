@@ -20,6 +20,14 @@ export const dynamic = "force-dynamic";
 // metadata + page dùng chung một lần đọc DB trong cùng request.
 const getWeddingByGuestSlug = cache(getPublicWeddingByGuestSlug);
 
+function inferOgImageType(url: string): string | undefined {
+  const lower = url.toLowerCase().split("?")[0];
+  if (lower.includes("/api/og/") || lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  return undefined;
+}
+
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
@@ -97,7 +105,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
               width: 1200,
               height: 630,
               alt: title,
-              type: "image/png",
+              type: inferOgImageType(ogImageUrl),
             },
           ]
         : undefined,

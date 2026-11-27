@@ -10,6 +10,7 @@ import {
   isLoopPreset,
   isTextPreset,
 } from "./animation-catalog";
+import "@/styles/designer-animations.css";
 import type {
   DesignerElementAnimation,
   DesignerEntranceAnimation,

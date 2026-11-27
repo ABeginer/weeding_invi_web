@@ -1,13 +1,8 @@
 import type { MetadataRoute } from "next";
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.APP_BASE_URL ||
-  "https://inviwedd.date";
+import { resolveAppBaseUrl } from "@/config/site";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = SITE_URL.replace(/\/+$/, "");
+  const base = resolveAppBaseUrl().replace(/\/+$/, "");
 
   return {
     rules: [
@@ -34,9 +29,14 @@ export default function robots(): MetadataRoute.Robots {
           "/ops/*",
           "/m/",
           "/w/",
+          "/a/",
           "/led/",
+          "/share/",
+          "/photo-wall/",
+          "/qa/",
           "/media/",
           "/tao-thiep/luu",
+          "/tao-thiep/preview",
         ],
       },
     ],

@@ -11,149 +11,173 @@ import type { WeddingPlan } from "@/lib/types";
 export interface TemplateSections {
   /** Key khớp `hiddenSections` / `sectionOrder`. */
   sections: readonly string[];
-  /** Có khối ảnh cô dâu/chú rể riêng trong phần gia đình. */
+  /** Có công tắc ẩn/hiện ảnh cô dâu/chú rể riêng (`data.hideCouplePhotos`). */
   couplePhotos: boolean;
-  /** Có hai cột hai họ để chọn nhà nào đứng trước. */
+  /** Có hai cột hai họ để chọn nhà nào đứng trước (`data.hostFirst`). */
   hostFirst: boolean;
+  /** Có hỗ trợ kéo-thả sắp xếp thứ tự section (`data.sectionOrder`). */
+  reorderable: boolean;
+  /** Có đọc và áp dụng 3 màu trang phục tùy chỉnh (`data.dressCode`). */
+  dressCodeEditor: boolean;
+  /** Có hiển thị lịch trình ngày cưới (`data.timeline`). */
+  timelineEditor: boolean;
+  /** Có hiển thị khối Chuyện chúng mình (`data.story`). */
+  storySupported: boolean;
 }
 
-/** Bộ đầy đủ: dùng cho mọi template chưa có khai báo riêng. */
-export const ALL_SECTION_KEYS = [
+/** Thứ tự chuẩn duy nhất cho mọi mẫu thiệp và demo (sau Hero cố định). */
+export const CANONICAL_SECTION_ORDER: readonly string[] = [
   "family",
-  "calendar",
   "map",
+  "story",
   "dresscode",
-  "album",
-  "albumQr",
+  "calendar",
   "gift",
   "rsvp",
+  "album",
+  "albumQr",
+];
+
+/** Bộ đầy đủ: dùng cho template mới chưa có khai báo riêng. */
+export const ALL_SECTION_KEYS = [
+  ...CANONICAL_SECTION_ORDER,
   "music",
-  "story",
+] as const;
+
+const SECTIONS_NO_STORY = [
+  "family",
+  "map",
+  "dresscode",
+  "calendar",
+  "gift",
+  "rsvp",
+  "album",
+  "albumQr",
+  "music",
 ] as const;
 
 export const DEFAULT_TEMPLATE_SECTIONS: TemplateSections = {
   sections: ALL_SECTION_KEYS,
   couplePhotos: true,
   hostFirst: true,
+  reorderable: true,
+  dressCodeEditor: true,
+  timelineEditor: true,
+  storySupported: true,
 };
 
 /**
- * Ngoại lệ theo template. Chỉ khai báo cái KHÁC mặc định.
- * - `do-truyen-thong`: phần gia đình chỉ có tên + hai họ, không có ảnh cặp đôi
- *   riêng → ẩn nút "Hiện ảnh cô dâu & chú rể".
+ * Khai báo chính xác các block/công tắc mà từng mẫu thiệp thực sự đọc và hiển thị.
+ * Đảm bảo mọi nút hiện trên Dashboard đều có tác dụng thật trên thiệp.
  */
+const NO_STORY_NO_COUPLE: Partial<TemplateSections> = {
+  sections: SECTIONS_NO_STORY,
+  couplePhotos: false,
+  hostFirst: false,
+  storySupported: false,
+};
+
 const TEMPLATE_OVERRIDES: Record<string, Partial<TemplateSections>> = {
-  "mot-thoi-de-nho": {
-    couplePhotos: true,
-  },
-  "to-hong-lua-tham": {
-    couplePhotos: true,
-  },
-  "ban-sac-huong-cang": {
-    couplePhotos: true,
-  },
-  "cuu-long-hy-yen": {
-    couplePhotos: true,
-  },
-  "da-anh-huong-cang": {
-    couplePhotos: true,
-  },
-  "hao-quang-huong-cang": {
-    couplePhotos: true,
-  },
-  "huong-cang-dem-neon": {
-    couplePhotos: true,
-  },
-  "nhat-ky-mua-yeu": {
-    couplePhotos: true,
-  },
-  "thanh-mai-ngoc-lan": {
-    couplePhotos: true,
-  },
-  "song-phung-bich-dao": {
-    couplePhotos: true,
-  },
-  "phuong-loan-gam-do": {
-    couplePhotos: true,
-  },
-  "yen-chi-mau-don": {
+  // 2 mẫu cơ bản không đọc hiddenSections & sectionOrder
+  "vuon-o-liu": {
+    sections: [],
     couplePhotos: false,
+    hostFirst: false,
+    reorderable: false,
+    dressCodeEditor: false,
+    timelineEditor: false,
+    storySupported: false,
   },
-  "rang-hong-hoang-hon": {
+  "basic-1": {
+    sections: [],
+    couplePhotos: false,
+    hostFirst: false,
+    reorderable: false,
+    dressCodeEditor: false,
+    timelineEditor: false,
+    storySupported: false,
+  },
+  "bach-nguyet": NO_STORY_NO_COUPLE,
+  "lam-hoa-vien": NO_STORY_NO_COUPLE,
+  "long-phung-ep4": { ...NO_STORY_NO_COUPLE, dressCodeEditor: false },
+
+  // Mẫu Standard hỗ trợ đầy đủ 10 section theo thứ tự chuẩn (bao gồm ảnh Polaroid lật 3D cặp đôi)
+  "mot-thoi-de-nho": DEFAULT_TEMPLATE_SECTIONS,
+
+  // 2 mẫu đọc data.hideCouplePhotos
+  "bach-lan-lua-nga": {
+    sections: SECTIONS_NO_STORY,
     couplePhotos: true,
+    hostFirst: true,
+    dressCodeEditor: false,
+    storySupported: false,
   },
-  "do-truyen-thong": {
-    couplePhotos: false,
+  "song-hy-v2-do": {
+    sections: SECTIONS_NO_STORY,
+    couplePhotos: true,
+    hostFirst: true,
+    dressCodeEditor: false,
+    timelineEditor: false,
+    storySupported: false,
   },
-  "long-phung": {
-    couplePhotos: false,
-  },
-  "chu-sa-long-phung": {
-    couplePhotos: false,
-  },
+
+  // Các mẫu đọc data.hostFirst (không đọc hideCouplePhotos)
   "anh-dao-phan-tuyet": {
+    ...NO_STORY_NO_COUPLE,
+    hostFirst: true,
+    dressCodeEditor: false,
+  },
+  "do-ruou-vang": { ...NO_STORY_NO_COUPLE, hostFirst: true },
+  "do-truyen-thong": { ...NO_STORY_NO_COUPLE, hostFirst: true },
+  "flowery-white": { ...NO_STORY_NO_COUPLE, hostFirst: true },
+  "long-phung": { ...NO_STORY_NO_COUPLE, hostFirst: true },
+  "minimal-red": { ...NO_STORY_NO_COUPLE, hostFirst: true },
+  "nau-toi-gian": { ...NO_STORY_NO_COUPLE, hostFirst: true },
+  "yen-chi-mau-don": { ...NO_STORY_NO_COUPLE, hostFirst: true },
+
+  // Toàn bộ Bộ sưu tập Hồng Kông (5/5 mẫu chuẩn Standard: đủ 10 section, story, timeline, couplePhotos, hostFirst)
+  "ban-sac-huong-cang": DEFAULT_TEMPLATE_SECTIONS,
+  "cuu-long-hy-yen": DEFAULT_TEMPLATE_SECTIONS,
+  "da-anh-huong-cang": DEFAULT_TEMPLATE_SECTIONS,
+  "sen-ngoc-tram-nam": DEFAULT_TEMPLATE_SECTIONS,
+  "hao-quang-huong-cang": DEFAULT_TEMPLATE_SECTIONS,
+  "huong-cang-dem-neon": DEFAULT_TEMPLATE_SECTIONS,
+  "nhat-ky-mua-yeu": {
+    ...DEFAULT_TEMPLATE_SECTIONS,
+    timelineEditor: false,
+  },
+
+  // 4 mẫu hoàng gia vẽ màu dress code cố định & không vẽ timeline
+  "phuong-loan-gam-do": { ...NO_STORY_NO_COUPLE, dressCodeEditor: false, timelineEditor: false },
+  "song-phung-bich-dao": { ...NO_STORY_NO_COUPLE, dressCodeEditor: false, timelineEditor: false },
+  "thanh-mai-ngoc-lan": { ...NO_STORY_NO_COUPLE, dressCodeEditor: false, timelineEditor: false },
+  "to-hong-lua-tham": { ...NO_STORY_NO_COUPLE, dressCodeEditor: false, timelineEditor: false },
+
+  // Các mẫu vẽ màu dress code cố định
+  "bich-ngoc-hoang-trieu": { ...NO_STORY_NO_COUPLE, dressCodeEditor: false },
+  "moc-huong-nang-thu": { ...NO_STORY_NO_COUPLE, dressCodeEditor: false },
+  "rang-hong-hoang-hon": { ...NO_STORY_NO_COUPLE, dressCodeEditor: false },
+
+  // Các mẫu chuẩn còn lại (đủ 9 section trừ story, có dressCode, timeline & kéo-thả)
+  "chu-sa-long-phung": NO_STORY_NO_COUPLE,
+  "da-yen-pha-le": NO_STORY_NO_COUPLE,
+  "hac-kim-nhat-thuc": NO_STORY_NO_COUPLE,
+  "vuonkinh-xanh": NO_STORY_NO_COUPLE,
+
+  // Các mẫu chuẩn còn lại (đủ 9 section trừ story, có dressCode & timeline)
+  "bach-tra-suong-mai": NO_STORY_NO_COUPLE,
+  "diem-phan-kim-to": NO_STORY_NO_COUPLE,
+  "hac-vu-luu-ly": DEFAULT_TEMPLATE_SECTIONS,
+  "ho-phach-mat-thu": {
+    ...DEFAULT_TEMPLATE_SECTIONS,
     couplePhotos: false,
   },
-  "bich-ngoc-hoang-trieu": {
-    couplePhotos: false,
-  },
-  "long-phung-ep4": {
-    couplePhotos: false,
-  },
-  "bach-nguyet": {
-    couplePhotos: false,
-  },
-  "lam-hoa-vien": {
-    couplePhotos: false,
-  },
-  "bach-tra-suong-mai": {
-    couplePhotos: false,
-  },
-  "song-hac-kim-van": {
-    couplePhotos: false,
-  },
-  "hac-vu-luu-ly": {
-    couplePhotos: false,
-  },
-  "diem-phan-kim-to": {
-    couplePhotos: false,
-  },
-  "phi-thuy-dong-duong": {
-    couplePhotos: false,
-  },
-  "lam-tu-ngoc-suong": {
-    couplePhotos: false,
-  },
-  "tu-dang-da-khuc": {
-    couplePhotos: false,
-  },
-  "huyen-kim-long-phung": {
-    couplePhotos: false,
-  },
-  "hac-kim-nhat-thuc": {
-    couplePhotos: false,
-  },
-  "da-yen-pha-le": {
-    couplePhotos: false,
-  },
-  "mac-lam-kim-tuyen": {
-    couplePhotos: false,
-  },
-  "do-ruou-vang": {
-    couplePhotos: false,
-  },
-  "minimal-red": {
-    couplePhotos: false,
-  },
-  "moc-huong-nang-thu": {
-    couplePhotos: false,
-  },
-  "flowery-white": {
-    couplePhotos: false,
-  },
-  "vuonkinh-xanh": {
-    couplePhotos: false,
-  },
+  "huyen-kim-long-phung": NO_STORY_NO_COUPLE,
+  "lam-tu-ngoc-suong": NO_STORY_NO_COUPLE,
+  "mac-lam-kim-tuyen": NO_STORY_NO_COUPLE,
+  "phi-thuy-dong-duong": NO_STORY_NO_COUPLE,
+  "song-hac-kim-van": NO_STORY_NO_COUPLE,
+  "tu-dang-da-khuc": NO_STORY_NO_COUPLE,
 };
 
 /**
@@ -170,7 +194,8 @@ export function getTemplateSections(
   templateId: string | null | undefined,
   plan: WeddingPlan,
 ): TemplateSections {
-  const override = templateId ? TEMPLATE_OVERRIDES[templateId] : undefined;
+  const normalized = templateId ? templateId.replace(/_/g, "-") : null;
+  const override = normalized ? TEMPLATE_OVERRIDES[normalized] : undefined;
   const base: TemplateSections = { ...DEFAULT_TEMPLATE_SECTIONS, ...override };
   const sections = base.sections.filter((key) => {
     const gate = PLAN_GATED_SECTIONS[key];
@@ -239,8 +264,8 @@ const PHOTO_OVERRIDES: Record<string, Partial<TemplatePhotoSlots>> = {
   "bach-tra-suong-mai": { hero: true, couple: false, gallery: true },
   // Song Hạc Kim Vân: dùng biểu tượng tranh sơn mài hero-cranes.webp làm trung tâm nghệ thuật, ẩn ô upload ảnh bìa và chân dung thừa
   "song-hac-kim-van": { hero: false, couple: false, gallery: true },
-  // Hạc Vũ Lưu Ly: có ảnh bìa tròn Nguyệt Môn Hero, không có 2 ảnh chân dung riêng gia đình, có album
-  "hac-vu-luu-ly": { hero: true, couple: false, gallery: true },
+  // Hạc Vũ Lưu Ly (Standard): Nguyệt Môn Hero, thẻ lật 3D chân dung cô dâu chú rể, thước phim 35mm, album
+  "hac-vu-luu-ly": { hero: true, couple: true, gallery: true },
   // Diễm Phấn Kim Tơ: có ảnh bìa Oval Cameo Hero, không có 2 ảnh chân dung riêng gia đình, có album
   "diem-phan-kim-to": { hero: true, couple: false, gallery: true },
   // Phỉ Thúy Đông Dương: có ảnh bìa Vòm Kiến Trúc Đông Dương Hero, không có 2 ảnh chân dung riêng gia đình, có album
@@ -289,6 +314,8 @@ const PHOTO_OVERRIDES: Record<string, Partial<TemplatePhotoSlots>> = {
   "huong-cang-dem-neon": { hero: true, couple: true, gallery: true },
   // Nhật Ký Mùa Yêu: có ảnh cưới khung Polaroid ở Hero, 2 ảnh chân dung đời thường, có album
   "nhat-ky-mua-yeu": { hero: true, couple: true, gallery: true },
+  // Sen Ngọc Trăm Năm: có ảnh cưới lồng phong bì xanh rêu ở Hero, 2 ảnh chân dung lật 3D khung cổ điển, có album
+  "sen-ngoc-tram-nam": { hero: true, couple: true, gallery: true },
 };
 
 export function getTemplatePhotos(templateId?: string | null): TemplatePhotoSlots {

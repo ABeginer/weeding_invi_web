@@ -26,7 +26,8 @@ export function GuestAlbumGallery({ photos }: GuestAlbumGalleryProps) {
               <img
                 src={photo.url}
                 alt={photo.alt}
-                loading="lazy"
+                loading={index < 3 ? "eager" : "lazy"}
+                fetchPriority={index < 3 ? "high" : "auto"}
                 decoding="async"
                 className="aspect-[4/5] w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
               />

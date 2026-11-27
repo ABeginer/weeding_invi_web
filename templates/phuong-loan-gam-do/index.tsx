@@ -7,23 +7,27 @@ import {
   MapPin,
   Calendar,
   Clock,
-  Heart,
 } from "lucide-react";
 import { m, useReducedMotion, AnimatePresence } from "motion/react";
 import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
   getEventDirectionsUrl,
 } from "@/lib/events";
 import type {
-  TemplateData,
-  WeddingEvent,
   TemplatePhotoItem,
 } from "@/lib/wedding-types";
+import {
+  ImperialReveal,
+  HeroReveal,
+  GoldButtonShimmer,
+  IMPERIAL_EASE,
+} from "../shared/ImperialMotion";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
@@ -31,41 +35,15 @@ import type { WeddingTemplateProps } from "../types";
 
 /* ============================================================
    BẢNG MÀU CHÍNH THỨC: PHƯỢNG LOAN GẤM ĐỎ (phuong-loan-gam-do)
-   - Nền gấm đỏ son hoàng gia: #560B12 → #6B1019 (sâu #3E070D)
-   - Bề mặt thẻ gấm nổi: rgba(74, 11, 18, 0.88) viền vàng 24K rgba(229, 193, 115, 0.42)
-   - Vàng 24K hoàng kim: #E5C173 (sáng #F6DF9F, trầm #B88E3F)
-   - Chữ chính trên nền gấm đỏ: #FBF5E8 (kem ngà sáng, tương phản chuẩn WCAG AA)
-   - Chữ phụ / nhãn: #E8D4B8
-   - Nút CTA chính: Nền gradient #E5C173 → #F4DC9A, chữ đỏ trầm #4A0B12
-   - Dress Code mặc định: #680E0E (Đỏ son gấm), #E5C173 (Vàng 24K), #FBF5E8 (Kem ngà)
    ============================================================ */
 
-const CRIMSON_BG = "#560B12";
 const CRIMSON_DEEP = "#3E070D";
 const CRIMSON_CARD = "rgba(74, 11, 18, 0.90)";
-const CRIMSON_INNER = "rgba(54, 7, 12, 0.95)";
 
-const GOLD_24K = "#E5C173";
-const GOLD_LIGHT = "#F6DF9F";
-const GOLD_DEEP = "#B88E3F";
-const GOLD_BORDER = "rgba(229, 193, 115, 0.45)";
-
-const TEXT_MAIN = "#FBF5E8";
-const TEXT_MUTED = "#E8D4B8";
 const TEXT_DARK_ON_GOLD = "#4A0B12";
 
 const TITLE_FONT = "var(--font-playfair), Georgia, serif";
 const BODY_FONT = "var(--font-be-vietnam), sans-serif";
-
-const EASE_IMPERIAL = [0.22, 1, 0.36, 1] as const;
-
-const DEFAULT_TIMELINE = [
-  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm tại tiền sảnh Phượng Loan Gấm Đỏ" },
-  { time: "17:30", label: "Nghi thức Thành Hôn Long Phụng Hòa Minh & Trao lời hẹn ước trăm năm" },
-  { time: "18:00", label: "Khai tiệc mừng giao bôi & Nâng ly chúc phúc đôi uyên ương" },
-  { time: "19:30", label: "Giai điệu cung đình hoàng gia & Gắn kết thân tình hai họ" },
-  { time: "20:30", label: "Tiễn khách & Trao quà cảm tạ tri ân" },
-];
 
 const DEFAULT_DRESS = [
   { name: "Đỏ Son Gấm", color: "#680E0E" },
@@ -89,6 +67,7 @@ function splitParentNames(raw?: string): string[] {
  * Hiệu ứng bụi vàng hoàng kim sa trôi nhẹ trên bìa thiệp (pointer-events-none, tuyệt đối không dùng emoji)
  */
 function ImperialGoldDust({ count = 16 }: { count?: number }) {
+  const reduce = useReducedMotion();
   const particles = React.useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
@@ -99,6 +78,8 @@ function ImperialGoldDust({ count = 16 }: { count?: number }) {
       delay: (i % 5) * 0.4,
     }));
   }, [count]);
+
+  if (reduce) return null;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[5] overflow-hidden">
@@ -139,45 +120,70 @@ export default function PhuongLoanGamDoTemplate({
   weddingSlug,
   invitationMode = "personal",
   guestName,
-  viewport = "phone",
 }: WeddingTemplateProps) {
   const prefersReduced = useReducedMotion();
 
-  // Trạng thái mở bìa thiệp
+  // Trạng thái mở bìa thiệp theo 2 pha độc bản: "idle" -> "seal" -> "curtain"
   const [isOpen, setIsOpen] = React.useState(isOpened);
-  const [isOpening, setIsOpening] = React.useState(false);
+  const [coverPhase, setCoverPhase] = React.useState<"idle" | "seal" | "curtain">("idle");
   const [coverGone, setCoverGone] = React.useState(isOpened);
+  const [prevIsOpened, setPrevIsOpened] = React.useState(isOpened);
+  const timeoutsRef = React.useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
-  // 2-way sync với parent frame
-  const parentOpenedRef = React.useRef(isOpened);
-  React.useEffect(() => {
-    if (isOpened && !isOpen) {
+  if (isOpened !== prevIsOpened) {
+    setPrevIsOpened(isOpened);
+    if (isOpened) {
       setIsOpen(true);
       setCoverGone(true);
-    } else if (!isOpened && parentOpenedRef.current) {
+      setCoverPhase("idle");
+    } else {
       setIsOpen(false);
       setCoverGone(false);
-      setIsOpening(false);
+      setCoverPhase("idle");
     }
-    parentOpenedRef.current = isOpened;
-  }, [isOpened, isOpen]);
+  }
+
+  React.useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((id) => clearTimeout(id));
+      timeoutsRef.current = [];
+    };
+  }, []);
+
+  const isOpening = coverPhase === "seal" || coverPhase === "curtain";
+  const showBody = coverGone || coverPhase === "curtain";
 
   const handleOpenCover = () => {
     if (isOpen || isOpening) return;
-    onOpenedChange?.(true);
-    try {
-      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
-    } catch {}
-    setIsOpening(true);
     playOpenCardSound();
-    setTimeout(() => {
+
+    if (prefersReduced) {
       setIsOpen(true);
       setCoverGone(true);
-      setIsOpening(false);
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch { }
+      return;
+    }
+
+    setCoverPhase("seal");
+    const t1 = setTimeout(() => {
+      setCoverPhase("curtain");
+    }, 700);
+    const t2 = setTimeout(() => {
+      setIsOpen(true);
+      setCoverGone(true);
+      setCoverPhase("idle");
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch { }
       if (!contained && typeof window !== "undefined") {
         window.scrollTo({ top: 0, behavior: "auto" });
       }
-    }, 650);
+    }, 2050);
+    timeoutsRef.current.push(t1, t2);
   };
 
   // Gift modal state & Parcel hover
@@ -204,17 +210,15 @@ export default function PhuongLoanGamDoTemplate({
     ? formatLunarDateClean(targetEvent.lunarDate)
     : "Ngày Hoàng Đạo";
 
-  // Countdown timer an toàn hydration
-  const [mounted, setMounted] = React.useState(false);
-  const [timeLeft, setTimeLeft] = React.useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
+  // Countdown timer an toàn hydration (chỉ khởi tạo từ callback setTimeout(0))
+  const [timeLeft, setTimeLeft] = React.useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  } | null>(null);
 
   React.useEffect(() => {
-    setMounted(true);
     const target = new Date(eventDateStr).getTime();
 
     const calcTime = () => {
@@ -228,9 +232,12 @@ export default function PhuongLoanGamDoTemplate({
       });
     };
 
-    calcTime();
+    const boot = setTimeout(calcTime, 0);
     const timer = setInterval(calcTime, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(boot);
+      clearInterval(timer);
+    };
   }, [eventDateStr]);
 
   // Calendar month days calculation (hỗ trợ đa lễ)
@@ -275,19 +282,7 @@ export default function PhuongLoanGamDoTemplate({
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const defaultOrder = React.useMemo(
-    () => [
-      "family",
-      "calendar",
-      "map",
-      "dresscode",
-      "album",
-      "albumQr",
-      "gift",
-      "rsvp",
-    ],
-    []
-  );
+  const defaultOrder = CANONICAL_SECTION_ORDER;
 
   const sectionOrder = React.useMemo(() => {
     const order = data.sectionOrder || defaultOrder;
@@ -337,8 +332,6 @@ export default function PhuongLoanGamDoTemplate({
     return { google };
   }, [groomDisplayName, brideDisplayName, targetEvent, eventDateStr]);
 
-  const mapDirectionUrl = targetEvent?.mapDirectionsUrl;
-
   return (
     <div
       className={cn(
@@ -355,12 +348,7 @@ export default function PhuongLoanGamDoTemplate({
       }}
     >
       {/* --------------------------------------------------------
-          TRANG BÌA (COVER SECTION)
-          Phân tầng Z-Index chuẩn Anti-Blur & Anti-Drift:
-          z-0: Background gấm đỏ son (mobile / desktop)
-          z-[5]: Bụi vàng hoàng kim sa trôi nhẹ
-          z-10: Thẻ gấm đỏ viền vàng 24K + gold_cloud_corner ở 4 góc
-          z-20: Ấn triện Song Hỷ, tên cặp đôi 3 dòng, dải phân cách, nút Mở Thiệp
+          TRANG BÌA (COVER SECTION) — KIM ẤN KHAI RÈM GẤM 3D (~2.05s)
           -------------------------------------------------------- */}
       <AnimatePresence>
         {!coverGone && (
@@ -368,20 +356,28 @@ export default function PhuongLoanGamDoTemplate({
             key="envelope-cover"
             className="absolute inset-0 z-50 w-full max-w-full overflow-hidden flex items-center justify-center px-4 py-4 sm:px-6"
             initial={{ opacity: 1 }}
+            animate={
+              coverPhase === "curtain"
+                ? { opacity: 0, transition: { duration: 0.65, delay: 0.75, ease: IMPERIAL_EASE } }
+                : { opacity: 1 }
+            }
             exit={{
               opacity: 0,
-              scale: 0.96,
-              transition: { duration: 0.65, ease: EASE_IMPERIAL },
+              transition: { duration: 0.35, ease: IMPERIAL_EASE },
             }}
           >
-            {/* z-0: Ảnh nền gấm lụa đỏ son sắc nét 100% */}
-            <div className="absolute inset-0 z-0">
+            {/* z-0: Ảnh nền gấm lụa đỏ son (tan cùng cửa rèm) */}
+            <m.div
+              className="absolute inset-0 z-0"
+              animate={coverPhase === "curtain" ? { opacity: 0 } : { opacity: 1 }}
+              transition={{ duration: 0.55, delay: 0.4 }}
+            >
               <picture>
                 <source
                   media="(min-width: 768px)"
                   srcSet="/templates/phuong-loan-gam-do/bg_desktop.webp"
                 />
-                <img
+                <img decoding="async"
                   src="/templates/phuong-loan-gam-do/bg_mobile.webp"
                   alt="Nền gấm đỏ Phượng Loan Gấm Đỏ"
                   className="w-full h-full object-cover"
@@ -392,88 +388,145 @@ export default function PhuongLoanGamDoTemplate({
                 className="absolute inset-0 bg-[#3E070D]/40 pointer-events-none"
                 aria-hidden="true"
               />
-            </div>
+            </m.div>
 
             {/* z-[5]: Bụi vàng hoàng kim sa trôi chậm */}
             <ImperialGoldDust count={16} />
 
-            {/* Màn gấm đỏ tách cánh khi bấm Mở Thiệp (z-[5] pointer-events-none) */}
+            {/* Hai cánh rèm gấm đỏ 3D xoay mở sang trái/phải khi Pha 2 (curtain) kích hoạt */}
             {isOpening && (
-              <div className="pointer-events-none absolute inset-0 z-[5] flex overflow-hidden">
+              <div
+                className="pointer-events-none absolute inset-0 z-10 flex overflow-hidden"
+                style={{ perspective: "1200px" }}
+              >
                 <m.div
-                  className="w-1/2 h-full bg-[#560B12] shadow-2xl"
-                  initial={{ x: 0 }}
-                  animate={{ x: "-100%" }}
-                  transition={{ duration: 0.65, ease: EASE_IMPERIAL }}
+                  className="w-1/2 h-full bg-gradient-to-r from-[#3E070D] via-[#560B12] to-[#6B1019] border-r-2 border-[#E5C173]/60 shadow-[12px_0_40px_rgba(0,0,0,0.6)]"
+                  style={{
+                    transformOrigin: "left center",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                  }}
+                  initial={{ rotateY: 0, opacity: 1 }}
+                  animate={
+                    coverPhase === "curtain"
+                      ? { rotateY: -82, opacity: 0.15 }
+                      : { rotateY: 0, opacity: 1 }
+                  }
+                  transition={{ duration: 1.25, ease: IMPERIAL_EASE }}
                 />
                 <m.div
-                  className="w-1/2 h-full bg-[#560B12] shadow-2xl"
-                  initial={{ x: 0 }}
-                  animate={{ x: "100%" }}
-                  transition={{ duration: 0.65, ease: EASE_IMPERIAL }}
+                  className="w-1/2 h-full bg-gradient-to-l from-[#3E070D] via-[#560B12] to-[#6B1019] border-l-2 border-[#E5C173]/60 shadow-[-12px_0_40px_rgba(0,0,0,0.6)]"
+                  style={{
+                    transformOrigin: "right center",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                  }}
+                  initial={{ rotateY: 0, opacity: 1 }}
+                  animate={
+                    coverPhase === "curtain"
+                      ? { rotateY: 82, opacity: 0.15 }
+                      : { rotateY: 0, opacity: 1 }
+                  }
+                  transition={{ duration: 1.25, ease: IMPERIAL_EASE }}
                 />
               </div>
             )}
 
             {/* Thẻ Gấm Đỏ Hoàng Gia Trung Tâm (z-20) */}
             <m.div
-              className="relative w-full max-w-[328px] sm:max-w-[380px] mx-auto my-auto flex flex-col items-center text-center rounded-3xl p-6 sm:p-7 shadow-[0_24px_80px_rgba(0,0,0,0.85)] border border-[#E5C173]/50 overflow-hidden z-20"
+              className="relative w-full max-w-[328px] sm:max-w-[380px] mx-auto my-auto flex flex-col items-center text-center rounded-3xl p-6 sm:p-7 shadow-[0_24px_80px_rgba(0,0,0,0.85)] border border-[#E5C173]/55 overflow-hidden z-20"
               style={{ backgroundColor: CRIMSON_CARD }}
               initial={{ scale: 0.95, opacity: 0, y: 15 }}
               animate={
-                isOpening
+                coverPhase === "curtain"
                   ? {
-                    scale: 1.03,
+                    scale: 0.94,
                     opacity: 0,
-                    y: -25,
-                    transition: { duration: 0.65, ease: EASE_IMPERIAL },
+                    y: -26,
+                    transition: { duration: 0.65, ease: IMPERIAL_EASE },
                   }
                   : {
                     scale: 1,
                     opacity: 1,
                     y: 0,
-                    transition: { duration: 0.6, ease: EASE_IMPERIAL },
+                    transition: { duration: 0.6, ease: IMPERIAL_EASE },
                   }
               }
             >
               {/* Viền chỉ vàng cổ lồng bên trong */}
               <div
-                className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#E5C173]/35"
+                className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#E5C173]/40"
                 aria-hidden="true"
               />
 
               {/* 4 Góc Mây Vàng Như Ý gold_cloud_corner.webp */}
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/phuong-loan-gam-do/gold_cloud_corner.webp"
                 alt=""
                 aria-hidden="true"
                 className="pointer-events-none absolute top-2.5 left-2.5 w-10 sm:w-11 object-contain opacity-85 z-10"
               />
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/phuong-loan-gam-do/gold_cloud_corner.webp"
                 alt=""
                 aria-hidden="true"
                 className="pointer-events-none absolute top-2.5 right-2.5 w-10 sm:w-11 object-contain opacity-85 -scale-x-100 z-10"
               />
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/phuong-loan-gam-do/gold_cloud_corner.webp"
                 alt=""
                 aria-hidden="true"
                 className="pointer-events-none absolute bottom-2.5 left-2.5 w-10 sm:w-11 object-contain opacity-85 -scale-y-100 z-10"
               />
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/phuong-loan-gam-do/gold_cloud_corner.webp"
                 alt=""
                 aria-hidden="true"
                 className="pointer-events-none absolute bottom-2.5 right-2.5 w-10 sm:w-11 object-contain opacity-85 -scale-100 z-10"
               />
 
-              {/* Ấn Triện Bát Giác Song Hỷ Hoàng Kim */}
-              <div className="relative z-20 mt-1 mb-3">
-                <img
+              {/* Ấn Triện Bát Giác Song Hỷ Hoàng Kim + Vòng Sóng Nghi Thức Pha 1 */}
+              <div className="relative z-20 mt-1 mb-3 flex items-center justify-center">
+                {!prefersReduced && (
+                  <m.div
+                    className="pointer-events-none absolute -inset-3 rounded-full"
+                    style={{
+                      background: "radial-gradient(circle, rgba(229,193,115,0.45) 0%, transparent 70%)",
+                    }}
+                    animate={{ scale: [0.95, 1.15, 0.95], opacity: [0.45, 0.85, 0.45] }}
+                    transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                )}
+                {coverPhase === "seal" && !prefersReduced && (
+                  <>
+                    <m.span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute h-16 w-16 rounded-full border border-[#F6DF9F]/80"
+                      initial={{ scale: 0.7, opacity: 0.9 }}
+                      animate={{ scale: 2.8, opacity: 0 }}
+                      transition={{ duration: 0.9, ease: IMPERIAL_EASE }}
+                    />
+                    <m.span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute h-14 w-14 rounded-full border border-[#E5C173]/60"
+                      initial={{ scale: 0.6, opacity: 0.8 }}
+                      animate={{ scale: 2.2, opacity: 0 }}
+                      transition={{ duration: 0.85, delay: 0.16, ease: IMPERIAL_EASE }}
+                    />
+                  </>
+                )}
+                <m.img
+                  loading="eager"
+                  decoding="async"
                   src="/templates/phuong-loan-gam-do/song_hy_medallion.webp"
                   alt="Kim Ấn Song Hỷ"
-                  className="w-14 sm:w-16 h-auto object-contain drop-shadow-[0_4px_12px_rgba(229,193,115,0.4)]"
+                  className="relative z-10 w-14 sm:w-16 h-auto object-contain drop-shadow-[0_4px_12px_rgba(229,193,115,0.45)]"
+                  animate={
+                    coverPhase === "seal"
+                      ? { rotate: 18, scale: 1.12 }
+                      : { rotate: 0, scale: 1 }
+                  }
+                  transition={{ duration: 0.65, ease: IMPERIAL_EASE }}
                 />
               </div>
 
@@ -484,16 +537,10 @@ export default function PhuongLoanGamDoTemplate({
               >
                 Trân Trọng Kính Mời
               </p>
-              <p
-                className="text-[10px] sm:text-[11px] tracking-[0.15em] uppercase text-[#E8D4B8] mb-3"
-                style={{ fontFamily: BODY_FONT }}
-              >
-                Long Phụng Hòa Minh
-              </p>
 
               {/* Tên cặp đôi 3 dòng chuẩn với break-words */}
               <div
-                className="text-center my-2 max-w-full px-2"
+                className="text-center my-1.5 max-w-full px-2"
                 style={{ fontFamily: TITLE_FONT }}
               >
                 <div className="text-2xl sm:text-3xl text-[#FBF5E8] tracking-wide break-words drop-shadow-sm leading-tight">
@@ -506,35 +553,44 @@ export default function PhuongLoanGamDoTemplate({
               </div>
 
               {/* Dải phân cách mây ngọc ruby */}
-              <img
+              <img loading="eager" decoding="async"
                 src="/templates/phuong-loan-gam-do/divider_cloud_ruby.webp"
                 alt=""
                 aria-hidden="true"
-                className="w-44 sm:w-52 h-auto object-contain my-3 opacity-90"
+                className="w-44 sm:w-52 h-auto object-contain my-2.5 opacity-90"
               />
+
+              {/* Ngày cưới ngắn gọn trên bìa */}
+              <p
+                className="text-[11px] sm:text-xs tracking-[0.22em] uppercase text-[#F6DF9F] font-medium"
+                style={{ fontFamily: TITLE_FONT }}
+              >
+                {dateParts.weekday} · {dateParts.dotDate}
+              </p>
 
               {/* Dành riêng cho khách mời (nếu có) */}
               {guestName && (
-                <div className="my-2 px-3 py-1.5 rounded-full bg-[#36070C]/80 border border-[#E5C173]/30 max-w-full">
+                <div className="mt-2.5 px-3.5 py-1 rounded-full bg-[#36070C]/85 border border-[#E5C173]/35 max-w-full">
                   <p className="text-xs text-[#E8D4B8] truncate">
                     Kính mời: <span className="text-[#FBF5E8] font-medium">{guestName}</span>
                   </p>
                 </div>
               )}
 
-              {/* Nút Mở Thiệp mạ vàng 24K */}
+              {/* Nút Mở Thiệp mạ vàng 24K + hiệu ứng ánh kim lướt */}
               <button
                 type="button"
                 onClick={handleOpenCover}
                 disabled={isOpening}
-                className="mt-4 px-8 py-2.5 rounded-full text-xs sm:text-sm font-semibold tracking-widest uppercase transition-all duration-300 transform active:scale-95 shadow-[0_4px_20px_rgba(229,193,115,0.45)] hover:shadow-[0_6px_25px_rgba(229,193,115,0.65)] hover:brightness-105 cursor-pointer"
+                className="relative overflow-hidden mt-4 px-9 py-2.5 rounded-full text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase transition-all duration-300 transform active:scale-95 shadow-[0_4px_20px_rgba(229,193,115,0.45)] hover:shadow-[0_6px_25px_rgba(229,193,115,0.65)] hover:brightness-105 cursor-pointer"
                 style={{
                   background: "linear-gradient(135deg, #F6DF9F 0%, #E5C173 50%, #B88E3F 100%)",
                   color: TEXT_DARK_ON_GOLD,
                   fontFamily: BODY_FONT,
                 }}
               >
-                Mở Thiệp
+                <GoldButtonShimmer active={!isOpening} />
+                <span className="relative z-10">{isOpening ? "Đang Khai Thiệp..." : "Mở Thiệp"}</span>
               </button>
             </m.div>
           </m.div>
@@ -543,12 +599,12 @@ export default function PhuongLoanGamDoTemplate({
 
       {/* --------------------------------------------------------
           THÂN THIỆP CHÍNH (MAIN INVITATION CONTENT)
-          Ẩn hoàn toàn cho đến khi mở thiệp để chống cuộn lệch
+          Ẩn hoàn toàn cho đến khi Pha 2 (curtain) bắt đầu mở
           -------------------------------------------------------- */}
       <div
         className={cn(
           "relative z-10 w-full min-h-screen",
-          !isOpen && !isOpening ? "hidden" : "block"
+          !showBody ? "hidden pointer-events-none" : "block"
         )}
       >
         {/* Nền gấm cố định xuyên suốt ruột thiệp */}
@@ -558,7 +614,7 @@ export default function PhuongLoanGamDoTemplate({
               media="(min-width: 768px)"
               srcSet="/templates/phuong-loan-gam-do/bg_desktop.webp"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/phuong-loan-gam-do/bg_mobile.webp"
               alt=""
               className="w-full h-full object-cover"
@@ -580,7 +636,7 @@ export default function PhuongLoanGamDoTemplate({
               ======================================================== */}
           <section className="relative text-center flex flex-col items-center">
             {/* Nhãn mở đầu & Song Hỷ */}
-            <div className="mb-3 flex items-center justify-center gap-2">
+            <HeroReveal showBody={showBody} delay={0.15} y={10} className="mb-3 flex items-center justify-center gap-2">
               <span className="w-8 h-px bg-gradient-to-r from-transparent to-[#E5C173]/70" />
               <span
                 className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E5C173] font-semibold"
@@ -589,42 +645,58 @@ export default function PhuongLoanGamDoTemplate({
                 Lễ Thành Hôn
               </span>
               <span className="w-8 h-px bg-gradient-to-l from-transparent to-[#E5C173]/70" />
-            </div>
+            </HeroReveal>
 
             {/* Tên cặp đôi 3 dòng ở Hero (tuyệt đối không lặp ngày cưới) */}
-            <div
+            <HeroReveal
+              showBody={showBody}
+              delay={0.28}
+              y={16}
               className="my-3 text-center px-4 max-w-full"
-              style={{ fontFamily: TITLE_FONT }}
             >
-              <h1 className="text-3xl sm:text-4xl md:text-5xl text-[#FBF5E8] tracking-wide break-words drop-shadow-md leading-tight">
-                {groomDisplayName}
-              </h1>
-              <div className="text-xl sm:text-2xl text-[#E5C173] my-1 font-serif">&</div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl text-[#FBF5E8] tracking-wide break-words drop-shadow-md leading-tight">
-                {brideDisplayName}
-              </h2>
-            </div>
+              <div style={{ fontFamily: TITLE_FONT }}>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl text-[#FBF5E8] tracking-wide break-words drop-shadow-md leading-tight">
+                  {groomDisplayName}
+                </h1>
+                <div className="text-xl sm:text-2xl text-[#E5C173] my-1 font-serif">&</div>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl text-[#FBF5E8] tracking-wide break-words drop-shadow-md leading-tight">
+                  {brideDisplayName}
+                </h2>
+              </div>
+            </HeroReveal>
 
-            <p
-              className="text-xs sm:text-sm text-[#E8D4B8] max-w-md mx-auto mt-1 mb-6 px-4 leading-relaxed"
-              style={{ fontFamily: BODY_FONT }}
+            <HeroReveal showBody={showBody} delay={0.4} y={14}>
+              <p
+                className="text-xs sm:text-sm text-[#E8D4B8] max-w-md mx-auto mt-1 mb-6 px-4 leading-relaxed"
+                style={{ fontFamily: BODY_FONT }}
+              >
+                Trăm năm kết tóc se tơ · Duyên cầm sắt trọn đời gắn bó
+              </p>
+            </HeroReveal>
+
+            {/* Khung Vòm Long Phụng ôm ảnh cưới (Long Phụng chầu rìa ngoài, 0% che mặt cặp đôi) */}
+            <HeroReveal
+              showBody={showBody}
+              delay={0.5}
+              y={22}
+              scale={0.96}
+              duration={1.05}
+              className="relative w-full max-w-[358px] sm:max-w-[460px] aspect-[1010/940] mx-auto flex items-center justify-center"
             >
-              Trăm năm kết tóc se tơ · Long Phụng Hòa Minh duyên cầm sắt trọn đời
-            </p>
-
-            {/* Khung Vòm Long Phụng ôm ảnh cưới */}
-            <div className="relative w-full max-w-[320px] sm:max-w-[360px] aspect-[680/917] mx-auto flex items-center justify-center">
-              {/* Lõi bên trong: Ảnh cặp đôi bo vòm khớp lòng khung vòm */}
-              <div className="absolute inset-x-[10%] top-[11.5%] bottom-[2%] rounded-t-full overflow-hidden bg-[#3E070D]">
+              {/* Lõi bên trong: Ảnh cặp đôi bo vòm khớp khít 100% lòng đường chỉ vàng kép (canvas 1010x940) */}
+              <div
+                className="absolute left-[17.4%] right-[18.2%] top-[2.4%] bottom-[2.3%] overflow-hidden bg-[#3E070D]"
+                style={{ borderRadius: "50% 50% 0 0 / 34.6% 34.6% 0 0" }}
+              >
                 {heroPhotoUrl ? (
-                  <img
+                  <img loading="eager" decoding="async"
                     src={heroPhotoUrl}
                     alt={`${groomDisplayName} & ${brideDisplayName}`}
                     className="w-full h-full object-cover object-top transition-transform duration-700 hover:scale-105"
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#4A0B12] to-[#2E0509]">
-                    <img
+                    <img loading="eager" decoding="async"
                       src="/templates/phuong-loan-gam-do/song_hy_medallion.webp"
                       alt="Song Hỷ"
                       className="w-20 h-auto mb-3 opacity-90 drop-shadow-md"
@@ -633,28 +705,30 @@ export default function PhuongLoanGamDoTemplate({
                       className="text-[#E5C173] text-sm font-serif tracking-wider"
                       style={{ fontFamily: TITLE_FONT }}
                     >
-                      Long Phụng Hòa Minh
+                      Lễ Thành Hôn
                     </p>
                   </div>
                 )}
               </div>
 
               {/* Lớp khung vòm Phù Điêu Long Phụng 24K đè lên trên (pointer-events-none) */}
-              <img
-                src="/templates/phuong-loan-gam-do/dragon_phoenix_arch.webp"
+              <img loading="eager" decoding="async"
+                src="/templates/phuong-loan-gam-do/dragon_phoenix_arch.webp?v=3"
                 alt="Khung vòm Long Phụng 24K"
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 w-full h-full object-contain z-10 drop-shadow-[0_12px_36px_rgba(0,0,0,0.8)]"
+                className="pointer-events-none absolute inset-0 w-full h-full object-fill z-10 drop-shadow-[0_12px_36px_rgba(0,0,0,0.8)]"
               />
-            </div>
+            </HeroReveal>
 
             {/* Dải phân cách mây ruby dưới Hero */}
-            <img
-              src="/templates/phuong-loan-gam-do/divider_cloud_ruby.webp"
-              alt=""
-              aria-hidden="true"
-              className="w-48 sm:w-56 h-auto object-contain mt-6 opacity-90"
-            />
+            <HeroReveal showBody={showBody} delay={0.7} y={12} blur={false}>
+              <img loading="lazy" decoding="async"
+                src="/templates/phuong-loan-gam-do/divider_cloud_ruby.webp"
+                alt=""
+                aria-hidden="true"
+                className="w-48 sm:w-56 h-auto object-contain mt-6 opacity-90"
+              />
+            </HeroReveal>
           </section>
 
           {/* ========================================================
@@ -668,7 +742,6 @@ export default function PhuongLoanGamDoTemplate({
               <section
                 style={{ order: orderOf("family") }}
                 className="relative rounded-3xl p-6 sm:p-8 border border-[#E5C173]/45 shadow-[0_20px_50px_rgba(0,0,0,0.65)] overflow-hidden"
-                style-bg={CRIMSON_CARD}
               >
                 <div
                   className="absolute inset-0 pointer-events-none rounded-3xl"
@@ -680,20 +753,20 @@ export default function PhuongLoanGamDoTemplate({
                 />
 
                 {/* Góc mây trang trí */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/phuong-loan-gam-do/gold_cloud_corner.webp"
                   alt=""
                   aria-hidden="true"
                   className="pointer-events-none absolute top-2.5 left-2.5 w-9 sm:w-10 object-contain opacity-75"
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/phuong-loan-gam-do/gold_cloud_corner.webp"
                   alt=""
                   aria-hidden="true"
                   className="pointer-events-none absolute top-2.5 right-2.5 w-9 sm:w-10 object-contain opacity-75 -scale-x-100"
                 />
 
-                <div className="relative z-10 text-center mb-6">
+                <ImperialReveal direction="up" className="relative z-10 text-center mb-6">
                   <span
                     className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E5C173] font-semibold"
                     style={{ fontFamily: BODY_FONT }}
@@ -706,16 +779,16 @@ export default function PhuongLoanGamDoTemplate({
                   >
                     Hai Họ Tác Hợp
                   </h3>
-                </div>
+                </ImperialReveal>
 
                 {/* Hai thẻ chân dung Chú Rể & Cô Dâu */}
                 <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                   {/* CỘT NHÀ TRAI / CHÚ RỂ */}
-                  <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-[#36070C]/80 border border-[#E5C173]/35">
+                  <ImperialReveal direction="left" delay={0.08} className="flex flex-col items-center text-center p-5 rounded-2xl bg-[#36070C]/80 border border-[#E5C173]/35">
                     {/* Ảnh chân dung tròn viền vàng 24K */}
                     <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 border-2 border-[#E5C173] shadow-[0_4px_16px_rgba(229,193,115,0.3)] mb-4 bg-[#4A0B12] overflow-hidden">
                       {groomPhotoUrl ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={groomPhotoUrl}
                           alt={groomDisplayName}
                           className="w-full h-full object-cover rounded-full"
@@ -753,14 +826,14 @@ export default function PhuongLoanGamDoTemplate({
                         ))}
                       </div>
                     )}
-                  </div>
+                  </ImperialReveal>
 
                   {/* CỘT NHÀ GÁI / CÔ DÂU */}
-                  <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-[#36070C]/80 border border-[#E5C173]/35">
+                  <ImperialReveal direction="right" delay={0.14} className="flex flex-col items-center text-center p-5 rounded-2xl bg-[#36070C]/80 border border-[#E5C173]/35">
                     {/* Ảnh chân dung tròn viền vàng 24K */}
                     <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 border-2 border-[#E5C173] shadow-[0_4px_16px_rgba(229,193,115,0.3)] mb-4 bg-[#4A0B12] overflow-hidden">
                       {bridePhotoUrl ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={bridePhotoUrl}
                           alt={brideDisplayName}
                           className="w-full h-full object-cover rounded-full"
@@ -798,7 +871,7 @@ export default function PhuongLoanGamDoTemplate({
                         ))}
                       </div>
                     )}
-                  </div>
+                  </ImperialReveal>
                 </div>
               </section>
             )}
@@ -820,7 +893,7 @@ export default function PhuongLoanGamDoTemplate({
                   aria-hidden="true"
                 />
 
-                <div className="relative z-10 text-center mb-6">
+                <ImperialReveal direction="up" className="relative z-10 text-center mb-6">
                   <span
                     className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E5C173] font-semibold"
                     style={{ fontFamily: BODY_FONT }}
@@ -839,10 +912,10 @@ export default function PhuongLoanGamDoTemplate({
                       ({lunarDateClean})
                     </p>
                   )}
-                </div>
+                </ImperialReveal>
 
                 {/* BẢNG LỊCH THÁNG (Lần 2 & là lần cuối cùng xuất hiện ngày cưới) */}
-                <div className="relative z-10 max-w-sm mx-auto p-4 sm:p-5 rounded-2xl bg-[#36070C]/85 border border-[#E5C173]/35 mb-8">
+                <ImperialReveal direction="up" delay={0.1} className="relative z-10 max-w-sm mx-auto p-4 sm:p-5 rounded-2xl bg-[#36070C]/85 border border-[#E5C173]/35 mb-8">
                   <p
                     className="text-center text-xs tracking-widest uppercase font-semibold text-[#E5C173] mb-3"
                     style={{ fontFamily: BODY_FONT }}
@@ -884,11 +957,11 @@ export default function PhuongLoanGamDoTemplate({
                       );
                     })}
                   </div>
-                </div>
+                </ImperialReveal>
 
                 {/* ĐỒNG HỒ ĐẾM NGƯỢC (4 Ô HOÀNG KIM) */}
-                {mounted && (
-                  <div className="relative z-10 mb-8">
+                {timeLeft && (
+                  <ImperialReveal direction="up" delay={0.14} className="relative z-10 mb-8">
                     <p
                       className="text-center text-[11px] sm:text-xs tracking-[0.2em] uppercase text-[#E5C173] font-semibold mb-3"
                       style={{ fontFamily: BODY_FONT }}
@@ -918,76 +991,101 @@ export default function PhuongLoanGamDoTemplate({
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </ImperialReveal>
                 )}
 
+              </section>
+            )}
+
+            {/* ----------------------------------------------------
+                SECTION: SỰ KIỆN & ĐỊA ĐIỂM (map)
+                ---------------------------------------------------- */}
+            {!hiddenSections.has("map") && visibleEvents.length > 0 && (
+              <section
+                style={{ order: orderOf("map") }}
+                className="relative rounded-3xl p-6 sm:p-8 border border-[#E5C173]/45 shadow-[0_20px_50px_rgba(0,0,0,0.65)] overflow-hidden"
+              >
+                <div
+                  className="absolute inset-0 pointer-events-none rounded-3xl"
+                  style={{ backgroundColor: CRIMSON_CARD }}
+                />
+                <div
+                  className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#E5C173]/30"
+                  aria-hidden="true"
+                />
+                <ImperialReveal direction="up" className="relative z-10 text-center mb-6">
+                  <h3
+                    className="text-2xl sm:text-3xl text-[#FBF5E8] font-serif"
+                    style={{ fontFamily: TITLE_FONT }}
+                  >
+                    Sự Kiện Cưới
+                  </h3>
+                </ImperialReveal>
                 {/* THỜI GIAN & ĐỊA ĐIỂM TIỆC (Hỗ trợ 1..N buổi lễ) */}
-                {visibleEvents.length > 0 && (
-                  <div className={visibleEvents.length > 1 ? "relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto" : "relative z-10 max-w-md mx-auto space-y-4"}>
-                    {visibleEvents.map((evt, idx) => {
-                      const evtDateParts = formatWeddingDateParts(evt.startsAt);
-                      const directionsUrl = getEventDirectionsUrl(evt);
+                <div className={visibleEvents.length > 1 ? "relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto" : "relative z-10 max-w-md mx-auto space-y-4"}>
+                  {visibleEvents.map((evt, idx) => {
+                    const evtDateParts = formatWeddingDateParts(evt.startsAt);
+                    const directionsUrl = getEventDirectionsUrl(evt);
 
-                      return (
-                        <div
-                          key={evt.id || idx}
-                          className="p-5 rounded-2xl bg-[#36070C]/80 border border-[#E5C173]/35 text-center flex flex-col items-center justify-between gap-3 shadow-sm"
-                        >
-                          <div className="w-full flex flex-col items-center">
-                            <span className="inline-block text-[10px] font-bold tracking-[0.2em] text-[#E5C173] uppercase border-b border-[#E5C173]/40 pb-1 mb-2">
-                              BUỔI LỄ #{idx + 1}
-                            </span>
-                            <div className="flex items-center gap-2 text-xs sm:text-sm text-[#E5C173] font-semibold tracking-wider uppercase">
-                              <Clock className="w-4 h-4 text-[#E5C173]" />
-                              <span>{evtDateParts.time || "17:30"} · {evt.title || "Tiệc Cưới Hoàng Gia"}</span>
-                            </div>
-                            <p className="text-xs text-[#E8D4B8] mt-1 font-medium">
-                              {evtDateParts.weekday}, {evtDateParts.day}/{evtDateParts.month}/{evtDateParts.year}
-                            </p>
-
-                            <div className="flex flex-col items-center text-center mt-2">
-                              <p
-                                className="text-lg sm:text-xl text-[#FBF5E8] font-serif font-medium"
-                                style={{ fontFamily: TITLE_FONT }}
-                              >
-                                {evt.venueName || "Trung Tâm Hội Nghị Tiệc Cưới"}
-                              </p>
-                              <p className="text-xs sm:text-sm text-[#E8D4B8] mt-1 leading-relaxed">
-                                {evt.venueAddress || "Địa chỉ hôn trường đang cập nhật"}
-                              </p>
-                            </div>
+                    return (
+                      <ImperialReveal
+                        key={evt.id || idx}
+                        direction="up"
+                        delay={idx * 0.1}
+                        className="p-5 rounded-2xl bg-[#36070C]/80 border border-[#E5C173]/35 text-center flex flex-col items-center justify-between gap-3 shadow-sm"
+                      >
+                        <div className="w-full flex flex-col items-center">
+                          <span className="inline-block text-[10px] font-bold tracking-[0.2em] text-[#E5C173] uppercase border-b border-[#E5C173]/40 pb-1 mb-2">
+                            BUỔI LỄ #{idx + 1}
+                          </span>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-[#E5C173] font-semibold tracking-wider uppercase">
+                            <Clock className="w-4 h-4 text-[#E5C173]" />
+                            <span>{evtDateParts.time || "17:30"} · {evt.title || "Tiệc Cưới Hoàng Gia"}</span>
                           </div>
+                          <p className="text-xs text-[#E8D4B8] mt-1 font-medium">
+                            {evtDateParts.weekday}, {evtDateParts.day}/{evtDateParts.month}/{evtDateParts.year}
+                          </p>
 
-                          {/* Nút chỉ đường & Thêm vào lịch */}
-                          <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-                            {!hiddenSections.has("map") && (
-                              <a
-                                href={directionsUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E5C173] text-[#4A0B12] text-xs font-semibold tracking-wider uppercase transition-transform active:scale-95 hover:brightness-105"
-                                style={{ fontFamily: BODY_FONT }}
-                              >
-                                <MapPin className="w-3.5 h-3.5" />
-                                <span>Chỉ Đường</span>
-                              </a>
-                            )}
-                            <a
-                              href={calendarLinks.google}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#E5C173] text-[#E5C173] text-xs font-semibold tracking-wider uppercase hover:bg-[#E5C173]/15 transition-colors"
-                              style={{ fontFamily: BODY_FONT }}
+                          <div className="flex flex-col items-center text-center mt-2">
+                            <p
+                              className="text-lg sm:text-xl text-[#FBF5E8] font-serif font-medium"
+                              style={{ fontFamily: TITLE_FONT }}
                             >
-                              <Calendar className="w-3.5 h-3.5" />
-                              <span>Thêm Vào Lịch</span>
-                            </a>
+                              {evt.venueName || "Trung Tâm Hội Nghị Tiệc Cưới"}
+                            </p>
+                            <p className="text-xs sm:text-sm text-[#E8D4B8] mt-1 leading-relaxed">
+                              {evt.venueAddress || "Địa chỉ hôn trường đang cập nhật"}
+                            </p>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+
+                        {/* Nút chỉ đường & Thêm vào lịch */}
+                        <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+                          <a
+                            href={directionsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E5C173] text-[#4A0B12] text-xs font-semibold tracking-wider uppercase transition-transform active:scale-95 hover:brightness-105"
+                            style={{ fontFamily: BODY_FONT }}
+                          >
+                            <MapPin className="w-3.5 h-3.5" />
+                            <span>Chỉ Đường</span>
+                          </a>
+                          <a
+                            href={calendarLinks.google}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#E5C173] text-[#E5C173] text-xs font-semibold tracking-wider uppercase hover:bg-[#E5C173]/15 transition-colors"
+                            style={{ fontFamily: BODY_FONT }}
+                          >
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Thêm Vào Lịch</span>
+                          </a>
+                        </div>
+                      </ImperialReveal>
+                    );
+                  })}
+                </div>
               </section>
             )}
 
@@ -1010,7 +1108,7 @@ export default function PhuongLoanGamDoTemplate({
                   aria-hidden="true"
                 />
 
-                <div className="relative z-10 max-w-md mx-auto">
+                <ImperialReveal direction="up" className="relative z-10 max-w-md mx-auto">
                   <span
                     className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E5C173] font-semibold"
                     style={{ fontFamily: BODY_FONT }}
@@ -1030,15 +1128,22 @@ export default function PhuongLoanGamDoTemplate({
                   {/* Các ô màu tròn viền vàng 24K - TUYỆT ĐỐI KHÔNG IN MÃ HEX HOẶC TÊN MÀU */}
                   <div className="flex items-center justify-center gap-6 sm:gap-8">
                     {DEFAULT_DRESS.map((item, idx) => (
-                      <div
+                      <ImperialReveal
                         key={idx}
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#E5C173] shadow-[0_4px_16px_rgba(0,0,0,0.5)] transition-transform hover:scale-110"
-                        style={{ backgroundColor: item.color }}
-                        title={item.name}
-                      />
+                        direction="up"
+                        delay={0.08 + idx * 0.08}
+                        scale={0.85}
+                        blur={false}
+                      >
+                        <div
+                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#E5C173] shadow-[0_4px_16px_rgba(0,0,0,0.5)] transition-transform hover:scale-110"
+                          style={{ backgroundColor: item.color }}
+                          title={item.name}
+                        />
+                      </ImperialReveal>
                     ))}
                   </div>
-                </div>
+                </ImperialReveal>
               </section>
             )}
 
@@ -1062,20 +1167,20 @@ export default function PhuongLoanGamDoTemplate({
                 />
 
                 {/* Góc mây trang trí */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/phuong-loan-gam-do/gold_cloud_corner.webp"
                   alt=""
                   aria-hidden="true"
                   className="pointer-events-none absolute top-2.5 left-2.5 w-9 sm:w-10 object-contain opacity-75"
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/phuong-loan-gam-do/gold_cloud_corner.webp"
                   alt=""
                   aria-hidden="true"
                   className="pointer-events-none absolute top-2.5 right-2.5 w-9 sm:w-10 object-contain opacity-75 -scale-x-100"
                 />
 
-                <div className="relative z-10 text-center mb-6">
+                <ImperialReveal direction="up" className="relative z-10 text-center mb-6">
                   <span
                     className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E5C173] font-semibold"
                     style={{ fontFamily: BODY_FONT }}
@@ -1088,15 +1193,15 @@ export default function PhuongLoanGamDoTemplate({
                   >
                     Album Tình Yêu
                   </h3>
-                </div>
+                </ImperialReveal>
 
                 {/* CAROUSEL HIỂN THỊ ẢNH CHÍNH */}
-                <div className="relative z-10 max-w-lg mx-auto">
+                <ImperialReveal direction="up" delay={0.1} scale={0.97} className="relative z-10 max-w-lg mx-auto">
                   <div
                     className="relative aspect-[3/4] sm:aspect-[4/5] rounded-2xl overflow-hidden border border-[#E5C173]/40 shadow-[0_12px_36px_rgba(0,0,0,0.7)] cursor-pointer group bg-[#3E070D]"
                     onClick={() => setLightboxIndex(activePhotoIdx)}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={albumPhotos[activePhotoIdx]?.url}
                       alt={albumPhotos[activePhotoIdx]?.alt || `Ảnh cưới ${activePhotoIdx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1175,7 +1280,7 @@ export default function PhuongLoanGamDoTemplate({
                               : "border-transparent opacity-60 hover:opacity-100"
                           )}
                         >
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={photo.url}
                             alt=""
                             className="w-full h-full object-cover"
@@ -1184,19 +1289,33 @@ export default function PhuongLoanGamDoTemplate({
                       ))}
                     </div>
                   )}
-                </div>
+                </ImperialReveal>
 
-                {/* QR Album dành cho khách tải ảnh lên (chỉ hiện khi có url & không phải gói Free) */}
-                {data.plan !== "free" && !hiddenSections.has("albumQr") && (
-                  <div className="mt-8 pt-6 border-t border-[#E5C173]/25 flex flex-col items-center">
-                    <GuestAlbumQr
-                      slug={inviteSlug || weddingSlug}
-                      accentColor="#E5C173"
-                      textColor="#FBF5E8"
-                      mutedColor="#E8D4B8"
-                    />
-                  </div>
-                )}
+              </section>
+            )}
+
+            {/* QR Album dành cho khách tải ảnh lên (chỉ hiện khi có url & không phải gói Free) */}
+            {data.plan !== "free" && !hiddenSections.has("albumQr") && (inviteSlug || weddingSlug) && (
+              <section
+                style={{ order: orderOf("albumQr") }}
+                className="relative rounded-3xl p-6 sm:p-8 border border-[#E5C173]/45 shadow-[0_20px_50px_rgba(0,0,0,0.65)] overflow-hidden"
+              >
+                <div
+                  className="absolute inset-0 pointer-events-none rounded-3xl"
+                  style={{ backgroundColor: CRIMSON_CARD }}
+                />
+                <div
+                  className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#E5C173]/30"
+                  aria-hidden="true"
+                />
+                <ImperialReveal direction="up" delay={0.12} className="relative z-10 flex flex-col items-center">
+                  <GuestAlbumQr
+                    slug={inviteSlug || weddingSlug}
+                    accentColor="#E5C173"
+                    textColor="#FBF5E8"
+                    mutedColor="#E8D4B8"
+                  />
+                </ImperialReveal>
               </section>
             )}
 
@@ -1220,7 +1339,7 @@ export default function PhuongLoanGamDoTemplate({
                   aria-hidden="true"
                 />
 
-                <div className="relative z-10 max-w-md mx-auto flex flex-col items-center">
+                <ImperialReveal direction="up" className="relative z-10 max-w-md mx-auto flex flex-col items-center">
                   <span
                     className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-[#E5C173] font-semibold"
                     style={{ fontFamily: BODY_FONT }}
@@ -1228,14 +1347,11 @@ export default function PhuongLoanGamDoTemplate({
                     Gửi Gắm Yêu Thương
                   </span>
                   <h3
-                    className="text-2xl sm:text-3xl text-[#FBF5E8] font-serif mt-1 mb-2"
+                    className="text-2xl sm:text-3xl text-[#FBF5E8] font-serif mt-1 mb-4"
                     style={{ fontFamily: TITLE_FONT }}
                   >
                     Hộp Quà Chúc Phúc
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#E8D4B8] leading-relaxed mb-4">
-                    Sự hiện diện của Quý khách là niềm hạnh phúc trọn vẹn nhất của hai gia đình. Nếu ở xa không tiện ghé chung vui, Quý khách có thể gửi lời chúc qua hộp quà nhỏ bên dưới.
-                  </p>
 
                   {/* Hộp quà gấm đỏ 3 trạng thái tương tác */}
                   <div
@@ -1247,7 +1363,7 @@ export default function PhuongLoanGamDoTemplate({
                     onMouseEnter={() => setBoxState("glow")}
                     onMouseLeave={() => setBoxState("normal")}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={
                         boxState === "open"
                           ? "/templates/phuong-loan-gam-do/gift_box_open.webp"
@@ -1275,7 +1391,7 @@ export default function PhuongLoanGamDoTemplate({
                   >
                     Mừng Cưới
                   </button>
-                </div>
+                </ImperialReveal>
               </section>
             )}
 
@@ -1289,31 +1405,33 @@ export default function PhuongLoanGamDoTemplate({
                 style={{ order: orderOf("rsvp") }}
                 className="relative z-10 [color-scheme:dark]"
               >
-                <TemplateRsvpSection
-                  data={data}
-                  mode={mode}
-                  tone="ruby"
-                  customTheme={{
-                    isDark: true,
-                    wrap: "bg-[#4A0B12]/95 border-[#E5C173]/45 text-[#FBF5E8] shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-3xl",
-                    card: "bg-[#36070C]/90 border border-[#E5C173]/40 text-[#FBF5E8]",
-                    eyebrow: "text-[#E5C173] tracking-[0.25em] uppercase font-semibold text-[11px]",
-                    heading: "text-[#E5C173] font-serif text-2xl sm:text-3xl",
-                    subtext: "text-[#E8D4B8] text-xs sm:text-sm",
-                    input: "bg-[#36070C] border-[#E5C173]/40 text-[#FBF5E8] placeholder:text-[#D4B898]/70 focus:border-[#E5C173] focus:ring-1 focus:ring-[#E5C173]",
-                    primaryBtn: "bg-[#E5C173] hover:bg-[#F6DF9F] text-[#4A0B12] font-semibold shadow-md",
-                    outlineBtn: "border-[#E5C173] text-[#E5C173] hover:bg-[#E5C173]/15",
-                    alert: "border-[#E5C173]/40 bg-[#36070C] text-[#FBF5E8]",
-                    badge: "border-[#E5C173]/40 bg-[#36070C] text-[#E5C173]",
-                    optionBg: "#36070C",
-                    optionColor: "#FBF5E8",
-                  }}
-                  contained={contained}
-                  inviteSlug={inviteSlug}
-                  weddingSlug={weddingSlug}
-                  invitationMode={invitationMode}
-                  guestName={guestName}
-                />
+                <ImperialReveal direction="up">
+                  <TemplateRsvpSection
+                    data={data}
+                    mode={mode}
+                    tone="ruby"
+                    customTheme={{
+                      isDark: true,
+                      wrap: "bg-[#4A0B12]/95 border-[#E5C173]/45 text-[#FBF5E8] shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-3xl",
+                      card: "bg-[#36070C]/90 border border-[#E5C173]/40 text-[#FBF5E8]",
+                      eyebrow: "text-[#E5C173] tracking-[0.25em] uppercase font-semibold text-[11px]",
+                      heading: "text-[#E5C173] font-serif text-2xl sm:text-3xl",
+                      subtext: "text-[#E8D4B8] text-xs sm:text-sm",
+                      input: "bg-[#36070C] border-[#E5C173]/40 text-[#FBF5E8] placeholder:text-[#D4B898]/70 focus:border-[#E5C173] focus:ring-1 focus:ring-[#E5C173]",
+                      primaryBtn: "bg-[#E5C173] hover:bg-[#F6DF9F] text-[#4A0B12] font-semibold shadow-md",
+                      outlineBtn: "border-[#E5C173] text-[#E5C173] hover:bg-[#E5C173]/15",
+                      alert: "border-[#E5C173]/40 bg-[#36070C] text-[#FBF5E8]",
+                      badge: "border-[#E5C173]/40 bg-[#36070C] text-[#E5C173]",
+                      optionBg: "#36070C",
+                      optionColor: "#FBF5E8",
+                    }}
+                    contained={contained}
+                    inviteSlug={inviteSlug}
+                    weddingSlug={weddingSlug}
+                    invitationMode={invitationMode}
+                    guestName={guestName}
+                  />
+                </ImperialReveal>
               </section>
             )}
           </div>
@@ -1323,20 +1441,22 @@ export default function PhuongLoanGamDoTemplate({
               Lời cảm ơn ấm áp, không lặp lại ngày cưới
               ======================================================== */}
           <footer className="relative z-10 text-center pt-8 sm:pt-12 pb-16 border-t border-[#E5C173]/30">
-            <img
-              src="/templates/phuong-loan-gam-do/song_hy_medallion.webp"
-              alt="Song Hỷ"
-              className="w-10 sm:w-12 h-auto mx-auto mb-4 opacity-85"
-            />
-            <p
-              className="text-base sm:text-lg text-[#FBF5E8] font-serif font-medium mb-1"
-              style={{ fontFamily: TITLE_FONT }}
-            >
-              {groomDisplayName} & {brideDisplayName}
-            </p>
-            <p className="text-xs sm:text-sm text-[#E8D4B8] max-w-md mx-auto leading-relaxed px-4">
-              Chân thành cảm ơn tình cảm và sự hiện diện quý báu của Quý khách trong ngày vui của chúng tôi.
-            </p>
+            <ImperialReveal direction="up">
+              <img loading="lazy" decoding="async"
+                src="/templates/phuong-loan-gam-do/song_hy_medallion.webp"
+                alt="Song Hỷ"
+                className="w-10 sm:w-12 h-auto mx-auto mb-4 opacity-85"
+              />
+              <p
+                className="text-base sm:text-lg text-[#FBF5E8] font-serif font-medium mb-1"
+                style={{ fontFamily: TITLE_FONT }}
+              >
+                {groomDisplayName} & {brideDisplayName}
+              </p>
+              <p className="text-xs sm:text-sm text-[#E8D4B8] max-w-md mx-auto leading-relaxed px-4">
+                Chân thành cảm ơn tình cảm và sự hiện diện quý báu của Quý khách trong ngày vui của chúng tôi.
+              </p>
+            </ImperialReveal>
           </footer>
         </div>
 
@@ -1368,11 +1488,11 @@ export default function PhuongLoanGamDoTemplate({
         {/* Nút Nhạc Nền Nổi (LiveMusicFloatingButton) */}
         {!data.hiddenSections?.includes("music") && (
           <LiveMusicFloatingButton
-          src={data.music?.src || "/media/co-dien.mp3"}
-          title={data.music?.title || "Long Phụng Hòa Minh"}
-          visible={isOpen || coverGone}
-          tone="ruby"
-        />
+            src={data.music?.src || "/media/co-dien.mp3"}
+            title={data.music?.title || "Long Phụng Hòa Minh"}
+            visible={isOpen || coverGone}
+            tone="ruby"
+          />
         )}
       </div>
     </div>

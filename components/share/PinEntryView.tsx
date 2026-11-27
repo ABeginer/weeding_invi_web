@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { KeyRound, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { KeyRound, Loader2, ShieldCheck } from "lucide-react";
+import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
 import { verifySharePin } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,9 @@ export function PinEntryView({ slug, coupleTitle, onSuccess }: PinEntryViewProps
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [shake, setShake] = React.useState(false);
+  const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
+  const turnstileRequired = isTurnstileEnabled();
 
   const inputRefs = [
     React.useRef<HTMLInputElement | null>(null),
@@ -47,7 +51,7 @@ export function PinEntryView({ slug, coupleTitle, onSuccess }: PinEntryViewProps
       const nextFocus = Math.min(cleaned.length, 3);
       inputRefs[nextFocus].current?.focus();
 
-      if (nextDigits.every((d) => d.length === 1)) {
+      if (nextDigits.every((d) => d.length === 1) && (!turnstileRequired || turnstileToken)) {
         void submitPin(nextDigits.join(""));
       }
       return;
@@ -61,7 +65,7 @@ export function PinEntryView({ slug, coupleTitle, onSuccess }: PinEntryViewProps
       inputRefs[index + 1].current?.focus();
     }
 
-    if (nextDigits.every((d) => d.length === 1)) {
+    if (nextDigits.every((d) => d.length === 1) && (!turnstileRequired || turnstileToken)) {
       void submitPin(nextDigits.join(""));
     }
   };
@@ -74,11 +78,15 @@ export function PinEntryView({ slug, coupleTitle, onSuccess }: PinEntryViewProps
 
   const submitPin = async (pinValue: string) => {
     if (submitting) return;
+    if (turnstileRequired && !turnstileToken) {
+      setError("Vui lòng hoàn tất xác thực bảo mật trước khi tiếp tục.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
     try {
-      const res = await verifySharePin(slug, pinValue);
+      const res = await verifySharePin(slug, pinValue, turnstileToken);
       if (res.ok) {
         if (onSuccess) {
           onSuccess();
@@ -89,6 +97,8 @@ export function PinEntryView({ slug, coupleTitle, onSuccess }: PinEntryViewProps
         setError(res.error || "Mã PIN không chính xác.");
         triggerShake();
         setDigits(["", "", "", ""]);
+        setTurnstileToken(null);
+        setTurnstileResetSignal((n) => n + 1);
         inputRefs[0].current?.focus();
       }
     } catch (err) {
@@ -97,6 +107,8 @@ export function PinEntryView({ slug, coupleTitle, onSuccess }: PinEntryViewProps
       );
       triggerShake();
       setDigits(["", "", "", ""]);
+      setTurnstileToken(null);
+      setTurnstileResetSignal((n) => n + 1);
       inputRefs[0].current?.focus();
     } finally {
       setSubmitting(false);
@@ -153,6 +165,16 @@ export function PinEntryView({ slug, coupleTitle, onSuccess }: PinEntryViewProps
           ))}
         </div>
 
+        {turnstileRequired && (
+          <div className="mt-5 flex justify-center">
+            <TurnstileWidget
+              theme="light"
+              onTokenChange={setTurnstileToken}
+              resetSignal={turnstileResetSignal}
+            />
+          </div>
+        )}
+
         {error && (
           <p className="mt-4 text-xs font-medium text-[#9E3B3B] animate-fade-in">
             {error}
@@ -162,7 +184,7 @@ export function PinEntryView({ slug, coupleTitle, onSuccess }: PinEntryViewProps
         <div className="mt-8">
           <button
             type="button"
-            disabled={submitting || digits.some((d) => !d)}
+            disabled={submitting || digits.some((d) => !d) || (turnstileRequired && !turnstileToken)}
             onClick={() => submitPin(digits.join(""))}
             className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[#7A1C24] bg-[#7A1C24] px-6 text-xs font-semibold text-white shadow-xs transition-all hover:bg-[#5E141B] disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
           >

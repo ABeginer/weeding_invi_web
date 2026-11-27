@@ -24,6 +24,10 @@ type PageProps = {
 };
 
 export default async function QaTestRunnerPage({ params, searchParams }: PageProps) {
+  if (process.env.NODE_ENV === "production") {
+    notFound();
+  }
+
   const { slug } = await params;
   const { config, opened, contained, viewport, mode } = await searchParams;
 
@@ -85,7 +89,7 @@ export default async function QaTestRunnerPage({ params, searchParams }: PagePro
   return (
     <div
       id="qa-runner-root"
-      className="relative min-h-screen w-full bg-transparent overflow-x-hidden"
+      className="relative h-screen min-h-screen w-full bg-transparent overflow-x-hidden"
       data-testid="qa-runner-root"
       data-template-id={slug}
       data-opened={isOpened ? "true" : "false"}

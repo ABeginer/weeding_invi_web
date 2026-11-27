@@ -14,6 +14,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type {
   TemplateData,
@@ -253,7 +254,8 @@ export default function MocHuongNangThuTemplate({
 
   const orderMap = React.useMemo(() => {
     const map = new Map<string, number>();
-    (data.sectionOrder || []).forEach((key, idx) => map.set(key, idx));
+    const list = data.sectionOrder && data.sectionOrder.length > 0 ? data.sectionOrder : CANONICAL_SECTION_ORDER;
+    list.forEach((key, idx) => map.set(key, idx + 1));
     return map;
   }, [data.sectionOrder]);
 
@@ -316,7 +318,7 @@ export default function MocHuongNangThuTemplate({
               media="(max-width: 640px)"
               srcSet="/templates/moc-huong-nang-thu/bg_mobile.webp"
             />
-            <img
+            <img decoding="async"
               src="/templates/moc-huong-nang-thu/bg_desktop.webp"
               alt="Mộc Hương Nắng Thu"
               className="w-full h-full object-cover object-center"
@@ -335,13 +337,13 @@ export default function MocHuongNangThuTemplate({
             className="relative z-20 my-auto w-full max-w-[328px] sm:max-w-[380px] mx-auto rounded-3xl border border-[#DFCBB5] bg-[#FFFDFB]/95 p-6 sm:p-8 text-center shadow-[0_24px_60px_rgba(66,43,29,0.08)] backdrop-blur-sm"
           >
             {/* Nhánh lá thu góc trang trí đối xứng (trên-trái & dưới-phải lật 180°) */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/moc-huong-nang-thu/autumn_corner.webp"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute -top-3 -left-3 w-14 sm:w-16 object-contain z-10 opacity-90 drop-shadow-sm"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/moc-huong-nang-thu/autumn_corner.webp"
               alt=""
               aria-hidden="true"
@@ -350,7 +352,7 @@ export default function MocHuongNangThuTemplate({
 
             {/* Con dấu sáp đồng cổ Mộc Hương ở đỉnh */}
             <div className="relative mx-auto mb-3 w-16 h-16 sm:w-20 sm:h-20">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/moc-huong-nang-thu/wax_seal_bronze.webp"
                 alt="Con Dấu Sáp Mộc Hương"
                 className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(140,86,51,0.22)]"
@@ -399,7 +401,7 @@ export default function MocHuongNangThuTemplate({
 
             {/* Dải phân cách lá thu caramel */}
             <div className="my-3">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/moc-huong-nang-thu/divider_autumn_leaf.webp"
                 alt=""
                 aria-hidden="true"
@@ -483,7 +485,7 @@ export default function MocHuongNangThuTemplate({
             {/* Phong bì nâu caramel lồng đôi ảnh Polaroid */}
             <div className="relative mx-auto h-[380px] sm:h-[440px] w-full max-w-[340px] sm:max-w-[380px] flex items-center justify-center mt-2">
               {/* Lớp 1: Phong bì nền lót lụa ngà mở nắp (Lớp sau z-10) */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/moc-huong-nang-thu/caramel_envelope.webp"
                 alt=""
                 aria-hidden="true"
@@ -552,7 +554,7 @@ export default function MocHuongNangThuTemplate({
                   clipPath: "polygon(0 48%, 50% 64%, 100% 48%, 100% 100%, 0 100%)",
                 }}
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/moc-huong-nang-thu/caramel_envelope.webp"
                   alt=""
                   aria-hidden="true"
@@ -569,7 +571,7 @@ export default function MocHuongNangThuTemplate({
                   transform: "translateX(-50%)",
                 }}
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/moc-huong-nang-thu/wax_seal_bronze.webp"
                   alt=""
                   aria-hidden="true"
@@ -606,7 +608,7 @@ export default function MocHuongNangThuTemplate({
 
             {/* Dải phân cách lá thu */}
             <div className="pt-1">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/moc-huong-nang-thu/divider_autumn_leaf.webp"
                 alt=""
                 aria-hidden="true"
@@ -694,7 +696,7 @@ export default function MocHuongNangThuTemplate({
                 </h3>
 
                 <div className="my-4">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/moc-huong-nang-thu/divider_autumn_leaf.webp"
                     alt=""
                     aria-hidden="true"
@@ -1106,7 +1108,7 @@ export default function MocHuongNangThuTemplate({
                     className="cursor-pointer group relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden"
                     onClick={() => setLightboxIndex(activePhotoIdx)}
                   >
-                    <img
+                    <img decoding="async"
                       src={albumPhotos[activePhotoIdx]?.url}
                       alt={albumPhotos[activePhotoIdx]?.alt || `Ảnh cưới ${activePhotoIdx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1172,17 +1174,23 @@ export default function MocHuongNangThuTemplate({
                   </div>
                 )}
 
-                {/* QR Album Khách Chụp (Chỉ Pro/VIP) */}
-                {!hiddenSections.has("albumQr") && data.plan !== "free" && (
-                  <div className="pt-4 border-t border-[#DFCBB5]/60">
-                    <GuestAlbumQr
-                      slug={weddingSlug ?? data.weddingSlug}
-                      accentColor="#8C5633"
-                      textColor="#422B1D"
-                      mutedColor="#7D6352"
-                    />
-                  </div>
-                )}
+              </div>
+            </section>
+          )}
+
+          {/* QR Album Khách Chụp (Chỉ Pro/VIP) */}
+          {!hiddenSections.has("albumQr") && data.plan !== "free" && (weddingSlug || data.weddingSlug) && (
+            <section
+              style={{ order: orderOf("albumQr", 9) }}
+              className="relative z-10"
+            >
+              <div className="rounded-3xl border border-[#DFCBB5] bg-[#FFFDFB]/95 p-6 sm:p-8 text-center shadow-sm flex flex-col items-center">
+                <GuestAlbumQr
+                  slug={(weddingSlug ?? data.weddingSlug)!}
+                  accentColor="#8C5633"
+                  textColor="#422B1D"
+                  mutedColor="#7D6352"
+                />
               </div>
             </section>
           )}
@@ -1208,10 +1216,6 @@ export default function MocHuongNangThuTemplate({
                   Gửi Gắm Yêu Thương
                 </h3>
 
-                <p className="text-xs sm:text-sm text-[#7D6352] max-w-md mx-auto leading-relaxed">
-                  Sự hiện diện của Quý khách là niềm hạnh phúc trọn vẹn nhất của hai gia đình. Nếu ở xa không tiện ghé chung vui, Quý khách có thể gửi lời chúc qua hộp quà nhỏ bên dưới.
-                </p>
-
                 {/* Hộp quà vải lanh nâu caramel 3 trạng thái */}
                 <div className="py-4">
                   <button
@@ -1222,7 +1226,7 @@ export default function MocHuongNangThuTemplate({
                     className="group relative mx-auto block w-44 sm:w-52 cursor-pointer focus:outline-none"
                   >
                     <div className="relative w-full aspect-square flex items-center justify-center">
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={`/templates/moc-huong-nang-thu/gift_box_${activeGiftState}.webp`}
                         alt="Hộp quà Mộc Hương"
                         className="w-full h-full object-contain drop-shadow-[0_8px_20px_rgba(140,86,51,0.18)] transition-transform duration-300 group-hover:scale-105"
@@ -1250,21 +1254,6 @@ export default function MocHuongNangThuTemplate({
               className="relative z-10"
             >
               <div className="rounded-3xl border border-[#DFCBB5] bg-[#FFFDFB]/95 p-6 sm:p-8 text-center shadow-sm space-y-6">
-                <div>
-                  <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.26em] font-semibold text-[#8C5633]">
-                    XÁC NHẬN THAM DỰ &amp; GỬI LỜI CHÚC
-                  </p>
-                  <h3
-                    className="mt-1 text-xl sm:text-2xl font-normal text-[#422B1D]"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Sổ Lưu Bút Mừng Cưới
-                  </h3>
-                  <p className="mt-2 text-xs text-[#7D6352] max-w-md mx-auto">
-                    Để gia đình chuẩn bị chu đáo nhất cho sự hiện diện của Quý khách
-                  </p>
-                </div>
-
                 <div className="[&_select]:!bg-[#FFFDFB] [&_select]:!text-[#422B1D] [&_option]:!bg-[#FFFDFB] [&_option]:!text-[#422B1D] [&_input]:!bg-[#FFFDFB] [&_input]:!text-[#422B1D] [&_textarea]:!bg-[#FFFDFB] [&_textarea]:!text-[#422B1D]">
                   <TemplateRsvpSection
                     data={data}

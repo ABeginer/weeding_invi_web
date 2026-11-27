@@ -59,11 +59,8 @@ export function GuestAlbumQr({
 
   return (
     <section className={cn("px-4 py-8 text-center", className)}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.24em]" style={{ color: mutedColor }}>
-        Album ảnh cưới
-      </p>
-      <h2 className="mt-1 text-xl" style={{ fontFamily: "var(--font-playfair)", color: textColor }}>
-        Quét QR để xem album
+      <h2 className="text-xl" style={{ fontFamily: "var(--font-playfair)", color: textColor }}>
+        Chia Sẻ Ảnh Tiệc Cưới
       </h2>
       <button
         type="button"
@@ -74,9 +71,6 @@ export function GuestAlbumQr({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={qr} alt="Mã QR album ảnh cưới" className="h-36 w-36 object-contain" />
       </button>
-      <p className="mt-2 text-[10px]" style={{ color: mutedColor }}>
-        Quét mã hoặc bấm để phóng to
-      </p>
 
       {open &&
         mounted &&

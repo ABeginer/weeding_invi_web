@@ -43,11 +43,13 @@ Mỗi template có cấu trúc section và slot ảnh khác nhau. Dashboard **ch
    * Phân biệt rõ:
      * `TemplatePhotoSlots` (`{ hero: boolean; couple: boolean; gallery: boolean }`): Quyết định tab "Ảnh cưới" trong Dashboard hiện ô upload nào. Mẫu không có ảnh bìa hoặc không có ảnh chân dung cô dâu/chú rể **bắt buộc** khai báo trong `PHOTO_OVERRIDES` để ẩn ô upload thừa.
      * `TemplateSections.couplePhotos`: Quyết định có hiển thị khối ảnh chân dung trong phần thông tin gia đình hay không.
-3. **Phân quyền Gói Dịch Vụ (Free / Pro / VIP):**
-   * **Album ảnh:** Free tối đa 5 ảnh, Pro/VIP tối đa 30 ảnh.
-   * **QR chia sẻ album khách chụp (`albumQr`):** Chỉ kích hoạt từ gói Pro trở lên; ẩn khỏi UI và dashboard ở gói Free.
-   * **Chuyện chúng mình (`story` / `loveStory`):** Chỉ dành riêng cho gói Standard (`pro`) và Pro (`vip`). Gói Free tuyệt đối không có section này (công tắc bị disabled kèm badge "Standard" trong Dashboard Editor, và thiệp/preview Free tuyệt đối không render). Dữ liệu mốc kỷ niệm (`data.story`) tách biệt độc lập 100% khỏi lịch trình ngày cưới (`data.timeline`).
-   * **Mừng cưới & VietQR:** Component render QR tự động chỉ kích hoạt khi `plan !== "free"` **và** bên nhận chưa tải lên ảnh QR cá nhân riêng.
+3. **Phân quyền Gói Dịch Vụ (Quy ước tên hiển thị ↔ mã code trong DB/TS):**
+   * **Miễn phí (`0đ`)** ↔ mã code `free`: Tối đa 20 khách, 2 sự kiện, 5 ảnh gallery, 0 ảnh album khách.
+   * **Standard (`159.000đ`)** ↔ mã code `pro`: Không giới hạn khách, 10 sự kiện, 30 ảnh gallery + 30 ảnh album khách, VietQR, Album QR, Chuyện chúng mình (`story`).
+   * **Pro (`399.000đ`)** ↔ mã code `vip`: Không giới hạn khách, 20 sự kiện, 50 ảnh gallery + 300 ảnh album khách, trải nghiệm sảnh tiệc (LED / Photo Wall / duyệt ảnh / Share PIN).
+   * *Lưu ý quan trọng:* Tên hiển thị cho khách hàng **luôn gọi là `Miễn phí` / `Standard (159k)` / `Pro (399k)`** thông qua `getPlanLabel(plan)`. Tuyệt đối không in thô chữ `VIP` hay `PRO` cho gói `Standard`.
+   * **Chuyện chúng mình (`story` / `loveStory`):** Chỉ kích hoạt từ gói **Standard (`159k`, mã `pro`)** và **Pro (`399k`, mã `vip`)**. Gói Miễn phí tuyệt đối không có section này. Dữ liệu mốc kỷ niệm (`data.story`: `{ id?, year?, title, content }`) tách biệt độc lập 100% khỏi lịch trình ngày cưới (`data.timeline`).
+   * **Mừng cưới & VietQR:** Component render QR tự động chỉ kích hoạt khi `plan !== "free"` **và** bên nhận chưa tải lên ảnh QR cá nhân riêng; không lặp thẻ tài khoản ngân hàng giữa `GiftModal` và `VietQRGiftBox`.
 
 ---
 
@@ -667,13 +669,12 @@ Mỗi thẻ lễ trong danh sách bắt buộc phải hiển thị độc lập 
   * Tự động reset `scrollTop = 0` và accumulator khi chuyển sang thẻ thiệp khác.
 
 ### 18.3. Quản Lý Âm Thanh Thực Trên Coverflow & Trang Xem Thử (/mau/[templateId])
+* **Nguyên tắc 1 nguồn phát duy nhất (`lib/global-audio.ts`):** Mọi trình phát nhạc bên ngoài thiệp (Coverflow Landing, Popup `TemplatePreviewDialog`, Preview Navbar `/mau/[templateId]`, Builder `/tao-thiep`) bắt buộc đi qua singleton `globalAudio` (không tạo `<audio>` rời rạc).
 * **Coverflow Landing:**
-  * Quản lý 1 thẻ `<audio ref={audioRef} loop preload="auto" />` duy nhất ở tầng component `TemplateShowcase`.
-  * Nút "Bật nhạc" trên thẻ thiệp kích hoạt `audio.play()` đồng bộ ngay trong sự kiện `onClick` (user gesture hợp lệ, không bao giờ bị trình duyệt chặn).
-  * Ghi nhận trạng thái ý định của người dùng qua `userWantsMusicRef.current = true`.
-  * Khi bấm `<` / `>`, chạm thẻ bên cạnh, vuốt cảm ứng hoặc bấm dots chuyển thẻ: nếu người dùng đang bật nhạc, tự động cập nhật `audio.src` sang bài nhạc mặc định của template mới và tiếp tục phát nhạc đồng bộ.
+  * Nút "Bật nhạc" trên thẻ thiệp kích hoạt `globalAudio.play(src)` đồng bộ ngay trong sự kiện `onClick` (giữ user gesture hợp lệ trên iOS Safari / Chrome Mobile) và gọi `e.stopPropagation()` trên đủ 4 sự kiện (`onTouchStart`, `onTouchEnd`, `onPointerDown`, `onClick`).
+  * Khi chuyển thẻ nếu người dùng đang bật nhạc, tự động chuyển track sang bài nhạc mặc định của template mới và gọi `globalAudio.stop()` khi unmount/chuyển trang.
 * **Trang Xem Thử (/mau/[templateId]):**
-  * `MusicToggle` thiết lập `autoPlay={true}` kèm listener mở khóa 1 lần trên toàn window (`pointerdown`, `click`, `touchstart`, `keydown`) để tự động phát ngay khi người dùng chạm màn hình lần đầu nếu chính sách trình duyệt chặn phát tự động không tiếng.
+  * `MusicToggle` thiết lập `autoPlay={true}` kết hợp `globalAudio`, luôn truyền `?externalAudio=1` / `disableAudio={true}` vào iframe nhúng để chống phát đúp.
 
 ---
 
@@ -732,6 +733,67 @@ Mỗi thẻ lễ trong danh sách bắt buộc phải hiển thị độc lập 
 * Hộp quà 3 trạng thái (`gift-box-closed.webp` $\to$ `gift-box-opening.webp` $\to$ `gift-box-opened.webp`) đồng bộ đáy (baseline) tuyệt đối, mở trễ 700ms mở `GiftModal`.
 * Hỗ trợ đầy đủ `hiddenSections` (ẩn sạch 9 toggle khi cấu hình tắt), `hostFirst: "bride"` (đảo Nhà Gái lên trước) và `sectionOrder`.
 * Vượt qua 100% 15/15 tiêu chí trong `qa-template.mjs`.
+
+---
+
+## 20. CHUẨN PHÂN HẠNG & QUY TRÌNH TẠO THIỆP MIỄN PHÍ VS. STANDARD (159K)
+
+> **MỤC ĐÍCH:** Phân định rạch ròi giữa mẫu **Miễn phí (`0đ`, mã `free`)** và mẫu **Standard (`159.000đ`, mã `pro`)** để mỗi mẫu Standard đều tạo ra lý do chuyển đổi rõ ràng (không bị trùng lặp với mẫu Free).
+> **Lưu ý tên gói hiện hành (`config/pricing.ts`):**
+> * **Miễn phí (`0đ`)** = `plan: "free"`
+> * **Standard (`159.000đ`)** = `plan: "pro"` ← *Hạng chuẩn cho toàn bộ mẫu thiệp trả phí mở khóa đầy đủ tính năng thiệp.*
+> * **Pro (`399.000đ`)** = `plan: "vip"` ← *Hạng cao cấp 399k cho trải nghiệm sảnh tiệc (LED / Photo Wall / 300 ảnh khách / duyệt ảnh).*
+
+### 20.1. Bảng So Sánh Tiêu Chuẩn: Thiệp Miễn phí vs. Thiệp Standard (159k)
+
+| Tiêu chí | Thiệp Miễn phí (`plan: "free"`) | Thiệp Standard (`plan: "pro"`) |
+| :--- | :--- | :--- |
+| **Vai trò trong phễu** | Thu hút người dùng tạo thiệp nhanh, trải nghiệm đẹp – gọn – đủ dùng. | Tạo khoảnh khắc "Wow" và lý do rõ ràng để khách nâng cấp gói Standard. |
+| **Concept & Bố cục** | Layout dọc chuẩn truyền thống (Hero → Gia đình → Lịch/Bản đồ → Dress code → Album → Quà → RSVP). | **Concept nghệ thuật phá khuôn**, có bản sắc kể chuyện xuyên suốt (Vd: Điện ảnh Hồng Kông 90s `cuu-long-hy-yen`, Nhật ký Vintage `mot-thoi-de-nho`, Tạp chí Vogue, Hộ chiếu/Vé phim). |
+| **Tương tác độc bản (Signature)** | Mở bìa cơ bản (fade/trượt đơn) + hộp quà mở modal. | **Bắt buộc có hiệu ứng mở bìa 3 pha "Live-Hero Reveal"** (cửa 3D Art Deco `rotateY`, rèm nhung xé vé đóng dấu son, màn trập phim 35mm, tia sáng CRT... tách trực tiếp trên Hero thật) **+ ít nhất 1–2 tương tác độc bản bên trong**: Thẻ cào nhũ vàng 24K (`<canvas>`), Lật thẻ bài 3D (`rotateY(180deg)`), Phong bì 3D 3-stage. |
+| **Hiệu ứng âm thanh (SFX)** | Âm thanh đại trà 1 pha nhẹ (`envelope`, `box`). | **Bắt buộc có "Signature Cinema Foley"** riêng theo chủ đề & ngữ cảnh (`lib/sfx-foley.ts`): phối âm đa pha khớp mở bìa 3 pha (kéo rèm nhung, chuông cửa VIP, sập clapperboard, mở cổng Art Deco, bật đèn neon/CRT), mở quà VIP (bật chốt khóa số vali tiền, nắp hộp thiếc) + Micro-SFX khi cào nhũ & lật thẻ 3D. |
+| **Block Chuyện chúng mình (`story`)** | **KHÔNG có** (`storySupported: false`). | **BẮT BUỘC có** (`storySupported: true`), đọc `data.story` (`{ id?, year?, title, content }`) với thiết kế trực quan (cuộn phim 35mm, thẻ giấy kraft, timeline lồng ảnh album). |
+| **Block Lịch trình (`timeline`)** | Tùy mẫu. | **BẮT BUỘC có** (`timelineEditor: true`), đọc `data.timeline`, trình bày có chủ đề (Vd: Cue Sheet `ACT I, II...`). |
+| **Ảnh chân dung & Đảo hai họ** | Thường chỉ có 1 ảnh Hero chung (`couplePhotos: false`). | **Khuyến nghị bật đủ** `couplePhotos: true` (tôn trọng `data.hideCouplePhotos`) và `hostFirst: true` (hỗ trợ đảo Nhà Gái / Nhà Trai). |
+| **Thiết kế Album ảnh** | Tối ưu cho **5 ảnh** (lưới 2 cột đơn giản). | **Tối ưu cho 10–30 ảnh HD** của gói Standard (Vd: 5 ảnh đầu lưới nổi bật + từ ảnh thứ 6 trở đi dạng **Film Strip / Lookbook cuộn ngang** để không kéo dài trang quá mức). |
+| **Khả năng sắp xếp (`sectionOrder`)** | Tùy mẫu. | **BẮT BUỘC `reorderable: true`**, đầy đủ 10 key trong `ALL_SECTION_KEYS` (`DEFAULT_TEMPLATE_SECTIONS`). |
+| **Quyền dùng thử & Xuất bản** | Tạo & xuất bản miễn phí ngay tại `/tao-thiep`. | **Cho xem thử miễn phí** ở `/mau/<id>` và `/tao-thiep?template=<id>` (ghép tên/ảnh thật để kích thích chuyển đổi), nhưng **bắt buộc nâng cấp Standard mới được lưu/xuất bản** (`POST /api/weddings` khóa `403` với gói Free). |
+
+### 20.2. Công Thức Bắt Buộc Khi Thiết Kế Một Mẫu Standard Mới
+Để không tạo ra một mẫu Standard "chỉ khác mẫu Free ở mỗi cái tên gói", mỗi mẫu Standard mới phải hội tụ đủ **3 trụ cột**:
+1. **1 Concept nghệ thuật có bản sắc riêng** (typography + bảng màu + chất liệu nền đồng bộ, có thể tái sử dụng hoặc tách asset `.webp` sắc nét).
+2. **1–2 Tương tác "chạm là thích"** chạy mượt 60fps trên Mobile:
+   * Luôn hỗ trợ `prefers-reduced-motion` và có nút truy cập nhanh (Vd: nút *"Mở nhanh"* trên thẻ cào nhũ vàng cho người lớn tuổi).
+   * Tuyệt đối không đặt `backdrop-blur` đè lên container có `transform-3d` / `perspective` (tránh flicker trên iOS Safari — luôn dùng gradient đặc + `backface-visibility: hidden`).
+3. **Đầy đủ bộ dữ liệu Standard từ Dashboard:**
+   * Đọc & vẽ đầy đủ: `data.story` (`story`), `data.timeline` (`timeline`), `data.dressCode`, `data.hideCouplePhotos`, `data.hostFirst`, `data.hiddenSections`, `data.sectionOrder`, `GuestAlbumQr` (khóa `data.plan !== "free" && !hidden.has("albumQr")`), và nút nhạc tôn trọng `!hidden.has("music")`.
+
+> **Mẫu chuẩn tham chiếu hiện có:**
+> * [templates/cuu-long-hy-yen/index.tsx](templates/cuu-long-hy-yen/index.tsx) — *Cửu Long Hỷ Yến*: Thẻ cào nhũ vàng 24K (`GoldenScratchCard`), Lật thẻ bài 3D K♥/Q♥ (`RoyalFlipCard`), Cuộn phim 35mm (`story`), Cue Sheet (`timeline`), Film Strip 30 ảnh.
+> * [templates/mot-thoi-de-nho/index.tsx](templates/mot-thoi-de-nho/index.tsx) — *Một Thời Để Nhớ*: Phong bì 3D 3-stage, Chuyện chúng mình giấy kraft, 4 kiểu khung Scrapbook.
+
+### 20.3. Checklist 5 Bước Bắt Buộc Khi Gắn Mác Standard (`plan: "pro"`)
+Mỗi khi tạo mới hoặc nâng hạng một mẫu lên **Standard**, bắt buộc thực hiện đủ 5 bước sau:
+1. **Đăng ký trong `templates/registry.ts`:**
+   * Đặt `plan: "pro"` (UI sẽ tự hiển thị nhãn **`Standard`** qua `getPlanLabel("pro")`).
+   * Viết `description` nêu bật các tương tác/block độc quyền Standard.
+   * Khai báo `extraFeatureIds: [...]` để popup xem mẫu hiển thị mục **"Riêng mẫu này"**.
+2. **Khai báo nhãn tính năng trong `config/template-features.ts`:**
+   * Thêm mô tả tiếng Việt ngắn gọn cho từng `extraFeatureId` vào `EXTRA_FEATURES`.
+   * Không để cờ `comingSoon: true` cho các tính năng đã hoàn thiện.
+3. **Đồng bộ năng lực Dashboard trong `config/template-sections.ts` & Unit Test:**
+   * Gán `DEFAULT_TEMPLATE_SECTIONS` (hoặc cấu hình khớp 100% các block mẫu thực sự đọc).
+   * Cập nhật `tests/template-sections.test.ts` xác minh `storySupported`, `timelineEditor`, `couplePhotos`, `hostFirst`.
+4. **Kiểm chứng Tag `Standard` & Phễu Chuyển đổi tại 4 điểm chạm:**
+   * **Coverflow trang chủ** (`components/landing/template-showcase.tsx`): Hiện badge **`STANDARD`** (từ `getPlanLabel`), nút **"Dùng thử"**.
+   * **Kho mẫu & Popup** (`components/templates/template-grid-browser.tsx`, `template-preview-dialog.tsx`): Hiện pill badge **`Standard`** nổi bật, CTA **"Dùng thử mẫu Standard"** kèm chú thích cần gói Standard khi xuất bản.
+   * **Trang xem thử `/mau/[templateId]`** (`components/demo/template-demo-viewer.tsx`, `demo-toolbar.tsx`): Hiện badge **`Standard`**, nút **"Mở khóa gói Standard"** (mở `PlanUpgradeModal` khi chưa có gói).
+   * **Trang `/tao-thiep`** (`components/create/CreateWeddingBuilder.tsx`): Giữ nguyên mẫu Standard cho khách xem trước với tên/ảnh thật, hiện tag **`Standard`** + banner thông báo và chặn lưu xuất bản Free (khớp `403` từ `POST /api/weddings`).
+5. **Nghiệm thu kỹ thuật trước khi phát hành:**
+   * 100% đường dẫn `/templates/<id>/*.webp` khớp file thực tế trong `public/templates/<id>/`.
+   * Khóa chiều cao bìa trong chế độ `contained` (`!coverGone`) và căn khớp ảnh Hero theo tọa độ `%` thực tế của khung `.webp` (`AGENTS.md` §7).
+   * Chạy trọn bộ `npx eslint . --quiet`, `npm run typecheck`, `npm test`, `npm run build` đạt **0 lỗi**.
+
 
 
 

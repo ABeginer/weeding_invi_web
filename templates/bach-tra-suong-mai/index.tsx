@@ -15,6 +15,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-types";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -205,25 +206,25 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
           <div className="absolute inset-1 rounded-xl border border-[#C8A96E]/30" />
 
           {/* 4 Góc hoa bạch trà từ corner-tl.webp dùng CSS transforms */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute top-0 left-0 h-auto w-10 opacity-85 sm:w-12 md:w-14"
             aria-hidden="true"
           />
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute top-0 right-0 h-auto w-10 -scale-x-100 opacity-85 sm:w-12 md:w-14"
             aria-hidden="true"
           />
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute bottom-0 left-0 h-auto w-10 -scale-y-100 opacity-85 sm:w-12 md:w-14"
             aria-hidden="true"
           />
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute bottom-0 right-0 h-auto w-10 -scale-100 opacity-85 sm:w-12 md:w-14"
@@ -259,7 +260,7 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
               ease: "easeInOut",
             }}
           />
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/wax-seal.webp"
             alt="Con dấu sáp Bạch Trà"
             className="relative z-10 h-full w-full object-contain drop-shadow-md"
@@ -318,7 +319,7 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
 
         {/* Dải hoa bạch trà phân cách */}
         <div className="my-2 flex w-full justify-center">
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/divider-floral.webp"
             alt=""
             className="h-auto w-44 object-contain opacity-90 sm:w-52"
@@ -390,14 +391,14 @@ function HeroSection({ data }: { data: TemplateData }) {
       <div className="relative z-10 mx-auto max-w-lg">
         {/* Lời tựa mở đầu */}
         <m.p
-          className="text-xs uppercase tracking-[0.35em] text-[#4A5D50]"
+          className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-[#4A5D50] text-center"
           style={{ fontFamily: BODY_FONT }}
           initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          {data.ui?.eyebrow || "The Wedding of"}
+          {data.ui?.eyebrow || "Thiệp mời tham dự lễ cưới"}
         </m.p>
 
         {/* Tên cặp đôi thanh lịch: 3 dòng */}
@@ -436,48 +437,50 @@ function HeroSection({ data }: { data: TemplateData }) {
           viewport={{ once: true }}
           transition={{ duration: 0.9, delay: 0.25, ease: EASE_EDITORIAL }}
         >
-          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-[140px] shadow-xl">
-            {heroPhotoUrl ? (
-              <img
-                src={heroPhotoUrl}
-                alt="Ảnh cưới uyên ương"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              /* Fallback thẻ vòm kính mờ sang trọng khi chưa có ảnh */
-              <div
-                className="flex h-full w-full flex-col items-center justify-center p-6 text-center backdrop-blur-md"
-                style={{
-                  background:
-                    "radial-gradient(circle at 50% 40%, rgba(252,250,246,0.95) 0%, rgba(245,242,235,0.9) 100%)",
-                }}
-              >
-                <span
-                  className="text-2xl font-bold text-[#23382B]"
-                  style={{ fontFamily: NAME_FONT }}
+          <div className="relative aspect-[520/676] w-full">
+            <div className="absolute left-[16.5%] right-[13%] top-[1.5%] bottom-[16%] overflow-hidden rounded-t-[999px] rounded-b-[45%] shadow-lg">
+              {heroPhotoUrl ? (
+                <img loading="lazy" decoding="async"
+                  src={heroPhotoUrl}
+                  alt="Ảnh cưới uyên ương"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                /* Fallback thẻ vòm kính mờ sang trọng khi chưa có ảnh */
+                <div
+                  className="flex h-full w-full flex-col items-center justify-center p-6 text-center backdrop-blur-md"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 50% 40%, rgba(252,250,246,0.95) 0%, rgba(245,242,235,0.9) 100%)",
+                  }}
                 >
-                  {data.couple?.groomName ?? "Đức Minh"}
-                </span>
-                <span
-                  className="my-1 text-lg italic text-[#C8A96E]"
-                  style={{ fontFamily: TITLE_FONT }}
-                >
-                  &amp;
-                </span>
-                <span
-                  className="text-2xl font-bold text-[#23382B]"
-                  style={{ fontFamily: NAME_FONT }}
-                >
-                  {data.couple?.brideName ?? "Ngọc Trà"}
-                </span>
-              </div>
-            )}
+                  <span
+                    className="text-2xl font-bold text-[#23382B]"
+                    style={{ fontFamily: NAME_FONT }}
+                  >
+                    {data.couple?.groomName ?? "Đức Minh"}
+                  </span>
+                  <span
+                    className="my-1 text-lg italic text-[#C8A96E]"
+                    style={{ fontFamily: TITLE_FONT }}
+                  >
+                    &amp;
+                  </span>
+                  <span
+                    className="text-2xl font-bold text-[#23382B]"
+                    style={{ fontFamily: NAME_FONT }}
+                  >
+                    {data.couple?.brideName ?? "Ngọc Trà"}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Khung vòm nghệ thuật arch-frame.webp xếp lớp mặt trước */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/bach-tra-suong-mai/arch-frame.webp"
               alt=""
-              className="pointer-events-none absolute inset-0 h-full w-full object-fill"
+              className="pointer-events-none absolute inset-0 z-10 h-full w-full object-contain"
               aria-hidden="true"
             />
           </div>
@@ -526,7 +529,7 @@ function FamilySection({ data }: { data: TemplateData }) {
     <section className="relative overflow-hidden px-4 py-16 text-[#23382B] md:py-20">
       <div className="relative z-10 mx-auto max-w-xl text-center">
         <div className="mb-4 flex justify-center">
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/divider-floral.webp"
             alt=""
             className="h-auto w-36 object-contain opacity-85 sm:w-44"
@@ -540,12 +543,6 @@ function FamilySection({ data }: { data: TemplateData }) {
         >
           Thông Tin Gia Đình
         </h2>
-        <p
-          className="mt-1 text-xs text-[#8FA394]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Trân trọng báo tin lễ thành hôn của con chúng tôi
-        </p>
 
         {/* Lưới 2 nhà: Nhà Trai & Nhà Gái (Cao bằng nhau) */}
         <div className="mt-8 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2">
@@ -678,13 +675,13 @@ function EventsSection({ data }: { data: TemplateData }) {
                 transition={{ duration: 0.7, delay: idx * 0.15 }}
               >
                 {/* Góc trang trí hoa bạch trà */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/bach-tra-suong-mai/corner-tl.webp"
                   alt=""
                   className="pointer-events-none absolute top-0 left-0 h-auto w-8 opacity-65"
                   aria-hidden="true"
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/bach-tra-suong-mai/corner-tl.webp"
                   alt=""
                   className="pointer-events-none absolute top-0 right-0 h-auto w-8 -scale-x-100 opacity-65"
@@ -719,7 +716,7 @@ function EventsSection({ data }: { data: TemplateData }) {
 
                 {/* Phân cách hoa */}
                 <div className="my-2 flex justify-center">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/bach-tra-suong-mai/divider-floral.webp"
                     alt=""
                     className="h-auto w-28 object-contain opacity-75"
@@ -790,7 +787,7 @@ function GallerySection({ data }: { data: TemplateData }) {
     <section className="relative overflow-hidden px-4 py-16 text-[#23382B] md:py-24">
       <div className="relative z-10 mx-auto max-w-xl text-center">
         <div className="mb-4 flex justify-center">
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/divider-floral.webp"
             alt=""
             className="h-auto w-36 object-contain opacity-85 sm:w-44"
@@ -825,7 +822,7 @@ function GallerySection({ data }: { data: TemplateData }) {
             onClick={() => setLightboxIndex(activeIndex)}
             className="relative aspect-[3/4] w-full max-w-xs cursor-pointer overflow-hidden rounded-2xl border-2 border-[#C8A96E]/40 shadow-xl"
           >
-            <img
+            <img loading="lazy" decoding="async"
               src={photos[activeIndex]?.url}
               alt={photos[activeIndex]?.alt || "Ảnh cưới"}
               className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
@@ -1079,14 +1076,8 @@ function TimelineSection({ data }: { data: TemplateData }) {
               className="text-sm font-bold tracking-widest uppercase text-[#23382B]"
               style={{ fontFamily: TITLE_FONT }}
             >
-              Trang Phục Gợi Ý (Dress Code)
+              Trang Phục Gợi Ý
             </h3>
-            <p
-              className="mt-1 text-xs text-[#8FA394]"
-              style={{ fontFamily: BODY_FONT }}
-            >
-              Quý khách có thể lựa chọn các tone màu trang nhã dưới đây
-            </p>
             <div className="mt-5 flex items-center justify-center gap-4 sm:gap-6">
               {dressColors.map((hex, idx) => (
                 <div
@@ -1154,7 +1145,7 @@ function GiftSection({
           onMouseLeave={() => setGiftState("normal")}
           className="group relative mx-auto my-6 flex h-[350px] w-[180px] cursor-pointer items-end justify-center transition-transform hover:scale-105 active:scale-95 sm:h-[390px] sm:w-[214px]"
         >
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/gift-normal.webp"
             alt="Hộp mừng cưới"
             className={cn(
@@ -1162,7 +1153,7 @@ function GiftSection({
               giftState === "normal" ? "opacity-100" : "opacity-0",
             )}
           />
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/gift-hover.webp"
             alt="Hộp mừng cưới mở nắp"
             className={cn(
@@ -1170,7 +1161,7 @@ function GiftSection({
               giftState === "hover" ? "opacity-100" : "opacity-0",
             )}
           />
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/bach-tra-suong-mai/gift-active.webp"
             alt="Hộp mừng cưới trao lì xì"
             className={cn(
@@ -1239,7 +1230,7 @@ export function BachTraSuongMaiTemplate({
     onOpenedChange?.(true);
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
-    } catch {}
+    } catch { }
 
     if (!contained && typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1251,7 +1242,7 @@ export function BachTraSuongMaiTemplate({
   const hidden = new Set(data.hiddenSections ?? []);
   const order = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "map", "calendar", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = order.indexOf(key);
     return index < 0 ? 99 : index;
@@ -1289,9 +1280,9 @@ export function BachTraSuongMaiTemplate({
           LỚP 2: NÚT NHẠC NỀN NỔI
           -------------------------------------------------------- */}
       <LiveMusicFloatingButton
-        src={data.music?.src}
+        src={(data.hiddenSections ?? []).includes("music") ? undefined : data.music?.src}
         title={data.music?.title || "Giai điệu Bạch Trà"}
-        visible={openState}
+        visible={openState && !(data.hiddenSections ?? []).includes("music")}
         tone="obsidian"
       />
 
@@ -1382,18 +1373,22 @@ export function BachTraSuongMaiTemplate({
                       invitationMode={invitationMode}
                       guestName={guestName}
                     />
+                  </div>
+                </section>
+              </div>
+            )}
 
-                    {/* QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
-                    {data.plan !== "free" && !hidden.has("albumQr") && weddingSlug && (
-                      <div className="mt-12 flex justify-center">
-                        <GuestAlbumQr
-                          slug={weddingSlug}
-                          accentColor="#23382B"
-                          textColor="#FAF7F2"
-                          mutedColor="#C8A96E"
-                        />
-                      </div>
-                    )}
+            {/* Section 10: QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
+            {data.plan !== "free" && !hidden.has("albumQr") && weddingSlug && (
+              <div style={{ order: orderOf("albumQr") }}>
+                <section className="relative overflow-hidden bg-[#23382B] px-4 py-12 text-[#FAF7F2] md:py-16">
+                  <div className="relative z-10 mx-auto flex max-w-xl justify-center">
+                    <GuestAlbumQr
+                      slug={weddingSlug}
+                      accentColor="#23382B"
+                      textColor="#FAF7F2"
+                      mutedColor="#C8A96E"
+                    />
                   </div>
                 </section>
               </div>
@@ -1404,7 +1399,7 @@ export function BachTraSuongMaiTemplate({
         {/* Footer chúc phúc chân trang (Đặt ngoài flex container có order) */}
         <footer className="border-t border-[#C8A96E]/20 bg-[#18281E] px-4 py-12 text-center text-xs text-[#FAF7F2]/60">
           <div className="mx-auto flex max-w-sm flex-col items-center gap-2">
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/bach-tra-suong-mai/divider-floral.webp"
               alt=""
               className="h-auto w-24 object-contain opacity-60"

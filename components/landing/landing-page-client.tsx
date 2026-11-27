@@ -3,33 +3,43 @@
 import * as React from "react";
 import dynamic from "next/dynamic";
 import { useUser } from "@auth0/nextjs-auth0";
+import { AUTH0_EMAIL_CLAIM } from "@/config/site";
 import { useBrandTheme } from "@/components/theme/ThemeProvider";
 import { listWeddings, syncMe } from "@/lib/api";
 import type { Wedding, WeddingPlan } from "@/lib/types";
-import { LandingFooter } from "./footer";
-import { LandingFaq } from "./faq";
 import { HeroSection } from "./hero";
-import { HowItWorks } from "./how-it-works";
 import { InteractiveFeatureBento } from "./interactive-feature-bento";
 import { LandingNavbar } from "./navbar";
 import { PricingTable } from "./pricing-table";
 import { VIP_SALES_ENABLED } from "@/config/pricing";
 import { TemplateShowcase } from "./template-showcase";
-import { ToolsPreviewSection } from "./tools-preview";
 
 const PaymentTransferModal = dynamic(
   () => import("./pricing-modals").then((m) => m.PaymentTransferModal),
   { ssr: false },
 );
 
+const BELOW_FOLD_SECTION_STYLE: React.CSSProperties = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "auto 680px",
+};
+
 interface LandingPageClientProps {
   isAuthenticated?: boolean;
   userEmail?: string | null;
+  toolsSection?: React.ReactNode;
+  howItWorksSection?: React.ReactNode;
+  faqSection?: React.ReactNode;
+  footerSection?: React.ReactNode;
 }
 
 export function LandingPageClient({
   isAuthenticated = false,
   userEmail = null,
+  toolsSection,
+  howItWorksSection,
+  faqSection,
+  footerSection,
 }: LandingPageClientProps) {
   const { setSessionInfo, adoptAccountTheme } = useBrandTheme();
 
@@ -37,7 +47,7 @@ export function LandingPageClient({
   const { user } = useUser();
   const sessionEmail = React.useMemo(() => {
     const record = user as Record<string, unknown> | null | undefined;
-    const raw = record?.email ?? record?.["https://thiepcuoi/email"];
+    const raw = record?.email ?? record?.[AUTH0_EMAIL_CLAIM];
     return typeof raw === "string" && raw.trim() ? raw.trim() : null;
   }, [user]);
   const resolvedEmail = sessionEmail ?? userEmail;
@@ -52,7 +62,10 @@ export function LandingPageClient({
     const params = new URLSearchParams(window.location.search);
     const pay = params.get("pay");
     if (pay === "pro" || (pay === "vip" && VIP_SALES_ENABLED)) {
-      setPaymentPlan(pay);
+      let active = true;
+      queueMicrotask(() => {
+        if (active) setPaymentPlan(pay);
+      });
       params.delete("pay");
       const nextQuery = params.toString();
       const nextUrl =
@@ -60,6 +73,9 @@ export function LandingPageClient({
         (nextQuery ? `?${nextQuery}` : "") +
         window.location.hash;
       window.history.replaceState(null, "", nextUrl);
+      return () => {
+        active = false;
+      };
     }
   }, []);
 
@@ -112,20 +128,31 @@ export function LandingPageClient({
 
   return (
     <div className="landing-theme min-h-screen-dvh bg-[#FAF8F5] text-[#1F1D1A] overflow-x-hidden">
-      <LandingNavbar isAuthenticated={resolvedAuthenticated} userEmail={resolvedEmail} />
+      <LandingNavbar
+        isAuthenticated={resolvedAuthenticated}
+        userEmail={resolvedEmail}
+        hideThemeToggle
+        revealMobileCtaOnScroll
+      />
       <main>
         <HeroSection />
         <TemplateShowcase />
-        <InteractiveFeatureBento />
-        <ToolsPreviewSection />
-        <HowItWorks />
-        <PricingTable
-          isAuthenticated={resolvedAuthenticated}
-          onSelectPaidPlan={(plan) => setPaymentPlan(plan)}
-        />
-        <LandingFaq />
+        <div style={BELOW_FOLD_SECTION_STYLE}>
+          <InteractiveFeatureBento />
+        </div>
+        {toolsSection && <div style={BELOW_FOLD_SECTION_STYLE}>{toolsSection}</div>}
+        {howItWorksSection && (
+          <div style={BELOW_FOLD_SECTION_STYLE}>{howItWorksSection}</div>
+        )}
+        <div style={BELOW_FOLD_SECTION_STYLE}>
+          <PricingTable
+            isAuthenticated={resolvedAuthenticated}
+            onSelectPaidPlan={(plan) => setPaymentPlan(plan)}
+          />
+        </div>
+        {faqSection && <div style={BELOW_FOLD_SECTION_STYLE}>{faqSection}</div>}
       </main>
-      <LandingFooter />
+      {footerSection && <div style={BELOW_FOLD_SECTION_STYLE}>{footerSection}</div>}
 
       <PaymentTransferModal
         plan={paymentPlan}

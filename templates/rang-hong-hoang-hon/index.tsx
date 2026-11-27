@@ -14,6 +14,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type {
   TemplateData,
@@ -286,19 +287,7 @@ export default function RangHongHoangHonTemplate({
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const defaultOrder = React.useMemo(
-    () => [
-      "calendar",
-      "map",
-      "family",
-      "dresscode",
-      "album",
-      "albumQr",
-      "gift",
-      "rsvp",
-    ],
-    []
-  );
+  const defaultOrder = CANONICAL_SECTION_ORDER;
 
   const sectionOrder = React.useMemo(() => {
     const order = data.sectionOrder || defaultOrder;
@@ -409,13 +398,13 @@ export default function RangHongHoangHonTemplate({
               <div className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#D69F8E]/40" />
 
               {/* Hoa Mẫu Đơn Điểm Góc (Bất đối xứng 2 góc chéo) */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/rang-hong-hoang-hon/corner-peony.webp"
                 alt=""
                 aria-hidden="true"
                 className="pointer-events-none absolute top-2 left-2 w-14 sm:w-16 object-contain opacity-85 z-10"
               />
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/rang-hong-hoang-hon/corner-peony.webp"
                 alt=""
                 aria-hidden="true"
@@ -434,7 +423,7 @@ export default function RangHongHoangHonTemplate({
 
               {/* Vòng hoa tròn rỗng tâm wreath-floral.webp lồng Monogram chữ cái đầu ĐỘNG */}
               <div className="relative mt-2 mb-2 w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center z-10">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/rang-hong-hoang-hon/wreath-floral.webp"
                   alt=""
                   aria-hidden="true"
@@ -470,7 +459,7 @@ export default function RangHongHoangHonTemplate({
 
               {/* Dải phân cách hoa hồng đào & cỏ lau */}
               <div className="relative z-10 my-2 w-36 sm:w-44 flex justify-center">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                   alt=""
                   aria-hidden="true"
@@ -546,13 +535,13 @@ export default function RangHongHoangHonTemplate({
             <SunsetGlowDust count={10} />
 
             {/* Hoa Mẫu Đơn Điểm Góc */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/rang-hong-hoang-hon/corner-peony.webp"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute top-3 left-3 w-12 sm:w-16 object-contain opacity-75 z-10"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/rang-hong-hoang-hon/corner-peony.webp"
               alt=""
               aria-hidden="true"
@@ -561,7 +550,7 @@ export default function RangHongHoangHonTemplate({
 
             {/* Vòng hoa monogram thu nhỏ ở đỉnh */}
             <div className="relative mb-3 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center z-10">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/rang-hong-hoang-hon/wreath-floral.webp"
                 alt=""
                 aria-hidden="true"
@@ -576,10 +565,10 @@ export default function RangHongHoangHonTemplate({
             </div>
 
             <p
-              className="text-[11px] uppercase tracking-[0.25em] text-[#D69288] font-semibold mb-2 z-10"
+              className="text-[11px] uppercase tracking-[0.16em] text-[#D69288] font-semibold mb-2 z-10"
               style={{ fontFamily: BODY_FONT }}
             >
-              {data.ui?.eyebrow || "Khúc Nhạc Ráng Hồng"}
+              {data.ui?.eyebrow || "Thiệp mời tham dự lễ cưới"}
             </p>
 
             <h2
@@ -592,7 +581,7 @@ export default function RangHongHoangHonTemplate({
             </h2>
 
             <div className="w-36 sm:w-44 my-3 flex justify-center z-10">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                 alt=""
                 aria-hidden="true"
@@ -601,14 +590,14 @@ export default function RangHongHoangHonTemplate({
             </div>
 
             <p className="text-xs sm:text-sm text-[#8C686E] max-w-[420px] leading-relaxed font-light mb-6 z-10 italic">
-              "Dưới ráng chiều dịu ngọt, mình nắm tay nhau đi qua giông bão để cùng xây một mái nhà."
+              &ldquo;Dưới ráng chiều dịu ngọt, mình nắm tay nhau đi qua giông bão để cùng xây một mái nhà.&rdquo;
             </p>
 
             {/* KHUNG VÒM HOA HOÀNG HÔN sunset-arch.webp ÔM ẢNH CẶP ĐÔI */}
             <div className="relative mx-auto w-full max-w-[320px] sm:max-w-[360px] aspect-[440/575] flex items-center justify-center z-10">
               {/* Lớp ảnh cặp đôi lồng trong vòm */}
               <div className="absolute left-[18%] right-[18%] top-[2.5%] bottom-[16%] rounded-t-full overflow-hidden shadow-sm z-10 bg-[#F5E6E8]">
-                <img
+                <img loading="lazy" decoding="async"
                   src={heroPhotoUrl}
                   alt={`${groomDisplayName} & ${brideDisplayName}`}
                   className="w-full h-full object-cover object-top transition-transform duration-700 hover:scale-105"
@@ -616,7 +605,7 @@ export default function RangHongHoangHonTemplate({
               </div>
 
               {/* Lớp khung vòm hoa hoàng hôn úp lên trên viền ảnh */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/rang-hong-hoang-hon/sunset-arch.webp"
                 alt=""
                 aria-hidden="true"
@@ -660,7 +649,7 @@ export default function RangHongHoangHonTemplate({
                   </h3>
 
                   <div className="w-28 sm:w-36 mb-6 flex justify-center">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                       alt=""
                       aria-hidden="true"
@@ -776,7 +765,7 @@ export default function RangHongHoangHonTemplate({
                   </h3>
 
                   <div className="w-28 sm:w-36 mb-6 flex justify-center">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                       alt=""
                       aria-hidden="true"
@@ -844,7 +833,7 @@ export default function RangHongHoangHonTemplate({
                   </h3>
 
                   <div className="w-28 sm:w-36 mb-8 flex justify-center">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                       alt=""
                       aria-hidden="true"
@@ -918,13 +907,13 @@ export default function RangHongHoangHonTemplate({
                       <div className="flex flex-col items-center p-4 rounded-2xl bg-[#FFF7F5] border border-[#D69F8E]/30">
                         <div className="relative w-48 sm:w-52 aspect-[400/567] flex items-center justify-center overflow-hidden mb-3">
                           <div className="w-[84%] h-[84%] rounded-xl overflow-hidden shadow-sm">
-                            <img
+                            <img loading="lazy" decoding="async"
                               src={groomPortraitUrl}
                               alt={groomDisplayName}
                               className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                             />
                           </div>
-                          <img
+                          <img loading="lazy" decoding="async"
                             src="/templates/rang-hong-hoang-hon/portrait-frame.webp"
                             alt=""
                             aria-hidden="true"
@@ -946,13 +935,13 @@ export default function RangHongHoangHonTemplate({
                       <div className="flex flex-col items-center p-4 rounded-2xl bg-[#FFF7F5] border border-[#D69F8E]/30">
                         <div className="relative w-48 sm:w-52 aspect-[400/567] flex items-center justify-center overflow-hidden mb-3">
                           <div className="w-[84%] h-[84%] rounded-xl overflow-hidden shadow-sm">
-                            <img
+                            <img loading="lazy" decoding="async"
                               src={bridePortraitUrl}
                               alt={brideDisplayName}
                               className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                             />
                           </div>
-                          <img
+                          <img loading="lazy" decoding="async"
                             src="/templates/rang-hong-hoang-hon/portrait-frame.webp"
                             alt=""
                             aria-hidden="true"
@@ -1031,11 +1020,11 @@ export default function RangHongHoangHonTemplate({
                     className="text-2xl sm:text-3xl text-[#7E3945] font-normal mb-3"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    Lịch Trình &amp; Dress Code
+                    Lịch Trình &amp; Trang Phục
                   </h3>
 
                   <div className="w-28 sm:w-36 mb-6 flex justify-center">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                       alt=""
                       aria-hidden="true"
@@ -1082,8 +1071,8 @@ export default function RangHongHoangHonTemplate({
                     ))}
                   </div>
 
-                  <p className="text-xs text-[#8C686E] max-w-[420px] italic">
-                    Để không gian ngày chung đôi thêm phần ấm áp, quý khách vui lòng ưu tiên trang phục theo gam màu trên.
+                  <p className="text-xs text-[#8C686E] max-w-[420px] italic sr-only">
+                    Bảng màu gợi ý
                   </p>
                 </section>
               </div>
@@ -1110,7 +1099,7 @@ export default function RangHongHoangHonTemplate({
                   </h3>
 
                   <div className="w-28 sm:w-36 mb-6 flex justify-center z-10">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                       alt=""
                       aria-hidden="true"
@@ -1120,7 +1109,7 @@ export default function RangHongHoangHonTemplate({
 
                   {/* Carousel ảnh chính */}
                   <div className="relative w-full max-w-[580px] aspect-[4/3] sm:aspect-[16/10] rounded-2xl overflow-hidden border border-[#D69F8E]/50 shadow-xl z-10 group">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={albumPhotos[activePhotoIdx]?.url || heroPhotoUrl}
                       alt={albumPhotos[activePhotoIdx]?.alt || "Ảnh cưới"}
                       className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-105"
@@ -1175,7 +1164,7 @@ export default function RangHongHoangHonTemplate({
                               : "border-transparent opacity-60 hover:opacity-100"
                           )}
                         >
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={photo.url}
                             alt=""
                             className="w-full h-full object-cover"
@@ -1189,7 +1178,7 @@ export default function RangHongHoangHonTemplate({
             )}
 
             {/* Guest Album QR (albumQr) */}
-            {!hiddenSections.has("albumQr") && weddingSlug && (
+            {!hiddenSections.has("albumQr") && data.plan !== "free" && weddingSlug && (
               <div style={{ order: orderOf("albumQr") }}>
                 <section className="relative w-full rounded-3xl bg-white/94 border border-[#D69F8E]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(126,57,69,0.08)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
                   <GuestAlbumQr
@@ -1224,7 +1213,7 @@ export default function RangHongHoangHonTemplate({
                   </h3>
 
                   <div className="w-28 sm:w-36 mb-6 flex justify-center z-10">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                       alt=""
                       aria-hidden="true"
@@ -1248,7 +1237,7 @@ export default function RangHongHoangHonTemplate({
                       className="relative w-56 sm:w-64 aspect-[320/350] flex items-end justify-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7E3945]"
                       aria-label="Mở hộp mừng cưới"
                     >
-                      <img
+                      <img loading="lazy" decoding="async"
                         src="/templates/rang-hong-hoang-hon/gift-normal.webp"
                         alt="Hộp mừng cưới"
                         className={cn(
@@ -1257,7 +1246,7 @@ export default function RangHongHoangHonTemplate({
                         )}
                       />
 
-                      <img
+                      <img loading="lazy" decoding="async"
                         src="/templates/rang-hong-hoang-hon/gift-hover.webp"
                         alt="Hộp mừng cưới hé nắp"
                         className={cn(
@@ -1266,7 +1255,7 @@ export default function RangHongHoangHonTemplate({
                         )}
                       />
 
-                      <img
+                      <img loading="lazy" decoding="async"
                         src="/templates/rang-hong-hoang-hon/gift-active.webp"
                         alt="Hộp mừng cưới mở nắp trao thiệp"
                         className={cn(
@@ -1276,10 +1265,6 @@ export default function RangHongHoangHonTemplate({
                       />
                     </button>
                   </div>
-
-                  <p className="text-xs text-[#D69288] mt-2 mb-4 italic z-10 font-medium">
-                    (Nhấn vào hộp quà để gửi lời chúc phúc &amp; quà mừng)
-                  </p>
 
                   <button
                     type="button"
@@ -1339,7 +1324,7 @@ export default function RangHongHoangHonTemplate({
               ============================================================ */}
           <footer className="w-full flex flex-col items-center text-center pt-8 pb-12 mt-4 text-[#694349]">
             <div className="w-16 h-16 mb-2 flex items-center justify-center opacity-85">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/rang-hong-hoang-hon/wreath-floral.webp"
                 alt=""
                 aria-hidden="true"
@@ -1353,7 +1338,7 @@ export default function RangHongHoangHonTemplate({
               Chân Thành Cảm Tạ
             </h4>
             <div className="w-24 sm:w-32 my-1 flex justify-center">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/rang-hong-hoang-hon/divider-roses.webp"
                 alt=""
                 aria-hidden="true"

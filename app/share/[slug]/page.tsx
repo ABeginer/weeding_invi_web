@@ -7,7 +7,7 @@ import { FamilySharePortal } from "@/components/share/FamilySharePortal";
 import { PinEntryView } from "@/components/share/PinEntryView";
 import { getPublicWeddingBySlug } from "@/lib/server/public-wedding";
 import { db } from "@/lib/server/supabase";
-import { listWeddingPhotos } from "@/lib/server/weddings";
+import { isWeddingSuspendedRow, listWeddingPhotos } from "@/lib/server/weddings";
 import { verifyShareCookieValue } from "@/lib/share-pin";
 import { normalizeWeddingContent } from "@/lib/wedding-data";
 
@@ -36,11 +36,11 @@ export default async function FamilySharePage({ params }: PageProps) {
 
   const { data: weddingRow, error } = await client
     .from("weddings")
-    .select("id, slug, owner_id, plan, content")
+    .select("id, slug, owner_id, plan, content, suspended")
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error || !weddingRow) {
+  if (error || !weddingRow || isWeddingSuspendedRow(weddingRow)) {
     notFound();
   }
 
@@ -89,10 +89,13 @@ export default async function FamilySharePage({ params }: PageProps) {
     .filter(Boolean)
     .join(" & ");
 
-  // Kiểm tra quyền: Cookie mã PIN hợp lệ
+  // Kiểm tra quyền: Cookie mã PIN hợp lệ & tính năng PIN vẫn đang bật
   const cookieStore = await cookies();
   const authCookie = cookieStore.get(`inviwedd_share_${slug}`)?.value;
-  const isPinAuthed = await verifyShareCookieValue(slug, authCookie);
+  const isPinAuthed =
+    content.sharePinEnabled === true &&
+    Boolean(content.sharePin) &&
+    (await verifyShareCookieValue(slug, authCookie, content.sharePin));
 
   if (!isPinAuthed) {
     if (!content.sharePinEnabled || !content.sharePin) {
@@ -164,6 +167,7 @@ export default async function FamilySharePage({ params }: PageProps) {
       wedding={publicWedding}
       guests={guests}
       photos={photos}
+      initialModeration={content.photoModeration}
     />
   );
 }

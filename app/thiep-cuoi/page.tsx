@@ -8,7 +8,7 @@ import { SITE_LINKS, SITE_NAME, toAbsoluteSiteUrl } from "@/config/site";
 import { getTemplateCollection } from "@/templates/registry";
 
 export const metadata: Metadata = {
-  title: `Mẫu thiệp cưới online | ${SITE_NAME}`,
+  title: "Mẫu thiệp cưới online",
   description:
     "Bộ sưu tập mẫu thiệp cưới online: tối giản, cổ điển và truyền thống Việt Nam. Xem thử từng mẫu và dùng ngay, miễn phí cho 20 khách.",
   alternates: {
@@ -24,14 +24,9 @@ export const metadata: Metadata = {
   },
 };
 
-interface TemplateCollectionPageProps {
-  searchParams: Promise<{ category?: string; color?: string }>;
-}
+export const dynamic = "force-static";
 
-export default async function TemplateCollectionPage({
-  searchParams,
-}: TemplateCollectionPageProps) {
-  const { category, color } = await searchParams;
+export default function TemplateCollectionPage() {
   const templates: CollectionTemplate[] = getTemplateCollection().map(
     (template) => ({
       id: template.id,
@@ -89,8 +84,6 @@ export default async function TemplateCollectionPage({
         <LiveTemplateCollection
           initialTemplates={templates}
           variant="grid"
-          initialCategory={category}
-          initialColor={color}
         />
 
         <div className="border-t border-[#E8E2D9] py-12 text-center">

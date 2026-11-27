@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   MapPin,
-  Calendar,
   Clock,
   Heart,
   ExternalLink,
@@ -16,12 +15,18 @@ import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
   getEventDirectionsUrl,
 } from "@/lib/events";
-import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-types";
+import type { TemplateData, WeddingPlan } from "@/lib/wedding-types";
+import {
+  ImperialReveal,
+  GoldButtonShimmer,
+  IMPERIAL_EASE,
+} from "../shared/ImperialMotion";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
@@ -37,27 +42,28 @@ import type { WeddingTemplateProps } from "../types";
 
 const NAVY_DARK = "#091326";
 const NAVY_MAIN = "#0F1D3A";
-const NAVY_CARD = "#162A52";
-const NAVY_LIGHT = "#1E3A6E";
 
-const SILK_CREAM = "#FAF6F0";
 const SILK_CREAM_CARD = "#F5EFE6";
 
 const GOLD_MAIN = "#DFC07C";
 const GOLD_ACCENT = "#C6A45E";
 const GOLD_LIGHT = "#F5E6C4";
 const GOLD_BORDER = "rgba(223, 192, 124, 0.45)";
-const GOLD_SOFT = "rgba(223, 192, 124, 0.25)";
-
-const TEXT_GOLD_LIGHT = "#F5E6C4";
-const TEXT_NAVY_DARK = "#091326";
-const TEXT_SLATE = "#1E293B";
 
 const TITLE_FONT = "var(--font-playfair), Georgia, serif";
 const NAME_FONT = "var(--font-cormorant), Georgia, serif";
 const BODY_FONT = "var(--font-lora), Georgia, serif";
 
 const EASE_ROYAL = [0.16, 1, 0.3, 1] as const;
+
+const SAPPHIRE_STAR_SEEDS = [
+  { id: 1, x: -72, y: -64, rot: -25, delay: 0.04, scale: 1.05 },
+  { id: 2, x: 76, y: -58, rot: 20, delay: 0.1, scale: 0.95 },
+  { id: 3, x: -92, y: 12, rot: -45, delay: 0.16, scale: 0.85 },
+  { id: 4, x: 94, y: 18, rot: 40, delay: 0.2, scale: 0.9 },
+  { id: 5, x: -52, y: 74, rot: 15, delay: 0.12, scale: 0.8 },
+  { id: 6, x: 56, y: 78, rot: -20, delay: 0.24, scale: 0.85 },
+] as const;
 
 const DEFAULT_TIMELINE = [
   { time: "17:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
@@ -66,13 +72,6 @@ const DEFAULT_TIMELINE = [
   { time: "20:00", label: "Giai điệu tình ca & Trò chơi gắn kết" },
   { time: "21:00", label: "Tiễn khách & Trao quà cảm tạ" },
 ];
-
-const DEFAULT_DRESS = ["#0F1D3A", "#DFC07C", "#FAF6F0"];
-
-function getDressColors(data: TemplateData): string[] {
-  const source = data.dressCode?.filter((color) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color));
-  return source && source.length > 0 ? source.slice(0, 3) : DEFAULT_DRESS;
-}
 
 function getTimeline(data: TemplateData) {
   const items = data.timeline?.filter((item) => item.time?.trim() || item.label?.trim());
@@ -132,44 +131,45 @@ function GoldDustParticles({ count = 18 }: { count?: number }) {
 }
 
 /* ------------------------------------------------------------
-   Màn hình Mở Thiệp Hoàng Gia (Splash / Envelope Entrance — 100dvh)
+   Màn hình Mở Thiệp Hoàng Gia: "Nguyệt Ấn Lam Ngọc Tan Màn Đêm" (~2.0s)
    ------------------------------------------------------------ */
 function EnvelopeCover({
   data,
   guestName,
   contained,
-  onOpen,
+  coverPhase,
+  onOpenStart,
 }: {
   data: TemplateData;
   guestName?: string;
   contained?: boolean;
-  onOpen: () => void;
+  coverPhase: "idle" | "seal" | "dissolve";
+  onOpenStart: () => void;
 }) {
   const reduce = useReducedMotion();
-  const [openingStage, setOpeningStage] = React.useState(false);
-
-  const handleOpenClick = () => {
-    if (openingStage) return;
-    try {
-      playOpenCardSound();
-    } catch {
-      // Audio context error fallback
-    }
-    setOpeningStage(true);
-    setTimeout(() => {
-      onOpen();
-    }, 750);
-  };
+  const visibleEvents = getVisibleEvents(data);
+  const targetEvent = getNearestUpcomingEvent(visibleEvents, data.date);
+  const dateParts = formatWeddingDateParts(targetEvent?.startsAt || data.date || "2027-03-20");
+  const closing = coverPhase !== "idle";
 
   return (
-    <div
+    <m.div
       className={cn(
-        "relative flex w-full flex-col items-center justify-center overflow-hidden text-center",
+        "relative flex w-full flex-col items-center justify-center overflow-hidden text-center select-none",
         contained ? "h-full min-h-[580px]" : "h-screen-dvh min-h-[640px]",
       )}
       style={{
         background: `radial-gradient(ellipse at 50% 40%, #162A52 0%, ${NAVY_MAIN} 60%, ${NAVY_DARK} 100%)`,
       }}
+      animate={
+        coverPhase === "dissolve"
+          ? {
+            opacity: 0,
+            ...(reduce ? {} : { filter: "blur(8px)" }),
+            transition: { duration: 1.15, ease: IMPERIAL_EASE },
+          }
+          : { opacity: 1 }
+      }
     >
       {/* Nền gấm hoa văn hoàng gia chìm */}
       <div
@@ -179,62 +179,45 @@ function EnvelopeCover({
         }}
       />
 
-      {/* Hai cánh màn Lam Ngọc tách mở khi bấm mở thiệp */}
-      {openingStage && !reduce && (
-        <div className="pointer-events-none absolute inset-0 z-[5]">
-          <m.div
-            className="pointer-events-none absolute inset-y-0 left-0 w-1/2 border-r border-[#DFC07C]/30"
-            style={{
-              background: "linear-gradient(90deg, #091326 0%, #0F1D3A 100%)",
-            }}
-            initial={{ x: "0%" }}
-            animate={{ x: "-105%" }}
-            transition={{ duration: 0.8, ease: EASE_ROYAL }}
-          />
-          <m.div
-            className="pointer-events-none absolute inset-y-0 right-0 w-1/2 border-l border-[#DFC07C]/30"
-            style={{
-              background: "linear-gradient(270deg, #091326 0%, #0F1D3A 100%)",
-            }}
-            initial={{ x: "0%" }}
-            animate={{ x: "105%" }}
-            transition={{ duration: 0.8, ease: EASE_ROYAL }}
-          />
-        </div>
-      )}
-
       {/* Hiệu ứng hạt bụi vàng kim */}
       <GoldDustParticles count={22} />
 
-      {/* Khung viền chỉ vàng kim ngoại biên & 4 góc hoa văn hoàng gia ôm sát 4 góc */}
-      <div className="pointer-events-none absolute inset-4 rounded-xl border border-[#DFC07C]/40 md:inset-8">
-        <div className="absolute inset-1 rounded-lg border border-[#DFC07C]/20" />
+      {/* Khung viền chỉ vàng kim ngoại biên (phóng nhẹ ra ngoài khi màn đêm tan) */}
+      <m.div
+        className="pointer-events-none absolute inset-4 rounded-xl border border-[#DFC07C]/45 md:inset-8"
+        animate={
+          coverPhase === "dissolve"
+            ? { scale: 1.08, opacity: 0, transition: { duration: 1.0, ease: IMPERIAL_EASE } }
+            : { scale: 1, opacity: 1 }
+        }
+      >
+        <div className="absolute inset-1 rounded-lg border border-[#DFC07C]/22" />
         {/* 4 Góc hoa văn hoàng gia ôm sát đúng 4 đỉnh khung viền dùng duy nhất corner-tl.webp */}
-        <img
+        <img loading="eager" decoding="async"
           src="/templates/long-phung-ep4/corner-tl.webp"
           alt=""
-          className="pointer-events-none absolute left-0 top-0 h-auto w-10 opacity-80 sm:w-12 md:w-14"
+          className="pointer-events-none absolute left-0 top-0 h-auto w-10 opacity-85 sm:w-12 md:w-14"
           aria-hidden="true"
         />
-        <img
+        <img loading="eager" decoding="async"
           src="/templates/long-phung-ep4/corner-tl.webp"
           alt=""
-          className="pointer-events-none absolute right-0 top-0 h-auto w-10 -scale-x-100 opacity-80 sm:w-12 md:w-14"
+          className="pointer-events-none absolute right-0 top-0 h-auto w-10 -scale-x-100 opacity-85 sm:w-12 md:w-14"
           aria-hidden="true"
         />
-        <img
+        <img loading="eager" decoding="async"
           src="/templates/long-phung-ep4/corner-tl.webp"
           alt=""
-          className="pointer-events-none absolute bottom-0 left-0 h-auto w-10 -scale-y-100 opacity-80 sm:w-12 md:w-14"
+          className="pointer-events-none absolute bottom-0 left-0 h-auto w-10 -scale-y-100 opacity-85 sm:w-12 md:w-14"
           aria-hidden="true"
         />
-        <img
+        <img loading="eager" decoding="async"
           src="/templates/long-phung-ep4/corner-tl.webp"
           alt=""
-          className="pointer-events-none absolute bottom-0 right-0 h-auto w-10 -scale-100 opacity-80 sm:w-12 md:w-14"
+          className="pointer-events-none absolute bottom-0 right-0 h-auto w-10 -scale-100 opacity-85 sm:w-12 md:w-14"
           aria-hidden="true"
         />
-      </div>
+      </m.div>
 
       {/* Khối nội dung trung tâm của phong bì — my-auto luôn căn giữa khung điện thoại */}
       <m.div
@@ -242,8 +225,11 @@ function EnvelopeCover({
           "relative z-10 my-auto flex max-w-sm flex-col items-center px-6 text-center",
           contained ? "py-4" : "py-8",
         )}
-        animate={openingStage ? { scale: 0.9, opacity: 0 } : { scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
+        animate={
+          coverPhase === "dissolve"
+            ? { scale: 0.96, y: -16, opacity: 0, transition: { duration: 0.75, ease: IMPERIAL_EASE } }
+            : { scale: 1, y: 0, opacity: 1 }
+        }
       >
         {/* Lời trân trọng kính mời */}
         <m.p
@@ -261,10 +247,10 @@ function EnvelopeCover({
           <m.div
             className="my-3 rounded-md px-4 py-1.5"
             style={{
-              background: "rgba(22, 42, 82, 0.75)",
-              border: `1px solid ${GOLD_BORDER}`,
+              background: "rgba(22, 42, 82, 0.85)",
+              border: "1px solid rgba(223, 192, 124, 0.55)",
             }}
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.25 }}
           >
@@ -279,35 +265,71 @@ function EnvelopeCover({
           <div className="h-4" />
         )}
 
-        {/* Con dấu vàng kim hoàng gia phát sáng nhịp thở + quét ánh kim */}
+        {/* Con dấu vàng kim hoàng gia + Halo lam-vàng & 6 tia sao 4 cánh lấp lánh Pha 1 */}
         <m.div
           className="relative my-4 flex h-28 w-28 items-center justify-center sm:h-32 sm:w-32"
-          initial={{ scale: 0.7, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.9, delay: 0.3, ease: EASE_ROYAL }}
+          initial={{ scale: 0.75, opacity: 0 }}
+          animate={
+            coverPhase === "seal"
+              ? { scale: 1.12, opacity: 1 }
+              : { scale: 1, opacity: 1 }
+          }
+          transition={{ duration: 0.75, ease: IMPERIAL_EASE }}
         >
-          {/* Quầng hào quang vàng kim thở chậm */}
-          <m.div
-            className="pointer-events-none absolute inset-0 rounded-full"
-            style={{
-              background: "radial-gradient(circle, rgba(223,192,124,0.45) 0%, rgba(223,192,124,0.08) 60%, transparent 75%)",
-            }}
-            animate={
-              reduce
-                ? {}
-                : {
-                  scale: [1, 1.15, 1],
-                  opacity: [0.6, 0.95, 0.6],
-                }
-            }
-            transition={{
-              duration: 3.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
+          {!reduce && (
+            <m.div
+              className="pointer-events-none absolute -inset-3 rounded-full"
+              style={{
+                background: "radial-gradient(circle, rgba(223,192,124,0.48) 0%, rgba(56,189,248,0.12) 55%, transparent 75%)",
+              }}
+              animate={
+                coverPhase === "seal"
+                  ? { scale: [1, 1.55], opacity: [0.65, 1] }
+                  : { scale: [1, 1.15, 1], opacity: [0.55, 0.95, 0.55] }
+              }
+              transition={
+                coverPhase === "seal"
+                  ? { duration: 0.65, ease: IMPERIAL_EASE }
+                  : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
+              }
+            />
+          )}
 
-          <img
+          {coverPhase === "seal" && !reduce && (
+            <>
+              <m.span
+                aria-hidden="true"
+                className="pointer-events-none absolute h-24 w-24 rounded-full border border-[#F5E6C4]/80"
+                initial={{ scale: 0.75, opacity: 0.9 }}
+                animate={{ scale: 2.6, opacity: 0 }}
+                transition={{ duration: 0.85, ease: IMPERIAL_EASE }}
+              />
+              {SAPPHIRE_STAR_SEEDS.map((star) => (
+                <m.svg
+                  key={star.id}
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="pointer-events-none absolute h-4 w-4 text-[#FFF2B2] drop-shadow-[0_0_8px_#DFC07C]"
+                  initial={{ x: 0, y: 0, scale: 0.2, rotate: 0, opacity: 0 }}
+                  animate={{
+                    x: star.x,
+                    y: star.y,
+                    scale: [0.2, star.scale, 0.2],
+                    rotate: star.rot,
+                    opacity: [0, 1, 0],
+                  }}
+                  transition={{ duration: 0.95, delay: star.delay, ease: IMPERIAL_EASE }}
+                >
+                  <path
+                    fill="currentColor"
+                    d="M12 0 L14.5 9.5 L24 12 L14.5 14.5 L12 24 L9.5 14.5 L0 12 L9.5 9.5 Z"
+                  />
+                </m.svg>
+              ))}
+            </>
+          )}
+
+          <img loading="eager" decoding="async"
             src="/templates/long-phung-ep4/seal-gold.webp"
             alt="Song Hỷ"
             className="relative z-10 h-full w-full object-contain drop-shadow-[0_4px_20px_rgba(223,192,124,0.5)]"
@@ -315,7 +337,7 @@ function EnvelopeCover({
         </m.div>
 
         {/* Tên cặp đôi đại diện trên phong bì */}
-        <div className="my-2 space-y-0.5">
+        <div className="my-2 space-y-1">
           <p
             className="text-2xl tracking-wide sm:text-3xl"
             style={{
@@ -327,46 +349,43 @@ function EnvelopeCover({
             {data.couple?.groomName ?? "Chú Rể"} &amp; {data.couple?.brideName ?? "Cô Dâu"}
           </p>
           <p
-            className="text-[11px] uppercase tracking-[0.25em] text-[#FAF6F0]/80"
+            className="text-[11px] uppercase tracking-[0.25em] text-[#FAF6F0]/85"
             style={{ fontFamily: BODY_FONT }}
           >
-            Lễ Thành Hôn
+            Lễ Thành Hôn · {dateParts.dotDate}
           </p>
         </div>
 
-        {/* Nút bấm Mở Thiệp mạ vàng kim hoàng gia */}
+        {/* Nút bấm Mở Thiệp mạ vàng kim hoàng gia + shimmer liên tục */}
         <m.button
           type="button"
-          onClick={handleOpenClick}
-          className="group relative mt-6 inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full px-8 py-3 transition-transform duration-300 active:scale-95"
+          onClick={onOpenStart}
+          disabled={closing}
+          className="group relative mt-6 inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full px-9 py-3 transition-transform duration-300 active:scale-95"
           style={{
             background: "linear-gradient(135deg, #DFC07C 0%, #C6A45E 50%, #9E7D38 100%)",
-            boxShadow: "0 4px 22px rgba(223, 192, 124, 0.45), 0 0 0 1px rgba(255, 242, 178, 0.5)",
+            boxShadow: "0 4px 22px rgba(223, 192, 124, 0.45), 0 0 0 1px rgba(255, 242, 178, 0.55)",
           }}
-          whileHover={reduce ? {} : { scale: 1.05 }}
+          whileHover={reduce ? {} : { scale: 1.04 }}
           whileTap={reduce ? {} : { scale: 0.96 }}
         >
-          {/* Lớp shimmer lướt sáng */}
+          <GoldButtonShimmer active={!closing} />
           <span
-            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
-            aria-hidden="true"
-          />
-          <span
-            className="text-xs font-semibold uppercase tracking-[0.25em] text-[#091326]"
+            className="relative z-10 text-xs font-semibold uppercase tracking-[0.25em] text-[#091326]"
             style={{ fontFamily: BODY_FONT }}
           >
-            Mở Thiệp
+            {closing ? "Đang Khai Ấn..." : "Mở Thiệp"}
           </span>
         </m.button>
 
         <p
-          className="mt-3 text-[10px] tracking-widest text-[#FAF6F0]/60 uppercase"
+          className="mt-3 text-[10px] tracking-widest text-[#FAF6F0]/65 uppercase"
           style={{ fontFamily: BODY_FONT }}
         >
           Chạm để mở thiệp cưới
         </p>
       </m.div>
-    </div>
+    </m.div>
   );
 }
 
@@ -408,13 +427,13 @@ function HeroSection({
       <GoldDustParticles count={20} />
 
       {/* Viền hoa văn 2 góc trên dùng duy nhất corner-tl.webp */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute left-2 top-2 h-auto w-11 opacity-75 sm:left-4 sm:top-4 sm:w-14 md:left-6 md:top-6"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute right-2 top-2 h-auto w-11 -scale-x-100 opacity-75 sm:right-4 sm:top-4 sm:w-14 md:right-6 md:top-6"
@@ -444,7 +463,7 @@ function HeroSection({
           rotate: { duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.3 },
         }}
       >
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep4/dragon.webp"
           alt=""
           className="h-auto w-full object-contain drop-shadow-[0_4px_16px_rgba(223,192,124,0.35)]"
@@ -475,7 +494,7 @@ function HeroSection({
           rotate: { duration: 7.5, repeat: Infinity, ease: "easeInOut", delay: 1.4 },
         }}
       >
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/long-phung-ep4/phoenix.webp"
           alt=""
           className="h-auto w-full object-contain drop-shadow-[0_4px_16px_rgba(223,192,124,0.35)]"
@@ -506,7 +525,7 @@ function HeroSection({
           {/* Lớp ảnh cặp đôi bên trong vòm cong */}
           <div className="absolute inset-2.5 overflow-hidden rounded-t-[72px] sm:inset-3 sm:rounded-t-[84px] md:rounded-t-[96px] bg-[#162A52]">
             {heroPhotoUrl ? (
-              <img
+              <img loading="lazy" decoding="async"
                 src={heroPhotoUrl}
                 alt="Ảnh cưới uyên ương"
                 className="h-full w-full object-cover object-center transition-transform duration-700 hover:scale-105"
@@ -522,7 +541,7 @@ function HeroSection({
           </div>
 
           {/* Khung vòm mạ vàng bọc phủ viền ngoài */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep4/arch-frame.webp"
             alt=""
             className="pointer-events-none absolute inset-0 h-full w-full object-fill drop-shadow-[0_4px_18px_rgba(223,192,124,0.35)]"
@@ -590,7 +609,7 @@ function HeroSection({
           animate={isOpened ? { scaleX: 1, opacity: 1 } : {}}
           transition={{ duration: 0.8, delay: 0.7, ease: EASE_ROYAL }}
         >
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep4/divider-lotus.webp"
             alt=""
             className="h-auto w-52 md:w-64"
@@ -656,25 +675,25 @@ function InvitationSection({
   return (
     <section className="relative overflow-hidden bg-[#FAF6F0] px-4 py-16 text-[#091326] md:py-24">
       {/* 4 Góc hoa văn vàng kim viền quanh thiệp kem dùng duy nhất corner-tl.webp */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute left-2 top-2 h-auto w-11 opacity-60 sm:left-4 sm:top-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute right-2 top-2 h-auto w-11 -scale-x-100 opacity-60 sm:right-4 sm:top-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 left-2 h-auto w-11 -scale-y-100 opacity-60 sm:bottom-4 sm:left-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 right-2 h-auto w-11 -scale-100 opacity-60 sm:bottom-4 sm:right-4 sm:w-14"
@@ -683,169 +702,144 @@ function InvitationSection({
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
         {/* Con dấu vàng kim Song Hỷ trang trí đầu thư */}
-        <m.div
-          className="mx-auto mb-4 h-16 w-16 md:h-20 md:w-20"
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-        >
-          <img
+        <ImperialReveal direction="up" scale={0.9} className="mx-auto mb-4 h-16 w-16 md:h-20 md:w-20">
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep4/seal-gold.webp"
             alt="Song Hỷ"
             className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(223,192,124,0.4)]"
           />
-        </m.div>
+        </ImperialReveal>
 
         {/* Lời dẫn dắt thư mời */}
-        <m.h2
-          className="text-xs uppercase tracking-[0.3em]"
-          style={{ color: GOLD_ACCENT, fontFamily: BODY_FONT }}
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          Thư Mời Tiệc Cưới
-        </m.h2>
+        <ImperialReveal direction="up" delay={0.05}>
+          <h2
+            className="text-xs uppercase tracking-[0.3em]"
+            style={{ color: GOLD_ACCENT, fontFamily: BODY_FONT }}
+          >
+            Thư Mời Tiệc Cưới
+          </h2>
+        </ImperialReveal>
 
-        <m.p
-          className="mt-3 text-2xl md:text-3xl"
-          style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}
-          initial={{ opacity: 0, y: 14 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.1 }}
-        >
-          Trân Trọng Kính Mời Quan Khách
-        </m.p>
-
-        <m.p
-          className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-[#1E293B]/80 md:text-base"
-          style={{ fontFamily: BODY_FONT }}
-          initial={{ opacity: 0, y: 14 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.15 }}
-        >
-          Hôn nhân là bến đỗ bình yên của tình yêu, là lời thề ước trăm năm dưới sự chứng giám của hai họ và bạn bè thân quý. Chúng tôi vô cùng hân hạnh được đón tiếp quý vị trong ngày vui trọng đại của gia đình.
-        </m.p>
+        <ImperialReveal direction="up" delay={0.1}>
+          <p
+            className="mt-3 text-2xl md:text-3xl"
+            style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}
+          >
+            Trân Trọng Kính Mời Quan Khách
+          </p>
+        </ImperialReveal>
 
         {/* Thẻ đại gia đình hai bên: Nhà Trai & Nhà Gái */}
         <div className="mt-12 grid grid-cols-1 gap-6 text-left sm:grid-cols-2">
           {/* Card Nhà Trai */}
-          <m.div
-            className="relative flex flex-col justify-between rounded-2xl p-6 transition-all duration-300 hover:shadow-md"
-            style={{
-              backgroundColor: SILK_CREAM_CARD,
-              border: `1px solid ${GOLD_BORDER}`,
-            }}
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-          >
-            <div>
-              <div className="flex items-center justify-between border-b border-[#DFC07C]/30 pb-3">
-                <span
-                  className="text-xs uppercase tracking-[0.25em]"
-                  style={{ color: GOLD_ACCENT, fontFamily: BODY_FONT }}
-                >
-                  Nhà Trai
-                </span>
-                <span className="text-xs text-[#091326]/60">Hôn trường đàng trai</span>
-              </div>
+          <ImperialReveal direction="left" delay={0.18} className="h-full">
+            <div
+              className="relative h-full flex flex-col justify-between rounded-2xl p-6 transition-all duration-300 hover:shadow-md"
+              style={{
+                backgroundColor: SILK_CREAM_CARD,
+                border: `1px solid ${GOLD_BORDER}`,
+              }}
+            >
+              <div>
+                <div className="flex items-center justify-between border-b border-[#DFC07C]/30 pb-3">
+                  <span
+                    className="text-xs uppercase tracking-[0.25em]"
+                    style={{ color: GOLD_ACCENT, fontFamily: BODY_FONT }}
+                  >
+                    Nhà Trai
+                  </span>
+                  <span className="text-xs text-[#091326]/60">Hôn trường đàng trai</span>
+                </div>
 
-              {/* Tên phụ huynh tách dòng sạch tại '&' */}
-              <div className="mt-4 space-y-1 text-sm text-[#1E293B]">
-                {data.couple?.groomParents ? (
-                  data.couple.groomParents.includes("&") ? (
-                    data.couple.groomParents.split("&").map((p, i) => (
-                      <p key={i} className="font-medium">
-                        {p.trim()}
-                      </p>
-                    ))
+                {/* Tên phụ huynh tách dòng sạch tại '&' */}
+                <div className="mt-4 space-y-1 text-sm text-[#1E293B]">
+                  {data.couple?.groomParents ? (
+                    data.couple.groomParents.includes("&") ? (
+                      data.couple.groomParents.split("&").map((p, i) => (
+                        <p key={i} className="font-medium">
+                          {p.trim()}
+                        </p>
+                      ))
+                    ) : (
+                      <p className="font-medium">{data.couple.groomParents}</p>
+                    )
                   ) : (
-                    <p className="font-medium">{data.couple.groomParents}</p>
-                  )
-                ) : (
-                  <>
-                    <p className="font-medium">Ông: Trần Văn Thành</p>
-                    <p className="font-medium">Bà: Lê Thị Mai</p>
-                  </>
-                )}
+                    <>
+                      <p className="font-medium">Ông: Trần Văn Thành</p>
+                      <p className="font-medium">Bà: Lê Thị Mai</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 border-t border-[#DFC07C]/20 pt-4">
+                <span className="text-xs uppercase tracking-wider text-[#091326]/60" style={{ fontFamily: BODY_FONT }}>
+                  {groomTitle}
+                </span>
+                <p
+                  className="mt-1 text-2xl font-normal"
+                  style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}
+                >
+                  {data.couple?.groomFullName || data.couple?.groomName || "Trần Quốc Đạt"}
+                </p>
               </div>
             </div>
-
-            <div className="mt-6 border-t border-[#DFC07C]/20 pt-4">
-              <span className="text-xs uppercase tracking-wider text-[#091326]/60" style={{ fontFamily: BODY_FONT }}>
-                {groomTitle}
-              </span>
-              <p
-                className="mt-1 text-2xl font-normal"
-                style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}
-              >
-                {data.couple?.groomFullName || data.couple?.groomName || "Trần Quốc Đạt"}
-              </p>
-            </div>
-          </m.div>
+          </ImperialReveal>
 
           {/* Card Nhà Gái */}
-          <m.div
-            className="relative flex flex-col justify-between rounded-2xl p-6 transition-all duration-300 hover:shadow-md"
-            style={{
-              backgroundColor: SILK_CREAM_CARD,
-              border: `1px solid ${GOLD_BORDER}`,
-            }}
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.25 }}
-          >
-            <div>
-              <div className="flex items-center justify-between border-b border-[#DFC07C]/30 pb-3">
-                <span
-                  className="text-xs uppercase tracking-[0.25em]"
-                  style={{ color: GOLD_ACCENT, fontFamily: BODY_FONT }}
-                >
-                  Nhà Gái
-                </span>
-                <span className="text-xs text-[#091326]/60">Hôn trường đàng gái</span>
-              </div>
+          <ImperialReveal direction="right" delay={0.22} className="h-full">
+            <div
+              className="relative h-full flex flex-col justify-between rounded-2xl p-6 transition-all duration-300 hover:shadow-md"
+              style={{
+                backgroundColor: SILK_CREAM_CARD,
+                border: `1px solid ${GOLD_BORDER}`,
+              }}
+            >
+              <div>
+                <div className="flex items-center justify-between border-b border-[#DFC07C]/30 pb-3">
+                  <span
+                    className="text-xs uppercase tracking-[0.25em]"
+                    style={{ color: GOLD_ACCENT, fontFamily: BODY_FONT }}
+                  >
+                    Nhà Gái
+                  </span>
+                  <span className="text-xs text-[#091326]/60">Hôn trường đàng gái</span>
+                </div>
 
-              {/* Tên phụ huynh tách dòng sạch tại '&' */}
-              <div className="mt-4 space-y-1 text-sm text-[#1E293B]">
-                {data.couple?.brideParents ? (
-                  data.couple.brideParents.includes("&") ? (
-                    data.couple.brideParents.split("&").map((p, i) => (
-                      <p key={i} className="font-medium">
-                        {p.trim()}
-                      </p>
-                    ))
+                {/* Tên phụ huynh tách dòng sạch tại '&' */}
+                <div className="mt-4 space-y-1 text-sm text-[#1E293B]">
+                  {data.couple?.brideParents ? (
+                    data.couple.brideParents.includes("&") ? (
+                      data.couple.brideParents.split("&").map((p, i) => (
+                        <p key={i} className="font-medium">
+                          {p.trim()}
+                        </p>
+                      ))
+                    ) : (
+                      <p className="font-medium">{data.couple.brideParents}</p>
+                    )
                   ) : (
-                    <p className="font-medium">{data.couple.brideParents}</p>
-                  )
-                ) : (
-                  <>
-                    <p className="font-medium">Ông: Nguyễn Văn Hùng</p>
-                    <p className="font-medium">Bà: Phạm Thị Lan</p>
-                  </>
-                )}
+                    <>
+                      <p className="font-medium">Ông: Nguyễn Văn Hùng</p>
+                      <p className="font-medium">Bà: Phạm Thị Lan</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 border-t border-[#DFC07C]/20 pt-4">
+                <span className="text-xs uppercase tracking-wider text-[#091326]/60" style={{ fontFamily: BODY_FONT }}>
+                  {brideTitle}
+                </span>
+                <p
+                  className="mt-1 text-2xl font-normal"
+                  style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}
+                >
+                  {data.couple?.brideFullName || data.couple?.brideName || "Nguyễn Khánh Huyền"}
+                </p>
               </div>
             </div>
-
-            <div className="mt-6 border-t border-[#DFC07C]/20 pt-4">
-              <span className="text-xs uppercase tracking-wider text-[#091326]/60" style={{ fontFamily: BODY_FONT }}>
-                {brideTitle}
-              </span>
-              <p
-                className="mt-1 text-2xl font-normal"
-                style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}
-              >
-                {data.couple?.brideFullName || data.couple?.brideName || "Nguyễn Khánh Huyền"}
-              </p>
-            </div>
-          </m.div>
+          </ImperialReveal>
         </div>
       </div>
     </section>
@@ -906,106 +900,107 @@ function GallerySection({
       <GoldDustParticles count={14} />
 
       <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <p className="text-xs uppercase tracking-[0.3em]" style={{ color: GOLD_LIGHT, fontFamily: BODY_FONT }}>
-          Khoảnh Khắc Hạnh Phúc
-        </p>
-        <h2 className="mt-1 text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: GOLD_LIGHT }}>
-          Album Ảnh Cưới
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-xs text-[#FAF6F0]/70 md:text-sm">
-          Ghi lại những thước phim lãng mạn, đánh dấu từng bước chân tình yêu của đôi lứa.
-        </p>
+        <ImperialReveal direction="up">
+          <p className="text-xs uppercase tracking-[0.3em]" style={{ color: GOLD_LIGHT, fontFamily: BODY_FONT }}>
+            Khoảnh Khắc Hạnh Phúc
+          </p>
+          <h2 className="mt-1 text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: GOLD_LIGHT }}>
+            Album Ảnh Cưới
+          </h2>
+        </ImperialReveal>
 
         {/* Khung Coverflow 3D */}
-        <div
-          className="relative mx-auto mt-10 h-[380px] w-full max-w-md select-none sm:h-[440px]"
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-        >
-          <div className="flex h-full w-full items-center justify-center">
-            {photos.map((item, idx) => {
-              const offset = idx - activeIndex;
-              const isCenter = offset === 0;
-              const isImmediate = Math.abs(offset) <= 2;
+        <ImperialReveal direction="up" delay={0.12} scale={0.96}>
+          <div
+            className="relative mx-auto mt-10 h-[380px] w-full max-w-md select-none sm:h-[440px]"
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+          >
+            <div className="flex h-full w-full items-center justify-center">
+              {photos.map((item, idx) => {
+                const offset = idx - activeIndex;
+                const isCenter = offset === 0;
+                const isImmediate = Math.abs(offset) <= 2;
 
-              if (!isImmediate && Math.abs(offset) > 2) return null;
+                if (!isImmediate && Math.abs(offset) > 2) return null;
 
-              const translateX = offset * 110;
-              const scale = isCenter ? 1 : 0.82 - Math.abs(offset) * 0.08;
-              const rotateY = offset * -28;
-              const zIndex = 30 - Math.abs(offset) * 10;
-              const opacity = isCenter ? 1 : Math.max(0.3, 0.7 - Math.abs(offset) * 0.25);
+                const translateX = offset * 110;
+                const scale = isCenter ? 1 : 0.82 - Math.abs(offset) * 0.08;
+                const rotateY = offset * -28;
+                const zIndex = 30 - Math.abs(offset) * 10;
+                const opacity = isCenter ? 1 : Math.max(0.3, 0.7 - Math.abs(offset) * 0.25);
 
-              return (
-                <m.div
-                  key={idx}
-                  className="absolute cursor-pointer overflow-hidden rounded-2xl"
-                  style={{
-                    width: 250,
-                    height: 350,
-                    zIndex,
-                    border: isCenter ? `2px solid ${GOLD_MAIN}` : "1px solid rgba(223, 192, 124, 0.25)",
-                    boxShadow: isCenter
-                      ? "0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(223, 192, 124, 0.35)"
-                      : "0 6px 16px rgba(0,0,0,0.5)",
-                  }}
-                  animate={{
-                    x: translateX,
-                    scale,
-                    rotateY,
-                    opacity,
-                  }}
-                  transition={{ duration: 0.55, ease: EASE_ROYAL }}
-                  onClick={() => {
-                    if (isCenter) setLightboxIndex(idx);
-                    else setActiveIndex(idx);
-                  }}
-                >
-                  <img
-                    src={item.url}
-                    alt={item.alt || `Ảnh cưới ${idx + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                  {isCenter && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-3 text-center">
-                      <span className="text-xs tracking-wider text-[#FAF6F0]/90">
-                        Chạm để phóng to
-                      </span>
-                    </div>
-                  )}
-                </m.div>
-              );
-            })}
+                return (
+                  <m.div
+                    key={idx}
+                    className="absolute cursor-pointer overflow-hidden rounded-2xl"
+                    style={{
+                      width: 250,
+                      height: 350,
+                      zIndex,
+                      border: isCenter ? `2px solid ${GOLD_MAIN}` : "1px solid rgba(223, 192, 124, 0.25)",
+                      boxShadow: isCenter
+                        ? "0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(223, 192, 124, 0.35)"
+                        : "0 6px 16px rgba(0,0,0,0.5)",
+                    }}
+                    animate={{
+                      x: translateX,
+                      scale,
+                      rotateY,
+                      opacity,
+                    }}
+                    transition={{ duration: 0.55, ease: EASE_ROYAL }}
+                    onClick={() => {
+                      if (isCenter) setLightboxIndex(idx);
+                      else setActiveIndex(idx);
+                    }}
+                  >
+                    <img loading="lazy" decoding="async"
+                      src={item.url}
+                      alt={item.alt || `Ảnh cưới ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                    {isCenter && (
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-3 text-center">
+                        <span className="text-xs tracking-wider text-[#FAF6F0]/90">
+                          Chạm để phóng to
+                        </span>
+                      </div>
+                    )}
+                  </m.div>
+                );
+              })}
+            </div>
+
+            {/* Nút điều hướng Coverflow */}
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="absolute left-2 top-1/2 z-40 -translate-y-1/2 rounded-full p-2.5 backdrop-blur-md transition-transform hover:scale-110 active:scale-95"
+              style={{
+                backgroundColor: "rgba(15, 29, 58, 0.75)",
+                border: `1px solid ${GOLD_BORDER}`,
+                color: GOLD_LIGHT,
+              }}
+              aria-label="Ảnh trước"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              className="absolute right-2 top-1/2 z-40 -translate-y-1/2 rounded-full p-2.5 backdrop-blur-md transition-transform hover:scale-110 active:scale-95"
+              style={{
+                backgroundColor: "rgba(15, 29, 58, 0.75)",
+                border: `1px solid ${GOLD_BORDER}`,
+                color: GOLD_LIGHT,
+              }}
+              aria-label="Ảnh kế tiếp"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
-
-          {/* Nút điều hướng Coverflow */}
-          <button
-            type="button"
-            onClick={handlePrev}
-            className="absolute left-2 top-1/2 z-40 -translate-y-1/2 rounded-full p-2.5 backdrop-blur-md transition-transform hover:scale-110 active:scale-95"
-            style={{
-              backgroundColor: "rgba(15, 29, 58, 0.75)",
-              border: `1px solid ${GOLD_BORDER}`,
-              color: GOLD_LIGHT,
-            }}
-            aria-label="Ảnh trước"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={handleNext}
-            className="absolute right-2 top-1/2 z-40 -translate-y-1/2 rounded-full p-2.5 backdrop-blur-md transition-transform hover:scale-110 active:scale-95"
-            style={{
-              backgroundColor: "rgba(15, 29, 58, 0.75)",
-              border: `1px solid ${GOLD_BORDER}`,
-              color: GOLD_LIGHT,
-            }}
-            aria-label="Ảnh kế tiếp"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </div>
+        </ImperialReveal>
 
         {/* Thanh chỉ số ảnh */}
         <div className="mt-4 flex items-center justify-center gap-1.5">
@@ -1045,21 +1040,37 @@ function CalendarCountdownSection({
 }: {
   data: TemplateData;
 }) {
+  const reduce = useReducedMotion();
   const visibleEvents = getVisibleEvents(data);
   const primary = getNearestUpcomingEvent(visibleEvents, data.date);
   const targetDateStr = primary?.startsAt ?? data.date;
 
-  const { daysRemaining, hoursRemaining, minutesRemaining, secondsRemaining } = React.useMemo(() => {
-    if (!targetDateStr) return { daysRemaining: 0, hoursRemaining: 0, minutesRemaining: 0, secondsRemaining: 0 };
-    const target = new Date(targetDateStr).getTime();
-    const now = Date.now();
-    const diff = Math.max(0, target - now);
+  const [{ daysRemaining, hoursRemaining, minutesRemaining, secondsRemaining }, setCountdown] =
+    React.useState({
+      daysRemaining: 0,
+      hoursRemaining: 0,
+      minutesRemaining: 0,
+      secondsRemaining: 0,
+    });
 
-    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const m = Math.floor((diff / (1000 * 60)) % 60);
-    const s = Math.floor((diff / 1000) % 60);
-    return { daysRemaining: d, hoursRemaining: h, minutesRemaining: m, secondsRemaining: s };
+  React.useEffect(() => {
+    if (!targetDateStr) return;
+    const target = new Date(targetDateStr).getTime();
+    const tick = () => {
+      const diff = Math.max(0, target - Date.now());
+      setCountdown({
+        daysRemaining: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hoursRemaining: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutesRemaining: Math.floor((diff / (1000 * 60)) % 60),
+        secondsRemaining: Math.floor((diff / 1000) % 60),
+      });
+    };
+    const boot = setTimeout(tick, 0);
+    const timer = setInterval(tick, 1000);
+    return () => {
+      clearTimeout(boot);
+      clearInterval(timer);
+    };
   }, [targetDateStr]);
 
   const weddingDateObj = React.useMemo(() => {
@@ -1101,31 +1112,28 @@ function CalendarCountdownSection({
     return days;
   }, [visibleEvents, targetDateStr, weddingYear, weddingMonth, weddingDay]);
 
-  const mapDirectionLink = primary?.mapDirectionsUrl || primary?.mapEmbedUrl;
-  const dateParts = formatWeddingDateParts(primary?.startsAt ?? data.date);
-
   return (
     <section className="relative overflow-hidden bg-[#FAF6F0] px-4 py-16 text-[#091326] md:py-24">
       {/* 4 Góc hoa văn hoàng gia trang trí lịch cưới dùng duy nhất corner-tl.webp */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute left-2 top-2 h-auto w-11 opacity-60 sm:left-4 sm:top-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute right-2 top-2 h-auto w-11 -scale-x-100 opacity-60 sm:right-4 sm:top-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 left-2 h-auto w-11 -scale-y-100 opacity-60 sm:bottom-4 sm:left-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 right-2 h-auto w-11 -scale-100 opacity-60 sm:bottom-4 sm:right-4 sm:w-14"
@@ -1133,76 +1141,80 @@ function CalendarCountdownSection({
       />
 
       <div className="relative z-10 mx-auto max-w-xl text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#C6A45E]" style={{ fontFamily: BODY_FONT }}>
-          Ngày Hạnh Phúc
-        </p>
-        <h2 className="mt-1 text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}>
-          Lịch Ngày Vui
-        </h2>
+        <ImperialReveal direction="up">
+          <p className="text-xs uppercase tracking-[0.3em] text-[#C6A45E]" style={{ fontFamily: BODY_FONT }}>
+            Ngày Hạnh Phúc
+          </p>
+          <h2 className="mt-1 text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}>
+            Lịch Ngày Vui
+          </h2>
+        </ImperialReveal>
 
         {/* Khung Lịch Tháng */}
-        <div
-          className="mx-auto mt-6 rounded-2xl p-6 shadow-sm transition-all"
-          style={{
-            backgroundColor: SILK_CREAM_CARD,
-            border: `1px solid ${GOLD_BORDER}`,
-          }}
-        >
-          <div className="mb-4 flex items-center justify-between border-b border-[#DFC07C]/30 pb-3">
-            <span className="text-sm font-semibold tracking-wider text-[#091326]" style={{ fontFamily: BODY_FONT }}>
-              Tháng {weddingMonth + 1} / {weddingYear}
-            </span>
-            <span className="text-xs text-[#091326]/60">Ngày Cưới Trọng Đại</span>
-          </div>
+        <ImperialReveal direction="up" delay={0.1}>
+          <div
+            className="mx-auto mt-6 rounded-2xl p-6 shadow-sm transition-all"
+            style={{
+              backgroundColor: SILK_CREAM_CARD,
+              border: `1px solid ${GOLD_BORDER}`,
+            }}
+          >
+            <div className="mb-4 flex items-center justify-between border-b border-[#DFC07C]/30 pb-3">
+              <span className="text-sm font-semibold tracking-wider text-[#091326]" style={{ fontFamily: BODY_FONT }}>
+                Tháng {weddingMonth + 1} / {weddingYear}
+              </span>
+              <span className="text-xs text-[#091326]/60">Ngày Cưới Trọng Đại</span>
+            </div>
 
-          <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-[#1E293B]/70">
-            <span>CN</span>
-            <span>T2</span>
-            <span>T3</span>
-            <span>T4</span>
-            <span>T5</span>
-            <span>T6</span>
-            <span>T7</span>
-          </div>
+            <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-[#1E293B]/70">
+              <span>CN</span>
+              <span>T2</span>
+              <span>T3</span>
+              <span>T4</span>
+              <span>T5</span>
+              <span>T6</span>
+              <span>T7</span>
+            </div>
 
-          <div className="mt-2 grid grid-cols-7 gap-1 text-center text-sm">
-            {monthDays.map((day, idx) => {
-              if (day === null) return <div key={idx} className="h-8" />;
-              const isWeddingDay = day !== null && eventDays.has(day);
+            <div className="mt-2 grid grid-cols-7 gap-1 text-center text-sm">
+              {monthDays.map((day, idx) => {
+                if (day === null) return <div key={idx} className="h-8" />;
+                const isWeddingDay = day !== null && eventDays.has(day);
 
-              return (
-                <div
-                  key={idx}
-                  className={cn(
-                    "relative flex h-8 items-center justify-center rounded-full text-xs transition-all",
-                    isWeddingDay
-                      ? "font-bold text-[#091326]"
-                      : "text-[#1E293B]/85 hover:bg-[#DFC07C]/15",
-                  )}
-                  style={
-                    isWeddingDay
-                      ? {
-                        background: "linear-gradient(135deg, #DFC07C 0%, #C6A45E 100%)",
-                        boxShadow: "0 2px 10px rgba(223, 192, 124, 0.45)",
-                      }
-                      : {}
-                  }
-                >
-                  {day}
-                  {isWeddingDay && (
-                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#DFC07C] opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C6A45E]" />
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "relative flex h-8 items-center justify-center rounded-full text-xs transition-all",
+                      isWeddingDay
+                        ? "font-bold text-[#091326]"
+                        : "text-[#1E293B]/85 hover:bg-[#DFC07C]/15",
+                    )}
+                    style={
+                      isWeddingDay
+                        ? {
+                          background: "linear-gradient(135deg, #DFC07C 0%, #C6A45E 100%)",
+                          boxShadow: "0 2px 10px rgba(223, 192, 124, 0.45)",
+                        }
+                        : {}
+                    }
+                  >
+                    {day}
+                    {isWeddingDay && !reduce && (
+                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#DFC07C] opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C6A45E]" />
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </ImperialReveal>
 
         {/* Đồng Hồ Đếm Ngược Hoàng Gia */}
-        <div className="mt-10">
+        <ImperialReveal direction="up" delay={0.14} className="mt-10">
           <p className="text-xs uppercase tracking-[0.25em] text-[#C6A45E]" style={{ fontFamily: BODY_FONT }}>
             Cùng Đếm Ngược Đến Giây Phút Thiêng Liêng
           </p>
@@ -1234,7 +1246,30 @@ function CalendarCountdownSection({
               </div>
             ))}
           </div>
-        </div>
+        </ImperialReveal>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------
+   Section 4B: Sự Kiện Cưới & Chỉ Đường (map)
+   ------------------------------------------------------------ */
+function EventsSection({ data }: { data: TemplateData }) {
+  const visibleEvents = getVisibleEvents(data);
+  const primary = getNearestUpcomingEvent(visibleEvents, data.date);
+  const targetDateStr = primary?.startsAt ?? data.date;
+
+  if (visibleEvents.length === 0) return null;
+
+  return (
+    <section className="relative overflow-hidden bg-[#FAF6F0] px-4 py-16 text-[#091326] md:py-24">
+      <div className="relative z-10 mx-auto max-w-4xl text-center">
+        <ImperialReveal direction="up">
+          <h2 className="text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}>
+            Sự Kiện Cưới
+          </h2>
+        </ImperialReveal>
 
         {/* Thông tin sự kiện chi tiết: Giờ, Địa điểm & Chỉ đường (hỗ trợ đa lễ) */}
         <div
@@ -1248,59 +1283,60 @@ function CalendarCountdownSection({
             const evtDirections = getEventDirectionsUrl(evt);
 
             return (
-              <div
-                key={evt.id || `evt-${idx}`}
-                className="rounded-2xl p-5 flex flex-col justify-between"
-                style={{
-                  backgroundColor: SILK_CREAM_CARD,
-                  border: `1px solid ${GOLD_BORDER}`,
-                }}
-              >
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#C6A45E] block mb-3">
-                    {evt.title || (idx === 0 ? "Lễ Thành Hôn" : "Tiệc Báo Hỷ")}
-                  </span>
+              <ImperialReveal key={evt.id || `evt-${idx}`} direction="up" delay={idx * 0.1} className="h-full">
+                <div
+                  className="h-full rounded-2xl p-5 flex flex-col justify-between"
+                  style={{
+                    backgroundColor: SILK_CREAM_CARD,
+                    border: `1px solid ${GOLD_BORDER}`,
+                  }}
+                >
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#C6A45E] block mb-3">
+                      {evt.title || (idx === 0 ? "Lễ Thành Hôn" : "Tiệc Báo Hỷ")}
+                    </span>
 
-                  <div className="flex items-start gap-3">
-                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-[#C6A45E]" />
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-[#C6A45E]">Thời Gian</p>
-                      <p className="text-sm font-medium text-[#1E293B]">
-                        {evtDateParts.time ? `${evtDateParts.time} — ` : ""}{evtDateParts.day} · {evtDateParts.month} · {evtDateParts.year}
-                      </p>
+                    <div className="flex items-start gap-3">
+                      <Clock className="mt-0.5 h-4 w-4 shrink-0 text-[#C6A45E]" />
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-[#C6A45E]">Thời Gian</p>
+                        <p className="text-sm font-medium text-[#1E293B]">
+                          {evtDateParts.time ? `${evtDateParts.time} — ` : ""}{evtDateParts.day} · {evtDateParts.month} · {evtDateParts.year}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-start gap-3 border-t border-[#DFC07C]/20 pt-4">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C6A45E]" />
+                      <div className="flex-1">
+                        <p className="text-xs uppercase tracking-wider text-[#C6A45E]">Địa Điểm</p>
+                        <p className="text-sm font-medium text-[#1E293B]">{evt.venueName}</p>
+                        {evt.venueAddress && (
+                          <p className="mt-0.5 text-xs text-[#1E293B]/70">{evt.venueAddress}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-start gap-3 border-t border-[#DFC07C]/20 pt-4">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#C6A45E]" />
-                    <div className="flex-1">
-                      <p className="text-xs uppercase tracking-wider text-[#C6A45E]">Địa Điểm</p>
-                      <p className="text-sm font-medium text-[#1E293B]">{evt.venueName}</p>
-                      {evt.venueAddress && (
-                        <p className="mt-0.5 text-xs text-[#1E293B]/70">{evt.venueAddress}</p>
-                      )}
-                    </div>
+                  <div className="mt-5 text-center">
+                    <a
+                      href={evtDirections}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full px-6 py-2 text-xs font-semibold uppercase tracking-wider transition-transform hover:scale-105 active:scale-95"
+                      style={{
+                        background: "linear-gradient(135deg, #0F1D3A 0%, #162A52 100%)",
+                        color: GOLD_LIGHT,
+                        border: `1px solid ${GOLD_BORDER}`,
+                      }}
+                    >
+                      <MapPin className="h-3.5 w-3.5 text-[#DFC07C]" />
+                      Xem Chỉ Đường Google Maps
+                      <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+                    </a>
                   </div>
                 </div>
-
-                <div className="mt-5 text-center">
-                  <a
-                    href={evtDirections}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full px-6 py-2 text-xs font-semibold uppercase tracking-wider transition-transform hover:scale-105 active:scale-95"
-                    style={{
-                      background: "linear-gradient(135deg, #0F1D3A 0%, #162A52 100%)",
-                      color: GOLD_LIGHT,
-                      border: `1px solid ${GOLD_BORDER}`,
-                    }}
-                  >
-                    <MapPin className="h-3.5 w-3.5 text-[#DFC07C]" />
-                    Xem Chỉ Đường Google Maps
-                    <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-                  </a>
-                </div>
-              </div>
+              </ImperialReveal>
             );
           })}
         </div>
@@ -1329,12 +1365,14 @@ function TimelineSection({
       <GoldDustParticles count={14} />
 
       <div className="relative z-10 mx-auto max-w-lg text-center">
-        <p className="text-xs uppercase tracking-[0.3em]" style={{ color: GOLD_LIGHT, fontFamily: BODY_FONT }}>
-          Lịch Trình Hôn Lễ
-        </p>
-        <h2 className="mt-1 text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: GOLD_LIGHT }}>
-          Chương Trình Tiệc Cưới
-        </h2>
+        <ImperialReveal direction="up">
+          <p className="text-xs uppercase tracking-[0.3em]" style={{ color: GOLD_LIGHT, fontFamily: BODY_FONT }}>
+            Lịch Trình Hôn Lễ
+          </p>
+          <h2 className="mt-1 text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: GOLD_LIGHT }}>
+            Chương Trình Tiệc Cưới
+          </h2>
+        </ImperialReveal>
 
         {/* Cột mốc Timeline so le */}
         <div className="relative mx-auto mt-10 max-w-md">
@@ -1349,13 +1387,11 @@ function TimelineSection({
               const isEven = idx % 2 === 0;
 
               return (
-                <m.div
+                <ImperialReveal
                   key={idx}
+                  direction={isEven ? "left" : "right"}
+                  delay={idx * 0.08}
                   className="relative flex items-center gap-4 sm:gap-8"
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: idx * 0.1 }}
                 >
                   {/* Điểm nút tròn hoa sen vàng */}
                   <div
@@ -1390,7 +1426,7 @@ function TimelineSection({
                       {item.label}
                     </p>
                   </div>
-                </m.div>
+                </ImperialReveal>
               );
             })}
           </div>
@@ -1418,7 +1454,6 @@ function GiftSection({
     setStage: setBoxState,
     isOpening: isGiftOpening,
     isModalOpen: modalOpen,
-    setIsModalOpen: setModalOpen,
     handleGiftClick,
     handleCloseModal,
   } = useGiftBoxInteraction({
@@ -1429,25 +1464,25 @@ function GiftSection({
   return (
     <section className="relative overflow-hidden bg-[#FAF6F0] px-4 py-16 text-[#091326] md:py-24">
       {/* 4 Góc hoa văn hoàng gia trang trí hộp mừng dùng duy nhất corner-tl.webp */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute left-2 top-2 h-auto w-11 opacity-60 sm:left-4 sm:top-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute right-2 top-2 h-auto w-11 -scale-x-100 opacity-60 sm:right-4 sm:top-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 left-2 h-auto w-11 -scale-y-100 opacity-60 sm:bottom-4 sm:left-4 sm:w-14"
         aria-hidden="true"
       />
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/long-phung-ep4/corner-tl.webp"
         alt=""
         className="pointer-events-none absolute bottom-2 right-2 h-auto w-11 -scale-100 opacity-60 sm:bottom-4 sm:right-4 sm:w-14"
@@ -1455,23 +1490,25 @@ function GiftSection({
       />
 
       <div className="relative z-10 mx-auto max-w-lg text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#C6A45E]" style={{ fontFamily: BODY_FONT }}>
-          Mừng Cưới Chúc Phúc
-        </p>
-        <h2 className="mt-1 text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}>
-          Hộp Mừng Cưới
-        </h2>
-        <p className="mx-auto mt-2 max-w-sm text-xs text-[#091326]/75 md:text-sm">
-          Sự hiện diện và lời chúc phúc của quý vị là món quà ý nghĩa nhất dành cho tân lang &amp; tân nương.
-        </p>
+        <ImperialReveal direction="up">
+          <p className="text-xs uppercase tracking-[0.3em] text-[#C6A45E]" style={{ fontFamily: BODY_FONT }}>
+            Mừng Cưới Chúc Phúc
+          </p>
+          <h2 className="mt-1 text-2xl md:text-3xl" style={{ fontFamily: NAME_FONT, color: NAVY_MAIN }}>
+            Hộp Mừng Cưới
+          </h2>
+          <p className="mx-auto mt-2 max-w-sm text-xs text-[#091326]/75 md:text-sm">
+            Sự hiện diện và lời chúc phúc của quý vị là món quà ý nghĩa nhất dành cho tân lang &amp; tân nương.
+          </p>
+        </ImperialReveal>
 
         {/* Khung Hộp Quà 3 Trạng Thái — Kích thước & Baseline đồng nhất tuyệt đối */}
-        <div className="mt-8 flex flex-col items-center justify-center">
+        <ImperialReveal direction="up" delay={0.12} scale={0.95} className="mt-8 flex flex-col items-center justify-center">
           {/* Preload ẩn để tránh chớp trắng khi hover/active */}
           <div className="hidden" aria-hidden="true">
-            <img src="/templates/long-phung-ep4/gift-normal.webp" alt="" width={320} height={568} />
-            <img src="/templates/long-phung-ep4/gift-hover.webp" alt="" width={320} height={568} />
-            <img src="/templates/long-phung-ep4/gift-active.webp" alt="" width={320} height={568} />
+            <img loading="lazy" decoding="async" src="/templates/long-phung-ep4/gift-normal.webp" alt="" width={320} height={568} />
+            <img loading="lazy" decoding="async" src="/templates/long-phung-ep4/gift-hover.webp" alt="" width={320} height={568} />
+            <img loading="lazy" decoding="async" src="/templates/long-phung-ep4/gift-active.webp" alt="" width={320} height={568} />
           </div>
 
           <div
@@ -1497,7 +1534,7 @@ function GiftSection({
 
             {/* Ảnh hộp quà 3 trạng thái với kích thước 320x568px chuẩn tỷ lệ */}
             <div className="relative h-[280px] w-[160px] sm:h-[340px] sm:w-[190px]">
-              <img
+              <img loading="lazy" decoding="async"
                 src={
                   boxState === "active"
                     ? "/templates/long-phung-ep4/gift-active.webp"
@@ -1514,7 +1551,7 @@ function GiftSection({
               <span>Chạm để gửi mừng cưới</span>
             </div>
           </div>
-        </div>
+        </ImperialReveal>
       </div>
 
       {/* Modal VietQR mừng cưới mở qua Portal với màu cứng chuẩn Lam Ngọc */}
@@ -1545,35 +1582,77 @@ export function LongPhungEp4Template({
   guestName,
   invitationMode = "personal",
 }: WeddingTemplateProps) {
+  const reduce = useReducedMotion();
   const [openState, setOpenState] = React.useState(Boolean(isOpened));
   const [coverGone, setCoverGone] = React.useState(Boolean(isOpened));
+  const [coverPhase, setCoverPhase] = React.useState<"idle" | "seal" | "dissolve">("idle");
+  const [prevIsOpened, setPrevIsOpened] = React.useState(Boolean(isOpened));
+  const timeoutsRef = React.useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
-  // Đồng bộ 2 chiều prop isOpened bằng parentOpenedRef theo quy chuẩn card_exp.md
-  const parentOpenedRef = React.useRef(isOpened);
-  React.useEffect(() => {
-    if (parentOpenedRef.current && !isOpened) {
-      setOpenState(false);
-      setCoverGone(false);
-    } else if (!parentOpenedRef.current && isOpened) {
+  if (Boolean(isOpened) !== prevIsOpened) {
+    setPrevIsOpened(Boolean(isOpened));
+    if (isOpened) {
       setOpenState(true);
       setCoverGone(true);
+      setCoverPhase("idle");
+    } else {
+      setOpenState(false);
+      setCoverGone(false);
+      setCoverPhase("idle");
     }
-    parentOpenedRef.current = isOpened;
-  }, [isOpened]);
+  }
 
-  const handleOpenInvitation = () => {
-    setOpenState(true);
-    setCoverGone(true);
-    onOpenedChange?.(true);
+  React.useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((id) => clearTimeout(id));
+      timeoutsRef.current = [];
+    };
+  }, []);
+
+  const showBody = coverGone || coverPhase === "dissolve";
+
+  const handleOpenStart = () => {
+    if (coverPhase !== "idle" || openState) return;
     try {
-      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      playOpenCardSound();
     } catch { }
-    if (!contained && typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (reduce) {
+      setOpenState(true);
+      setCoverGone(true);
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch { }
+      return;
     }
+
+    setCoverPhase("seal");
+    const t1 = setTimeout(() => {
+      setCoverPhase("dissolve");
+    }, 750);
+    const t2 = setTimeout(() => {
+      setOpenState(true);
+      setCoverGone(true);
+      setCoverPhase("idle");
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch { }
+      if (!contained && typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 2000);
+    timeoutsRef.current.push(t1, t2);
   };
 
   const safeGuestName = guestName || data.ui?.defaultGuestName || "";
+  const hidden = new Set(data.hiddenSections ?? []);
+  const order = data.sectionOrder?.length ? data.sectionOrder : CANONICAL_SECTION_ORDER;
+  const orderOf = (key: string) => {
+    const idx = order.indexOf(key);
+    return idx === -1 ? 99 : idx;
+  };
 
   return (
     <div
@@ -1599,13 +1678,14 @@ export function LongPhungEp4Template({
             className="absolute inset-0 z-50 flex items-center justify-center"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.45 }}
           >
             <EnvelopeCover
               data={data}
               guestName={safeGuestName}
               contained={contained}
-              onOpen={handleOpenInvitation}
+              coverPhase={coverPhase}
+              onOpenStart={handleOpenStart}
             />
           </m.div>
         )}
@@ -1622,69 +1702,106 @@ export function LongPhungEp4Template({
       />
 
       {/* --------------------------------------------------------
-          LỚP 3: RUỘT THIỆP CƯỚI CHÍNH (Chỉ hiển thị sau khi mở)
+          LỚP 3: RUỘT THIỆP CƯỚI CHÍNH (Hiện mượt khi Pha 2 dissolve)
           -------------------------------------------------------- */}
       <main
         className={cn(
           "relative z-10 transition-opacity duration-700",
-          !openState ? "hidden opacity-0 pointer-events-none" : "opacity-100",
+          !showBody ? "hidden opacity-0 pointer-events-none" : "opacity-100",
         )}
       >
         {/* Section 1: Hero chào mừng Long Phụng & Khung vòm ảnh cưới */}
-        <HeroSection data={data} isOpened={openState} />
+        <HeroSection data={data} isOpened={showBody} />
 
-        {/* Section 2: Thư mời thành hôn & Đại gia đình */}
-        <InvitationSection data={data} />
+        <div className="flex flex-col">
+          {/* Section 2: Thư mời thành hôn & Đại gia đình */}
+          {!hidden.has("family") && (
+            <div style={{ order: orderOf("family") }}>
+              <InvitationSection data={data} />
+            </div>
+          )}
 
-        {/* Section 3: Bộ sưu tập ảnh cưới 3D coverflow */}
-        <GallerySection data={data} />
+          {/* Section 3: Sự kiện cưới & bản đồ chỉ đường */}
+          {!hidden.has("map") && (
+            <div style={{ order: orderOf("map") }}>
+              <EventsSection data={data} />
+            </div>
+          )}
 
-        {/* Section 4: Lịch ngày cưới & Đếm ngược */}
-        <CalendarCountdownSection data={data} />
+          {/* Section 5: Lịch trình hôn lễ */}
+          {!hidden.has("dresscode") && (
+            <div style={{ order: orderOf("dresscode") }}>
+              <TimelineSection data={data} />
+            </div>
+          )}
 
-        {/* Section 5: Lịch trình hôn lễ */}
-        <TimelineSection data={data} />
+          {/* Section 6: Lịch ngày cưới & Đếm ngược */}
+          {!hidden.has("calendar") && (
+            <div style={{ order: orderOf("calendar") }}>
+              <CalendarCountdownSection data={data} />
+            </div>
+          )}
 
-        {/* Section 6: Hộp mừng cưới 3 trạng thái & VietQR */}
-        <GiftSection data={data} plan={data.plan} guestName={safeGuestName} />
+          {/* Section 7: Hộp mừng cưới 3 trạng thái & VietQR */}
+          {!hidden.has("gift") && (
+            <div style={{ order: orderOf("gift") }}>
+              <GiftSection data={data} plan={data.plan} guestName={safeGuestName} />
+            </div>
+          )}
 
-        {/* Section 7: Form xác nhận tham dự RSVP & Sổ lời chúc (Không bọc viền trắng) */}
-        <section className="relative overflow-hidden bg-[#091326] px-4 py-16 text-[#FAF6F0] md:py-24">
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-25 mix-blend-soft-light"
-            style={{ backgroundImage: "url('/templates/long-phung-ep4/background-mobile.webp')" }}
-          />
-          <GoldDustParticles count={16} />
-
-          <div className="relative z-10 mx-auto max-w-xl">
-            <TemplateRsvpSection
-              data={data}
-              mode={mode}
-              tone="obsidian"
-              contained={contained}
-              inviteSlug={inviteSlug}
-              weddingSlug={weddingSlug}
-              invitationMode={invitationMode}
-              guestName={guestName}
-            />
-
-            {/* QR Album kỷ niệm đám cưới cho gói trả phí */}
-            {data.plan !== "free" && weddingSlug && (
-              <div className="mt-12 flex justify-center">
-                <GuestAlbumQr
-                  slug={weddingSlug}
-                  accentColor="#0F1D3A"
-                  textColor="#FAF6F0"
-                  mutedColor="#DFC07C"
+          {/* Section 8: Form xác nhận tham dự RSVP & Sổ lời chúc */}
+          {!hidden.has("rsvp") && (
+            <div style={{ order: orderOf("rsvp") }}>
+              <section className="relative overflow-hidden bg-[#091326] px-4 py-16 text-[#FAF6F0] md:py-24">
+                <div
+                  className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-25 mix-blend-soft-light"
+                  style={{ backgroundImage: "url('/templates/long-phung-ep4/background-mobile.webp')" }}
                 />
-              </div>
-            )}
-          </div>
-        </section>
+                <GoldDustParticles count={16} />
+
+                <ImperialReveal direction="up" className="relative z-10 mx-auto max-w-xl">
+                  <TemplateRsvpSection
+                    data={data}
+                    mode={mode}
+                    tone="obsidian"
+                    contained={contained}
+                    inviteSlug={inviteSlug}
+                    weddingSlug={weddingSlug}
+                    invitationMode={invitationMode}
+                    guestName={guestName}
+                  />
+                </ImperialReveal>
+              </section>
+            </div>
+          )}
+
+          {/* Section 9: Bộ sưu tập ảnh cưới 3D coverflow */}
+          {!hidden.has("album") && (
+            <div style={{ order: orderOf("album") }}>
+              <GallerySection data={data} />
+            </div>
+          )}
+
+          {/* Section 10: QR Album kỷ niệm đám cưới cho gói trả phí */}
+          {data.plan !== "free" && !hidden.has("albumQr") && weddingSlug && (
+            <div style={{ order: orderOf("albumQr") }}>
+              <section className="relative overflow-hidden bg-[#091326] px-4 py-12 text-[#FAF6F0] md:py-16">
+                <ImperialReveal direction="up" delay={0.1} className="relative z-10 mx-auto flex max-w-xl justify-center">
+                  <GuestAlbumQr
+                    slug={weddingSlug}
+                    accentColor="#0F1D3A"
+                    textColor="#FAF6F0"
+                    mutedColor="#DFC07C"
+                  />
+                </ImperialReveal>
+              </section>
+            </div>
+          )}
+        </div>
 
         {/* Footer chúc phúc chân trang */}
         <footer className="border-t border-[#DFC07C]/20 bg-[#091326] px-4 py-12 text-center text-xs text-[#FAF6F0]/60">
-          <div className="mx-auto flex max-w-sm flex-col items-center gap-2">
+          <ImperialReveal direction="up" className="mx-auto flex max-w-sm flex-col items-center gap-2">
             <Heart className="h-4 w-4 text-[#DFC07C]" />
             <p className="tracking-widest uppercase">
               {data.couple?.groomName ?? "Chú Rể"} &amp; {data.couple?.brideName ?? "Cô Dâu"}
@@ -1692,7 +1809,7 @@ export function LongPhungEp4Template({
             <p className="text-[11px] text-[#FAF6F0]/40">
               Cảm ơn quý khách đã gửi trọn yêu thương cùng chúng tôi
             </p>
-          </div>
+          </ImperialReveal>
         </footer>
       </main>
     </div>

@@ -7,6 +7,7 @@ import { m, useReducedMotion } from "motion/react"; import { GiftModal } from "@
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
@@ -331,7 +332,7 @@ function Cover({
               style={{ border: `1px solid ${GOLD_SOFT}` }}
             />
 
-            {/* cụm hoa góc trên trái — lật + xoay đặt trên <img> tĩnh để không
+            {/* cụm hoa góc trên trái — lật + xoay đặt trên <img loading="lazy" decoding="async"> tĩnh để không
                 xung đột transform với Motion ở lớp ngoài */}
             <m.div
               className="pointer-events-none absolute -top-16 -left-14 w-[42%] max-w-[160px]"
@@ -388,7 +389,7 @@ function Cover({
                 className="mt-4 text-[9px] uppercase tracking-[0.3em]"
                 style={{ color: MUTED }}
               >
-                You are invited to the wedding of
+                Trân Trọng Kính Mời
               </p>
 
               <h1
@@ -439,7 +440,7 @@ function Hero({ data, guestName }: { data: TemplateData; guestName: string }) {
       <div className="relative overflow-hidden" style={{ backgroundColor: RED }}>
         <div className="mx-auto w-full max-w-[560px] px-5 pt-7 pb-4 text-center">
           <p className="text-[10px] font-medium uppercase tracking-[0.38em]" style={{ color: ON_RED }}>
-            {data.ui.eyebrow || "WELCOME TO OUR WEDDING"}
+            {data.ui.eyebrow || "Trân Trọng Kính Mời"}
           </p>
 
           <div className="mt-3 flex items-start justify-between gap-2">
@@ -902,11 +903,7 @@ function DressAndTimeline({ data }: { data: TemplateData }) {
         <GoldTitle>Trang phục</GoldTitle>
 
         <div className="mt-5 text-center">
-          <p className="text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD }}>
-            Dress code
-          </p>
-          <p className="mt-1 text-[11px]" style={{ color: MUTED }}>Trang phục dự tiệc</p>
-          <div className="mt-3 flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3">
             {colors.map((color) => (
               <span
                 key={color}
@@ -1121,7 +1118,7 @@ function AlbumCarousel({ data }: { data: TemplateData }) {
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src={photos[lightbox].url}
             alt={photos[lightbox].alt}
             className="max-h-[86vh] max-w-full rounded-lg object-contain"
@@ -1238,7 +1235,7 @@ export default function DoTruyenThongTemplate({
   const hidden = new Set(data.hiddenSections ?? []);
   const order = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "map", "calendar", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = order.indexOf(key);
     return index < 0 ? 99 : index;
@@ -1298,7 +1295,9 @@ export default function DoTruyenThongTemplate({
       data-template-id="do-ruou-vang"
       className={cn(
         "relative min-w-0 overflow-x-hidden antialiased",
-        contained ? "min-h-full" : "min-h-screen-dvh",
+        contained
+          ? (!coverGone ? "h-full overflow-hidden" : "min-h-full")
+          : (!coverGone ? "h-screen-dvh max-h-full overflow-hidden" : "min-h-screen-dvh"),
         viewport === "desktop" && !contained && "mx-auto w-full max-w-[820px]",
       )}
       style={{
@@ -1320,7 +1319,10 @@ export default function DoTruyenThongTemplate({
       )}
 
       <m.div
-        className="mx-auto w-full"
+        className={cn(
+          "mx-auto w-full",
+          !coverGone && !closing && "hidden pointer-events-none",
+        )}
         initial={false}
         animate={{ scale: closing || coverGone ? 1 : 0.96 }}
         transition={{ duration: 0.7, ease: EASE }}
@@ -1417,7 +1419,7 @@ export default function DoTruyenThongTemplate({
             {data.couple.groomName} &amp; {data.couple.brideName}
           </p>
           <p className="mt-1 text-[10px] uppercase tracking-[0.24em]" style={{ color: MUTED }}>
-            {data.ui.thankYouHeading || "Thank you for celebrating with us"}
+            {data.ui.thankYouHeading || "Trân trọng cảm ơn"}
           </p>
         </footer>
       </m.div>

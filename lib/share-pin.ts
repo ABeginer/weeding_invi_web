@@ -17,10 +17,10 @@ function getShareSecret(): string {
 
 export { safeEqual };
 
-export async function createShareCookieValue(slug: string): Promise<string> {
+export async function createShareCookieValue(slug: string, pin = ""): Promise<string> {
   const enc = new TextEncoder();
   const timestamp = Date.now().toString();
-  const payload = `${slug}:${timestamp}`;
+  const payload = `${slug}:${pin}:${timestamp}`;
   const key = await crypto.subtle.importKey(
     "raw",
     enc.encode(getShareSecret()),
@@ -38,6 +38,7 @@ export async function createShareCookieValue(slug: string): Promise<string> {
 export async function verifyShareCookieValue(
   slug: string,
   cookieValue: string | null | undefined,
+  pin = "",
 ): Promise<boolean> {
   if (!cookieValue || typeof cookieValue !== "string") return false;
   const parts = cookieValue.split(".");
@@ -50,7 +51,7 @@ export async function verifyShareCookieValue(
   if (Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000) return false;
 
   const enc = new TextEncoder();
-  const payload = `${slug}:${timestampStr}`;
+  const payload = `${slug}:${pin}:${timestampStr}`;
   const key = await crypto.subtle.importKey(
     "raw",
     enc.encode(getShareSecret()),

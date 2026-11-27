@@ -12,6 +12,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent } from "@/lib/wedding-types";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -44,11 +45,11 @@ const BODY_FONT = "var(--font-be-vietnam), 'Be Vietnam Pro', sans-serif";
 const EASE_BALLROOM = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_TIMELINE = [
-  { time: "16:30", label: "Đón tiếp quan khách & Thảm đỏ dạ yến tại tiền sảnh Pha Lê Baccarat" },
-  { time: "17:30", label: "Khai mạc Dạ Yến & Nghi thức Tình Yêu Vĩnh Cửu dưới đèn chùm pha lê" },
-  { time: "18:00", label: "Khui Champagne khai tiệc & Nâng ly chúc phúc tình yêu son sắt" },
-  { time: "19:30", label: "Vũ điệu Valse hoàng gia & Hòa tấu thính phòng dưới ánh sao" },
-  { time: "20:30", label: "Tiễn khách & Trao kỷ vật dạ yến tri ân" },
+  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
+  { time: "17:30", label: "Khai mạc buổi lễ & Nghi thức Thành Hôn" },
+  { time: "18:00", label: "Khui Champagne khai tiệc & Nâng ly chúc phúc" },
+  { time: "19:30", label: "Âm nhạc & Giao lưu cùng quan khách" },
+  { time: "20:30", label: "Tiễn khách & Trao kỷ vật tri ân" },
 ];
 
 const DEFAULT_DRESS = ["#0A0A0D", "#E6C98C", "#DCE3EE"];
@@ -244,7 +245,7 @@ export function DaYenPhaLeTemplate({
   );
   const eventDateStr = targetEvent?.startsAt || data.date || "2027-03-20T10:00:00+07:00";
   const dateParts = formatWeddingDateParts(eventDateStr);
-  const lunarClean = formatLunarDateClean(eventDateStr);
+  const lunarClean = targetEvent?.lunarDate ? formatLunarDateClean(targetEvent.lunarDate) : "";
 
   const eventDays = React.useMemo(() => {
     const set = new Set<number>();
@@ -300,7 +301,7 @@ export function DaYenPhaLeTemplate({
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const sectionOrder = data.sectionOrder || ["family", "calendar", "map", "dresscode", "album", "gift", "rsvp"];
+  const sectionOrder = data.sectionOrder?.length ? data.sectionOrder : CANONICAL_SECTION_ORDER;
   const orderOf = (name: string) => {
     const idx = sectionOrder.indexOf(name);
     return idx === -1 ? 99 : idx + 1;
@@ -378,7 +379,7 @@ export function DaYenPhaLeTemplate({
                   media="(min-width: 768px)"
                   srcSet="/templates/da-yen-pha-le/background.webp"
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/da-yen-pha-le/background-mobile.webp"
                   alt="Nền dạ yến pha lê"
                   className="w-full h-full object-cover object-center"
@@ -512,7 +513,7 @@ export function DaYenPhaLeTemplate({
               </div>
 
               {/* Dải chuỗi pha lê rủ ánh bạc-vàng */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/da-yen-pha-le/divider-crystal.webp"
                 alt="Dải chuỗi pha lê"
                 className="w-48 sm:w-60 h-auto my-3 opacity-90 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
@@ -605,7 +606,7 @@ export function DaYenPhaLeTemplate({
               media="(min-width: 768px)"
               srcSet="/templates/da-yen-pha-le/background.webp"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/da-yen-pha-le/background-mobile.webp"
               alt="Nền dạ yến"
               className="w-full h-full object-cover object-center"
@@ -632,7 +633,7 @@ export function DaYenPhaLeTemplate({
           >
             {/* Đèn chùm pha lê Baccarat treo đỉnh Hero */}
             <div className="w-full max-w-[620px] mb-4 flex justify-center">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/da-yen-pha-le/chandelier-top.webp"
                 alt="Đèn chùm pha lê"
                 className="w-full h-auto drop-shadow-[0_6px_25px_rgba(230,201,140,0.5)]"
@@ -648,7 +649,7 @@ export function DaYenPhaLeTemplate({
               {/* Ảnh bên trong vòm hoặc Fallback tên 3 dòng */}
               {heroPhoto ? (
                 <div className="absolute inset-[8%] rounded-t-full overflow-hidden shadow-2xl border border-[#E6C98C]/40 group">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={heroPhoto}
                     alt="Ảnh cặp đôi"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -658,7 +659,7 @@ export function DaYenPhaLeTemplate({
                 </div>
               ) : (
                 <div className="absolute inset-[8%] rounded-t-full bg-[#141318] flex flex-col items-center justify-center p-6 border border-[#E6C98C]/30 text-center">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/da-yen-pha-le/crystal-crest.webp"
                     alt="Trâm pha lê"
                     className="w-12 h-auto mb-2 opacity-80"
@@ -682,7 +683,7 @@ export function DaYenPhaLeTemplate({
               )}
 
               {/* Khung Vòm Gương Pha Lê Nổi Phía Trước */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/da-yen-pha-le/crystal-arch.webp"
                 alt="Khung vòm gương pha lê"
                 className="relative z-10 w-full h-full object-contain pointer-events-none drop-shadow-[0_0_20px_rgba(230,201,140,0.4)]"
@@ -700,7 +701,7 @@ export function DaYenPhaLeTemplate({
             </h1>
 
             {/* Dải chuỗi pha lê rủ */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/da-yen-pha-le/divider-crystal.webp"
               alt="Dải chuỗi pha lê"
               className="w-48 sm:w-64 h-auto my-3 opacity-90"
@@ -725,9 +726,6 @@ export function DaYenPhaLeTemplate({
                     <span className="text-[11px] uppercase tracking-[0.25em] text-[#E6C98C] font-semibold">
                       Gia Tộc Thông Báo
                     </span>
-                    <p className="text-xs sm:text-sm text-[#BDB8B0] mt-1 italic">
-                      Trân trọng báo tin lễ thành hôn của con chúng tôi
-                    </p>
                   </div>
 
                   {/* 2 cột gia đình cân đối cao bằng nhau */}
@@ -790,145 +788,144 @@ export function DaYenPhaLeTemplate({
             )}
 
             {/* Section 2: Thông tin Lễ Cưới (Ceremony — Đa Lễ 100%) */}
-            <div style={{ order: orderOf("calendar") }}>
-              <section className="relative w-full rounded-2xl bg-[#141318]/94 border border-[#E6C98C]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
-                <span className="text-[11px] uppercase tracking-[0.25em] text-[#E6C98C] font-semibold mb-1">
-                  Thời Gian &amp; Địa Điểm
-                </span>
+            {!hiddenSections.has("map") && (
+              <div style={{ order: orderOf("map") }}>
+                <section className="relative w-full rounded-2xl bg-[#141318]/94 border border-[#E6C98C]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
+                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#E6C98C] font-semibold mb-1">
+                    Thời Gian &amp; Địa Điểm
+                  </span>
 
-                <div
-                  className={cn(
-                    "grid gap-6 w-full mt-4",
-                    visibleEvents.length > 1
-                      ? "grid-cols-1 md:grid-cols-2 text-left"
-                      : "max-w-xl mx-auto text-center"
-                  )}
-                >
-                  {visibleEvents.map((evt, idx) => {
-                    const evtDateStr = evt.startsAt || data.date || "2027-03-20T10:00:00+07:00";
-                    const evtDateParts = formatWeddingDateParts(evtDateStr);
-                    const evtLunar = evt.lunarDate
-                      ? formatLunarDateClean(evt.lunarDate)
-                      : formatLunarDateClean(evtDateStr);
-                    const directionsUrl = getEventDirectionsUrl(evt);
+                  <div
+                    className={cn(
+                      "grid gap-6 w-full mt-4",
+                      visibleEvents.length > 1
+                        ? "grid-cols-1 md:grid-cols-2 text-left"
+                        : "max-w-xl mx-auto text-center"
+                    )}
+                  >
+                    {visibleEvents.map((evt, idx) => {
+                      const evtDateStr = evt.startsAt || data.date || "2027-03-20T10:00:00+07:00";
+                      const evtDateParts = formatWeddingDateParts(evtDateStr);
+                      const evtLunar = evt.lunarDate
+                        ? formatLunarDateClean(evt.lunarDate)
+                        : "";
+                      const directionsUrl = getEventDirectionsUrl(evt);
 
-                    return (
-                      <div
-                        key={evt.id || `event-${idx}`}
-                        className="rounded-xl border border-[#E6C98C]/30 bg-[#0A0A0D]/70 p-5 sm:p-6 flex flex-col items-center text-center space-y-3"
-                      >
-                        <h2
-                          className="text-xl sm:text-2xl text-[#F9EBD0] font-normal tracking-wide uppercase"
-                          style={{ fontFamily: TITLE_FONT }}
+                      return (
+                        <div
+                          key={evt.id || `event-${idx}`}
+                          className="rounded-xl border border-[#E6C98C]/30 bg-[#0A0A0D]/70 p-5 sm:p-6 flex flex-col items-center text-center space-y-3"
                         >
-                          {evt.title || (idx === 0 ? "Lễ Thành Hôn" : `Lễ Cưới ${idx + 1}`)}
-                        </h2>
+                          <h2
+                            className="text-xl sm:text-2xl text-[#F9EBD0] font-normal tracking-wide uppercase"
+                            style={{ fontFamily: TITLE_FONT }}
+                          >
+                            {evt.title || (idx === 0 ? "Lễ Thành Hôn" : `Lễ Cưới ${idx + 1}`)}
+                          </h2>
 
-                        {/* Giờ tổ chức */}
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-[#E6C98C] tracking-widest uppercase">
-                          <Clock className="w-4 h-4 text-[#E6C98C]" />
-                          <span>
-                            VÀO LÚC {evtDateParts.time || "10:00"}
+                          {/* Giờ tổ chức */}
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-[#E6C98C] tracking-widest uppercase">
+                            <Clock className="w-4 h-4 text-[#E6C98C]" />
+                            <span>
+                              VÀO LÚC {evtDateParts.time || "10:00"}
+                            </span>
+                          </div>
+
+                          {/* Khối Ngày Ngang: THỨ | NGÀY | THÁNG */}
+                          <div className="flex items-center justify-center gap-4 sm:gap-6 py-2.5 px-4 sm:px-6 rounded border border-[#E6C98C]/30 bg-[#141318]/90 my-1">
+                            <div className="text-center">
+                              <span className="block text-[10px] sm:text-[11px] tracking-[0.2em] text-[#BDB8B0] uppercase">
+                                {evtDateParts.weekday || "Chủ Nhật"}
+                              </span>
+                            </div>
+                            <div className="w-px h-8 bg-[#E6C98C]/40" />
+                            <div className="text-center">
+                              <span
+                                className="block text-2xl sm:text-4xl font-bold text-[#E6C98C] leading-none"
+                                style={{ fontFamily: TITLE_FONT }}
+                              >
+                                {evtDateParts.day || "20"}
+                              </span>
+                            </div>
+                            <div className="w-px h-8 bg-[#E6C98C]/40" />
+                            <div className="text-center">
+                              <span className="block text-[10px] sm:text-[11px] tracking-[0.2em] text-[#BDB8B0] uppercase">
+                                Tháng {evtDateParts.month || "03"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <span className="text-[11px] tracking-widest text-[#BDB8B0]">
+                            NĂM {evtDateParts.year || "2027"}
                           </span>
-                        </div>
 
-                        {/* Khối Ngày Ngang: THỨ | NGÀY | THÁNG */}
-                        <div className="flex items-center justify-center gap-4 sm:gap-6 py-2.5 px-4 sm:px-6 rounded border border-[#E6C98C]/30 bg-[#141318]/90 my-1">
-                          <div className="text-center">
-                            <span className="block text-[10px] sm:text-[11px] tracking-[0.2em] text-[#BDB8B0] uppercase">
-                              {evtDateParts.weekday || "Chủ Nhật"}
-                            </span>
-                          </div>
-                          <div className="w-px h-8 bg-[#E6C98C]/40" />
-                          <div className="text-center">
-                            <span
-                              className="block text-2xl sm:text-4xl font-bold text-[#E6C98C] leading-none"
-                              style={{ fontFamily: TITLE_FONT }}
-                            >
-                              {evtDateParts.day || "20"}
-                            </span>
-                          </div>
-                          <div className="w-px h-8 bg-[#E6C98C]/40" />
-                          <div className="text-center">
-                            <span className="block text-[10px] sm:text-[11px] tracking-[0.2em] text-[#BDB8B0] uppercase">
-                              Tháng {evtDateParts.month || "03"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <span className="text-[11px] tracking-widest text-[#BDB8B0]">
-                          NĂM {evtDateParts.year || "2027"}
-                        </span>
-
-                        {/* Ngày Âm Lịch */}
-                        {evtLunar && (
-                          <p className="text-xs text-[#E6C98C] font-medium tracking-wider">
-                            {evtLunar}
-                          </p>
-                        )}
-
-                        {/* Địa điểm tổ chức */}
-                        <div className="pt-3 border-t border-[#E6C98C]/20 w-full space-y-1">
-                          {evt.venueName && (
-                            <h4
-                              className="text-base sm:text-lg text-[#F9EBD0] font-medium"
-                              style={{ fontFamily: TITLE_FONT }}
-                            >
-                              {evt.venueName}
-                            </h4>
-                          )}
-                          {evt.venueAddress && (
-                            <p className="text-xs text-[#BDB8B0] leading-relaxed">
-                              {evt.venueAddress}
+                          {/* Ngày Âm Lịch */}
+                          {evtLunar && (
+                            <p className="text-xs text-[#E6C98C] font-medium tracking-wider">
+                              {evtLunar}
                             </p>
                           )}
-                        </div>
 
-                        {/* Nút tác vụ: Chỉ đường & Thêm vào lịch */}
-                        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                          {directionsUrl && (
+                          {/* Địa điểm tổ chức */}
+                          <div className="pt-3 border-t border-[#E6C98C]/20 w-full space-y-1">
+                            {evt.venueName && (
+                              <h4
+                                className="text-base sm:text-lg text-[#F9EBD0] font-medium"
+                                style={{ fontFamily: TITLE_FONT }}
+                              >
+                                {evt.venueName}
+                              </h4>
+                            )}
+                            {evt.venueAddress && (
+                              <p className="text-xs text-[#BDB8B0] leading-relaxed">
+                                {evt.venueAddress}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Nút tác vụ: Chỉ đường & Thêm vào lịch */}
+                          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                            {directionsUrl && (
+                              <a
+                                href={directionsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] bg-gradient-to-r from-[#D4B16A] via-[#F2DCB0] to-[#D4B16A] text-[#0A0A0D] text-xs font-bold tracking-widest uppercase transition-all duration-300 hover:shadow-[0_0_12px_rgba(230,201,140,0.6)] cursor-pointer"
+                              >
+                                <MapPin className="w-3.5 h-3.5 text-[#0A0A0D]" />
+                                <span>Chỉ Đường</span>
+                              </a>
+                            )}
                             <a
-                              href={directionsUrl}
+                              href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                                `${evt.title || "Lễ Cưới"}: ${groomName} & ${brideName}`
+                              )}&dates=${evtDateStr.replace(/-|:|\./g, "").slice(0, 8)}T040000Z/${evtDateStr.replace(/-|:|\./g, "").slice(0, 8)}T080000Z&details=${encodeURIComponent(
+                                `Trân trọng kính mời tham dự ${evt.title || "lễ cưới"} của ${groomName} & ${brideName}.`
+                              )}&location=${encodeURIComponent(evt.venueAddress || "")}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] bg-gradient-to-r from-[#D4B16A] via-[#F2DCB0] to-[#D4B16A] text-[#0A0A0D] text-xs font-bold tracking-widest uppercase transition-all duration-300 hover:shadow-[0_0_12px_rgba(230,201,140,0.6)] cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] border border-[#E6C98C]/50 hover:bg-[#E6C98C]/20 text-[#E6C98C] text-xs font-medium tracking-wider uppercase transition-colors"
                             >
-                              <MapPin className="w-3.5 h-3.5 text-[#0A0A0D]" />
-                              <span>Chỉ Đường</span>
+                              <span>Thêm Vào Lịch</span>
                             </a>
-                          )}
-                          <a
-                            href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-                              `${evt.title || "Lễ Cưới"}: ${groomName} & ${brideName}`
-                            )}&dates=${evtDateStr.replace(/-|:|\./g, "").slice(0, 8)}T040000Z/${evtDateStr.replace(/-|:|\./g, "").slice(0, 8)}T080000Z&details=${encodeURIComponent(
-                              `Trân trọng kính mời tham dự ${evt.title || "lễ cưới"} của ${groomName} & ${brideName}.`
-                            )}&location=${encodeURIComponent(evt.venueAddress || "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] border border-[#E6C98C]/50 hover:bg-[#E6C98C]/20 text-[#E6C98C] text-xs font-medium tracking-wider uppercase transition-colors"
-                          >
-                            <span>Thêm Vào Lịch</span>
-                          </a>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              </div>
+            )}
 
-            {/* Section 3: Album Ảnh Cưới (album & albumQr — "Thảm Đỏ Dạ Yến") */}
+            {/* Section 3: Album Ảnh Cưới (album) */}
             {!hiddenSections.has("album") && albumPhotos.length > 0 && (
               <div style={{ order: orderOf("album") }}>
                 <section className="relative w-full rounded-2xl bg-[#141318]/94 border border-[#E6C98C]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#E6C98C] font-semibold mb-1">
-                    Thảm Đỏ Dạ Yến
-                  </span>
                   <h2
                     className="text-2xl sm:text-3xl text-[#F9EBD0] font-normal mb-8 tracking-wide uppercase"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    Khoảnh Khắc Lộng Lẫy
+                    Album Ảnh Cưới
                   </h2>
 
                   {/* 3D Coverflow / Carousel */}
@@ -950,7 +947,7 @@ export function DaYenPhaLeTemplate({
                       className="relative w-full aspect-[4/5] sm:aspect-[3/4] max-w-[400px] rounded-sm overflow-hidden shadow-2xl border border-[#E6C98C]/60 cursor-pointer group"
                       onClick={() => setLightboxIndex(activePhotoIdx)}
                     >
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={albumPhotos[activePhotoIdx]?.url || "/photos/hero2.webp"}
                         alt="Ảnh cưới"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -985,12 +982,15 @@ export function DaYenPhaLeTemplate({
                     </div>
                   )}
 
-                  {/* QR tải ảnh khách mời (chỉ hiện ở gói trả phí) */}
-                  {!isFree && !hiddenSections.has("albumQr") && (
-                    <div className="mt-8 pt-6 border-t border-[#E6C98C]/30 w-full flex justify-center">
-                      <GuestAlbumQr slug={weddingSlug} accentColor={GOLD_CHAMPAGNE} textColor={GOLD_BRIGHT} mutedColor={TEXT_MUTED} />
-                    </div>
-                  )}
+                </section>
+              </div>
+            )}
+
+            {/* QR tải ảnh khách mời (chỉ hiện ở gói trả phí) */}
+            {!isFree && !hiddenSections.has("albumQr") && weddingSlug && (
+              <div style={{ order: orderOf("albumQr") }}>
+                <section className="relative w-full rounded-2xl bg-[#141318]/94 border border-[#E6C98C]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
+                  <GuestAlbumQr slug={weddingSlug} accentColor={GOLD_CHAMPAGNE} textColor={GOLD_BRIGHT} mutedColor={TEXT_MUTED} />
                 </section>
               </div>
             )}
@@ -1086,19 +1086,12 @@ export function DaYenPhaLeTemplate({
             {!hiddenSections.has("dresscode") && (
               <div style={{ order: orderOf("dresscode") }}>
                 <section className="relative w-full rounded-2xl bg-[#141318]/94 border border-[#E6C98C]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#E6C98C] font-semibold mb-1">
-                    Trang Phục Gợi Ý
-                  </span>
                   <h2
                     className="text-2xl sm:text-3xl text-[#F9EBD0] font-normal mb-6 tracking-wide uppercase"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    Dress Code
+                    Trang Phục Gợi Ý
                   </h2>
-
-                  <p className="text-xs sm:text-sm text-[#BDB8B0] max-w-[480px] leading-relaxed mb-6 font-light">
-                    Để tạo nên không gian dạ hội lộng lẫy và đồng điệu, quý khách vui lòng ưu tiên trang phục mang các sắc màu:
-                  </p>
 
                   {/* 3 vòng tròn màu Dress Code động */}
                   <div className="flex items-center justify-center gap-6 mb-12">
@@ -1155,15 +1148,11 @@ export function DaYenPhaLeTemplate({
                     Gửi Lời Chúc Phúc
                   </span>
                   <h2
-                    className="text-2xl sm:text-3xl text-[#F9EBD0] font-normal mb-4 tracking-wide uppercase"
+                    className="text-2xl sm:text-3xl text-[#F9EBD0] font-normal mb-6 tracking-wide uppercase"
                     style={{ fontFamily: TITLE_FONT }}
                   >
                     Hộp Mừng Cưới
                   </h2>
-
-                  <p className="text-xs sm:text-sm text-[#BDB8B0] max-w-[460px] leading-relaxed mb-6 font-light">
-                    Sự hiện diện và lời chúc phúc của quý khách là món quà quý giá nhất. Quý khách cũng có thể gửi quà mừng qua tráp pha lê đế nhung:
-                  </p>
 
                   {/* Hộp quà Pha Lê Cloche 3 trạng thái tương tác */}
                   <div
@@ -1175,7 +1164,7 @@ export function DaYenPhaLeTemplate({
                       setTimeout(() => setGiftModalOpen(true), 300);
                     }}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={`/templates/da-yen-pha-le/gift-${activeParcel}.webp`}
                       alt="Hộp mừng cưới Pha Lê Cloche"
                       className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]"
@@ -1203,21 +1192,6 @@ export function DaYenPhaLeTemplate({
             {!hiddenSections.has("rsvp") && (
               <div style={{ order: orderOf("rsvp") }}>
                 <section className="relative w-full rounded-2xl bg-[#141318]/94 border border-[#E6C98C]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md overflow-hidden">
-                  <div className="text-center mb-8">
-                    <span className="text-[11px] uppercase tracking-[0.25em] text-[#E6C98C] font-semibold">
-                      Phúc Đáp
-                    </span>
-                    <h2
-                      className="text-2xl sm:text-3xl text-[#F9EBD0] font-normal mt-1 tracking-wide uppercase"
-                      style={{ fontFamily: TITLE_FONT }}
-                    >
-                      Xác Nhận Tham Dự
-                    </h2>
-                    <p className="text-xs sm:text-sm text-[#BDB8B0] mt-2 italic">
-                      Xin vui lòng phản hồi trước ngày {dateParts.day} tháng {dateParts.month} để chúng tôi chuẩn bị đón tiếp chu đáo nhất.
-                    </p>
-                  </div>
-
                   <TemplateRsvpSection
                     data={data}
                     mode={mode}
@@ -1253,12 +1227,12 @@ export function DaYenPhaLeTemplate({
               FOOTER (ĐẶT NGOÀI FLEX CONTAINER CÓ ORDER)
               ------------------------------------------------------------ */}
           <footer className="mt-16 sm:mt-24 pt-12 pb-8 border-t border-[#E6C98C]/30 flex flex-col items-center text-center">
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/da-yen-pha-le/crystal-crest.webp"
               alt="Trâm pha lê"
               className="w-12 h-auto mb-3 opacity-90"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/da-yen-pha-le/divider-crystal.webp"
               alt="Chuỗi pha lê"
               className="w-44 sm:w-56 h-auto my-2 opacity-90"
@@ -1273,7 +1247,7 @@ export function DaYenPhaLeTemplate({
               {groomName} &amp; {brideName}
             </div>
             <span className="text-[10px] tracking-[0.25em] text-[#BDB8B0]/60 uppercase mt-6">
-              Dạ Yến Pha Lê • Midnight Ballroom Gala
+              Trân Trọng Cảm Ơn
             </span>
           </footer>
         </div>

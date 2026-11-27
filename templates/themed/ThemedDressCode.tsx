@@ -19,34 +19,15 @@ export function ThemedDressCode({ theme }: ThemedDressCodeProps) {
       }}
       className="mx-auto w-full rounded-2xl border p-5 text-center shadow-lg backdrop-blur-md sm:p-6"
     >
-      <div
-        className="inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest"
-        style={{
-          backgroundColor: theme.badgeBg,
-          color: theme.badgeTextColor,
-        }}
-      >
-        <span
-          className="h-1.5 w-1.5 rounded-full"
-          style={{ backgroundColor: theme.badgeTextColor }}
-          aria-hidden="true"
-        />
-        <span>Dress Code Gợi Ý</span>
-      </div>
-
       <h3
         style={{
           color: theme.accentTextColor,
           fontFamily: theme.headingFontFamily,
         }}
-        className="mt-3 font-serif text-lg font-bold uppercase tracking-wider sm:text-xl"
+        className="mt-1 font-serif text-lg font-bold uppercase tracking-wider sm:text-xl"
       >
-        Trang Phục Tham Dự
+        Trang Phục Gợi Ý
       </h3>
-
-      <p style={{ color: theme.subtextColor }} className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed">
-        Để những bức ảnh lưu niệm thêm phần hài hòa và đồng điệu, kính mong quý khách ưu tiên trang phục theo các gam màu:
-      </p>
 
       {/* Swatches Row */}
       <div className="mt-5 flex flex-wrap items-center justify-center gap-4 sm:gap-6">

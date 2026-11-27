@@ -1,3 +1,5 @@
+export const AUTH0_EMAIL_CLAIM = "https://thiepcuoi/email";
+
 export function resolveAppBaseUrl(): string {
   const fromEnv =
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||

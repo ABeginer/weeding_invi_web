@@ -288,7 +288,12 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       );
       // Tải lại canvas mới nhất để preview + field ảnh cập nhật ngay.
       void getWedding(result.wedding.id)
-        .then((next) => setWedding(next))
+        .then((next) =>
+          setWedding({
+            ...next,
+            content: normalizeWeddingContent(next.content),
+          }),
+        )
         .catch(() => { });
     },
     [],
@@ -296,7 +301,7 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
 
   const handleSelectTab = (nextTab: DetailTab) => {
     if (nextTab === activeTab) return;
-    if (activeTab === "info" && isDirty && nextTab !== "preview") {
+    if (isDirty && nextTab !== "preview" && nextTab !== "info") {
       setPendingTab(nextTab);
       return;
     }
@@ -497,9 +502,11 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       </div>
 
       <div className="mx-auto w-full">
-        <p className="mb-2 rounded-lg border border-accent/25 bg-accent-soft/40 px-3 py-2 text-center text-[11px] text-fg-muted">
-          Chạm vào tên hoặc ảnh trên thiệp để chỉnh nhanh.
-        </p>
+        {Boolean(wedding.designerTemplateId) && (
+          <p className="mb-2 rounded-lg border border-accent/25 bg-accent-soft/40 px-3 py-2 text-center text-[11px] text-fg-muted">
+            Chạm vào tên hoặc ảnh trên thiệp để chỉnh nhanh.
+          </p>
+        )}
         <details className="mb-2 rounded-xl border border-border bg-surface px-3 py-2">
           <summary className="cursor-pointer text-[11px] font-semibold text-fg">
             Hiện / ẩn phần trên thiệp
@@ -726,8 +733,9 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
       >
         <div className="flex min-w-max gap-1">
           {[
-            ...SIDEBAR_TABS,
+            SIDEBAR_TABS[0],
             { id: "preview" as const, label: "Xem trước", Icon: Smartphone, badge: undefined },
+            ...SIDEBAR_TABS.slice(1),
           ].map(({ id, label, Icon, badge }) => {
             const active = activeTab === id;
             return (
@@ -940,6 +948,18 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
                   ...(nextMode ? { photoApprovalMode: nextMode } : {}),
                 };
                 setDraftContent(next);
+                setWedding((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        content: {
+                          ...prev.content,
+                          photoModeration: nextMod,
+                          ...(nextMode ? { photoApprovalMode: nextMode } : {}),
+                        },
+                      }
+                    : prev,
+                );
               }}
               onPhotoDeleted={(photoId) => {
                 setPhotos((prev) => prev.filter((p) => p.id !== photoId));
@@ -984,21 +1004,24 @@ export function WeddingDetailView({ weddingId }: WeddingDetailViewProps) {
               showOnCard={draftContent.showWishesOnCard === true}
               approvalMode={draftContent.wishApprovalMode === "auto" ? "auto" : "manual"}
               displayStyle={draftContent.wishDisplayStyle === "overlay" ? "overlay" : "box"}
-              onToggleShowOnCard={(next) =>
-                setDraftContent((prev) =>
-                  prev ? { ...prev, showWishesOnCard: next } : prev,
-                )
-              }
-              onApprovalModeChange={(mode) =>
+              onToggleShowOnCard={(next) => {
+                const updated = { ...draftContent, showWishesOnCard: next };
+                setDraftContent(updated);
+                void handleSaveInfo(updated);
+              }}
+              onApprovalModeChange={(mode) => {
                 setDraftContent((prev) =>
                   prev ? { ...prev, wishApprovalMode: mode } : prev,
-                )
-              }
-              onDisplayStyleChange={(style) =>
-                setDraftContent((prev) =>
-                  prev ? { ...prev, wishDisplayStyle: style } : prev,
-                )
-              }
+                );
+                setWedding((prev) =>
+                  prev ? { ...prev, content: { ...prev.content, wishApprovalMode: mode } } : prev,
+                );
+              }}
+              onDisplayStyleChange={(style) => {
+                const updated = { ...draftContent, wishDisplayStyle: style };
+                setDraftContent(updated);
+                void handleSaveInfo(updated);
+              }}
             />
           )}
 

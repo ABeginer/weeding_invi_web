@@ -15,6 +15,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-types";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
@@ -171,7 +172,7 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
       {/* Background Texture Mobile */}
       <div
         className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay"
-        style={{ backgroundImage: "url('/templates/cam-tu-cau-xanh/background-mobile.webp')" }}
+        style={{ backgroundImage: "url('/templates/lam-hoa-vien/background-mobile.webp')" }}
       />
 
       <HydrangeaDustParticles count={16} />
@@ -199,26 +200,26 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
           <div className="absolute inset-1 rounded-lg border border-[#C9B182]/25" />
 
           {/* 4 Góc hoa cẩm tú cầu duy nhất từ corner-tl.webp dùng CSS transforms */}
-          <img
-            src="/templates/cam-tu-cau-xanh/corner-tl.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute left-0 top-0 h-auto w-11 opacity-85 sm:w-13"
             aria-hidden="true"
           />
-          <img
-            src="/templates/cam-tu-cau-xanh/corner-tl.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute right-0 top-0 h-auto w-11 -scale-x-100 opacity-85 sm:w-13"
             aria-hidden="true"
           />
-          <img
-            src="/templates/cam-tu-cau-xanh/corner-tl.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute bottom-0 left-0 h-auto w-11 -scale-y-100 opacity-85 sm:w-13"
             aria-hidden="true"
           />
-          <img
-            src="/templates/cam-tu-cau-xanh/corner-tl.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute bottom-0 right-0 h-auto w-11 -scale-100 opacity-85 sm:w-13"
             aria-hidden="true"
@@ -252,8 +253,8 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
               ease: "easeInOut",
             }}
           />
-          <img
-            src="/templates/cam-tu-cau-xanh/wax-seal.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/wax-seal.webp"
             alt="Con dấu sáp Lam Hoa Viên"
             className="relative z-10 h-full w-full object-contain drop-shadow-md"
           />
@@ -311,8 +312,8 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
 
         {/* Dải hoa cẩm tú cầu phân cách */}
         <div className="my-2 flex w-full justify-center">
-          <img
-            src="/templates/cam-tu-cau-xanh/divider-floral.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/divider-floral.webp"
             alt=""
             className="h-auto w-44 object-contain opacity-90 sm:w-52"
             aria-hidden="true"
@@ -376,20 +377,20 @@ function HeroSection({ data, isOpened }: { data: TemplateData; isOpened: boolean
       {/* Background Decor */}
       <div
         className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-15"
-        style={{ backgroundImage: "url('/templates/cam-tu-cau-xanh/background-mobile.webp')" }}
+        style={{ backgroundImage: "url('/templates/lam-hoa-vien/background-mobile.webp')" }}
       />
 
       <div className="relative z-10 mx-auto max-w-lg">
         {/* Lời tựa mở đầu */}
         <m.p
-          className="text-xs uppercase tracking-[0.35em] text-[#4A5D75]"
+          className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-[#4A5D75] text-center"
           style={{ fontFamily: BODY_FONT }}
           initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          {data.ui?.eyebrow || "The Wedding of"}
+          {data.ui?.eyebrow || "Thiệp mời tham dự lễ cưới"}
         </m.p>
 
         {/* Tên cặp đôi thanh lịch */}
@@ -428,18 +429,20 @@ function HeroSection({ data, isOpened }: { data: TemplateData; isOpened: boolean
           viewport={{ once: true }}
           transition={{ duration: 0.9, delay: 0.25, ease: EASE_EDITORIAL }}
         >
-          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-[140px] shadow-xl">
-            {/* Ảnh cưới cặp đôi bên trong vòm */}
-            <img
-              src={heroPhotoUrl}
-              alt="Ảnh cưới uyên ương"
-              className="h-full w-full object-cover"
-            />
+          <div className="relative aspect-[480/631] w-full">
+            {/* Ảnh cưới cặp đôi khớp lòng khung vòm */}
+            <div className="absolute inset-x-[10.5%] top-[2%] bottom-[15%] overflow-hidden rounded-t-[999px] rounded-b-[45%] shadow-lg">
+              <img loading="lazy" decoding="async"
+                src={heroPhotoUrl}
+                alt="Ảnh cưới uyên ương"
+                className="h-full w-full object-cover"
+              />
+            </div>
             {/* Khung vòm nghệ thuật arch-frame.webp xếp lớp mặt trước */}
-            <img
-              src="/templates/cam-tu-cau-xanh/arch-frame.webp"
+            <img loading="lazy" decoding="async"
+              src="/templates/lam-hoa-vien/arch-frame.webp"
               alt=""
-              className="pointer-events-none absolute inset-0 h-full w-full object-fill"
+              className="pointer-events-none absolute inset-0 z-10 h-full w-full object-contain"
               aria-hidden="true"
             />
           </div>
@@ -488,8 +491,8 @@ function FamilySection({ data }: { data: TemplateData }) {
     <section className="relative overflow-hidden bg-[#FFFFFF] px-4 py-16 text-[#1E3557] md:py-20">
       <div className="relative z-10 mx-auto max-w-xl text-center">
         <div className="mb-4 flex justify-center">
-          <img
-            src="/templates/cam-tu-cau-xanh/divider-floral.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/divider-floral.webp"
             alt=""
             className="h-auto w-36 object-contain opacity-85 sm:w-44"
             aria-hidden="true"
@@ -502,12 +505,6 @@ function FamilySection({ data }: { data: TemplateData }) {
         >
           Thông Tin Gia Đình
         </h2>
-        <p
-          className="mt-1 text-xs text-[#6B7F99]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Trân trọng thông báo tin hỷ đến toàn thể quý thân hữu
-        </p>
 
         {/* Lưới 2 nhà: Nhà Trai & Nhà Gái (Cao bằng nhau) */}
         <div className="mt-8 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2">
@@ -617,12 +614,6 @@ function EventsSection({ data }: { data: TemplateData }) {
         >
           Sự Kiện Cưới
         </h2>
-        <p
-          className="mt-1 text-xs text-[#6B7F99]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Kính mời quý khách tới tham dự chung vui cùng gia đình
-        </p>
 
         <div className={`mt-8 ${visibleEvents.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}`}>
           {visibleEvents.map((evt, idx) => {
@@ -640,14 +631,14 @@ function EventsSection({ data }: { data: TemplateData }) {
                 transition={{ duration: 0.7, delay: idx * 0.15 }}
               >
                 {/* Góc trang trí cẩm tú cầu */}
-                <img
-                  src="/templates/cam-tu-cau-xanh/corner-tl.webp"
+                <img loading="lazy" decoding="async"
+                  src="/templates/lam-hoa-vien/corner-tl.webp"
                   alt=""
                   className="pointer-events-none absolute top-0 left-0 h-auto w-8 opacity-60"
                   aria-hidden="true"
                 />
-                <img
-                  src="/templates/cam-tu-cau-xanh/corner-tl.webp"
+                <img loading="lazy" decoding="async"
+                  src="/templates/lam-hoa-vien/corner-tl.webp"
                   alt=""
                   className="pointer-events-none absolute top-0 right-0 h-auto w-8 -scale-x-100 opacity-60"
                   aria-hidden="true"
@@ -735,8 +726,8 @@ function GallerySection({ data }: { data: TemplateData }) {
     <section className="relative overflow-hidden bg-[#FFFFFF] px-4 py-16 text-[#1E3557] md:py-24">
       <div className="relative z-10 mx-auto max-w-xl text-center">
         <div className="mb-4 flex justify-center">
-          <img
-            src="/templates/cam-tu-cau-xanh/divider-floral.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/divider-floral.webp"
             alt=""
             className="h-auto w-36 object-contain opacity-85 sm:w-44"
             aria-hidden="true"
@@ -770,7 +761,7 @@ function GallerySection({ data }: { data: TemplateData }) {
             onClick={() => setLightboxIndex(activeIndex)}
             className="relative aspect-[3/4] w-full max-w-xs cursor-pointer overflow-hidden rounded-xl border-2 border-[#C9B182]/40 shadow-lg"
           >
-            <img
+            <img loading="lazy" decoding="async"
               src={photos[activeIndex]?.url}
               alt={photos[activeIndex]?.alt || "Ảnh cưới"}
               className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
@@ -1018,14 +1009,8 @@ function TimelineSection({ data }: { data: TemplateData }) {
               className="text-sm font-bold tracking-widest uppercase text-[#1E3557]"
               style={{ fontFamily: TITLE_FONT }}
             >
-              Trang Phục Gợi Ý (Dress Code)
+              Trang Phục Gợi Ý
             </h3>
-            <p
-              className="mt-1 text-xs text-[#6B7F99]"
-              style={{ fontFamily: BODY_FONT }}
-            >
-              Quý khách có thể lựa chọn các tone màu trang nhã dưới đây
-            </p>
             <div className="mt-5 flex items-center justify-center gap-4 sm:gap-6">
               {dressColors.map((hex, idx) => (
                 <div
@@ -1093,24 +1078,24 @@ function GiftSection({
           onMouseLeave={() => setGiftState("normal")}
           className="group relative mx-auto my-6 flex h-[350px] w-[180px] cursor-pointer items-end justify-center transition-transform hover:scale-105 active:scale-95 sm:h-[390px] sm:w-[214px]"
         >
-          <img
-            src="/templates/cam-tu-cau-xanh/gift-normal.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/gift-normal.webp"
             alt="Hộp mừng cưới"
             className={cn(
               "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
               giftState === "normal" ? "opacity-100" : "opacity-0",
             )}
           />
-          <img
-            src="/templates/cam-tu-cau-xanh/gift-hover.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/gift-hover.webp"
             alt="Hộp mừng cưới mở nắp"
             className={cn(
               "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
               giftState === "hover" ? "opacity-100" : "opacity-0",
             )}
           />
-          <img
-            src="/templates/cam-tu-cau-xanh/gift-active.webp"
+          <img loading="lazy" decoding="async"
+            src="/templates/lam-hoa-vien/gift-active.webp"
             alt="Hộp mừng cưới trao lì xì"
             className={cn(
               "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
@@ -1186,6 +1171,12 @@ export function LamHoaVienTemplate({
   };
 
   const safeGuestName = guestName || null;
+  const hidden = new Set(data.hiddenSections ?? []);
+  const order = data.sectionOrder?.length ? data.sectionOrder : CANONICAL_SECTION_ORDER;
+  const orderOf = (key: string) => {
+    const idx = order.indexOf(key);
+    return idx === -1 ? 99 : idx;
+  };
 
   return (
     <div
@@ -1237,57 +1228,91 @@ export function LamHoaVienTemplate({
         {/* Section 1: Hero chào mừng & Khung vòm hoa cẩm tú cầu */}
         <HeroSection data={data} isOpened={openState} />
 
-        {/* Section 2: Thông tin gia đình */}
-        <FamilySection data={data} />
+        <div className="flex flex-col">
+          {/* Section 2: Thông tin gia đình */}
+          {!hidden.has("family") && (
+            <div style={{ order: orderOf("family") }}>
+              <FamilySection data={data} />
+            </div>
+          )}
 
-        {/* Section 3: Sự kiện cưới & bản đồ chỉ đường */}
-        <EventsSection data={data} />
+          {/* Section 3: Sự kiện cưới & bản đồ chỉ đường */}
+          {!hidden.has("map") && (
+            <div style={{ order: orderOf("map") }}>
+              <EventsSection data={data} />
+            </div>
+          )}
 
-        {/* Section 4: Album ảnh cưới coverflow */}
-        <GallerySection data={data} />
+          {/* Section 5: Lịch trình & Dress code */}
+          {!hidden.has("dresscode") && (
+            <div style={{ order: orderOf("dresscode") }}>
+              <TimelineSection data={data} />
+            </div>
+          )}
 
-        {/* Section 5: Lịch ngày vui & đếm ngược */}
-        <CalendarCountdownSection data={data} />
+          {/* Section 6: Lịch ngày vui & đếm ngược */}
+          {!hidden.has("calendar") && (
+            <div style={{ order: orderOf("calendar") }}>
+              <CalendarCountdownSection data={data} />
+            </div>
+          )}
 
-        {/* Section 6: Lịch trình & Dress code */}
-        <TimelineSection data={data} />
+          {/* Section 7: Hộp mừng cưới 3 trạng thái & VietQR */}
+          {!hidden.has("gift") && (
+            <div style={{ order: orderOf("gift") }}>
+              <GiftSection data={data} plan={data.plan} guestName={safeGuestName} />
+            </div>
+          )}
 
-        {/* Section 7: Hộp mừng cưới 3 trạng thái & VietQR */}
-        <GiftSection data={data} plan={data.plan} guestName={safeGuestName} />
-
-        {/* Section 8: Form xác nhận tham dự RSVP & Sổ lưu bút */}
-        <section className="relative overflow-hidden bg-[#14243D] px-4 py-16 text-[#F9FAFC] md:py-24">
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-20"
-            style={{ backgroundImage: "url('/templates/cam-tu-cau-xanh/background-mobile.webp')" }}
-          />
-          <HydrangeaDustParticles count={16} />
-
-          <div className="relative z-10 mx-auto max-w-xl">
-            <TemplateRsvpSection
-              data={data}
-              mode={mode}
-              tone="obsidian"
-              contained={contained}
-              inviteSlug={inviteSlug}
-              weddingSlug={weddingSlug}
-              invitationMode={invitationMode}
-              guestName={guestName}
-            />
-
-            {/* QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
-            {data.plan !== "free" && weddingSlug && (
-              <div className="mt-12 flex justify-center">
-                <GuestAlbumQr
-                  slug={weddingSlug}
-                  accentColor="#1E3557"
-                  textColor="#F9FAFC"
-                  mutedColor="#C9B182"
+          {/* Section 8: Form xác nhận tham dự RSVP & Sổ lưu bút */}
+          {!hidden.has("rsvp") && (
+            <div style={{ order: orderOf("rsvp") }}>
+              <section className="relative overflow-hidden bg-[#14243D] px-4 py-16 text-[#F9FAFC] md:py-24">
+                <div
+                  className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-20"
+                  style={{ backgroundImage: "url('/templates/lam-hoa-vien/background-mobile.webp')" }}
                 />
-              </div>
-            )}
-          </div>
-        </section>
+                <HydrangeaDustParticles count={16} />
+
+                <div className="relative z-10 mx-auto max-w-xl">
+                  <TemplateRsvpSection
+                    data={data}
+                    mode={mode}
+                    tone="obsidian"
+                    contained={contained}
+                    inviteSlug={inviteSlug}
+                    weddingSlug={weddingSlug}
+                    invitationMode={invitationMode}
+                    guestName={guestName}
+                  />
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* Section 9: Album ảnh cưới coverflow */}
+          {!hidden.has("album") && (
+            <div style={{ order: orderOf("album") }}>
+              <GallerySection data={data} />
+            </div>
+          )}
+
+          {/* Section 10: QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
+          {data.plan !== "free" && !hidden.has("albumQr") && weddingSlug && (
+            <div style={{ order: orderOf("albumQr") }}>
+              <section className="relative overflow-hidden bg-[#14243D] px-4 py-12 text-[#F9FAFC] md:py-16">
+                <div className="relative z-10 mx-auto flex max-w-xl justify-center">
+                  <GuestAlbumQr
+                    slug={weddingSlug}
+                    accentColor="#1E3557"
+                    textColor="#F9FAFC"
+                    mutedColor="#C9B182"
+                  />
+                </div>
+              </section>
+            </div>
+          )}
+        </div>
 
         {/* Footer chúc phúc chân trang */}
         <footer className="border-t border-[#C9B182]/20 bg-[#14243D] px-4 py-12 text-center text-xs text-[#F9FAFC]/60">

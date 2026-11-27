@@ -118,7 +118,7 @@ export function TemplateLightboxModal({
           <ChevronLeft className="h-5 w-5" aria-hidden="true" />
         </button>
 
-        <img
+        <img loading="lazy" decoding="async"
           src={current.url}
           alt={current.alt}
           className="max-h-[65dvh] w-auto max-w-full rounded-xl object-contain select-none"
@@ -150,7 +150,7 @@ export function TemplateLightboxModal({
                   : "opacity-55 hover:opacity-90",
               )}
             >
-              <img
+              <img loading="lazy" decoding="async"
                 src={thumb.url}
                 alt=""
                 width={64}

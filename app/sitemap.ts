@@ -1,15 +1,10 @@
 import type { MetadataRoute } from "next";
+import { resolveAppBaseUrl } from "@/config/site";
 import { LEGAL_POLICIES } from "@/lib/legal-config";
 import { TEMPLATE_REGISTRY } from "@/templates/registry";
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.APP_BASE_URL ||
-  "https://inviwedd.date";
-
 function makeUrl(path: string): string {
-  const base = SITE_URL.replace(/\/+$/, "");
+  const base = resolveAppBaseUrl().replace(/\/+$/, "");
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${base}${p}`;
 }
@@ -69,13 +64,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   ];
 
-  // 2. All 27 template preview routes
-  const templateEntries: MetadataRoute.Sitemap = TEMPLATE_REGISTRY.map((tpl) => ({
-    url: makeUrl(`/mau/${tpl.id}`),
-    lastModified: now,
-    changeFrequency: "monthly",
-    priority: 0.7,
-  }));
+  // 2. All active template preview routes
+  const templateEntries: MetadataRoute.Sitemap = TEMPLATE_REGISTRY
+    .filter((tpl) => !tpl.isPlaceholder)
+    .map((tpl) => ({
+      url: makeUrl(`/mau/${tpl.id}`),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    }));
 
   return [...coreEntries, ...templateEntries];
 }

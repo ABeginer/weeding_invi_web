@@ -36,17 +36,10 @@ export default async function GuestAlbumPage({ params }: PageProps) {
 
   if (!wedding) notFound();
 
-  // Lọc các ảnh album đã được duyệt (hoặc auto-approved)
-  const moderation = wedding.content.photoModeration || {};
+  // Ảnh album đã được lọc theo trạng thái duyệt ngay trên server (getPublicWeddingBySlug)
   const isAutoApprove = wedding.content.photoApprovalMode === "auto";
-
   const approvedAlbum = wedding.photos
-    .filter((photo) => {
-      if (photo.kind !== "album") return false;
-      const status = moderation[photo.id];
-      if (isAutoApprove) return status !== "hidden";
-      return status === "approved";
-    })
+    .filter((photo) => photo.kind === "album")
     .sort((a, b) => a.position - b.position);
 
   const { groomName, brideName } = wedding.content.couple;

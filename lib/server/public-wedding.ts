@@ -3,6 +3,7 @@ import { SLUG_RE } from "./http";
 import { db } from "./supabase";
 import { normalizeWeddingContent } from "../wedding-data";
 import { validateWeddingSlug } from "../wedding-slug";
+import { emptyGiftInfo } from "../wedding-types";
 import type {
   GuestDiet,
   GuestStatus,
@@ -165,11 +166,50 @@ async function loadDesignerTemplate(
   return { id: pinned.id, version: pinned.version, canvas: pinned.canvas };
 }
 
+function filterPublicPhotos(
+  allPhotos: WeddingPhoto[],
+  rawContent: unknown,
+  plan: WeddingPlan,
+): WeddingPhoto[] {
+  const normalized = normalizeWeddingContent(rawContent);
+  const isGiftHidden =
+    Array.isArray(normalized.hiddenSections) &&
+    normalized.hiddenSections.includes("gift");
+  const moderation = normalized.photoModeration ?? {};
+  const isAutoApprove = normalized.photoApprovalMode === "auto";
+
+  return allPhotos.filter((photo) => {
+    if (isGiftHidden && photo.kind === "gift") return false;
+    if (photo.kind !== "album") return true;
+
+    // Gói Standard (pro): ảnh album do cô dâu chú rể tự tải lên cho khách xem (chỉ ẩn nếu đánh dấu hidden)
+    if (plan === "pro") {
+      return moderation[photo.id] !== "hidden";
+    }
+    // Gói Pro 399k (vip): tôn trọng nghiêm ngặt chế độ duyệt ảnh (manual/auto)
+    if (plan === "vip") {
+      const status = moderation[photo.id];
+      return isAutoApprove ? status !== "hidden" : status === "approved";
+    }
+    return false;
+  });
+}
+
 function sanitizePublicContent(rawContent: unknown): WeddingContent {
   const content = normalizeWeddingContent(rawContent);
-  delete (content as Record<string, unknown>).sharePin;
-  delete (content as Record<string, unknown>).sharePinEnabled;
-  delete (content as Record<string, unknown>).photoModeration;
+  const isGiftHidden =
+    Array.isArray(content.hiddenSections) &&
+    content.hiddenSections.includes("gift");
+  if (isGiftHidden) {
+    content.gift = emptyGiftInfo();
+  }
+  const rec = content as Record<string, unknown>;
+  delete rec.sharePin;
+  delete rec.sharePinEnabled;
+  delete rec.sharePinFailCount;
+  delete rec.sharePinLockedUntil;
+  delete rec.photoModeration;
+  delete rec.suspended;
   return content;
 }
 
@@ -201,13 +241,14 @@ export async function getPublicWeddingBySlug(
     includeDesigner ? loadDesignerTemplate(row) : Promise.resolve(null),
   ]);
 
+  const plan = (row.plan as WeddingPlan) ?? "free";
   return {
     slug: row.slug,
     templateId: row.template_id,
-    plan: (row.plan as WeddingPlan) ?? "free",
+    plan,
     content: sanitizePublicContent(row.content),
     events,
-    photos,
+    photos: filterPublicPhotos(photos, row.content, plan),
     designerTemplate,
   };
 }
@@ -245,13 +286,14 @@ export async function getPublicWeddingByGuestSlug(
     loadDesignerTemplate(wedding),
   ]);
 
+  const plan = (wedding.plan as WeddingPlan) ?? "free";
   return {
     slug: wedding.slug,
     templateId: wedding.template_id,
-    plan: (wedding.plan as WeddingPlan) ?? "free",
+    plan,
     content: sanitizePublicContent(wedding.content),
     events,
-    photos,
+    photos: filterPublicPhotos(photos, wedding.content, plan),
     designerTemplate,
     guestId: guest.id,
     guestName: guest.name,

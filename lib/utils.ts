@@ -122,6 +122,61 @@ export function formatWeddingDateParts(dateInput: string, timeInput?: string) {
  */
 export function formatLunarDateClean(lunarDate?: string | null): string {
   if (!lunarDate) return "";
-  return lunarDate.trim().replace(/^(tức ngày|nhằm ngày|nhằm|ngày)\s+/i, "");
+  const trimmed = lunarDate.trim();
+  // Chặn hiển thị nhầm chuỗi ISO / timestamp thô nếu template truyền nhầm startsAt/data.date
+  if (/^\d{4}-\d{2}-\d{2}(?:[T\s]|$)/.test(trimmed)) return "";
+  return trimmed.replace(/^(tức ngày|nhằm ngày|nhằm|ngày)\s+/i, "");
+}
+
+const SIX_HUNDRED_WIDTH_TEMPLATES = new Set([
+  "bich-ngoc-hoang-trieu",
+  "chu-sa-long-phung",
+  "hac-vu-luu-ly",
+  "huyen-kim-long-phung",
+  "long-phung",
+  "long-phung-ep4",
+  "phuong-loan-gam-do",
+  "song-hac-kim-van",
+]);
+
+export interface CoverImageResponsive {
+  src: string;
+  srcSet?: string;
+  width?: number;
+  height?: number;
+}
+
+/**
+ * Trả về ảnh cover tối ưu theo kích thước (360w cho lưới mobile, 600w/720w cho desktop/Retina).
+ * Ảnh designer (/media/...) hoặc sen-ngoc-tram-nam (337w) giữ nguyên nguồn gốc.
+ */
+export function getCoverImageResponsive(
+  imageUrl: string,
+  kind?: "code" | "designer",
+): CoverImageResponsive {
+  if (kind === "designer") {
+    return { src: imageUrl };
+  }
+
+  const match = imageUrl.match(/^\/templates\/([^/?#]+)\/cover\.webp(\?.*)?$/);
+  if (!match) {
+    return { src: imageUrl };
+  }
+
+  const dir = match[1];
+  if (dir === "sen-ngoc-tram-nam") {
+    return { src: imageUrl, width: 337, height: 687 };
+  }
+
+  const fullWidth = SIX_HUNDRED_WIDTH_TEMPLATES.has(dir) ? 600 : 720;
+  const fullHeight = fullWidth === 600 ? 800 : 1180;
+  const smUrl = imageUrl.replace(/\/cover\.webp(\?.*)?$/, "/cover-sm.webp$1");
+
+  return {
+    src: smUrl,
+    srcSet: `${smUrl} 360w, ${imageUrl} ${fullWidth}w`,
+    width: fullWidth,
+    height: fullHeight,
+  };
 }
 

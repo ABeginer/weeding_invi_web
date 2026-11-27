@@ -12,6 +12,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent } from "@/lib/wedding-types";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -42,10 +43,10 @@ const BODY_FONT = "var(--font-be-vietnam), 'Be Vietnam Pro', sans-serif";
 const EASE_ECLIPSE = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_TIMELINE = [
-  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm tại tiền sảnh Hắc Kim Nhật Thực" },
-  { time: "17:30", label: "Nghi thức Nhật Nguyệt Giao Thoa & Lời hẹn ước vĩnh cửu" },
-  { time: "18:00", label: "Dạ tiệc Black-Tie & Nâng ly chúc phúc tình yêu son sắt" },
-  { time: "19:30", label: "Vũ điệu tình yêu & Hòa tấu thính phòng dưới ánh sao" },
+  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
+  { time: "17:30", label: "Cử hành Lễ Thành Hôn & Trao lời hẹn ước" },
+  { time: "18:00", label: "Khai tiệc chung vui & Nâng ly chúc phúc" },
+  { time: "19:30", label: "Âm nhạc & Giao lưu cùng quan khách" },
   { time: "20:30", label: "Tiễn khách & Trao kỷ vật tri ân" },
 ];
 
@@ -220,7 +221,7 @@ export function HacKimNhatThucTemplate({
   );
   const eventDateStr = targetEvent?.startsAt || data.date || "2027-03-20T10:00:00+07:00";
   const dateParts = formatWeddingDateParts(eventDateStr);
-  const lunarClean = formatLunarDateClean(eventDateStr);
+  const lunarClean = targetEvent?.lunarDate ? formatLunarDateClean(targetEvent.lunarDate) : "";
 
   const eventDays = React.useMemo(() => {
     const set = new Set<number>();
@@ -276,7 +277,7 @@ export function HacKimNhatThucTemplate({
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const sectionOrder = data.sectionOrder || ["family", "calendar", "map", "dresscode", "album", "gift", "rsvp"];
+  const sectionOrder = data.sectionOrder?.length ? data.sectionOrder : CANONICAL_SECTION_ORDER;
   const orderOf = (name: string) => {
     const idx = sectionOrder.indexOf(name);
     return idx === -1 ? 99 : idx + 1;
@@ -356,7 +357,7 @@ export function HacKimNhatThucTemplate({
                   media="(min-width: 768px)"
                   srcSet="/templates/hac-kim-nhat-thuc/background.webp"
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/hac-kim-nhat-thuc/background-mobile.webp"
                   alt="Nền cẩm thạch đen Kintsugi"
                   className="w-full h-full object-cover object-center"
@@ -365,12 +366,12 @@ export function HacKimNhatThucTemplate({
             </div>
 
             {/* Họa tiết Kintsugi góc */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/hac-kim-nhat-thuc/corner-kintsugi.webp"
               alt="Họa tiết Kintsugi"
               className="absolute top-3 left-3 sm:top-5 sm:left-5 w-16 sm:w-20 pointer-events-none z-10 opacity-70"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/hac-kim-nhat-thuc/corner-kintsugi.webp"
               alt="Họa tiết Kintsugi"
               className="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 w-16 sm:w-20 pointer-events-none z-10 opacity-70 rotate-180"
@@ -431,14 +432,14 @@ export function HacKimNhatThucTemplate({
                 {/* Nội dung lọt lòng bên trong vòng tròn nhật thực */}
                 <div className="relative z-10 flex flex-col items-center justify-center px-6">
                   {/* Huy hiệu đôi nhẫn vàng */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/hac-kim-nhat-thuc/rings-crest.webp"
                     alt="Huy hiệu đôi nhẫn"
                     className="w-12 h-auto mb-2 opacity-90 drop-shadow-[0_0_8px_rgba(224,184,102,0.4)]"
                   />
 
-                  <span className="text-[10px] sm:text-[11px] tracking-[0.35em] text-[#E0B866] uppercase font-light mb-1">
-                    Wedding Invitation
+                  <span className="text-[10px] sm:text-[11px] tracking-[0.14em] text-[#E0B866] uppercase font-light mb-1 text-center">
+                    Thiệp mời tham dự lễ cưới
                   </span>
 
                   {/* Tên cặp đôi 3 dòng: Groom / & / Bride */}
@@ -461,7 +462,7 @@ export function HacKimNhatThucTemplate({
                   </div>
 
                   {/* Dải phân cách 5 pha trăng */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/hac-kim-nhat-thuc/divider-lunar.webp"
                     alt="Dải phân cách trăng khuyết"
                     className="w-32 h-auto my-1.5 opacity-80"
@@ -524,7 +525,7 @@ export function HacKimNhatThucTemplate({
               media="(min-width: 768px)"
               srcSet="/templates/hac-kim-nhat-thuc/background.webp"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/hac-kim-nhat-thuc/background-mobile.webp"
               alt="Nền cẩm thạch đen Kintsugi"
               className="w-full h-full object-cover object-center"
@@ -559,7 +560,7 @@ export function HacKimNhatThucTemplate({
               {/* Ảnh tròn hoặc Fallback tên 3 dòng */}
               {heroPhoto ? (
                 <div className="absolute inset-[15%] rounded-full overflow-hidden shadow-2xl border border-[#E0B866]/40 group">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={heroPhoto}
                     alt="Ảnh cặp đôi"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -569,7 +570,7 @@ export function HacKimNhatThucTemplate({
                 </div>
               ) : (
                 <div className="absolute inset-[15%] rounded-full bg-[#121215] flex flex-col items-center justify-center p-4 border border-[#E0B866]/30">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/hac-kim-nhat-thuc/rings-crest.webp"
                     alt="Huy hiệu đôi nhẫn"
                     className="w-10 h-auto mb-1 opacity-80"
@@ -613,7 +614,7 @@ export function HacKimNhatThucTemplate({
             </h1>
 
             {/* Dải phân cách 5 pha trăng */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/hac-kim-nhat-thuc/divider-lunar.webp"
               alt="Dải phân cách"
               className="w-40 sm:w-56 h-auto my-3 opacity-80"
@@ -635,12 +636,12 @@ export function HacKimNhatThucTemplate({
               <div style={{ order: orderOf("family") }}>
                 <section className="relative w-full rounded-2xl bg-[#121215]/94 border border-[#E0B866]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md overflow-hidden">
                   {/* Họa tiết Kintsugi góc chéo */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/hac-kim-nhat-thuc/corner-kintsugi.webp"
                     alt="Kintsugi"
                     className="absolute top-2 left-2 w-12 sm:w-16 pointer-events-none opacity-60"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/hac-kim-nhat-thuc/corner-kintsugi.webp"
                     alt="Kintsugi"
                     className="absolute bottom-2 right-2 w-12 sm:w-16 pointer-events-none opacity-60 rotate-180"
@@ -650,9 +651,6 @@ export function HacKimNhatThucTemplate({
                     <span className="text-[11px] uppercase tracking-[0.25em] text-[#E0B866] font-semibold">
                       Gia Tộc Thông Báo
                     </span>
-                    <p className="text-xs sm:text-sm text-[#B9AFA2] mt-1 italic">
-                      Trân trọng báo tin lễ thành hôn của con chúng tôi
-                    </p>
                   </div>
 
                   {/* 2 cột gia đình cân đối cao bằng nhau */}
@@ -715,145 +713,144 @@ export function HacKimNhatThucTemplate({
             )}
 
             {/* Section 2: Thông tin Lễ Cưới (Ceremony — Đa Lễ 100%) */}
-            <div style={{ order: orderOf("calendar") }}>
-              <section className="relative w-full rounded-2xl bg-[#121215]/94 border border-[#E0B866]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
-                <span className="text-[11px] uppercase tracking-[0.25em] text-[#E0B866] font-semibold mb-1">
-                  Thời Gian &amp; Địa Điểm
-                </span>
+            {!hiddenSections.has("map") && (
+              <div style={{ order: orderOf("map") }}>
+                <section className="relative w-full rounded-2xl bg-[#121215]/94 border border-[#E0B866]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
+                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#E0B866] font-semibold mb-1">
+                    Thời Gian &amp; Địa Điểm
+                  </span>
 
-                <div
-                  className={cn(
-                    "grid gap-6 w-full mt-4",
-                    visibleEvents.length > 1
-                      ? "grid-cols-1 md:grid-cols-2 text-left"
-                      : "max-w-xl mx-auto text-center"
-                  )}
-                >
-                  {visibleEvents.map((evt, idx) => {
-                    const evtDateStr = evt.startsAt || data.date || "2027-03-20T10:00:00+07:00";
-                    const evtDateParts = formatWeddingDateParts(evtDateStr);
-                    const evtLunar = evt.lunarDate
-                      ? formatLunarDateClean(evt.lunarDate)
-                      : formatLunarDateClean(evtDateStr);
-                    const directionsUrl = getEventDirectionsUrl(evt);
+                  <div
+                    className={cn(
+                      "grid gap-6 w-full mt-4",
+                      visibleEvents.length > 1
+                        ? "grid-cols-1 md:grid-cols-2 text-left"
+                        : "max-w-xl mx-auto text-center"
+                    )}
+                  >
+                    {visibleEvents.map((evt, idx) => {
+                      const evtDateStr = evt.startsAt || data.date || "2027-03-20T10:00:00+07:00";
+                      const evtDateParts = formatWeddingDateParts(evtDateStr);
+                      const evtLunar = evt.lunarDate
+                        ? formatLunarDateClean(evt.lunarDate)
+                        : "";
+                      const directionsUrl = getEventDirectionsUrl(evt);
 
-                    return (
-                      <div
-                        key={evt.id || `event-${idx}`}
-                        className="rounded-xl border border-[#E0B866]/30 bg-[#09090B]/70 p-5 sm:p-6 flex flex-col items-center text-center space-y-3"
-                      >
-                        <h2
-                          className="text-xl sm:text-2xl text-[#F6E2B3] font-normal tracking-wide uppercase"
-                          style={{ fontFamily: TITLE_FONT }}
+                      return (
+                        <div
+                          key={evt.id || `event-${idx}`}
+                          className="rounded-xl border border-[#E0B866]/30 bg-[#09090B]/70 p-5 sm:p-6 flex flex-col items-center text-center space-y-3"
                         >
-                          {evt.title || (idx === 0 ? "Lễ Thành Hôn" : `Lễ Cưới ${idx + 1}`)}
-                        </h2>
+                          <h2
+                            className="text-xl sm:text-2xl text-[#F6E2B3] font-normal tracking-wide uppercase"
+                            style={{ fontFamily: TITLE_FONT }}
+                          >
+                            {evt.title || (idx === 0 ? "Lễ Thành Hôn" : `Lễ Cưới ${idx + 1}`)}
+                          </h2>
 
-                        {/* Giờ tổ chức */}
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-[#E0B866] tracking-widest uppercase">
-                          <Clock className="w-4 h-4 text-[#E0B866]" />
-                          <span>
-                            VÀO LÚC {evtDateParts.time || "10:00"}
+                          {/* Giờ tổ chức */}
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-[#E0B866] tracking-widest uppercase">
+                            <Clock className="w-4 h-4 text-[#E0B866]" />
+                            <span>
+                              VÀO LÚC {evtDateParts.time || "10:00"}
+                            </span>
+                          </div>
+
+                          {/* Khối Ngày Ngang: THỨ | NGÀY | THÁNG */}
+                          <div className="flex items-center justify-center gap-4 sm:gap-6 py-2.5 px-4 sm:px-6 rounded border border-[#E0B866]/30 bg-[#121215]/90 my-1">
+                            <div className="text-center">
+                              <span className="block text-[10px] sm:text-[11px] tracking-[0.2em] text-[#B9AFA2] uppercase">
+                                {evtDateParts.weekday || "Chủ Nhật"}
+                              </span>
+                            </div>
+                            <div className="w-px h-8 bg-[#E0B866]/40" />
+                            <div className="text-center">
+                              <span
+                                className="block text-2xl sm:text-4xl font-bold text-[#E0B866] leading-none"
+                                style={{ fontFamily: TITLE_FONT }}
+                              >
+                                {evtDateParts.day || "20"}
+                              </span>
+                            </div>
+                            <div className="w-px h-8 bg-[#E0B866]/40" />
+                            <div className="text-center">
+                              <span className="block text-[10px] sm:text-[11px] tracking-[0.2em] text-[#B9AFA2] uppercase">
+                                Tháng {evtDateParts.month || "03"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <span className="text-[11px] tracking-widest text-[#B9AFA2]">
+                            NĂM {evtDateParts.year || "2027"}
                           </span>
-                        </div>
 
-                        {/* Khối Ngày Ngang: THỨ | NGÀY | THÁNG */}
-                        <div className="flex items-center justify-center gap-4 sm:gap-6 py-2.5 px-4 sm:px-6 rounded border border-[#E0B866]/30 bg-[#121215]/90 my-1">
-                          <div className="text-center">
-                            <span className="block text-[10px] sm:text-[11px] tracking-[0.2em] text-[#B9AFA2] uppercase">
-                              {evtDateParts.weekday || "Chủ Nhật"}
-                            </span>
-                          </div>
-                          <div className="w-px h-8 bg-[#E0B866]/40" />
-                          <div className="text-center">
-                            <span
-                              className="block text-2xl sm:text-4xl font-bold text-[#E0B866] leading-none"
-                              style={{ fontFamily: TITLE_FONT }}
-                            >
-                              {evtDateParts.day || "20"}
-                            </span>
-                          </div>
-                          <div className="w-px h-8 bg-[#E0B866]/40" />
-                          <div className="text-center">
-                            <span className="block text-[10px] sm:text-[11px] tracking-[0.2em] text-[#B9AFA2] uppercase">
-                              Tháng {evtDateParts.month || "03"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <span className="text-[11px] tracking-widest text-[#B9AFA2]">
-                          NĂM {evtDateParts.year || "2027"}
-                        </span>
-
-                        {/* Ngày Âm Lịch */}
-                        {evtLunar && (
-                          <p className="text-xs text-[#E0B866] font-medium tracking-wider">
-                            {evtLunar}
-                          </p>
-                        )}
-
-                        {/* Địa điểm tổ chức */}
-                        <div className="pt-3 border-t border-[#E0B866]/20 w-full space-y-1">
-                          {evt.venueName && (
-                            <h4
-                              className="text-base sm:text-lg text-[#F6E2B3] font-medium"
-                              style={{ fontFamily: TITLE_FONT }}
-                            >
-                              {evt.venueName}
-                            </h4>
-                          )}
-                          {evt.venueAddress && (
-                            <p className="text-xs text-[#B9AFA2] leading-relaxed">
-                              {evt.venueAddress}
+                          {/* Ngày Âm Lịch */}
+                          {evtLunar && (
+                            <p className="text-xs text-[#E0B866] font-medium tracking-wider">
+                              {evtLunar}
                             </p>
                           )}
-                        </div>
 
-                        {/* Nút tác vụ: Chỉ đường & Thêm vào lịch */}
-                        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                          {directionsUrl && (
+                          {/* Địa điểm tổ chức */}
+                          <div className="pt-3 border-t border-[#E0B866]/20 w-full space-y-1">
+                            {evt.venueName && (
+                              <h4
+                                className="text-base sm:text-lg text-[#F6E2B3] font-medium"
+                                style={{ fontFamily: TITLE_FONT }}
+                              >
+                                {evt.venueName}
+                              </h4>
+                            )}
+                            {evt.venueAddress && (
+                              <p className="text-xs text-[#B9AFA2] leading-relaxed">
+                                {evt.venueAddress}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Nút tác vụ: Chỉ đường & Thêm vào lịch */}
+                          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                            {directionsUrl && (
+                              <a
+                                href={directionsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] bg-[#E0B866] text-[#09090B] text-xs font-semibold tracking-widest uppercase transition-all duration-300 hover:bg-[#F6E2B3] hover:shadow-[0_0_12px_rgba(224,184,102,0.5)] cursor-pointer"
+                              >
+                                <MapPin className="w-3.5 h-3.5 text-[#09090B]" />
+                                <span>Chỉ Đường</span>
+                              </a>
+                            )}
                             <a
-                              href={directionsUrl}
+                              href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                                `${evt.title || "Lễ Cưới"}: ${groomName} & ${brideName}`
+                              )}&dates=${evtDateStr.replace(/-|:|\./g, "").slice(0, 8)}T040000Z/${evtDateStr.replace(/-|:|\./g, "").slice(0, 8)}T080000Z&details=${encodeURIComponent(
+                                `Trân trọng kính mời tham dự ${evt.title || "lễ cưới"} của ${groomName} & ${brideName}.`
+                              )}&location=${encodeURIComponent(evt.venueAddress || "")}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] bg-[#E0B866] text-[#09090B] text-xs font-semibold tracking-widest uppercase transition-all duration-300 hover:bg-[#F6E2B3] hover:shadow-[0_0_12px_rgba(224,184,102,0.5)] cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] border border-[#E0B866]/50 hover:bg-[#E0B866]/20 text-[#E0B866] text-xs font-medium tracking-wider uppercase transition-colors"
                             >
-                              <MapPin className="w-3.5 h-3.5 text-[#09090B]" />
-                              <span>Chỉ Đường</span>
+                              <span>Thêm Vào Lịch</span>
                             </a>
-                          )}
-                          <a
-                            href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-                              `${evt.title || "Lễ Cưới"}: ${groomName} & ${brideName}`
-                            )}&dates=${evtDateStr.replace(/-|:|\./g, "").slice(0, 8)}T040000Z/${evtDateStr.replace(/-|:|\./g, "").slice(0, 8)}T080000Z&details=${encodeURIComponent(
-                              `Trân trọng kính mời tham dự ${evt.title || "lễ cưới"} của ${groomName} & ${brideName}.`
-                            )}&location=${encodeURIComponent(evt.venueAddress || "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[2px] border border-[#E0B866]/50 hover:bg-[#E0B866]/20 text-[#E0B866] text-xs font-medium tracking-wider uppercase transition-colors"
-                          >
-                            <span>Thêm Vào Lịch</span>
-                          </a>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              </div>
+            )}
 
-            {/* Section 3: Album Ảnh Cưới (album & albumQr — "Vogue Nocturne Gallery") */}
+            {/* Section 3: Album Ảnh Cưới (album) */}
             {!hiddenSections.has("album") && albumPhotos.length > 0 && (
               <div style={{ order: orderOf("album") }}>
                 <section className="relative w-full rounded-2xl bg-[#121215]/94 border border-[#E0B866]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#E0B866] font-semibold mb-1">
-                    Vogue Nocturne Gallery
-                  </span>
                   <h2
                     className="text-2xl sm:text-3xl text-[#F6E2B3] font-normal mb-8 tracking-wide uppercase"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    Khoảnh Khắc Kim Cương
+                    Album Ảnh Cưới
                   </h2>
 
                   {/* 3D Coverflow / Carousel */}
@@ -875,7 +872,7 @@ export function HacKimNhatThucTemplate({
                       className="relative w-full aspect-[4/5] sm:aspect-[3/4] max-w-[400px] rounded-sm overflow-hidden shadow-2xl border border-[#E0B866]/60 cursor-pointer group"
                       onClick={() => setLightboxIndex(activePhotoIdx)}
                     >
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={albumPhotos[activePhotoIdx]?.url || "/photos/hero2.webp"}
                         alt="Ảnh cưới"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -910,12 +907,15 @@ export function HacKimNhatThucTemplate({
                     </div>
                   )}
 
-                  {/* QR tải ảnh khách mời (chỉ hiện ở gói trả phí) */}
-                  {!isFree && !hiddenSections.has("albumQr") && (
-                    <div className="mt-8 pt-6 border-t border-[#E0B866]/30 w-full flex justify-center">
-                      <GuestAlbumQr slug={weddingSlug} accentColor={GOLD_24K} textColor={GOLD_LIGHT} mutedColor={TEXT_MUTED} />
-                    </div>
-                  )}
+                </section>
+              </div>
+            )}
+
+            {/* QR tải ảnh khách mời (chỉ hiện ở gói trả phí) */}
+            {!isFree && !hiddenSections.has("albumQr") && weddingSlug && (
+              <div style={{ order: orderOf("albumQr") }}>
+                <section className="relative w-full rounded-2xl bg-[#121215]/94 border border-[#E0B866]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
+                  <GuestAlbumQr slug={weddingSlug} accentColor={GOLD_24K} textColor={GOLD_LIGHT} mutedColor={TEXT_MUTED} />
                 </section>
               </div>
             )}
@@ -1011,19 +1011,12 @@ export function HacKimNhatThucTemplate({
             {!hiddenSections.has("dresscode") && (
               <div style={{ order: orderOf("dresscode") }}>
                 <section className="relative w-full rounded-2xl bg-[#121215]/94 border border-[#E0B866]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-[#E0B866] font-semibold mb-1">
-                    Trang Phục Gợi Ý
-                  </span>
                   <h2
                     className="text-2xl sm:text-3xl text-[#F6E2B3] font-normal mb-6 tracking-wide uppercase"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    Dress Code
+                    Trang Phục Gợi Ý
                   </h2>
-
-                  <p className="text-xs sm:text-sm text-[#B9AFA2] max-w-[480px] leading-relaxed mb-6 font-light">
-                    Để tạo nên không gian đêm tiệc trang trọng và đồng điệu, quý khách vui lòng ưu tiên trang phục mang các sắc màu:
-                  </p>
 
                   {/* 3 vòng tròn màu Dress Code động */}
                   <div className="flex items-center justify-center gap-6 mb-12">
@@ -1080,15 +1073,11 @@ export function HacKimNhatThucTemplate({
                     Gửi Lời Chúc Phúc
                   </span>
                   <h2
-                    className="text-2xl sm:text-3xl text-[#F6E2B3] font-normal mb-4 tracking-wide uppercase"
+                    className="text-2xl sm:text-3xl text-[#F6E2B3] font-normal mb-6 tracking-wide uppercase"
                     style={{ fontFamily: TITLE_FONT }}
                   >
                     Hộp Mừng Cưới
                   </h2>
-
-                  <p className="text-xs sm:text-sm text-[#B9AFA2] max-w-[460px] leading-relaxed mb-6 font-light">
-                    Sự hiện diện và lời chúc phúc của quý khách là món quà quý giá nhất. Quý khách cũng có thể gửi quà mừng qua tráp sính lễ hắc diệu thạch:
-                  </p>
 
                   {/* Hộp quà Monolith 3 trạng thái tương tác */}
                   <div
@@ -1100,7 +1089,7 @@ export function HacKimNhatThucTemplate({
                       setTimeout(() => setGiftModalOpen(true), 300);
                     }}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={`/templates/hac-kim-nhat-thuc/gift-${activeParcel}.webp`}
                       alt="Hộp mừng cưới Hắc Diệu Thạch"
                       className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]"
@@ -1128,21 +1117,6 @@ export function HacKimNhatThucTemplate({
             {!hiddenSections.has("rsvp") && (
               <div style={{ order: orderOf("rsvp") }}>
                 <section className="relative w-full rounded-2xl bg-[#121215]/94 border border-[#E0B866]/40 p-6 sm:p-10 shadow-[0_16px_40px_rgba(0,0,0,0.8)] backdrop-blur-md overflow-hidden">
-                  <div className="text-center mb-8">
-                    <span className="text-[11px] uppercase tracking-[0.25em] text-[#E0B866] font-semibold">
-                      Phúc Đáp
-                    </span>
-                    <h2
-                      className="text-2xl sm:text-3xl text-[#F6E2B3] font-normal mt-1 tracking-wide uppercase"
-                      style={{ fontFamily: TITLE_FONT }}
-                    >
-                      Xác Nhận Tham Dự
-                    </h2>
-                    <p className="text-xs sm:text-sm text-[#B9AFA2] mt-2 italic">
-                      Xin vui lòng phản hồi trước ngày {dateParts.day} tháng {dateParts.month} để chúng tôi chuẩn bị đón tiếp chu đáo nhất.
-                    </p>
-                  </div>
-
                   <TemplateRsvpSection
                     data={data}
                     mode={mode}
@@ -1178,12 +1152,12 @@ export function HacKimNhatThucTemplate({
               FOOTER (ĐẶT NGOÀI FLEX CONTAINER CÓ ORDER)
               ------------------------------------------------------------ */}
           <footer className="mt-16 sm:mt-24 pt-12 pb-8 border-t border-[#E0B866]/30 flex flex-col items-center text-center">
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/hac-kim-nhat-thuc/rings-crest.webp"
               alt="Huy hiệu đôi nhẫn"
               className="w-12 h-auto mb-3 opacity-90"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/hac-kim-nhat-thuc/divider-lunar.webp"
               alt="Trăng khuyết"
               className="w-40 sm:w-52 h-auto my-2 opacity-80"
@@ -1198,7 +1172,7 @@ export function HacKimNhatThucTemplate({
               {groomName} &amp; {brideName}
             </div>
             <span className="text-[10px] tracking-[0.25em] text-[#B9AFA2]/60 uppercase mt-6">
-              Hắc Kim Nhật Thực • Black-Tie Wedding
+              Trân Trọng Cảm Ơn
             </span>
           </footer>
         </div>

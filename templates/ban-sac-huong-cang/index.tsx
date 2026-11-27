@@ -18,6 +18,7 @@ import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playCoverSfx } from "@/lib/sfx";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
@@ -27,7 +28,31 @@ import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-type
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
+import {
+  HkCharacterFlipCards,
+  HkCueSheetTimeline,
+  HkExtendedFilmStrip,
+  HkFilmStorySection,
+  HkScratchDateCard,
+  type HkStandardTheme,
+} from "../shared/HongKongStandardBlocks";
+import {
+  HkCinemaShutterOverlay,
+  type HkRevealPhase,
+} from "../shared/HongKongStandardCovers";
 import type { WeddingTemplateProps } from "../types";
+
+const BAN_SAC_STANDARD_THEME: HkStandardTheme = {
+  accent: "#DFC07C",
+  accentLight: "#F2DCA8",
+  crimson: "#8F1524",
+  surfaceBg: "#0A0A0E",
+  cardBg: "#121218",
+  cardBorder: "rgba(223, 192, 124, 0.4)",
+  textPrimary: "#F4F1EA",
+  textMuted: "#A1A6B0",
+  foilStops: ["#8C6F38", "#DFC07C", "#F6E4B4", "#C29C52", "#6E5224"],
+};
 
 /* ============================================================
    BẢNG MÀU CHÍNH THỨC: BẢN SẮC HƯƠNG CẢNG (ban-sac-huong-cang)
@@ -128,40 +153,63 @@ function HongKongCover({
   data,
   guestName,
   contained,
+  onRevealStart,
   onOpen,
 }: {
   data: TemplateData;
   guestName: string | null;
   contained?: boolean;
+  onRevealStart?: () => void;
   onOpen: () => void;
 }) {
   const reduce = useReducedMotion();
-  const [openingPhase, setOpeningPhase] = React.useState<"idle" | "flash" | "the-big-day">("idle");
+  const [phase, setPhase] = React.useState<HkRevealPhase>("idle");
+  const timersRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  React.useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+    };
+  }, []);
 
   const handleOpenClick = () => {
-    if (openingPhase !== "idle") return;
-    playCoverSfx("vhs-shutter");
+    if (phase !== "idle") return;
+    playCoverSfx("cinema-clapper-35mm");
 
     if (reduce) {
-      setOpeningPhase("the-big-day");
-      setTimeout(() => {
-        onOpen();
-      }, 700);
+      onRevealStart?.();
+      setPhase("stage3");
+      timersRef.current.push(setTimeout(() => onOpen(), 380));
       return;
     }
 
-    setOpeningPhase("flash");
+    // Pha 1 (0 - 800ms): Clapperboard sập xuống + Vòng lá khẩu máy ảnh chớp hổ phách
+    setPhase("stage1");
 
-    // Sau 450ms flash/nhiễu -> chuyển sang phase "THE BIG DAY"
-    setTimeout(() => {
-      setOpeningPhase("the-big-day");
-    }, 450);
+    // Pha 2 (800 - 1840ms): 2 dải phim 35mm kẹp Widescreen + "THE BIG DAY" + bật Hero bên dưới
+    timersRef.current.push(
+      setTimeout(() => {
+        onRevealStart?.();
+        setPhase("stage2");
+      }, 800),
+    );
 
-    // Sau 1200ms -> vào hẳn thân thiệp
-    setTimeout(() => {
-      onOpen();
-    }, 1200);
+    // Pha 3 (1840 - 2960ms): 2 màn trập phim 35mm tách trên/dưới để lộ Hero thật
+    timersRef.current.push(
+      setTimeout(() => {
+        setPhase("stage3");
+      }, 1840),
+    );
+
+    timersRef.current.push(
+      setTimeout(() => {
+        onOpen();
+      }, 2960),
+    );
   };
+
+  const hidePosterBehindShutters = phase === "stage2" || phase === "stage3";
 
   return (
     <div
@@ -169,19 +217,24 @@ function HongKongCover({
         "relative flex w-full flex-col items-center justify-center overflow-hidden px-4 select-none",
         contained ? "h-full min-h-full py-6" : "h-screen-dvh min-h-screen-dvh py-8",
       )}
-      style={{ backgroundColor: NOIR_BLACK }}
+      style={{ backgroundColor: hidePosterBehindShutters ? "transparent" : NOIR_BLACK }}
     >
       {/* Lớp z-0: Ảnh phố đêm mưa có chiếc Mercedes-Benz W126 sắc nét */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 z-0 overflow-hidden transition-opacity duration-200",
+          hidePosterBehindShutters ? "opacity-0" : "opacity-100",
+        )}
+      >
         {/* Mobile background (mặc định và khi contained) */}
-        <picture>
+        <picture className="block h-full w-full">
           {!contained && (
             <source
               media="(min-width: 768px)"
               srcSet="/templates/ban-sac-huong-cang/bg_noir_desktop.webp"
             />
           )}
-          <img
+          <img loading="eager" fetchPriority="high"
             src="/templates/ban-sac-huong-cang/bg_noir_mobile.webp"
             alt="Hong Kong Noir Mercedes-Benz W126"
             className="h-full w-full object-cover object-center"
@@ -191,38 +244,40 @@ function HongKongCover({
 
       {/* Lớp z-[5]: Gradient tối bầu trời + Mưa đêm mảnh + Khói mờ trôi nhẹ */}
       <div
-        className="pointer-events-none absolute inset-0 z-[5]"
+        className={cn(
+          "pointer-events-none absolute inset-0 z-[5] transition-opacity duration-200",
+          hidePosterBehindShutters ? "opacity-0" : "opacity-100",
+        )}
         style={{
           background:
             "linear-gradient(180deg, rgba(7,7,9,0.85) 0%, rgba(7,7,9,0.3) 40%, rgba(7,7,9,0.6) 75%, rgba(7,7,9,0.95) 100%)",
         }}
         aria-hidden="true"
       />
-      <div className="z-[6] pointer-events-none absolute inset-0">
-        <HongKongRainParticles count={20} />
-      </div>
+      {!hidePosterBehindShutters && (
+        <div className="z-[6] pointer-events-none absolute inset-0">
+          <HongKongRainParticles count={20} />
+        </div>
+      )}
 
       {/* Lớp z-20: Khối Poster TVB 90s căn giữa tuyệt đối */}
-      <div className="relative z-20 mx-auto flex w-full max-w-[328px] sm:max-w-[380px] flex-col items-center text-center">
-        {/* Đỉnh Poster: Nhãn phim & REC indicator */}
+      <div
+        className={cn(
+          "relative z-20 mx-auto flex w-full max-w-[328px] sm:max-w-[380px] flex-col items-center text-center transition-opacity duration-200",
+          hidePosterBehindShutters ? "pointer-events-none opacity-0" : "opacity-100",
+        )}
+      >
         <div className="inline-flex items-center gap-2 rounded-full border border-[#DFC07C]/40 bg-[#070709]/80 px-3.5 py-1 backdrop-blur-xs">
-          <span className="h-2 w-2 rounded-full bg-[#E53E3E] animate-pulse" />
           <span
-            className="text-[10px] sm:text-[11px] font-bold tracking-[0.24em] text-[#DFC07C] uppercase"
+            className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] text-[#DFC07C] uppercase"
             style={{ fontFamily: MONO_FONT }}
           >
-            SPECIAL EDITION · 24FPS
+            Thiệp mời tham dự lễ cưới
           </span>
         </div>
 
-        {/* Bầu trời trên: Tên cặp đôi 3 dòng khổ lớn kiểu tên phim TVB */}
+        {/* Bầu trời trên: Tên cặp đôi 3 dòng khổ lớn */}
         <div className="mt-5 space-y-1">
-          <p
-            className="text-[11px] tracking-[0.3em] uppercase text-[#A1A6B0]"
-            style={{ fontFamily: BODY_FONT }}
-          >
-            A FILM BY LOVE
-          </p>
           <div className="pt-1">
             <h1
               className="text-3xl sm:text-4xl font-extrabold uppercase tracking-wider text-[#F4F1EA] drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] break-words leading-tight"
@@ -271,7 +326,7 @@ function HongKongCover({
           <button
             type="button"
             onClick={handleOpenClick}
-            disabled={openingPhase !== "idle"}
+            disabled={phase !== "idle"}
             className="group relative flex w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full border border-[#DFC07C]/70 bg-gradient-to-r from-[#6B0F1A] via-[#8F1524] to-[#6B0F1A] px-7 py-3 text-xs sm:text-sm font-bold tracking-[0.2em] text-[#F4F1EA] uppercase shadow-[0_0_20px_rgba(143,21,36,0.55)] transition-all duration-300 hover:border-[#DFC07C] hover:shadow-[0_0_28px_rgba(223,192,124,0.4)] active:scale-95 disabled:opacity-75"
           >
             {/* Vệt sáng lướt qua */}
@@ -286,76 +341,13 @@ function HongKongCover({
         </div>
       </div>
 
-      {/* --------------------------------------------------------
-          HIỆU ỨNG MỞ THIỆP THEO BRIEF KHÁCH HÀNG:
-          Bước A: Flash máy ảnh + VHS noise (0 - 450ms)
-          Bước B: Hiện "THE BIG DAY" sắc lạnh (450 - 1200ms)
-          -------------------------------------------------------- */}
-      <AnimatePresence>
-        {openingPhase === "flash" && (
-          <m.div
-            className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-white"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.9, 0.1, 0.85, 0] }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.42, times: [0, 0.25, 0.4, 0.65, 1] }}
-          >
-            {/* Scanline CRT overlay */}
-            <div
-              className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px]"
-              aria-hidden="true"
-            />
-          </m.div>
-        )}
-
-        {openingPhase === "the-big-day" && (
-          <m.div
-            className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070709]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.35 }}
-          >
-            {/* Tia sáng xanh neon cắt ngang */}
-            <m.div
-              className="absolute h-[1px] w-full bg-gradient-to-r from-transparent via-[#00D4AA] to-transparent shadow-[0_0_12px_#00D4AA]"
-              initial={{ scaleX: 0, opacity: 0 }}
-              animate={{ scaleX: 1, opacity: 0.8 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
-
-            <div className="relative z-10 text-center px-4">
-              <m.p
-                className="text-[11px] font-bold tracking-[0.34em] text-[#DFC07C] uppercase"
-                style={{ fontFamily: MONO_FONT }}
-                initial={{ y: 8, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-              >
-                SCENE 01 · 24FPS
-              </m.p>
-              <m.h2
-                className="mt-3 text-4xl sm:text-5xl md:text-6xl font-black uppercase tracking-[0.2em] text-[#F4F1EA] drop-shadow-[0_0_25px_rgba(223,192,124,0.35)]"
-                style={{ fontFamily: TITLE_FONT }}
-                initial={{ scale: 0.92, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.15 }}
-              >
-                THE BIG DAY
-              </m.h2>
-              <m.p
-                className="mt-3 text-xs tracking-[0.26em] text-[#A1A6B0] uppercase"
-                style={{ fontFamily: BODY_FONT }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.8 }}
-                transition={{ duration: 0.3, delay: 0.25 }}
-              >
-                {data.couple.groomName} &amp; {data.couple.brideName}
-              </m.p>
-            </div>
-          </m.div>
-        )}
-      </AnimatePresence>
+      {/* Vũ đạo Standard 3 pha: Clapperboard 35mm + Màn trập đục lỗ tách dọc lộ Hero */}
+      <HkCinemaShutterOverlay
+        phase={phase}
+        coupleLabel={`${data.couple.groomName} & ${data.couple.brideName}`}
+        titleFont={TITLE_FONT}
+        monoFont={MONO_FONT}
+      />
     </div>
   );
 }
@@ -384,6 +376,7 @@ export function BanSacHuongCangTemplate({
 }: WeddingTemplateProps) {
   const [openState, setOpenState] = React.useState(isOpened);
   const [coverGone, setCoverGone] = React.useState(isOpened);
+  const [isRevealing, setIsRevealing] = React.useState(false);
   const parentOpenedRef = React.useRef(isOpened);
 
   // Lightbox State
@@ -397,7 +390,7 @@ export function BanSacHuongCangTemplate({
     handleGiftClick,
     handleCloseModal: handleCloseGiftModal,
   } = useGiftBoxInteraction({
-    sfxType: "box",
+    sfxType: "artdeco-box-luxury",
     delayMs: 700,
   });
 
@@ -417,6 +410,7 @@ export function BanSacHuongCangTemplate({
   const handleOpenInvitation = () => {
     setOpenState(true);
     setCoverGone(true);
+    setIsRevealing(false);
     onOpenedChange?.(true);
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
@@ -435,9 +429,10 @@ export function BanSacHuongCangTemplate({
 
   // Hidden sections & Section Order
   const hidden = new Set(data.hiddenSections ?? []);
+  const resolvedWeddingSlug = weddingSlug || data.weddingSlug;
   const order = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = order.indexOf(key);
     return index < 0 ? 99 : index;
@@ -464,7 +459,11 @@ export function BanSacHuongCangTemplate({
   const brideParentsList = parseParents(data.couple.brideParents);
 
   // Countdown & Calendar calculation
-  const targetDate = React.useMemo(() => new Date(targetDateStr), [targetDateStr]);
+  const targetDate = React.useMemo(() => {
+    const events = getVisibleEvents(data);
+    const ev = getNearestUpcomingEvent(events, data.date);
+    return new Date(ev.startsAt || data.date || "2027-03-20T10:00:00+07:00");
+  }, [data]);
 
   const [timeLeft, setTimeLeft] = React.useState({
     days: 0,
@@ -544,6 +543,7 @@ export function BanSacHuongCangTemplate({
               data={data}
               guestName={guestName}
               contained={contained}
+              onRevealStart={() => setIsRevealing(true)}
               onOpen={handleOpenInvitation}
             />
           </m.div>
@@ -563,9 +563,18 @@ export function BanSacHuongCangTemplate({
       )}
 
       {/* --------------------------------------------------------
-          LỚP 3: THÂN THIỆP NOIR CHÍNH (HIỆN KHI BÌA ĐÃ MỞ)
+          LỚP 3: THÂN THIỆP NOIR CHÍNH (HIỆN KHI BÌA ĐÃ MỞ / ĐANG VÉN MÀN)
           -------------------------------------------------------- */}
-      <div className={cn("relative w-full", !openState && "hidden")}>
+      <div
+        className={cn(
+          "relative w-full transition-transform duration-700 ease-out",
+          !openState && !isRevealing
+            ? "hidden"
+            : isRevealing
+              ? "scale-[1.03]"
+              : "scale-100",
+        )}
+      >
         {/* Nền phim trường tối & mưa đêm nhẹ */}
         <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#181822] via-[#070709] to-[#070709]" />
         <div className="pointer-events-none absolute inset-0 z-0 opacity-20">
@@ -584,7 +593,7 @@ export function BanSacHuongCangTemplate({
           <section className="relative px-4 pt-10 pb-14 text-center">
             {/* Biển hiệu Neon chữ Hoa đỉnh khối */}
             <div className="mx-auto mb-6 flex justify-center max-w-[280px] sm:max-w-[340px]">
-              <img
+              <img decoding="async"
                 src="/templates/ban-sac-huong-cang/neon_sign_noir.webp"
                 alt="Hong Kong Neon Sign"
                 className="h-auto w-full drop-shadow-[0_0_15px_rgba(0,212,170,0.45)]"
@@ -600,28 +609,21 @@ export function BanSacHuongCangTemplate({
               <div className="pointer-events-none absolute bottom-1.5 left-1.5 h-3.5 w-3.5 border-b-2 border-l-2 border-[#DFC07C]" />
               <div className="pointer-events-none absolute bottom-1.5 right-1.5 h-3.5 w-3.5 border-b-2 border-r-2 border-[#DFC07C]" />
 
-              {/* Timestamp phim góc trên */}
-              <div className="mb-2 flex items-center justify-between px-1 text-[10px] tracking-[0.2em] text-[#A1A6B0]" style={{ fontFamily: MONO_FONT }}>
-                <span className="text-[#DFC07C]">CAM-01 · 24FPS</span>
-                <span className="inline-flex items-center gap-1 text-[#E53E3E]">
-                  <span className="h-2 w-2 rounded-full bg-[#E53E3E] animate-pulse" />
-                  REC
+              {/* Nhãn góc trên */}
+              <div className="mb-2 flex items-center justify-between gap-2 px-1 text-[9px] sm:text-[10px] tracking-[0.08em] text-[#A1A6B0]" style={{ fontFamily: MONO_FONT }}>
+                <span className="text-[#DFC07C] uppercase">Thiệp mời tham dự lễ cưới</span>
+                <span className="text-[#DFC07C]/80 shrink-0">
+                  {dateParts.day}.{dateParts.month}.{dateParts.year}
                 </span>
               </div>
 
               {/* Ảnh chính cặp đôi */}
               <div className="relative aspect-[4/5] w-full overflow-hidden rounded bg-[#070709]">
-                {data.photos?.heroUrl ? (
-                  <img
-                    src={data.photos.heroUrl}
-                    alt={data.photos.heroAlt || "Ảnh cưới cặp đôi"}
-                    className="h-full w-full object-cover object-center filter contrast-105"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-[#101014] text-[#737882]">
-                    <Camera className="h-10 w-10 opacity-40" />
-                  </div>
-                )}
+                <img loading="lazy" decoding="async"
+                  src={data.photos?.heroUrl || "/demo/hongkong/01_hero_neon_street.webp"}
+                  alt={data.photos?.heroAlt || "Ảnh cưới cặp đôi"}
+                  className="h-full w-full object-cover object-center filter contrast-105"
+                />
 
                 {/* Vạch kẻ phim & grain */}
                 <div className="pointer-events-none absolute inset-0 border border-white/10" />
@@ -629,7 +631,7 @@ export function BanSacHuongCangTemplate({
 
               {/* Góc dưới điểm Kính râm đen & Dấu đỏ triện */}
               <div className="relative mt-3 flex items-center justify-between px-1">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/ban-sac-huong-cang/prop_sunglasses.webp"
                   alt="Boss Sunglasses"
                   className="h-7 w-auto drop-shadow-md"
@@ -637,7 +639,7 @@ export function BanSacHuongCangTemplate({
                 <span className="text-[10px] tracking-[0.2em] text-[#A1A6B0] uppercase" style={{ fontFamily: MONO_FONT }}>
                   SCENE 01 · NOIR
                 </span>
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/ban-sac-huong-cang/prop_red_chop.webp"
                   alt="Red Chop Seal"
                   className="h-8 w-auto drop-shadow-md"
@@ -669,110 +671,43 @@ export function BanSacHuongCangTemplate({
                   &ldquo;Giữa vạn dặm hồng trần và những đêm mưa Hương Cảng, chỉ cần một ánh mắt để nhận ra bến đỗ bình yên.&rdquo;
                 </p>
               )}
+
+              {dateParts?.dotDate && (
+                <p className="text-xs font-bold tracking-[0.26em] text-[#DFC07C] uppercase" style={{ fontFamily: MONO_FONT }}>
+                  {dateParts.dotDate}
+                </p>
+              )}
             </div>
           </section>
 
           {/* SẮP XẾP CÁC SECTION THEO ORDER */}
           <div className="flex flex-col">
             {/* ========================================================
-                SECTION 2: NHÂN VẬT CHÍNH & HAI GIA ĐÌNH
-                - Thẻ hồ sơ nền #101014 viền vàng champagne & xám khói
-                - Nối giữa bằng quân bài Tây A♠ Q♥
-                - Tên song thân 2 dòng sạch sẽ, không ghi "Thân sinh:"
-                - Divider Zippo & Bao thuốc vintage
+                SECTION 2: NHÂN VẬT CHÍNH LẬT THẺ 3D & HAI GIA ĐÌNH
                 ======================================================== */}
             {!hidden.has("family") && (
               <div style={{ order: orderOf("family") }} className="px-4 py-8">
                 <div className="text-center">
-                  <p className="text-[11px] font-bold tracking-[0.26em] text-[#DFC07C] uppercase" style={{ fontFamily: MONO_FONT }}>
-                    DOSSIER · NHÂN VẬT CHÍNH
-                  </p>
-                  <h3 className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
+                  <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
                     HAI BÊN GIA ĐÌNH
                   </h3>
                 </div>
 
-                {/* 2 Thẻ Hồ Sơ Cặp Đôi */}
-                <div className="relative mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  {/* Thẻ Chú Rể */}
-                  <div className="relative rounded-lg border border-[#DFC07C]/40 bg-[#101014] p-5 shadow-lg">
-                    <div className="flex items-center gap-4">
-                      {data.photos?.groomUrl ? (
-                        <img
-                          src={data.photos.groomUrl}
-                          alt="Ảnh Chú Rể"
-                          className="h-20 w-20 rounded-full object-cover border-2 border-[#DFC07C]/60"
-                        />
-                      ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#DFC07C]/40 bg-[#070709] text-[#737882]">
-                          CR
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-[10px] font-bold tracking-[0.2em] text-[#DFC07C] uppercase" style={{ fontFamily: MONO_FONT }}>
-                          {data.couple.groomTitle || "CHÚ RỂ"}
-                        </span>
-                        <h4 className="text-xl font-bold text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
-                          {data.couple.groomFullName || data.couple.groomName}
-                        </h4>
-                      </div>
-                    </div>
-
-                    {/* Song thân Nhà Trai (2 dòng riêng, không "Thân sinh:") */}
-                    {groomParentsList.length > 0 && (
-                      <div className="mt-4 border-t border-[#737882]/30 pt-3 text-xs leading-relaxed text-[#A1A6B0]">
-                        <p className="text-[10px] font-semibold tracking-[0.16em] text-[#DFC07C] uppercase mb-1">
-                          NHÀ TRAI
-                        </p>
-                        {groomParentsList.map((parent, idx) => (
-                          <p key={idx} className="text-[#F4F1EA]/90">{parent}</p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Thẻ Cô Dâu */}
-                  <div className="relative rounded-lg border border-[#DFC07C]/40 bg-[#101014] p-5 shadow-lg">
-                    <div className="flex items-center gap-4">
-                      {data.photos?.brideUrl ? (
-                        <img
-                          src={data.photos.brideUrl}
-                          alt="Ảnh Cô Dâu"
-                          className="h-20 w-20 rounded-full object-cover border-2 border-[#DFC07C]/60"
-                        />
-                      ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#DFC07C]/40 bg-[#070709] text-[#737882]">
-                          CD
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-[10px] font-bold tracking-[0.2em] text-[#DFC07C] uppercase" style={{ fontFamily: MONO_FONT }}>
-                          {data.couple.brideTitle || "CÔ DÂU"}
-                        </span>
-                        <h4 className="text-xl font-bold text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
-                          {data.couple.brideFullName || data.couple.brideName}
-                        </h4>
-                      </div>
-                    </div>
-
-                    {/* Song thân Nhà Gái (2 dòng riêng, không "Thân sinh:") */}
-                    {brideParentsList.length > 0 && (
-                      <div className="mt-4 border-t border-[#737882]/30 pt-3 text-xs leading-relaxed text-[#A1A6B0]">
-                        <p className="text-[10px] font-semibold tracking-[0.16em] text-[#DFC07C] uppercase mb-1">
-                          NHÀ GÁI
-                        </p>
-                        {brideParentsList.map((parent, idx) => (
-                          <p key={idx} className="text-[#F4F1EA]/90">{parent}</p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <div className="mt-6">
+                  <HkCharacterFlipCards
+                    theme={BAN_SAC_STANDARD_THEME}
+                    data={data}
+                    groomPhotoFallback="/demo/hongkong/02_groom_solo_mercedes.webp"
+                    bridePhotoFallback="/demo/hongkong/03_bride_solo_neon_lounge.webp"
+                    groomBadge="A ♠"
+                    brideBadge="Q ♥"
+                  />
                 </div>
 
                 {/* Quân Bài Tây A♠ Q♥ ở vị trí trung tâm nối hai người */}
                 <div className="mt-6 flex items-center justify-center">
                   <div className="flex items-center gap-3 rounded-full border border-[#DFC07C]/30 bg-[#070709] px-4 py-1.5 shadow-md">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/ban-sac-huong-cang/prop_playing_cards.webp"
                       alt="Playing Cards Ace and Queen"
                       className="h-8 w-auto"
@@ -785,13 +720,13 @@ export function BanSacHuongCangTemplate({
 
                 {/* Dải chuyển chương Zippo & Bao thuốc vintage */}
                 <div className="mt-8 flex items-center justify-center gap-6 opacity-75">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/ban-sac-huong-cang/prop_zippo.webp"
                     alt="Zippo Lighter"
                     className="h-10 w-auto"
                   />
                   <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-[#DFC07C]/50 to-transparent" />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/ban-sac-huong-cang/prop_vintage_pack.webp"
                     alt="Vintage Cigarette Pack"
                     className="h-10 w-auto"
@@ -801,19 +736,43 @@ export function BanSacHuongCangTemplate({
             )}
 
             {/* ========================================================
-                SECTION 3: VÉ CÁ CƯỢC ĐÊM TIỆC & LỊCH THÁNG & ĐIỂM HẸN
-                - Vị trí ngày cưới #1: Thẻ vé cá cược betting_ticket.webp
-                - Đồng hồ đếm ngược với prop_watch.webp
-                - Vị trí ngày cưới #2: Bảng Lịch Tháng Noir
-                - Điểm Hẹn Phố Đêm với prop_hk_taxi.webp & prop_retro_phone.webp
+                SECTION 2B (STANDARD): CHUYỆN CHÚNG MÌNH CUỘN PHIM 35MM
                 ======================================================== */}
+            {!hidden.has("story") && (
+              <div style={{ order: orderOf("story") }} className="px-4 py-8">
+                <HkFilmStorySection
+                  theme={BAN_SAC_STANDARD_THEME}
+                  data={data}
+                  galleryPhotos={galleryPhotos}
+                  heading="CHUYỆN CHÚNG MÌNH"
+                  eyebrow=""
+                  onPhotoClick={(idx) => setLightboxIndex(idx)}
+                />
+              </div>
+            )}
+
             {!hidden.has("calendar") && (
               <div style={{ order: orderOf("calendar") }} className="px-4 py-8">
                 <div className="text-center">
                   <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
-                    LỊCH HẸN TRĂM NĂM
+                    NGÀY CHUNG ĐÔI
                   </h3>
                 </div>
+
+                {dateParts && (
+                  <HkScratchDateCard
+                    theme={BAN_SAC_STANDARD_THEME}
+                    eyebrow=""
+                    foilHeading="CÀO NHŨ MỞ NGÀY THÀNH HÔN"
+                    weekday={dateParts.weekday}
+                    time={dateParts.time}
+                    day={dateParts.day}
+                    month={dateParts.month}
+                    year={dateParts.year}
+                    lunarStr={lunarClean}
+                    venueName={targetEvent.venueName}
+                  />
+                )}
 
                 {/* TẤM VÉ CÁ CƯỢC CỔ ĐIỂN (Vị trí ngày cưới #1) */}
                 <div className="relative mx-auto mt-6 max-w-md overflow-hidden rounded-xl border border-[#DFC07C]/40 bg-[#FAF7F0] text-[#1F1D1A] shadow-2xl">
@@ -827,7 +786,7 @@ export function BanSacHuongCangTemplate({
                         </span>
                         <p className="text-xs font-bold text-[#1F1D1A]">NO. 1980-LOVE-WIN</p>
                       </div>
-                      <img
+                      <img loading="lazy" decoding="async"
                         src="/templates/ban-sac-huong-cang/prop_red_chop.webp"
                         alt="Official Seal"
                         className="h-10 w-auto"
@@ -877,7 +836,7 @@ export function BanSacHuongCangTemplate({
                 {/* ĐỒNG HỒ ĐẾM NGƯỢC VỚI prop_watch.webp */}
                 <div className="mt-10 rounded-xl border border-[#DFC07C]/30 bg-[#101014] p-6 text-center shadow-lg">
                   <div className="flex items-center justify-center gap-2">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/ban-sac-huong-cang/prop_watch.webp"
                       alt="Vintage Watch"
                       className="h-8 w-auto"
@@ -968,12 +927,12 @@ export function BanSacHuongCangTemplate({
                       >
                         <div>
                           <div className="flex items-center justify-center gap-4 mb-3">
-                            <img
+                            <img loading="lazy" decoding="async"
                               src="/templates/ban-sac-huong-cang/prop_hk_taxi.webp"
                               alt="Hong Kong Taxi"
                               className="h-10 w-auto"
                             />
-                            <img
+                            <img loading="lazy" decoding="async"
                               src="/templates/ban-sac-huong-cang/prop_retro_phone.webp"
                               alt="Retro Telephone"
                               className="h-10 w-auto"
@@ -1019,15 +978,9 @@ export function BanSacHuongCangTemplate({
             {!hidden.has("dresscode") && (
               <div style={{ order: orderOf("dresscode") }} className="px-4 py-8">
                 <div className="rounded-xl border border-[#DFC07C]/30 bg-[#101014] p-6 text-center shadow-lg">
-                  <p className="text-[11px] font-bold tracking-[0.26em] text-[#DFC07C] uppercase" style={{ fontFamily: MONO_FONT }}>
-                    DRESS CODE · QUY CHUẨN ĐÊM TIỆC
-                  </p>
-                  <h3 className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
-                    SẮC MÀU TRANG PHỤC
+                  <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
+                    LỊCH TRÌNH &amp; TRANG PHỤC
                   </h3>
-                  <p className="mt-1 text-xs text-[#A1A6B0]">
-                    Trang phục lịch thiệp theo tông màu chủ đạo đêm tiệc
-                  </p>
 
                   {/* CHỈ hiển thị các ô màu - KHÔNG hiện mã hex */}
                   <div className="mt-5 flex items-center justify-center gap-4">
@@ -1041,31 +994,31 @@ export function BanSacHuongCangTemplate({
                     ))}
                   </div>
                 </div>
+
+                {/* KỊCH BẢN ĐÊM TIỆC (STANDARD — Cue Sheet) */}
+                <HkCueSheetTimeline theme={BAN_SAC_STANDARD_THEME} data={data} />
               </div>
             )}
 
             {/* ========================================================
                 SECTION 5: THƯỚC PHIM ĐÊM MƯA (ALBUM ẢNH CƯỚI)
-                - Đánh số cảnh SCENE 01, SCENE 02...
-                - Chạm vào mở Lightbox qua Portal
-                - Gói Free tối đa 5 ảnh, ẩn albumQr
                 ======================================================== */}
             {!hidden.has("album") && galleryPhotos.length > 0 && (
               <div style={{ order: orderOf("album") }} className="px-4 py-8">
                 <div className="text-center">
                   <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
-                    THƯỚC PHIM
+                    ALBUM ẢNH CƯỚI
                   </h3>
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {galleryPhotos.map((photo, idx) => (
+                  {galleryPhotos.slice(0, 5).map((photo, idx) => (
                     <div
                       key={photo.id || idx}
                       onClick={() => setLightboxIndex(idx)}
                       className="group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-lg border border-[#DFC07C]/30 bg-[#101014] shadow-md transition-all hover:border-[#DFC07C]"
                     >
-                      <img
+                      <img decoding="async"
                         src={photo.url}
                         alt={photo.alt || `Thước phim ${idx + 1}`}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1081,6 +1034,12 @@ export function BanSacHuongCangTemplate({
                     </div>
                   ))}
                 </div>
+
+                <HkExtendedFilmStrip
+                  theme={BAN_SAC_STANDARD_THEME}
+                  photos={galleryPhotos}
+                  onPhotoClick={(realIdx) => setLightboxIndex(realIdx)}
+                />
               </div>
             )}
 
@@ -1093,11 +1052,8 @@ export function BanSacHuongCangTemplate({
               <div style={{ order: orderOf("gift") }} className="px-4 py-8">
                 <div className="rounded-xl border border-[#DFC07C]/35 bg-[#101014] p-6 text-center shadow-lg">
                   <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
-                    HỘP QUÀ
+                    HỘP MỪNG CƯỚI
                   </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-[#A1A6B0] max-w-md mx-auto">
-                    Sự hiện diện của Quý khách là vinh dự lớn nhất trong đêm tiệc này. Nếu ở xa chưa kịp ghé chung vui, Quý khách có thể chạm mở chiếc hộp sơn mài bên dưới để gửi lời chúc phúc.
-                  </p>
 
                   {/* Tương tác 3 trạng thái của hộp sơn mài */}
                   <div className="mt-6 flex flex-col items-center">
@@ -1109,7 +1065,7 @@ export function BanSacHuongCangTemplate({
                     >
                       <div className="relative h-44 w-44 sm:h-52 sm:w-52">
                         {/* 1. Trạng thái Normal */}
-                        <img
+                        <img loading="lazy" decoding="async"
                           src="/templates/ban-sac-huong-cang/humidor_normal.webp"
                           alt="Hộp sơn mài đen"
                           className={cn(
@@ -1118,7 +1074,7 @@ export function BanSacHuongCangTemplate({
                           )}
                         />
                         {/* 2. Trạng thái Glow (Hover / Nhấn) */}
-                        <img
+                        <img loading="lazy" decoding="async"
                           src="/templates/ban-sac-huong-cang/humidor_glow.webp"
                           alt="Hộp sơn mài phát sáng"
                           className={cn(
@@ -1127,7 +1083,7 @@ export function BanSacHuongCangTemplate({
                           )}
                         />
                         {/* 3. Trạng thái Open */}
-                        <img
+                        <img loading="lazy" decoding="async"
                           src="/templates/ban-sac-huong-cang/humidor_open.webp"
                           alt="Hộp sơn mài mở nắp"
                           className={cn(
@@ -1154,12 +1110,6 @@ export function BanSacHuongCangTemplate({
             {!hidden.has("rsvp") && (
               <div style={{ order: orderOf("rsvp") }} className="px-4 py-8">
                 <section className="relative overflow-hidden rounded-xl border border-[#DFC07C]/35 bg-[#101014] p-5 sm:p-7 shadow-xl">
-                  <div className="text-center mb-6">
-                    <h3 className="text-2xl font-bold uppercase tracking-wider text-[#F4F1EA]" style={{ fontFamily: TITLE_FONT }}>
-                      XÁC NHẬN THAM DỰ
-                    </h3>
-                  </div>
-
                   <TemplateRsvpSection
                     data={data}
                     mode={mode}
@@ -1186,37 +1136,31 @@ export function BanSacHuongCangTemplate({
                     initialSongRequest={initialSongRequest}
                     initialRideNeeded={initialRideNeeded}
                   />
-
-                  {/* QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
-                  {data.plan !== "free" && !hidden.has("albumQr") && weddingSlug && (
-                    <div className="mt-10 flex justify-center border-t border-[#737882]/25 pt-6">
-                      <GuestAlbumQr
-                        slug={weddingSlug}
-                        accentColor="#8F1524"
-                        textColor="#F4F1EA"
-                        mutedColor="#DFC07C"
-                      />
-                    </div>
-                  )}
                 </section>
+              </div>
+            )}
+
+            {/* QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
+            {data.plan !== "free" && !hidden.has("albumQr") && resolvedWeddingSlug && (
+              <div style={{ order: orderOf("albumQr") }} className="px-4 py-8">
+                <div className="flex justify-center rounded-xl border border-[#DFC07C]/35 bg-[#101014] p-5 shadow-xl">
+                  <GuestAlbumQr
+                    slug={resolvedWeddingSlug}
+                    accentColor="#8F1524"
+                    textColor="#F4F1EA"
+                    mutedColor="#DFC07C"
+                  />
+                </div>
               </div>
             )}
           </div>
 
-          {/* ========================================================
-              SECTION 8: FOOTER (CREDIT CUỐI PHIM)
-              - ĐẶT BÊN NGOÀI container flex có order
-              - Tuyệt đối không lặp lại ngày cưới
-              ======================================================== */}
           <footer className="mt-12 border-t border-[#DFC07C]/30 bg-[#070709] px-4 py-12 text-center text-xs text-[#A1A6B0]">
             <p className="text-sm font-semibold text-[#DFC07C] tracking-widest uppercase" style={{ fontFamily: TITLE_FONT }}>
               Hẹn gặp Quý khách tại đêm tiệc chung vui
             </p>
-            <p className="mt-2 text-[10px] tracking-[0.24em] uppercase" style={{ fontFamily: MONO_FONT }}>
-              A FILM BY LOVE · 35MM CINEMA
-            </p>
             <p className="mt-4 text-[10px] text-[#737882]">
-              © {yearNum} {data.couple.groomName} &amp; {data.couple.brideName}. ALL RIGHTS RESERVED.
+              © {yearNum} {data.couple.groomName} &amp; {data.couple.brideName}
             </p>
           </footer>
         </div>

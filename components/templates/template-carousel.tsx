@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PLAN_LABELS } from "@/config/template-features";
-import { cn } from "@/lib/utils";
+import { cn, getCoverImageResponsive } from "@/lib/utils";
 import {
   frameOffsetMax,
   setFrameOffset,
@@ -271,29 +271,38 @@ export function TemplateCarousel({ templates }: TemplateCarouselProps) {
               >
                 <span className="block">
                   <span className="relative block aspect-[9/16] overflow-hidden rounded-2xl border border-border bg-surface-alt shadow-xl">
-                    {shouldLoadImage && !imageFailed ? (
-                      <img
-                        src={template.previewImage}
-                        alt={`Mẫu thiệp ${template.name}`}
-                        width={700}
-                        height={1240}
-                        loading={isSelected ? "eager" : "lazy"}
-                        decoding="async"
-                        onError={() =>
-                          setFailedImages((previous) => {
-                            const next = new Set(previous);
-                            next.add(template.id);
-                            return next;
-                          })
-                        }
-                        className={cn(
-                          "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
-                          liveCopy === copyIndex &&
-                            liveReady &&
-                            "opacity-0",
-                        )}
-                      />
-                    ) : (
+                    {shouldLoadImage && !imageFailed ? (() => {
+                      const coverImg = getCoverImageResponsive(
+                        template.previewImage,
+                        template.kind,
+                      );
+                      return (
+                        <img
+                          src={coverImg.src}
+                          srcSet={coverImg.srcSet}
+                          sizes={coverImg.srcSet ? "(max-width: 639px) 220px, 260px" : undefined}
+                          alt={`Mẫu thiệp ${template.name}`}
+                          width={coverImg.width ?? 700}
+                          height={coverImg.height ?? 1240}
+                          loading={isSelected ? "eager" : "lazy"}
+                          fetchPriority={isSelected ? "high" : "auto"}
+                          decoding="async"
+                          onError={() =>
+                            setFailedImages((previous) => {
+                              const next = new Set(previous);
+                              next.add(template.id);
+                              return next;
+                            })
+                          }
+                          className={cn(
+                            "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
+                            liveCopy === copyIndex &&
+                              liveReady &&
+                              "opacity-0",
+                          )}
+                        />
+                      );
+                    })() : (
                       <span className="flex h-full w-full flex-col items-center justify-center gap-2 bg-surface-alt px-4 text-center">
                         <span
                           className="h-10 w-10 rounded-full border border-border bg-surface"

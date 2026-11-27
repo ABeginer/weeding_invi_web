@@ -52,7 +52,8 @@ export type BaseTemplateId =
   | "hao-quang-huong-cang"
   | "huong-cang-dem-neon"
   | "nhat-ky-mua-yeu"
-  | "mot-thoi-de-nho";
+  | "mot-thoi-de-nho"
+  | "sen-ngoc-tram-nam";
 
 export type TemplateId =
   | BaseTemplateId

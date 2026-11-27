@@ -16,13 +16,38 @@ import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playCoverSfx } from "@/lib/sfx";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-types";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
 import { FilmFrame35mm } from "../shared/FilmFrame35mm";
+import {
+  HkCharacterFlipCards,
+  HkCueSheetTimeline,
+  HkExtendedFilmStrip,
+  HkFilmStorySection,
+  HkScratchDateCard,
+  type HkStandardTheme,
+} from "../shared/HongKongStandardBlocks";
+import {
+  HkNeonCrtUnfoldOverlay,
+  type HkRevealPhase,
+} from "../shared/HongKongStandardCovers";
 import type { WeddingTemplateProps } from "../types";
+
+const NEON_STANDARD_THEME: HkStandardTheme = {
+  accent: "#00F5D4",
+  accentLight: "#F5B841",
+  crimson: "#FF2D78",
+  surfaceBg: "#0B0B0F",
+  cardBg: "#12121A",
+  cardBorder: "rgba(255, 45, 120, 0.42)",
+  textPrimary: "#F7F4EE",
+  textMuted: "#9E9AA7",
+  foilStops: ["#B87C1A", "#F5B841", "#FFE49E", "#D98A2B", "#8F5A12"],
+};
 
 /* ============================================================
    BẢNG MÀU CHÍNH THỨC: HƯƠNG CẢNG ĐÊM NEON (huong-cang-dem-neon)
@@ -83,65 +108,84 @@ export function HuongCangDemNeonTemplate({
   const shouldReduceMotion = useReducedMotion();
 
   // -------------------------------------------------------------
-  // TRẠNG THÁI MỞ BÌA (Cover)
+  // TRẠNG THÁI MỞ BÌA (Cover Standard 3 Pha Live-Hero Reveal)
   // -------------------------------------------------------------
-  const [isOpening, setIsOpening] = React.useState(false);
-  const [glitchFlash, setGlitchFlash] = React.useState(false);
-  const [vhsLeader, setVhsLeader] = React.useState(false);
-  const [coverGone, setCoverGone] = React.useState(false);
+  const [revealPhase, setRevealPhase] = React.useState<HkRevealPhase>("idle");
+  const [coverGone, setCoverGone] = React.useState(Boolean(parentIsOpened));
   const parentOpenedRef = React.useRef(parentIsOpened);
+  const timersRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const isOpening = revealPhase !== "idle";
+  const isRevealing = revealPhase === "stage2" || revealPhase === "stage3";
+
+  React.useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+    };
+  }, []);
 
   React.useEffect(() => {
     if (parentIsOpened && !coverGone && !isOpening) {
       setCoverGone(true);
     } else if (parentIsOpened === false && parentOpenedRef.current === true) {
       setCoverGone(false);
-      setIsOpening(false);
-      setGlitchFlash(false);
-      setVhsLeader(false);
+      setRevealPhase("idle");
     }
     parentOpenedRef.current = parentIsOpened;
   }, [parentIsOpened, coverGone, isOpening]);
 
   const handleOpenInvitation = () => {
     if (isOpening || coverGone) return;
-    onOpenedChange?.(true);
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
     } catch { }
-    setIsOpening(true);
 
-    playCoverSfx("vhs-shutter");
+    playCoverSfx("neon-vhs-crt");
 
     if (shouldReduceMotion) {
-      setTimeout(() => {
-        setCoverGone(true);
-        setIsOpening(false);
-        if (!contained && typeof window !== "undefined") {
-          window.scrollTo({ top: 0, behavior: "auto" });
-        }
-      }, 200);
+      setRevealPhase("stage3");
+      timersRef.current.push(
+        setTimeout(() => {
+          setCoverGone(true);
+          setRevealPhase("idle");
+          onOpenedChange?.(true);
+          if (!contained && typeof window !== "undefined") {
+            window.scrollTo({ top: 0, behavior: "auto" });
+          }
+        }, 320),
+      );
       return;
     }
 
-    // Pha 1: Scanlines + Tracking glitch RGB + Flash trắng dịu (0 - 450ms)
-    setGlitchFlash(true);
+    // Pha 1 (0 - 840ms): Neon tăng áp 150% + Tách kênh RGB Cyan/Magenta + Thanh tracking VHS
+    setRevealPhase("stage1");
 
-    // Pha 2: Chuyển sang màn đen VHS Leader với tiêu đề zoom-in (450ms - 1100ms)
-    setTimeout(() => {
-      setVhsLeader(true);
-    }, 450);
+    // Pha 2 (840 - 1840ms): Màn đen CRT khóa nét "PLAY ▶ HI-FI STEREO" + tia sáng ngang, bật Hero bên dưới
+    timersRef.current.push(
+      setTimeout(() => {
+        setRevealPhase("stage2");
+      }, 840),
+    );
 
-    // Hoàn tất mở vào thân thiệp (1150ms)
-    setTimeout(() => {
-      setCoverGone(true);
-      setIsOpening(false);
-      setGlitchFlash(false);
-      setVhsLeader(false);
-      if (!contained && typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "auto" });
-      }
-    }, 1150);
+    // Pha 3 (1840 - 3000ms): Hai nửa đen CRT tách mở dọc quanh tia sáng Neon lộ trực tiếp Hero
+    timersRef.current.push(
+      setTimeout(() => {
+        setRevealPhase("stage3");
+      }, 1840),
+    );
+
+    // Hoàn tất mở vào thân thiệp
+    timersRef.current.push(
+      setTimeout(() => {
+        setCoverGone(true);
+        setRevealPhase("idle");
+        onOpenedChange?.(true);
+        if (!contained && typeof window !== "undefined") {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
+      }, 3000),
+    );
   };
 
   // -------------------------------------------------------------
@@ -154,7 +198,7 @@ export function HuongCangDemNeonTemplate({
     handleGiftClick,
     handleCloseModal: handleCloseGiftModal,
   } = useGiftBoxInteraction({
-    sfxType: "tin-vhs",
+    sfxType: "tin-vhs-retro",
     delayMs: shouldReduceMotion ? 150 : 700,
   });
 
@@ -214,18 +258,10 @@ export function HuongCangDemNeonTemplate({
 
   // Cấu hình ẩn/hiện section
   const hidden = new Set(data.hiddenSections || []);
-  const order = data.sectionOrder || [
-    "family",
-    "calendar",
-    "map",
-    "dresscode",
-    "album",
-    "albumQr",
-    "gift",
-    "rsvp",
-  ];
+  const resolvedWeddingSlug = weddingSlug || data.weddingSlug;
+  const order = data.sectionOrder?.length ? data.sectionOrder : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
-    const idx = order.indexOf(key as any);
+    const idx = (order as readonly string[]).indexOf(key);
     return idx === -1 ? 99 : idx;
   };
 
@@ -233,10 +269,11 @@ export function HuongCangDemNeonTemplate({
   // DỮ LIỆU LỊCH THÁNG & NGÀY SỰ KIỆN
   // -------------------------------------------------------------
   const eventDays = React.useMemo(() => {
+    const events = getVisibleEvents(data);
     const days = new Set<number>();
     const month = parseInt(dateParts.month, 10) || 1;
     const year = parseInt(dateParts.year, 10) || 2027;
-    visibleEvents.forEach((evt) => {
+    events.forEach((evt) => {
       if (evt.startsAt) {
         const d = new Date(evt.startsAt);
         if (d.getFullYear() === year && d.getMonth() + 1 === month) {
@@ -248,7 +285,7 @@ export function HuongCangDemNeonTemplate({
       days.add(parseInt(dateParts.day, 10));
     }
     return days;
-  }, [visibleEvents, dateParts.month, dateParts.year, dateParts.day]);
+  }, [data, dateParts.month, dateParts.year, dateParts.day]);
 
   const calendarDays = React.useMemo(() => {
     const month = parseInt(dateParts.month, 10) || 1;
@@ -290,7 +327,7 @@ export function HuongCangDemNeonTemplate({
       )}
 
       {/* Preload ảnh trạng thái mở hộp quà */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/huong-cang-dem-neon/vhs_box_open.webp"
         className="hidden"
         aria-hidden="true"
@@ -298,7 +335,7 @@ export function HuongCangDemNeonTemplate({
       />
 
       {/* =========================================================
-          BÌA PHỐ ĐÊM NEON + HUD VHS 1990S (COVER)
+          BÌA PHỐ ĐÊM NEON + VŨ ĐẠO STANDARD 3 PHA (RGB OVERDRIVE + CRT UNFOLD)
           ========================================================= */}
       <AnimatePresence>
         {!coverGone && (
@@ -306,20 +343,27 @@ export function HuongCangDemNeonTemplate({
             initial={{ opacity: 1 }}
             exit={{
               opacity: 0,
-              scale: shouldReduceMotion ? 1 : 1.05,
-              transition: { duration: 0.45, ease: "easeInOut" },
+              transition: { duration: 0.25, ease: "easeOut" },
             }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
-            style={{ backgroundColor: COLOR_BG }}
+            className={cn(
+              "inset-0 z-50 flex items-center justify-center overflow-hidden",
+              contained ? "absolute" : "fixed",
+            )}
+            style={{ backgroundColor: isRevealing ? "transparent" : COLOR_BG }}
           >
             {/* z-0: Nền Phố Đêm Neon Mobile / Desktop */}
-            <div className="absolute inset-0 z-0">
+            <div
+              className={cn(
+                "absolute inset-0 z-0 transition-opacity duration-200",
+                isRevealing ? "opacity-0" : "opacity-100",
+              )}
+            >
               <picture className="h-full w-full">
                 <source
                   media="(min-width: 640px)"
                   srcSet="/templates/huong-cang-dem-neon/bg_street_desktop.webp"
                 />
-                <img
+                <img loading="eager" fetchPriority="high"
                   src="/templates/huong-cang-dem-neon/bg_street_mobile.webp"
                   alt="Hương Cảng Đêm Neon Cover Background"
                   className="h-full w-full object-cover object-center"
@@ -334,7 +378,12 @@ export function HuongCangDemNeonTemplate({
             </div>
 
             {/* z-10: VHS HUD OVERLAY (Góc trên & Các thông số vintage) */}
-            <div className="absolute inset-0 z-10 pointer-events-none p-5 sm:p-7 flex flex-col justify-between">
+            <div
+              className={cn(
+                "absolute inset-0 z-10 pointer-events-none p-5 sm:p-7 flex flex-col justify-between transition-opacity duration-200",
+                isRevealing ? "opacity-0" : "opacity-100",
+              )}
+            >
               {/* Header HUD: REC nhấp nháy + SP 90s + Retro Star */}
               <div className="flex items-center justify-between text-xs tracking-widest text-[#F7F4EE]">
                 <div className="flex items-center gap-2">
@@ -348,7 +397,7 @@ export function HuongCangDemNeonTemplate({
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-[#00F5D4]" style={{ fontFamily: MONO_FONT }}>
                   <span>CH 03</span>
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/huong-cang-dem-neon/sticker_retro_stars.webp"
                     alt=""
                     className="h-5 w-5 object-contain"
@@ -364,7 +413,13 @@ export function HuongCangDemNeonTemplate({
             </div>
 
             {/* z-20: Nội dung chính bìa thiệp */}
-            <div className="relative z-20 flex w-full max-w-sm flex-col items-center px-6 text-center">
+            <div
+              className={cn(
+                "relative z-20 flex w-full max-w-sm flex-col items-center px-6 text-center transition-all duration-200",
+                isRevealing ? "pointer-events-none opacity-0" : "opacity-100",
+                revealPhase === "stage1" && "brightness-150 saturate-150",
+              )}
+            >
               {/* Biển hiệu neon Song Hỷ rực rỡ */}
               <m.div
                 initial={{ opacity: 0, y: -20 }}
@@ -372,7 +427,7 @@ export function HuongCangDemNeonTemplate({
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="relative mb-3 flex items-center justify-center"
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/huong-cang-dem-neon/neon_sign_song_hy.webp"
                   alt="Biển hiệu Neon Song Hỷ Hương Cảng"
                   className="h-28 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,45,120,0.7)]"
@@ -460,43 +515,13 @@ export function HuongCangDemNeonTemplate({
               </m.button>
             </div>
 
-            {/* HIỆU ỨNG CHỚP SÁNG SCANLINES & VHS GLITCH KHI BẤM MỞ (0 - 450ms) */}
-            {glitchFlash && (
-              <div
-                className="pointer-events-none absolute inset-0 z-40 bg-white/40 mix-blend-screen transition-opacity duration-300"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 1px, transparent 1px, transparent 3px)",
-                }}
-                aria-hidden="true"
-              />
-            )}
-
-            {/* HIỆU ỨNG MÀN ĐEN VHS LEADER (450ms - 1150ms) */}
-            {vhsLeader && (
-              <m.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#0B0B0F] text-center p-6"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center gap-2 text-xs tracking-widest text-[#00F5D4]" style={{ fontFamily: MONO_FONT }}>
-                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#00F5D4] animate-ping" />
-                    <span>LOADING TAPE #1990</span>
-                  </div>
-                  <h2
-                    className="text-2xl font-bold uppercase tracking-[0.3em] text-[#F7F4EE] drop-shadow-[0_0_10px_#FF2D78]"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    OUR WEDDING
-                  </h2>
-                  <p className="text-xs text-[#F5B841] tracking-widest" style={{ fontFamily: MONO_FONT }}>
-                    MONG KOK NIGHTS · SCENE 01
-                  </p>
-                </div>
-              </m.div>
-            )}
+            {/* Vũ đạo Standard 3 pha: RGB Overdrive + VHS Play + Tia sáng CRT mở dọc lộ Hero */}
+            <HkNeonCrtUnfoldOverlay
+              phase={revealPhase}
+              coupleLabel={`${data.couple.groomName} & ${data.couple.brideName}`}
+              titleFont={TITLE_FONT}
+              monoFont={MONO_FONT}
+            />
           </m.div>
         )}
       </AnimatePresence>
@@ -504,7 +529,16 @@ export function HuongCangDemNeonTemplate({
       {/* =========================================================
           THÂN THIỆP CHÍNH (MAIN BODY)
           ========================================================= */}
-      <div className="relative z-10 mx-auto w-full max-w-[500px] px-4 pb-16 pt-8 sm:px-6">
+      <div
+        className={cn(
+          "relative z-10 mx-auto w-full max-w-[500px] px-4 pb-16 pt-8 sm:px-6 transition-all duration-700 ease-out",
+          !coverGone && !isRevealing
+            ? "hidden pointer-events-none opacity-0"
+            : isRevealing
+              ? "opacity-100 scale-[1.03]"
+              : "opacity-100 scale-100",
+        )}
+      >
 
         {/* =========================================================
             PHẦN 1: HERO KHUNG PHIM 35MM & BIỂN HIỆU NEON
@@ -512,7 +546,7 @@ export function HuongCangDemNeonTemplate({
         <section className="mb-10 text-center">
           {/* Biển hiệu neon Song Hỷ rực rỡ */}
           <div className="mx-auto mb-4 flex justify-center">
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/huong-cang-dem-neon/neon_sign_song_hy.webp"
               alt="Song Hỷ Neon"
               className="h-24 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,45,120,0.6)]"
@@ -520,10 +554,10 @@ export function HuongCangDemNeonTemplate({
           </div>
 
           <span
-            className="inline-block rounded-full border border-[#00F5D4]/40 bg-[#12121A] px-3.5 py-1 text-[10px] font-bold tracking-[0.25em] text-[#00F5D4] uppercase shadow-xs"
+            className="inline-block rounded-full border border-[#00F5D4]/40 bg-[#12121A] px-3.5 py-1 text-[10px] font-bold tracking-[0.14em] text-[#00F5D4] uppercase shadow-xs"
             style={{ fontFamily: MONO_FONT }}
           >
-            THIỆP BÁO HỶ
+            Thiệp mời tham dự lễ cưới
           </span>
 
           <h2
@@ -537,34 +571,34 @@ export function HuongCangDemNeonTemplate({
           <div className="relative mx-auto mt-6 w-full max-w-sm">
             {/* Khung ảnh cưới 35mm chuẩn CSS/SVG không che mặt nhân vật */}
             <FilmFrame35mm
-              src={data.photos?.heroUrl || "/templates/huong-cang-dem-neon/bg_street_mobile.webp"}
+              src={data.photos?.heroUrl || "/demo/hongkong/01_hero_neon_street.webp"}
               alt={`Ảnh cưới ${data.couple.groomName} và ${data.couple.brideName}`}
               aspectRatio="16/10"
               stampSrc="/templates/huong-cang-dem-neon/sticker_pixel_heart.webp"
               stampAlt="Trái tim Pixel"
               stampPosition="bottom-right"
               stampClassName="w-10 sm:w-11 drop-shadow-[0_0_8px_#FF2D78]"
-              filmBrand="KODAK VISION3 500T"
-              frameCode="FRAME #24A"
               borderColor="border-[#FF2D78]/30"
               accentColor="text-[#00F5D4]"
               imgClassName="filter contrast-105 saturate-110"
             />
 
             {/* Subtitle vàng ấm kiểu phim Hong Kong 90s */}
-            <div className="mt-3 px-4">
+            <div className="mt-3 px-4 space-y-1.5">
               <p
                 className="text-xs sm:text-sm italic tracking-wide text-[#F5B841] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
                 style={{ fontFamily: BODY_FONT }}
               >
                 &ldquo;{data.quote || "Vào lúc đẹp nhất của cuộc đời, anh đã gặp được em."}&rdquo;
               </p>
-              <p
-                className="mt-1 text-[10px] tracking-widest text-[#9E9AA7] uppercase"
-                style={{ fontFamily: MONO_FONT }}
-              >
-                ISO 400 · 35MM · KODAK VISION3 500T
-              </p>
+              {dateParts?.dotDate && (
+                <p
+                  className="text-xs font-bold tracking-[0.26em] text-[#00F5D4] uppercase"
+                  style={{ fontFamily: MONO_FONT }}
+                >
+                  {dateParts.dotDate}
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -573,122 +607,65 @@ export function HuongCangDemNeonTemplate({
         <div className="flex flex-col gap-10">
 
           {/* =========================================================
-              PHẦN 2: CAST CREDIT CARD (family)
-              * Thông tin 2 nhân vật chính & Song thân Nhà Trai - Nhà Gái
-              * Tách 2 dòng Bố và Mẹ, không dùng '&', không 'Thân sinh:'
+              PHẦN 2: CAST CREDIT LẬT THẺ 3D (family)
               ========================================================= */}
           {!hidden.has("family") && (
             <section style={{ order: orderOf("family") }} className="space-y-4">
               <div className="text-center">
-                <span
-                  className="text-[10px] sm:text-[11px] font-bold tracking-[0.25em] text-[#00F5D4] uppercase"
-                  style={{ fontFamily: MONO_FONT }}
-                >
-                  OPENING CREDITS · DANH CHIẾU DIỄN VIÊN
-                </span>
                 <h3
-                  className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F7F4EE]"
+                  className="text-2xl font-bold uppercase tracking-wider text-[#F7F4EE]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
-                  HAI NHÂN VẬT CHÍNH &amp; GIA TIÊN
+                  HAI BÊN GIA ĐÌNH
                 </h3>
               </div>
 
-              {/* Card 2 Nhân Vật Chính */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Chú rể */}
-                <div className="relative overflow-hidden rounded-2xl border border-[#FF2D78]/30 bg-[#12121A] p-4 text-center shadow-lg">
-                  <div className="mx-auto mb-2 aspect-square w-20 overflow-hidden rounded-full border-2 border-[#FF2D78] shadow-[0_0_10px_rgba(255,45,120,0.4)]">
-                    <img
-                      src={data.photos?.groomUrl || data.photos?.heroUrl || "/templates/huong-cang-dem-neon/bg_street_mobile.webp"}
-                      alt={data.couple.groomName}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <span className="text-[10px] font-bold tracking-widest text-[#00F5D4] uppercase" style={{ fontFamily: MONO_FONT }}>
-                    NAM CHÍNH / GROOM
-                  </span>
-                  <h4 className="mt-1 text-base font-bold text-[#F7F4EE]" style={{ fontFamily: TITLE_FONT }}>
-                    {data.couple.groomName}
-                  </h4>
-                </div>
-
-                {/* Cô dâu */}
-                <div className="relative overflow-hidden rounded-2xl border border-[#00F5D4]/30 bg-[#12121A] p-4 text-center shadow-lg">
-                  <div className="mx-auto mb-2 aspect-square w-20 overflow-hidden rounded-full border-2 border-[#00F5D4] shadow-[0_0_10px_rgba(0,245,212,0.4)]">
-                    <img
-                      src={data.photos?.brideUrl || data.photos?.heroUrl || "/templates/huong-cang-dem-neon/bg_street_mobile.webp"}
-                      alt={data.couple.brideName}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <span className="text-[10px] font-bold tracking-widest text-[#FF2D78] uppercase" style={{ fontFamily: MONO_FONT }}>
-                    NỮ CHÍNH / BRIDE
-                  </span>
-                  <h4 className="mt-1 text-base font-bold text-[#F7F4EE]" style={{ fontFamily: TITLE_FONT }}>
-                    {data.couple.brideName}
-                  </h4>
-                </div>
-              </div>
-
-              {/* Card Song Thân Nhà Trai & Nhà Gái */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* Nhà trai */}
-                <div className="rounded-2xl border border-[#FF2D78]/25 bg-[#12121A] p-4 shadow-md">
-                  <span
-                    className="block text-[10px] font-bold tracking-[0.2em] text-[#FF2D78] uppercase"
-                    style={{ fontFamily: MONO_FONT }}
-                  >
-                    NHÀ TRAI
-                  </span>
-                  <div className="mt-2 space-y-1 text-xs text-[#F7F4EE]">
-                    {groomFather && (
-                      <p className="flex items-center gap-1.5">
-                        <span className="text-[#9E9AA7]">Ông:</span>
-                        <span className="font-semibold">{groomFather}</span>
-                      </p>
-                    )}
-                    {groomMother && (
-                      <p className="flex items-center gap-1.5">
-                        <span className="text-[#9E9AA7]">Bà:</span>
-                        <span className="font-semibold">{groomMother}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Nhà gái */}
-                <div className="rounded-2xl border border-[#00F5D4]/25 bg-[#12121A] p-4 shadow-md">
-                  <span
-                    className="block text-[10px] font-bold tracking-[0.2em] text-[#00F5D4] uppercase"
-                    style={{ fontFamily: MONO_FONT }}
-                  >
-                    NHÀ GÁI
-                  </span>
-                  <div className="mt-2 space-y-1 text-xs text-[#F7F4EE]">
-                    {brideFather && (
-                      <p className="flex items-center gap-1.5">
-                        <span className="text-[#9E9AA7]">Ông:</span>
-                        <span className="font-semibold">{brideFather}</span>
-                      </p>
-                    )}
-                    {brideMother && (
-                      <p className="flex items-center gap-1.5">
-                        <span className="text-[#9E9AA7]">Bà:</span>
-                        <span className="font-semibold">{brideMother}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <HkCharacterFlipCards
+                theme={NEON_STANDARD_THEME}
+                data={data}
+                groomPhotoFallback="/demo/hongkong/02_groom_solo_mercedes.webp"
+                bridePhotoFallback="/demo/hongkong/03_bride_solo_neon_lounge.webp"
+                groomBadge="CHÚ RỂ"
+                brideBadge="CÔ DÂU"
+              />
             </section>
           )}
 
           {/* =========================================================
-              PHẦN 3: LỊCH CÔNG CHIẾU & ĐẾM NGƯỢC RETRO LED (calendar)
+              PHẦN 4 (STANDARD): CHUYỆN CHÚNG MÌNH (story)
+              ========================================================= */}
+          {!hidden.has("story") && (
+            <section style={{ order: orderOf("story") }}>
+              <HkFilmStorySection
+                theme={NEON_STANDARD_THEME}
+                data={data}
+                galleryPhotos={galleryPhotos}
+                heading="CHUYỆN CHÚNG MÌNH"
+                eyebrow=""
+                onPhotoClick={(idx) => setLightboxIndex(idx)}
+              />
+            </section>
+          )}
+
+          {/* =========================================================
+              PHẦN 6: LỊCH CÔNG CHIẾU & ĐẾM NGƯỢC RETRO LED (calendar)
               ========================================================= */}
           {!hidden.has("calendar") && (
             <section style={{ order: orderOf("calendar") }} className="space-y-4">
+              {dateParts && (
+                <HkScratchDateCard
+                  theme={NEON_STANDARD_THEME}
+                  eyebrow=""
+                  foilHeading="CÀO NHŨ MỞ NGÀY HỶ SỰ"
+                  weekday={dateParts.weekday}
+                  time={dateParts.time}
+                  day={dateParts.day}
+                  month={dateParts.month}
+                  year={dateParts.year}
+                  lunarStr={targetEvent?.lunarDate ? formatLunarDateClean(targetEvent.lunarDate) : ""}
+                  venueName={targetEvent?.venueName}
+                />
+              )}
               <div className="text-center">
                 <h3
                   className="text-2xl font-bold uppercase tracking-wider text-[#F7F4EE]"
@@ -890,7 +867,7 @@ export function HuongCangDemNeonTemplate({
               <div className="relative overflow-hidden rounded-2xl border border-[#FF2D78]/30 bg-[#12121A] p-4 shadow-xl">
                 {/* Tấm bản đồ mini phố cổ Hong Kong */}
                 <div className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-xl bg-[#0B0B0F]">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/huong-cang-dem-neon/hk_mini_map.webp"
                     alt="Bản đồ chỉ dẫn đêm tiệc"
                     className="h-full w-full object-contain"
@@ -904,7 +881,7 @@ export function HuongCangDemNeonTemplate({
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="absolute -bottom-2 -left-2 z-10 w-36 sm:w-44"
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/huong-cang-dem-neon/hk_red_taxi.webp"
                       alt="Taxi đỏ Hong Kong"
                       className="h-auto w-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
@@ -975,17 +952,11 @@ export function HuongCangDemNeonTemplate({
           {!hidden.has("dresscode") && dressColors.length > 0 && (
             <section style={{ order: orderOf("dresscode") }} className="space-y-4">
               <div className="text-center">
-                <span
-                  className="text-[10px] sm:text-[11px] font-bold tracking-[0.25em] text-[#F5B841] uppercase"
-                  style={{ fontFamily: MONO_FONT }}
-                >
-                  STREET PALETTE · TRANG PHỤC GỢI Ý
-                </span>
                 <h3
-                  className="mt-1 text-2xl font-bold uppercase tracking-wider text-[#F7F4EE]"
+                  className="text-2xl font-bold uppercase tracking-wider text-[#F7F4EE]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
-                  BẢNG MÀU ĐÊM HỶ SỰ
+                  LỊCH TRÌNH &amp; TRANG PHỤC
                 </h3>
               </div>
 
@@ -1004,12 +975,15 @@ export function HuongCangDemNeonTemplate({
                   ))}
                 </div>
               </div>
+
+              {/* KỊCH BẢN ĐÊM TIỆC (STANDARD — Cue Sheet) */}
+              <HkCueSheetTimeline theme={NEON_STANDARD_THEME} data={data} />
             </section>
           )}
 
           {/* =========================================================
               PHẦN 6: CUỘN PHIM 35MM (ALBUM ẢNH CƯỚI) (album)
-              * Contact sheet 35mm, Lightbox portal
+              * 5 ảnh đầu lưới Contact Sheet + ảnh #6..#30 Film Strip cuộn ngang
               ========================================================= */}
           {!hidden.has("album") && galleryPhotos.length > 0 && (
             <section style={{ order: orderOf("album") }} className="space-y-4">
@@ -1018,13 +992,13 @@ export function HuongCangDemNeonTemplate({
                   className="text-2xl font-bold uppercase tracking-wider text-[#F7F4EE]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
-                  THƯỚC PHIM
+                  ALBUM ẢNH CƯỚI
                 </h3>
               </div>
 
-              {/* Lưới ảnh phong cách Film Contact Sheet 35mm */}
+              {/* Lưới ảnh phong cách Film Contact Sheet 35mm (5 ảnh đầu) */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {galleryPhotos.map((photo, idx) => {
+                {galleryPhotos.slice(0, 5).map((photo, idx) => {
                   const photoSrc = typeof photo === "string" ? photo : photo.url;
                   const photoAlt = (typeof photo === "object" && photo.alt) || `Ảnh cưới ${idx + 1}`;
                   return (
@@ -1035,29 +1009,31 @@ export function HuongCangDemNeonTemplate({
                       className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-[#FF2D78]/30 bg-[#0B0B0F] p-1 shadow-md transition-all duration-300 hover:scale-[1.03] hover:border-[#00F5D4] focus:outline-hidden"
                     >
                       <div className="relative h-full w-full overflow-hidden rounded-lg">
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={photoSrc}
                           alt={photoAlt}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100 flex items-end p-2">
-                          <span className="text-[9px] font-bold tracking-widest text-[#00F5D4]" style={{ fontFamily: MONO_FONT }}>
-                            EXP #{String(idx + 1).padStart(2, "0")}
-                          </span>
-                        </div>
                       </div>
                     </button>
                   );
                 })}
               </div>
+
+              {/* Dải phim mở rộng 35mm cho ảnh từ thứ 6 trở đi (Standard) */}
+              <HkExtendedFilmStrip
+                theme={NEON_STANDARD_THEME}
+                photos={galleryPhotos}
+                onPhotoClick={(realIdx) => setLightboxIndex(realIdx)}
+              />
             </section>
           )}
 
           {/* GUEST ALBUM QR (Tải ảnh chụp của khách mời) */}
-          {!hidden.has("albumQr") && weddingSlug && (
+          {!hidden.has("albumQr") && data.plan !== "free" && resolvedWeddingSlug && (
             <section style={{ order: orderOf("albumQr") }}>
               <div className="overflow-hidden rounded-2xl border border-[#00F5D4]/30 bg-[#12121A] p-5 shadow-lg text-center">
-                <GuestAlbumQr slug={weddingSlug} />
+                <GuestAlbumQr slug={resolvedWeddingSlug} />
               </div>
             </section>
           )}
@@ -1073,11 +1049,8 @@ export function HuongCangDemNeonTemplate({
                   className="text-2xl font-bold uppercase tracking-wider text-[#F7F4EE]"
                   style={{ fontFamily: TITLE_FONT }}
                 >
-                  HỘP QUÀ
+                  HỘP MỪNG CƯỚI
                 </h3>
-                <p className="mt-2 text-xs leading-relaxed text-[#9E9AA7] max-w-sm mx-auto">
-                  Sự hiện diện của Quý khách là niềm vinh dự lớn nhất. Nếu ở xa không tiện ghé mừng, Quý khách có thể chạm mở hộp băng VHS để gửi phong bao chúc phúc.
-                </p>
               </div>
 
               {/* Hộp quà VHS 3 trạng thái */}
@@ -1100,7 +1073,7 @@ export function HuongCangDemNeonTemplate({
 
                   {/* Ảnh chiếc hộp quà 3 trạng thái căn đáy thẳng hàng tuyệt đối */}
                   <div className="relative z-10 h-48 w-48 sm:h-52 sm:w-52">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={
                         boxStage === "open"
                           ? "/templates/huong-cang-dem-neon/vhs_box_open.webp"
@@ -1130,15 +1103,6 @@ export function HuongCangDemNeonTemplate({
               ========================================================= */}
           {!hidden.has("rsvp") && (
             <section style={{ order: orderOf("rsvp") }} className="space-y-4">
-              <div className="text-center">
-                <h3
-                  className="text-2xl font-bold uppercase tracking-wider text-[#F7F4EE]"
-                  style={{ fontFamily: TITLE_FONT }}
-                >
-                  XÁC NHẬN THAM DỰ
-                </h3>
-              </div>
-
               {/* Form RSVP bọc trong card Dark Neon */}
               <div
                 className="overflow-hidden rounded-2xl border border-[#FF2D78]/30 bg-[#12121A] p-5 sm:p-6 shadow-xl"
@@ -1186,15 +1150,10 @@ export function HuongCangDemNeonTemplate({
               className="text-sm font-bold uppercase tracking-widest text-[#FF2D78]"
               style={{ fontFamily: TITLE_FONT }}
             >
-              THE END · HẸN GẶP LẠI TẠI THƯỚC PHIM HẠNH PHÚC
-            </p>
-            <p
-              className="text-[11px] tracking-[0.2em] text-[#00F5D4] uppercase font-mono"
-            >
-              A FILM BY LOVE · 35MM CINEMA
+              HẸN GẶP LẠI TẠI ĐÊM TIỆC HẠNH PHÚC
             </p>
             <p className="text-[10px] text-[#9E9AA7]/80 pt-2">
-              © {dateParts.year} {data.couple.groomName} &amp; {data.couple.brideName}. ALL RIGHTS RESERVED.
+              © {dateParts.year} {data.couple.groomName} &amp; {data.couple.brideName}
             </p>
           </div>
         </footer>

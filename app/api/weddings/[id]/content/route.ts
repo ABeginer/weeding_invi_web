@@ -49,20 +49,31 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
       .groom_name_changes === "number";
   let groomNameChanges = 0;
   let brideNameChanges = 0;
+  let shouldLockNameChange = false;
   if (lockSupported && (groomChanged || brideChanged)) {
-    const client = db();
-    const { count: guestCount, error: guestCountError } = await client
-      .from("guests")
-      .select("id", { count: "exact", head: true })
-      .eq("wedding_id", wedding.id);
-    if (guestCountError) throw guestCountError;
-    if ((guestCount ?? 0) >= 3) {
-      const current = wedding as WeddingRow & {
-        groom_name_changes?: number | null;
-        bride_name_changes?: number | null;
-      };
-      groomNameChanges = current.groom_name_changes ?? 0;
-      brideNameChanges = current.bride_name_changes ?? 0;
+    const current = wedding as WeddingRow & {
+      groom_name_changes?: number | null;
+      bride_name_changes?: number | null;
+      names_locked_at?: string | null;
+    };
+    groomNameChanges = current.groom_name_changes ?? 0;
+    brideNameChanges = current.bride_name_changes ?? 0;
+    const alreadyLocked =
+      Boolean(current.names_locked_at) || groomNameChanges > 0 || brideNameChanges > 0;
+
+    let guestCount = 0;
+    if (!alreadyLocked) {
+      const client = db();
+      const { count, error: guestCountError } = await client
+        .from("guests")
+        .select("id", { count: "exact", head: true })
+        .eq("wedding_id", wedding.id);
+      if (guestCountError) throw guestCountError;
+      guestCount = count ?? 0;
+    }
+
+    if (alreadyLocked || guestCount >= 3) {
+      shouldLockNameChange = true;
       if (groomChanged && groomNameChanges >= 1) {
         return fail(
           "Tên chú rể chỉ được thay đổi 1 lần sau khi đã có 3 link khách. Vui lòng liên hệ hỗ trợ.",
@@ -81,7 +92,7 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
-  if (lockSupported && (groomChanged || brideChanged)) {
+  if (shouldLockNameChange) {
     patch.groom_name_changes =
       groomNameChanges + (groomChanged ? 1 : 0);
     patch.bride_name_changes =
@@ -122,7 +133,48 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
     }
   }
 
-  patch.content = content;
+  // Kiểm tra quyền gói cước cho các trường nâng cao (chống vượt Plan-Gate qua API trực tiếp)
+  if (wedding.plan === "free") {
+    const musicUrlChanged =
+      Boolean(content.musicUrl) && content.musicUrl !== previousContent.musicUrl;
+    if (content.musicPreset === "custom" || musicUrlChanged) {
+      return fail("Tải hoặc gắn nhạc nền tùy chỉnh chỉ dành cho gói Pro và VIP.", 403);
+    }
+  }
+
+  if (wedding.plan !== "vip") {
+    if (content.photoApprovalMode === "auto" || content.sharePinEnabled === true) {
+      return fail("Tính năng Live Photo Wall & Cổng trợ lý mã PIN chỉ dành cho gói VIP.", 403);
+    }
+  }
+
+  // Bảo toàn các trường do server quản lý (suspended fallback, photoModeration, sharePin cooldown)
+  const rawPrevContent =
+    wedding.content && typeof wedding.content === "object"
+      ? (wedding.content as Record<string, unknown>)
+      : {};
+  const mergedContent: Record<string, unknown> = {
+    ...content,
+  };
+  delete mergedContent.photoModeration;
+  delete mergedContent.suspended;
+  delete mergedContent.sharePinFailCount;
+  delete mergedContent.sharePinLockedUntil;
+
+  if (previousContent.photoModeration) {
+    mergedContent.photoModeration = previousContent.photoModeration;
+  }
+  if (typeof rawPrevContent.suspended === "boolean") {
+    mergedContent.suspended = rawPrevContent.suspended;
+  }
+  if (typeof rawPrevContent.sharePinFailCount === "number") {
+    mergedContent.sharePinFailCount = rawPrevContent.sharePinFailCount;
+  }
+  if (typeof rawPrevContent.sharePinLockedUntil === "string") {
+    mergedContent.sharePinLockedUntil = rawPrevContent.sharePinLockedUntil;
+  }
+
+  patch.content = mergedContent;
 
   const { data, error } = await client
     .from("weddings")

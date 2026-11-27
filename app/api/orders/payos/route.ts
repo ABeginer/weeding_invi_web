@@ -1,30 +1,19 @@
+import { resolveAppBaseUrl } from "@/config/site";
 import { getUser } from "@/lib/server/auth";
 import { readBody, route, json, fail } from "@/lib/server/http";
 import { coded, ownedWedding } from "@/lib/server/owner";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { db } from "@/lib/server/supabase";
 import { isUuid } from "@/lib/server/validate";
 import { calculateUpgradeAmount, newOrderCode } from "@/lib/server/payments";
 import { createPayosPaymentLink } from "@/lib/server/payos";
 
-function getBaseUrl(req: Request): string {
-  const envUrl =
-    process.env.APP_BASE_URL ||
-    process.env.SITE_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL;
-  if (envUrl && envUrl.trim()) {
-    return envUrl.trim().replace(/\/+$/, "");
-  }
-  const proto = req.headers.get("x-forwarded-proto") || "http";
-  const host =
-    req.headers.get("x-forwarded-host") ||
-    req.headers.get("host") ||
-    "localhost:3000";
-  return `${proto}://${host}`;
-}
-
 export const POST = route(async (req: Request) => {
   const user = await getUser(req);
   if (!user) return coded("Bạn cần đăng nhập.", "UNAUTHORIZED", 401);
+
+  const limited = rateLimit(req, `orders-payos:${user.id}`, 10, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
 
   const body = await readBody(req);
   if (!body || !isUuid(body.weddingId)) {
@@ -42,12 +31,6 @@ export const POST = route(async (req: Request) => {
     return coded("Thiệp đã ở gói này hoặc cao hơn.", "VALIDATION", 400);
   }
 
-  // payOS yêu cầu orderCode là số nguyên dương an toàn (<= 9007199254740991)
-  // Kết hợp 10 chữ số timestamp giây + 3 chữ số ngẫu nhiên = 13 chữ số (~1.7 * 10^12)
-  const orderCode = Number(
-    `${Math.floor(Date.now() / 1000)}${Math.floor(100 + Math.random() * 900)}`,
-  );
-
   const client = db();
 
   type OrderInsertResult = {
@@ -57,12 +40,16 @@ export const POST = route(async (req: Request) => {
     amount_vnd: number;
   };
 
-  // Sinh mã code INV-[A-Z0-9]{6} với cơ chế retry nếu trùng (Postgres error 23505)
+  // Sinh mã code INV-[A-Z0-9]{6} & payos orderCode với cơ chế retry nếu trùng (Postgres error 23505)
   let order: OrderInsertResult | null = null;
+  let orderCode = 0;
   const maxRetries = 5;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const code = newOrderCode();
+    orderCode = Number(
+      `${Math.floor(Date.now() / 1000)}${Math.floor(100 + Math.random() * 900)}`,
+    );
     const insertPayload: Record<string, unknown> = {
       code,
       user_id: user.id,
@@ -108,7 +95,7 @@ export const POST = route(async (req: Request) => {
     return fail("Không thể sinh mã đơn hàng không trùng sau nhiều lần thử.", 500);
   }
 
-  const baseUrl = getBaseUrl(req);
+  const baseUrl = resolveAppBaseUrl();
   const returnUrl = `${baseUrl}/dashboard/weddings/${wedding.id}?payment=success`;
   const cancelUrl = `${baseUrl}/dashboard/weddings/${wedding.id}?payment=cancelled`;
   // Đưa mã code INV-[A-Z0-9]{6} vào description thanh toán payOS (10 ký tự, thỏa mãn <= 25 ký tự)
@@ -140,7 +127,7 @@ export const POST = route(async (req: Request) => {
   } catch (err: unknown) {
     // Nếu gọi payOS thất bại, xóa bản ghi pending để không tạo rác dữ liệu
     await client.from("orders").delete().eq("id", order.id);
-    const msg = err instanceof Error ? err.message : "Lỗi kết nối cổng thanh toán";
-    return fail(msg, 502);
+    console.error("[Orders PayOS Direct Error]", err);
+    return fail("Không thể khởi tạo liên kết thanh toán lúc này. Vui lòng thử lại sau ít phút.", 502);
   }
 });

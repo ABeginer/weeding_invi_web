@@ -3,6 +3,7 @@
 import * as React from "react";
 import dynamic from "next/dynamic";
 import { MotionProvider } from "@/components/theme/MotionProvider";
+import { TemplateFontScope } from "@/components/theme/TemplateFontScope";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import {
   InvitationExperienceProvider,
@@ -10,10 +11,14 @@ import {
 } from "@/components/invitation/InvitationExperienceProvider";
 import type { WeddingTemplateProps } from "./types";
 import { THEME_CONFIGS } from "./themed/theme-configs";
+import "@/styles/invitation-templates.css";
 
 function TemplateLoadingFallback() {
   return (
-    <div className="flex h-full min-h-[320px] w-full items-center justify-center bg-[#FAF8F5]/90 text-[#5C554E] backdrop-blur-xs">
+    <div
+      data-template-loading="true"
+      className="flex h-full min-h-[320px] w-full items-center justify-center bg-[#FAF8F5]/90 text-[#5C554E] backdrop-blur-xs"
+    >
       <div className="flex flex-col items-center gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#B89B72] border-t-transparent" />
         <p className="font-serif text-sm tracking-wide">Đang tải giao diện thiệp...</p>
@@ -153,6 +158,9 @@ const DynamicNhatKyMuaYeu = dynamic(() => import("./nhat-ky-mua-yeu"), {
 const DynamicMotThoiDeNho = dynamic(() => import("./mot-thoi-de-nho"), {
   loading: () => <TemplateLoadingFallback />,
 });
+const DynamicSenNgocTramNam = dynamic(() => import("./sen-ngoc-tram-nam"), {
+  loading: () => <TemplateLoadingFallback />,
+});
 const DynamicLongPhungEp2 = dynamic(() => import("./long-phung-ep2"), {
   loading: () => <TemplateLoadingFallback />,
 });
@@ -167,6 +175,8 @@ export interface TemplatePreviewRendererProps extends WeddingTemplateProps {
   templateId: string;
   experienceMode?: InvitationExperienceMode;
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
+  disableAudio?: boolean;
+  enableAutoScroll?: boolean;
 }
 
 function TemplatePreviewRendererInner({
@@ -299,12 +309,18 @@ function TemplatePreviewRendererInner({
     case "mot-thoi-de-nho":
     case "mot_thoi_de_nho":
       return <DynamicMotThoiDeNho {...props} />;
+    case "sen-ngoc-tram-nam":
+    case "sen_ngoc_tram_nam":
+      return <DynamicSenNgocTramNam {...props} />;
     case "vuonkinh-xanh":
       return <DynamicVuonkinhXanh {...props} />;
+    case "basic-1":
+      return <DynamicBasic1 {...props} />;
     case "vuon-o-liu":
+      return <DynamicBasic1 {...props} />;
     case "basic-3":
       return <DynamicBasic3 {...props} />;
-    case "basic-1":
+
     case "ritual-an-hoi":
     default:
       return <DynamicBasic1 {...props} />;
@@ -323,6 +339,8 @@ export function TemplatePreviewRenderer(props: TemplatePreviewRendererProps) {
     externalMusicControl,
     experienceMode: explicitExperienceMode,
     scrollContainerRef,
+    disableAudio = false,
+    enableAutoScroll,
     ...restProps
   } = props;
 
@@ -357,21 +375,25 @@ export function TemplatePreviewRenderer(props: TemplatePreviewRendererProps) {
   }, []);
 
   return (
-    <MotionProvider>
-      <InvitationExperienceProvider
-        musicSrc={props.data?.music?.src}
-        musicTitle={props.data?.music?.title}
-        mode={experienceMode}
-        initialOpened={props.isOpened}
-        onOpenedChange={handleOpenedChange}
-        scrollContainerRef={scrollContainerRef}
-      >
-        <TemplatePreviewRendererInner
-          {...restProps}
+    <TemplateFontScope>
+      <MotionProvider>
+        <InvitationExperienceProvider
+          musicSrc={props.data?.music?.src}
+          musicTitle={props.data?.music?.title}
+          mode={experienceMode}
+          initialOpened={props.isOpened}
           onOpenedChange={handleOpenedChange}
-          externalMusicControl={externalMusicControl ?? true}
-        />
-      </InvitationExperienceProvider>
-    </MotionProvider>
+          scrollContainerRef={scrollContainerRef}
+          disableAudio={disableAudio}
+          enableAutoScroll={enableAutoScroll}
+        >
+          <TemplatePreviewRendererInner
+            {...restProps}
+            onOpenedChange={handleOpenedChange}
+            externalMusicControl={externalMusicControl ?? true}
+          />
+        </InvitationExperienceProvider>
+      </MotionProvider>
+    </TemplateFontScope>
   );
 }

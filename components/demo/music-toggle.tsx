@@ -4,6 +4,7 @@ import * as React from "react";
 import { Disc3, Music, VolumeX } from "lucide-react";
 import { LANDING_COPY } from "@/config/landing";
 import { cn } from "@/lib/utils";
+import { globalAudio } from "@/lib/global-audio";
 
 interface MusicToggleProps {
   src?: string;
@@ -22,104 +23,59 @@ export function MusicToggle({
   className,
   autoPlay = false,
 }: MusicToggleProps) {
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
-  const [hasError, setHasError] = React.useState(false);
+  const [hasError, setHasError] = React.useState(!src);
   const userManuallyPausedRef = React.useRef(false);
 
+  // Đồng bộ trạng thái từ Global Audio Controller
   React.useEffect(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-    setIsPlaying(false);
     setHasError(!src);
     userManuallyPausedRef.current = false;
+
+    return globalAudio.subscribe((state) => {
+      if (!src) {
+        setIsPlaying(false);
+        return;
+      }
+      const fullTargetUrl = typeof window !== "undefined" ? new URL(src, window.location.href).href : src;
+      const isCurSrc = state.src === src || state.src === fullTargetUrl || globalAudio.getAudioElement()?.src === fullTargetUrl;
+      setIsPlaying(state.isPlaying && isCurSrc);
+    });
   }, [src, resetKey]);
 
-  // Autoplay & 1-time interaction unlock listener
+  // Autoplay & 1-time interaction unlock listener qua Global Audio
   React.useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !src || hasError) return;
+    if (!src || hasError) return;
     if (!autoPlay || userManuallyPausedRef.current) return;
 
-    audio.volume = 0.55;
-    const promise = audio.play();
-    if (promise) {
-      promise
-        .then(() => {
-          setIsPlaying(true);
-          console.log("[Preview Music] Autoplay started successfully for:", title || src);
-        })
-        .catch((err) => {
-          console.warn("[Preview Music] Autoplay blocked by browser policy, waiting for first user touch:", err);
-          const unlockEvents = ["pointerdown", "click", "touchstart", "keydown"] as const;
-          const handleFirstInteraction = () => {
-            unlockEvents.forEach((ev) =>
-              window.removeEventListener(ev, handleFirstInteraction, true),
-            );
-            if (audioRef.current && !userManuallyPausedRef.current && audioRef.current.paused) {
-              audioRef.current.volume = 0.55;
-              audioRef.current
-                .play()
-                .then(() => {
-                  setIsPlaying(true);
-                  console.log("[Preview Music] Unlocked on user interaction:", title || src);
-                })
-                .catch((e) => {
-                  console.error("[Preview Music] Unlock play failed:", e);
-                });
-            }
-          };
+    globalAudio.play(src, { volume: 0.55 }).then((started) => {
+      if (!started && !userManuallyPausedRef.current) {
+        const unlockEvents = ["pointerdown", "click", "touchstart", "keydown"] as const;
+        const handleFirstInteraction = () => {
+          unlockEvents.forEach((ev) =>
+            window.removeEventListener(ev, handleFirstInteraction, true),
+          );
+          if (!userManuallyPausedRef.current && !globalAudio.isPlaying()) {
+            globalAudio.play(src, { volume: 0.55 }).catch(() => {});
+          }
+        };
 
-          unlockEvents.forEach((ev) => {
-            window.addEventListener(ev, handleFirstInteraction, { capture: true, once: true });
-          });
+        unlockEvents.forEach((ev) => {
+          window.addEventListener(ev, handleFirstInteraction, { capture: true, once: true });
         });
-    }
-  }, [src, resetKey, autoPlay, hasError, title]);
-
-  React.useEffect(() => {
-    const handleVisibilityChange = () => {
-      const audio = audioRef.current;
-      if (document.hidden && audio && !audio.paused) {
-        audio.pause();
-        setIsPlaying(false);
       }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
+    });
+  }, [src, resetKey, autoPlay, hasError]);
 
   const handleToggle = () => {
-    const audio = audioRef.current;
-    if (!audio || hasError || !src) return;
+    if (hasError || !src) return;
 
-    if (audio.paused) {
-      userManuallyPausedRef.current = false;
-      audio.volume = 0.55;
-      const playPromise = audio.play();
-      if (playPromise) {
-        playPromise
-          .then(() => {
-            setIsPlaying(true);
-            console.log("[Preview Music] User manually started music:", title || src);
-          })
-          .catch((err) => {
-            console.error("[Preview Music] Play failed on toggle:", err);
-            setIsPlaying(false);
-          });
-      } else {
-        setIsPlaying(true);
-      }
-    } else {
+    if (isPlaying) {
       userManuallyPausedRef.current = true;
-      audio.pause();
-      setIsPlaying(false);
-      console.log("[Preview Music] User manually paused music.");
+      globalAudio.pause();
+    } else {
+      userManuallyPausedRef.current = false;
+      globalAudio.play(src, { volume: 0.55 });
     }
   };
 
@@ -130,21 +86,6 @@ export function MusicToggle({
 
   return (
     <div className={cn("inline-flex items-center", className)}>
-      {src && !hasError && (
-        <audio
-          ref={audioRef}
-          src={src}
-          loop
-          preload="auto"
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onError={(e) => {
-            console.error("[Preview Music] Audio element error for src:", src, e);
-            setHasError(true);
-            setIsPlaying(false);
-          }}
-        />
-      )}
       <button
         type="button"
         onClick={handleToggle}

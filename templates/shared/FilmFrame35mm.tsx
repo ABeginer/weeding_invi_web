@@ -23,14 +23,14 @@ export interface FilmFrame35mmProps {
 
 export function FilmFrame35mm({
   src,
-  alt = "Ảnh cưới 35mm",
+  alt = "Ảnh cưới",
   aspectRatio = "4/5",
   stampSrc,
   stampAlt = "Dấu triện",
   stampPosition = "bottom-right",
   stampClassName,
-  filmBrand = "KODAK VISION3 500T",
-  frameCode = "FRAME #24A",
+  filmBrand = "",
+  frameCode = "",
   borderColor = "border-white/10",
   accentColor = "text-[#E5A93B]/85",
   sprocketCount = 8,
@@ -53,15 +53,11 @@ export function FilmFrame35mm({
         className
       )}
     >
-      {/* Top Film Header Track */}
-      <div className="mb-2 flex items-center justify-between px-2 text-[9px] sm:text-[10px] font-mono tracking-widest uppercase">
-        <span className={cn("font-semibold", accentColor)}>{filmBrand}</span>
-        <span className="flex items-center gap-1.5 text-white/50">
-          <span>●</span>
-          <span>24 FPS</span>
-          <span>▲ 24A</span>
-        </span>
-      </div>
+      {filmBrand && (
+        <div className="mb-2 flex items-center justify-between px-2 text-[10px] tracking-widest uppercase">
+          <span className={cn("font-semibold", accentColor)}>{filmBrand}</span>
+        </div>
+      )}
 
       {/* Main Strip: Left Sprockets | Bounded Photo Viewport | Right Sprockets */}
       <div className="relative flex items-stretch gap-2 sm:gap-2.5">
@@ -82,7 +78,7 @@ export function FilmFrame35mm({
             aspectClass
           )}
         >
-          <img
+          <img decoding="async"
             src={src}
             alt={alt}
             className={cn(
@@ -109,11 +105,11 @@ export function FilmFrame35mm({
         </div>
       </div>
 
-      {/* Bottom Film Footer Track */}
-      <div className="mt-2 flex items-center justify-between px-2 text-[9px] sm:text-[10px] font-mono tracking-widest text-white/45 uppercase">
-        <span>SAFETY FILM · 35MM</span>
-        <span className={cn("font-bold", accentColor)}>{frameCode}</span>
-      </div>
+      {frameCode && (
+        <div className="mt-2 flex items-center justify-end px-2 text-[10px] tracking-widest uppercase">
+          <span className={cn("font-semibold", accentColor)}>{frameCode}</span>
+        </div>
+      )}
 
       {/* Optional floating stamp / badge anchored to corner */}
       {stampSrc && (
@@ -125,7 +121,7 @@ export function FilmFrame35mm({
             stampPosition === "bottom-left" && "-bottom-3 -left-3"
           )}
         >
-          <img
+          <img loading="lazy" decoding="async"
             src={stampSrc}
             alt={stampAlt}
             className={cn(

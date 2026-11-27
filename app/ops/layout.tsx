@@ -7,6 +7,7 @@ import { getOpsHomePath, isOpsPathAllowed } from "@/lib/ops-roles";
 import { OpsHeader } from "@/components/ops/OpsHeader";
 import { OpsRoleProvider } from "@/components/ops/OpsRoleContext";
 import { OpsSidebar } from "@/components/ops/OpsSidebar";
+import { TemplateFontScope } from "@/components/theme/TemplateFontScope";
 import { AlertCircle, Loader2, X } from "lucide-react";
 
 export default function OpsLayout({ children }: { children: React.ReactNode }) {
@@ -74,6 +75,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-bg text-text">
+        <TemplateFontScope />
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-accent-text" />
           <span className="text-xs text-text-muted">Đang xác thực quyền truy cập...</span>
@@ -100,6 +102,7 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <OpsRoleProvider me={me}>
+      <TemplateFontScope />
       <div className="flex h-screen w-full overflow-hidden bg-bg text-text">
         {/* Sidebar for desktop & mobile sheet */}
         <OpsSidebar

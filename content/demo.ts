@@ -1,3 +1,4 @@
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import type {
   TemplateData,
   WeddingContent,
@@ -36,6 +37,31 @@ const DEMO_EVENTS: WeddingEvent[] = [
   },
 ];
 
+const SEN_NGOC_EVENTS: WeddingEvent[] = [
+  {
+    id: "sn-event-1",
+    title: "Lễ Thành Hôn",
+    startsAt: "2031-07-15T09:30:00+07:00",
+    lunarDate: "26 tháng 05 năm Tân Hợi",
+    venueName: "Hôn lễ được cử hành tại",
+    venueAddress: "Tư Gia Nhà Trai",
+    mapEmbedUrl: null,
+    mapDirectionsUrl: "https://www.google.com/maps/search/?api=1&query=Tu+Gia+Nha+Trai",
+    position: 0,
+  },
+  {
+    id: "sn-event-2",
+    title: "Lễ Vu Quy",
+    startsAt: "2031-07-15T09:30:00+07:00",
+    lunarDate: "26 tháng 05 năm Tân Hợi",
+    venueName: "Hôn lễ được cử hành tại",
+    venueAddress: "Tư Gia Nhà Gái",
+    mapEmbedUrl: null,
+    mapDirectionsUrl: "https://www.google.com/maps/search/?api=1&query=Tu+Gia+Nha+Gai",
+    position: 1,
+  },
+];
+
 const DEMO_GALLERY_PHOTOS: WeddingPhoto[] = [
   { id: "demo-gal-1", kind: "gallery", url: "/photos/1.webp", position: 0 },
   { id: "demo-gal-2", kind: "gallery", url: "/photos/2.webp", position: 1 },
@@ -51,9 +77,35 @@ const LONG_PHUNG_GALLERY_PHOTOS: WeddingPhoto[] = [
   { id: "demo-gal-lp-3", kind: "gallery", url: "/photos/long-phung-3.webp", position: 2 },
 ];
 
+const HONGKONG_GALLERY_PHOTOS: WeddingPhoto[] = [
+  { id: "demo-gal-hk-1", kind: "gallery", url: "/demo/hongkong/04_album_mercedes_couple.webp", position: 0 },
+  { id: "demo-gal-hk-2", kind: "gallery", url: "/demo/hongkong/05_album_hotel_corridor.webp", position: 1 },
+  { id: "demo-gal-hk-3", kind: "gallery", url: "/demo/hongkong/06_album_crimson_lounge_toast.webp", position: 2 },
+  { id: "demo-gal-hk-4", kind: "gallery", url: "/demo/hongkong/07_album_neon_street_walk.webp", position: 3 },
+  { id: "demo-gal-hk-5", kind: "gallery", url: "/demo/hongkong/08_album_rain_umbrella_closeup.webp", position: 4 },
+];
+
+const SEN_NGOC_GALLERY_PHOTOS: WeddingPhoto[] = [
+  { id: "demo-gal-sn-1", kind: "gallery", url: "/demo/sen-ngoc-tram-nam/04_album_1.webp", position: 0 },
+  { id: "demo-gal-sn-2", kind: "gallery", url: "/demo/sen-ngoc-tram-nam/05_album_2.webp", position: 1 },
+  { id: "demo-gal-sn-3", kind: "gallery", url: "/demo/sen-ngoc-tram-nam/06_album_3.webp", position: 2 },
+  { id: "demo-gal-sn-4", kind: "gallery", url: "/demo/sen-ngoc-tram-nam/07_album_4.webp", position: 3 },
+  { id: "demo-gal-sn-5", kind: "gallery", url: "/demo/sen-ngoc-tram-nam/08_album_5.webp", position: 4 },
+];
+
 const DEMO_PORTRAITS: WeddingPhoto[] = [
   { id: "demo-groom", kind: "couple", url: "/photos/portrait_cr.webp", position: 0 },
   { id: "demo-bride", kind: "couple", url: "/photos/portrait_cd.webp", position: 1 },
+];
+
+const HONGKONG_PORTRAITS: WeddingPhoto[] = [
+  { id: "demo-groom", kind: "couple", url: "/demo/hongkong/02_groom_solo_mercedes.webp", position: 0 },
+  { id: "demo-bride", kind: "couple", url: "/demo/hongkong/03_bride_solo_neon_lounge.webp", position: 1 },
+];
+
+const SEN_NGOC_PORTRAITS: WeddingPhoto[] = [
+  { id: "demo-groom", kind: "couple", url: "/demo/sen-ngoc-tram-nam/02_groom.webp", position: 0 },
+  { id: "demo-bride", kind: "couple", url: "/demo/sen-ngoc-tram-nam/03_bride.webp", position: 1 },
 ];
 
 const DEMO_GIFT_QR_PHOTOS: WeddingPhoto[] = [
@@ -75,7 +127,7 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
   "vuon-o-liu": {
     plan: "free",
     heroUrl: "/photos/hero2.webp",
-    eyebrow: "Save The Date",
+    eyebrow: "Thiệp mời tham dự lễ cưới",
     heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
     defaultGuestName: "Bạn Thanh Mai",
     thankYouBody:
@@ -108,7 +160,7 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
   "bach-lan-lua-nga": {
     plan: "free",
     heroUrl: "/photos/1.webp",
-    eyebrow: "Lụa Ngà & Bạch Lan",
+    eyebrow: "Thiệp mời tham dự lễ cưới",
     heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
     defaultGuestName: "Quý Khách Quý Mến",
     thankYouBody:
@@ -141,7 +193,7 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
   "rang-hong-hoang-hon": {
     plan: "free",
     heroUrl: "/photos/3.webp",
-    eyebrow: "Khúc Nhạc Ráng Hồng",
+    eyebrow: "Thiệp mời tham dự lễ cưới",
     heroSubtitle: "Dưới ráng chiều dịu ngọt, mình chung một mái nhà",
     defaultGuestName: "Chị Minh Châu",
     thankYouBody:
@@ -174,7 +226,7 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
   "long-phung": {
     plan: "free",
     heroUrl: "/photos/long-phung-hero.webp",
-    eyebrow: "Khúc Ca Long Phụng",
+    eyebrow: "Thiệp mời tham dự lễ cưới",
     heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
     defaultGuestName: "Quý Khách Quý Mến",
     thankYouBody:
@@ -204,11 +256,50 @@ const DEMO_PRESETS: Record<string, DemoPreset> = {
       },
     },
   },
+  "sen-ngoc-tram-nam": {
+    plan: "pro",
+    heroUrl: "/demo/sen-ngoc-tram-nam/01_main.webp",
+    eyebrow: "Ngày Chung Đôi",
+    heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
+    defaultGuestName: "Anh Ngọ & Chị Dần",
+    thankYouBody:
+      "Chân thành cám ơn sự yêu thương và hiện diện của Quý vị.",
+    content: {
+      couple: {
+        groomName: "Bá Long",
+        brideName: "Thúy Vy",
+        groomFullName: "Nguyễn Bá Long",
+        brideFullName: "Đinh Thúy Vy",
+        groomParents: "Ông Nguyễn Văn Tèo\nBà Nguyễn Thị Nở\n1900 Ao Đôi, Bình Hưng Hòa, TP. HCM",
+        brideParents: "Ông Đỗ Văn Tý\nBà Nguyễn Thị Mùi\n50 Đinh Tiên Hoàng, Hàng Buồm, Hà Nội",
+      },
+      date: "2036-11-25T09:30:00+07:00",
+      quote:
+        "Đến tham dự buổi tiệc thân mật chung vui cùng gia đình chúng tôi",
+      heroPhotoId: "demo-hero",
+      groomPhotoId: "demo-groom",
+      bridePhotoId: "demo-bride",
+      gift: {
+        groomBankName: "Vietcombank",
+        groomAccountName: "NGUYEN BA LONG",
+        groomAccountNumber: "1029384756",
+        brideBankName: "Techcombank",
+        brideAccountName: "DINH THUY VY",
+        brideAccountNumber: "1902837465",
+      },
+    },
+  },
 };
 
 const NEW_TEMPLATE_DEMO_COUPLES: Record<
   string,
-  { groomName: string; brideName: string; groomFullName: string; brideFullName: string }
+  {
+    groomName: string;
+    brideName: string;
+    groomFullName: string;
+    brideFullName: string;
+    story?: Array<{ year: string; title: string; content: string }>;
+  }
 > = {
   "flowery-white": {
     groomName: "Văn Long",
@@ -408,6 +499,76 @@ const NEW_TEMPLATE_DEMO_COUPLES: Record<
     groomFullName: "Trần Quang Huy",
     brideFullName: "Lê Thảo Vy",
   },
+  "ban-sac-huong-cang": {
+    groomName: "Vĩnh Hưng",
+    brideName: "Diễm My",
+    groomFullName: "Tạ Vĩnh Hưng",
+    brideFullName: "Trần Diễm My",
+  },
+  "cuu-long-hy-yen": {
+    groomName: "Lôi Lạc",
+    brideName: "Bạch Mai",
+    groomFullName: "Lôi Lạc",
+    brideFullName: "Trần Bạch Mai",
+  },
+  "da-anh-huong-cang": {
+    groomName: "Triệu Vỹ",
+    brideName: "Mạn Ngọc",
+    groomFullName: "Lương Triệu Vỹ",
+    brideFullName: "Trương Mạn Ngọc",
+  },
+  "hao-quang-huong-cang": {
+    groomName: "Đức Hoa",
+    brideName: "Gia Hân",
+    groomFullName: "Lưu Đức Hoa",
+    brideFullName: "Lý Gia Hân",
+  },
+  "huong-cang-dem-neon": {
+    groomName: "Gia Vệ",
+    brideName: "Nhã Kỳ",
+    groomFullName: "Vương Gia Vệ",
+    brideFullName: "Thư Nhã Kỳ",
+  },
+  "sen-ngoc-tram-nam": {
+    groomName: "Bá Long",
+    brideName: "Thúy Vy",
+    groomFullName: "Nguyễn Bá Long",
+    brideFullName: "Đinh Thúy Vy",
+  },
+  "mot-thoi-de-nho": {
+    groomName: "Minh Quân",
+    brideName: "Khánh Vân",
+    groomFullName: "Nguyễn Minh Quân",
+    brideFullName: "Trần Khánh Vân",
+  },
+  "nhat-ky-mua-yeu": {
+    groomName: "Hoàng Nam",
+    brideName: "Phương Anh",
+    groomFullName: "Nguyễn Hoàng Nam",
+    brideFullName: "Trần Phương Anh",
+    story: [
+      {
+        year: "2021",
+        title: "Trang nhật ký đầu tiên",
+        content: "Cơn mưa chiều tháng Mười níu hai người xa lạ đứng chung mái hiên quán sách cũ, mở đầu cho những dòng viết tay còn dang dở.",
+      },
+      {
+        year: "2023",
+        title: "Cuộn phim mùa hạ",
+        content: "Cùng nhau rong ruổi qua những cung đường đầy nắng gió, lưu lại từng bức ảnh Polaroid nhỏ xíu dán kín một góc bàn.",
+      },
+      {
+        year: "2025",
+        title: "Lời hẹn dưới ánh đèn vàng",
+        content: "Chiếc nhẫn giản dị lồng vào tay trong buổi tối bình yên, khép lại những ngày chờ đợi để bước sang chương mới.",
+      },
+      {
+        year: "2027",
+        title: "Chung một mái nhà",
+        content: "Gửi tấm thiệp nhỏ thay lời mời chân thành, mong được đón bạn đến chứng kiến ngày tụi mình chính thức về chung một nhà.",
+      },
+    ],
+  },
 };
 
 DEMO_PRESETS["basic-1"] = DEMO_PRESETS["vuon-o-liu"];
@@ -427,10 +588,10 @@ export function getDemoTemplateData(
   } else if (newCouple && meta) {
     resolvedKey = meta.id;
     preset = {
-      plan: "free",
+      plan: meta.plan ?? "free",
       heroUrl: "/photos/hero2.webp",
-      eyebrow: meta.subtitle,
-      heroSubtitle: meta.description,
+      eyebrow: "Thiệp mời tham dự lễ cưới",
+      heroSubtitle: "Hân hạnh đón tiếp trong ngày chung đôi",
       defaultGuestName: "Quý Khách Quý Mến",
       thankYouBody: `Cảm ơn sự yêu thương, hiện diện và chúc phúc của bạn dành cho ${newCouple.groomName} & ${newCouple.brideName}.`,
       content: {
@@ -445,6 +606,7 @@ export function getDemoTemplateData(
         date: "2027-03-20T10:00:00+07:00",
         quote:
           "Giữa muôn ngàn ngã rẽ của cuộc đời, điều bình yên nhất là hai ta chọn đi cùng nhau tới suốt chặng đường sau.",
+        ...(newCouple.story ? { story: newCouple.story } : {}),
         heroPhotoId: "demo-hero",
         groomPhotoId: "demo-groom",
         bridePhotoId: "demo-bride",
@@ -462,10 +624,36 @@ export function getDemoTemplateData(
     preset = DEMO_PRESETS["vuon-o-liu"];
   }
 
-  const gallerySource =
-    resolvedKey === "long-phung" || resolvedKey === "chu-sa-long-phung" || resolvedKey === "bich-ngoc-hoang-trieu" || resolvedKey === "long-phung-ep4"
-      ? LONG_PHUNG_GALLERY_PHOTOS
-      : DEMO_GALLERY_PHOTOS;
+  const isHongKong =
+    meta?.category === "hongkong" ||
+    resolvedKey === "ban-sac-huong-cang" ||
+    resolvedKey === "cuu-long-hy-yen" ||
+    resolvedKey === "da-anh-huong-cang" ||
+    resolvedKey === "hao-quang-huong-cang" ||
+    resolvedKey === "huong-cang-dem-neon";
+
+  const isSenNgoc =
+    resolvedKey === "sen-ngoc-tram-nam" || templateId === "sen-ngoc-tram-nam";
+
+  if (isHongKong) {
+    preset = { ...preset, heroUrl: "/demo/hongkong/01_hero_neon_street.webp" };
+  } else if (isSenNgoc) {
+    preset = { ...preset, heroUrl: "/demo/sen-ngoc-tram-nam/01_main.webp", plan: "pro" };
+  }
+
+  const portraitsSource = isSenNgoc
+    ? SEN_NGOC_PORTRAITS
+    : isHongKong
+      ? HONGKONG_PORTRAITS
+      : DEMO_PORTRAITS;
+
+  const gallerySource = isSenNgoc
+    ? SEN_NGOC_GALLERY_PHOTOS
+    : isHongKong
+      ? HONGKONG_GALLERY_PHOTOS
+      : resolvedKey === "long-phung" || resolvedKey === "chu-sa-long-phung" || resolvedKey === "bich-ngoc-hoang-trieu" || resolvedKey === "long-phung-ep4"
+        ? LONG_PHUNG_GALLERY_PHOTOS
+        : DEMO_GALLERY_PHOTOS;
 
   const uniqueGalleryPhotos = gallerySource.filter(
     (p) => p.url !== preset.heroUrl,
@@ -473,16 +661,26 @@ export function getDemoTemplateData(
 
   const photos: WeddingPhoto[] = [
     { id: "demo-hero", kind: "banner", url: preset.heroUrl, position: 0 },
-    ...DEMO_PORTRAITS,
+    ...portraitsSource,
     ...DEMO_GIFT_QR_PHOTOS,
     ...uniqueGalleryPhotos,
   ];
 
+  const effectivePlan: WeddingPlan = isSenNgoc ? "pro" : preset.plan;
+  const demoSectionOrder =
+    effectivePlan === "free"
+      ? CANONICAL_SECTION_ORDER.filter((key) => key !== "story" && key !== "albumQr")
+      : [...CANONICAL_SECTION_ORDER];
+
   return toTemplateData({
+    weddingSlug: effectivePlan !== "free" ? `demo-${resolvedKey}` : undefined,
     templateId: resolvedKey,
-    plan: preset.plan,
-    content: preset.content,
-    events: DEMO_EVENTS,
+    plan: effectivePlan,
+    content: {
+      ...preset.content,
+      sectionOrder: demoSectionOrder,
+    },
+    events: isSenNgoc ? SEN_NGOC_EVENTS : DEMO_EVENTS,
     photos,
     musicOverrides: meta?.defaultMusic,
     uiOverrides: {

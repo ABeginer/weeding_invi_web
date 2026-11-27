@@ -1,11 +1,14 @@
 "use client";
 
 import * as React from "react";
+import "@/styles/designer-animations.css";
+import "@/styles/invitation-templates.css";
 import type { CSSProperties } from "react";
 import type { DesignerCanvasContent, DesignerElement } from "@/components/ops/designer-types";
 import type { DesignerElementOverride } from "@/lib/wedding-types";
 import type { GuestDiet, GuestStatus, TemplateData, WeddingPlan } from "@/lib/types";
 import { WeddingContentProvider } from "@/components/invitation/WeddingContentProvider";
+import { TemplateFontScope } from "@/components/theme/TemplateFontScope";
 import { RsvpWishBlock } from "@/components/invitation/RsvpWishBlock";
 import { MusicPlayer } from "@/components/invitation/MusicPlayer";
 import { DesignerCover } from "./designer-cover";
@@ -344,10 +347,11 @@ export function DesignerInvitation({
   }, [broadcastMusicState, playAudio]);
 
   return (
-    <div
-      className="invitation-theme min-h-screen-dvh w-full"
-      style={{ backgroundColor: background }}
-    >
+    <TemplateFontScope>
+      <div
+        className="invitation-theme min-h-screen-dvh w-full"
+        style={{ backgroundColor: background }}
+      >
       {showCover && canvas.cover && (
         <DesignerCover cover={canvas.cover} coupleLabel={coupleLabel} />
       )}
@@ -467,7 +471,7 @@ export function DesignerInvitation({
               viewport="phone"
               mode={readOnly ? "preview" : "live"}
             >
-              {!hasGiftPage && hasGifts && data.gift && (
+              {!hasGiftPage && hasGifts && data.gift && !data.hiddenSections?.includes("gift") && (
                 <DesignerGiftBox
                   gift={data.gift}
                   accentColor={canvas.accentColor}
@@ -514,6 +518,7 @@ export function DesignerInvitation({
           </div>
         )}
       </main>
-    </div>
+      </div>
+    </TemplateFontScope>
   );
 }

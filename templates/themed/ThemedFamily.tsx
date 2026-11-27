@@ -131,7 +131,7 @@ export function ThemedFamily({
               <div className="relative aspect-square w-24 overflow-hidden rounded-full border-2 border-white/40 shadow-md sm:w-28">
                 {person.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <img decoding="async"
                     src={person.photo}
                     alt={person.name}
                     className="h-full w-full object-cover"

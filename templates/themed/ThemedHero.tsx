@@ -38,8 +38,8 @@ export function ThemedHero({
           color: theme.badgeTextColor,
         }}
       >
-        <CalendarHeart className="h-3.5 w-3.5" />
-        <span>SAVE OUR DATE</span>
+        <CalendarHeart className="h-3.5 w-3.5 shrink-0" />
+        <span>Thiệp mời tham dự lễ cưới</span>
       </div>
 
       {/* 2. Couple Names in Calligraphy Typography */}
@@ -101,7 +101,7 @@ export function ThemedHero({
                 style={{ fontFamily: theme.coupleFontFamily }}
                 className="mt-3 text-center text-xl font-bold text-stone-700 sm:text-2xl"
               >
-                Forever & Always
+                {couple.groomName} &amp; {couple.brideName}
               </p>
             </div>
           </div>

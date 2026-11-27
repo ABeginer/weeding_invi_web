@@ -371,7 +371,7 @@ revoke all on table public.gifts from anon, authenticated;
 -- ==============================================================================
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
-  code text not null unique check (code ~ '^[A-Z0-9]{6,20}$'),
+  code text not null unique check (code ~ '^[A-Z0-9-]{6,20}$'),
   user_id text not null references public.users (id) on delete cascade,
   wedding_id uuid not null references public.weddings (id) on delete cascade,
   plan text not null check (plan in ('pro', 'vip')),

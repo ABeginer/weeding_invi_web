@@ -36,9 +36,12 @@ export function PricingTable({
   onSelectPaidPlan,
 }: PricingTableProps) {
   const copy = LANDING_COPY.pricing;
+  const [mobileTier, setMobileTier] = React.useState<"free" | "pro" | "vip">("pro");
 
   const handleChoosePaidPlan = (plan: "pro" | "vip") => {
     if (!isAuthenticated) {
+      // Auth0 endpoint yêu cầu full-page navigation thay vì RSC router.push để tránh lỗi CORS
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign(
         `/auth/login?returnTo=${encodeURIComponent(`/?pay=${plan}`)}`,
       );
@@ -65,10 +68,49 @@ export function PricingTable({
           </p>
         </ScrollReveal>
 
+        {/* Mobile Quick Tier Switcher (< lg) */}
+        <div
+          role="tablist"
+          aria-label="Chọn gói dịch vụ"
+          className="mx-auto mt-8 grid max-w-sm grid-cols-3 rounded-full border border-[#E8E2D9] bg-white p-1 shadow-2xs lg:hidden"
+        >
+          {(
+            [
+              { id: "free", label: "Miễn phí" },
+              { id: "pro", label: "Standard ★" },
+              { id: "vip", label: "Pro" },
+            ] as const
+          ).map((tier) => {
+            const isSelected = mobileTier === tier.id;
+            return (
+              <button
+                key={tier.id}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                onClick={() => setMobileTier(tier.id)}
+                className={`h-9 cursor-pointer rounded-full px-2 text-xs font-semibold transition-all touch-manipulation ${
+                  isSelected
+                    ? tier.id === "vip"
+                      ? "bg-[#141210] text-[#D8B15B] shadow-2xs"
+                      : "bg-[#7A1C24] text-white shadow-2xs"
+                    : "text-[#6B655E] hover:text-[#1F1D1A]"
+                }`}
+              >
+                {tier.label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* 3-Tier Grid Layout */}
-        <div className="mx-auto mt-12 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 items-stretch max-w-6xl">
+        <div className="mx-auto mt-8 grid max-w-6xl grid-cols-1 items-stretch gap-6 lg:mt-12 lg:grid-cols-3 lg:gap-8">
           {/* Card 1 — Gói Miễn phí */}
-          <ScrollReveal as="article" className="flex h-full flex-col">
+          <article
+            className={
+              mobileTier === "free" ? "flex h-full flex-col" : "hidden h-full flex-col lg:flex"
+            }
+          >
             <div className="flex h-full flex-1 flex-col rounded-2xl border border-[#E8E2D9] bg-white p-6 sm:p-8 shadow-xs">
               <div>
                 <h3 className="font-serif text-2xl font-semibold text-[#1F1D1A]">
@@ -85,7 +127,7 @@ export function PricingTable({
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-[#6B655E] tracking-wide">
-                  Dùng thử không giới hạn thời gian
+                  Dùng thử đầy đủ tính năng cơ bản
                 </p>
 
                 {/* CTA Directly under price */}
@@ -131,10 +173,16 @@ export function PricingTable({
                 </li>
               </ul>
             </div>
-          </ScrollReveal>
+          </article>
 
           {/* Card 2 — Gói Standard (Highlighted Primary) */}
-          <ScrollReveal as="article" className="relative flex h-full flex-col">
+          <article
+            className={
+              mobileTier === "pro"
+                ? "relative flex h-full flex-col"
+                : "relative hidden h-full flex-col lg:flex"
+            }
+          >
             {/* Top Badge */}
             <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#C8AD7F]/60 bg-[#7A1C24] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#FAF8F5] uppercase shadow-sm whitespace-nowrap">
               PHỔ BIẾN NHẤT
@@ -161,7 +209,7 @@ export function PricingTable({
                     / lần
                   </span>
                 </div>
-                <p className="mt-1 text-xs font-medium text-[#B89B72] tracking-wide">
+                <p className="mt-1 text-xs font-medium text-[#8A6838] tracking-wide">
                   Ưu đãi giai đoạn ra mắt
                 </p>
 
@@ -233,10 +281,16 @@ export function PricingTable({
                 </li>
               </ul>
             </div>
-          </ScrollReveal>
+          </article>
 
           {/* Card 3 — Gói Pro (Editorial Black-Gold Ink) */}
-          <ScrollReveal as="article" className="relative flex h-full flex-col">
+          <article
+            className={
+              mobileTier === "vip"
+                ? "relative flex h-full flex-col"
+                : "relative hidden h-full flex-col lg:flex"
+            }
+          >
             {/* Top Badge */}
             <span className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#D8B15B]/70 bg-[#141210] px-3.5 py-1 text-[11px] font-semibold tracking-wider text-[#D8B15B] uppercase shadow-xs whitespace-nowrap">
               TRẢI NGHIỆM SẢNH TIỆC
@@ -334,7 +388,7 @@ export function PricingTable({
                 </li>
               </ul>
             </div>
-          </ScrollReveal>
+          </article>
         </div>
 
         {/* Footer Note Below Grid */}

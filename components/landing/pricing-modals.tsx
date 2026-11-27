@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { LANDING_COPY } from "@/config/landing";
+import { getPlanLabel } from "@/config/plans";
 import { VIP_SALES_ENABLED } from "@/config/pricing";
 import { SITE_LINKS } from "@/config/site";
 import { ApiError, createPayosOrder, getOrder, listWeddings } from "@/lib/api";
@@ -342,7 +343,7 @@ export function PaymentTransferModal({
           {noWeddingsFound && (
             <div className="rounded-xl border border-border bg-surface-alt p-5 text-center">
               <p className="text-sm leading-relaxed text-text">
-                Bạn chưa có thiệp cưới nào trong tài khoản. Hãy tạo thiệp cưới trước để nâng cấp và kích hoạt gói {plan.toUpperCase()}.
+                Bạn chưa có thiệp cưới nào trong tài khoản. Hãy tạo thiệp cưới trước để nâng cấp và kích hoạt gói {getPlanLabel(plan)}.
               </p>
               <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
                 <Link
@@ -381,8 +382,8 @@ export function PaymentTransferModal({
                 {userWeddings.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.content?.couple?.groomName && w.content?.couple?.brideName
-                      ? `${w.content.couple.groomName} & ${w.content.couple.brideName} (${w.slug}) - Gói ${w.plan.toUpperCase()}`
-                      : `${w.slug} - Gói ${w.plan.toUpperCase()}`}
+                      ? `${w.content.couple.groomName} & ${w.content.couple.brideName} (${w.slug}) - Gói ${getPlanLabel(w.plan)}`
+                      : `${w.slug} - Gói ${getPlanLabel(w.plan)}`}
                   </option>
                 ))}
               </select>

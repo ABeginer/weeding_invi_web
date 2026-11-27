@@ -7,12 +7,20 @@ import { m, useReducedMotion } from "motion/react"; import { GiftModal } from "@
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
   getEventDirectionsUrl,
 } from "@/lib/events";
 import type { TemplateData, WeddingEvent } from "@/lib/wedding-types";
+import {
+  ImperialReveal,
+  HeroReveal,
+  GoldButtonShimmer,
+  IMPERIAL_EASE,
+  IMPERIAL_VIEWPORT,
+} from "../shared/ImperialMotion";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
@@ -33,7 +41,6 @@ import type { WeddingTemplateProps } from "../types";
 const RED = "#69100F";
 const RED_DEEP = "#4A0B0A";
 const BG_DARK = "#2A0605";
-const CREAM = "#FAF3E8";
 const ON_RED = "#F2E4C2";
 const GOLD = "#E9CE91";
 const GOLD_DEEP = "#C6A45E";
@@ -118,7 +125,6 @@ function ArchPhoto({
               variants={{ hidden: { y: "100%" }, show: { y: "0%" } }}
               transition={{ duration: 0.9, ease: EASE }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <m.img
                 src={url}
                 alt={alt}
@@ -187,42 +193,31 @@ function GoldCorners({ color = GOLD }: { color?: string }) {
    chạy một lần rồi đứng yên — không có chuyển động nền).
    ------------------------------------------------------------ */
 function SectionReveal({ children }: { children: React.ReactNode }) {
-  const reduce = useReducedMotion();
-  return (
-    <m.div
-      initial={reduce ? false : { opacity: 0, y: 18 }}
-      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: 0.75, ease: EASE }}
-    >
-      {children}
-    </m.div>
-  );
+  return <ImperialReveal direction="up">{children}</ImperialReveal>;
 }
 
 /* ------------------------------------------------------------
-   Bìa: hai cánh cửa đỏ trượt sang hai bên
+   Bìa: Long Chầu Phượng Múa Rẽ Nhung (2 pha độc bản ~2.05s)
    ------------------------------------------------------------ */
 function Cover({
   data,
   guestName,
-  closing,
+  coverPhase,
   contained,
   onOpen,
-  onDoorsClosed,
 }: {
   data: TemplateData;
   guestName: string;
-  closing: boolean;
+  coverPhase: "idle" | "seal" | "part";
   contained: boolean;
   onOpen: () => void;
-  onDoorsClosed: () => void;
 }) {
   const reduce = useReducedMotion();
   const [tilt, setTilt] = React.useState({ x: 0, y: 0 });
   const visibleEvents = getVisibleEvents(data);
   const primary = getNearestUpcomingEvent(visibleEvents, data.date);
   const date = formatWeddingDateParts(eventStart(primary, data.date));
+  const closing = coverPhase !== "idle";
 
   const handlePointer = (event: React.PointerEvent<HTMLDivElement>) => {
     if (reduce) return;
@@ -266,10 +261,8 @@ function Cover({
       style={{ backgroundColor: BG_DARK }}
       onPointerMove={handlePointer}
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
-      // Bìa mờ dần để lộ ruột thiệp phía sau; trễ một nhịp cho rồng/phượng
-      // kịp dạt sang hai bên rồi mới tan (card_exp §22.21).
-      animate={closing ? { opacity: 0 } : { opacity: 1 }}
-      transition={{ duration: 0.75, ease: "easeInOut", delay: closing ? 0.25 : 0 }}
+      animate={coverPhase === "part" ? { opacity: 0 } : { opacity: 1 }}
+      transition={{ duration: 0.75, ease: "easeInOut", delay: coverPhase === "part" ? 0.6 : 0 }}
     >
       {/* nền nhung đỏ + hoa văn chìm */}
       <div
@@ -279,6 +272,25 @@ function Cover({
           background: `radial-gradient(130% 95% at 50% 42%, ${RED} 0%, ${RED_DEEP} 52%, ${BG_DARK} 100%)`,
         }}
       />
+
+      {/* Hai cánh màn nhung đỏ rẽ sang trái/phải khi Pha 2 (part) kích hoạt */}
+      {closing && !reduce && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex overflow-hidden">
+          <m.div
+            className="h-full w-1/2 border-r border-[#E9CE91]/40 bg-gradient-to-r from-[#2A0605] via-[#4A0B0A] to-[#69100F] shadow-2xl"
+            initial={{ x: "0%" }}
+            animate={coverPhase === "part" ? { x: "-105%" } : { x: "0%" }}
+            transition={{ duration: 1.25, ease: IMPERIAL_EASE }}
+          />
+          <m.div
+            className="h-full w-1/2 border-l border-[#E9CE91]/40 bg-gradient-to-l from-[#2A0605] via-[#4A0B0A] to-[#69100F] shadow-2xl"
+            initial={{ x: "0%" }}
+            animate={coverPhase === "part" ? { x: "105%" } : { x: "0%" }}
+            transition={{ duration: 1.25, ease: IMPERIAL_EASE }}
+          />
+        </div>
+      )}
+
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         {symbols.map((symbol) => (
           <m.span
@@ -315,8 +327,12 @@ function Cover({
             boxShadow: `0 26px 60px rgba(0,0,0,0.55), inset 0 0 60px rgba(0,0,0,0.35)`,
           }}
           initial={false}
-          animate={closing ? { scale: reduce ? 1 : 0.94, opacity: 0 } : { scale: 1, opacity: 1 }}
-          transition={{ duration: reduce ? 0.01 : 0.55, ease: EASE }}
+          animate={
+            coverPhase === "part"
+              ? { scale: reduce ? 1 : 0.94, opacity: 0 }
+              : { scale: 1, opacity: 1 }
+          }
+          transition={{ duration: reduce ? 0.01 : 0.65, ease: IMPERIAL_EASE }}
         >
           <div
             aria-hidden="true"
@@ -335,8 +351,12 @@ function Cover({
             <m.div
               className="h-full w-full"
               initial={reduce ? false : { x: -70, opacity: 0 }}
-              animate={closing ? { x: reduce ? 0 : "-115%", rotate: reduce ? 0 : -7, opacity: 0 } : { x: 0, rotate: 0, opacity: 1 }}
-              transition={{ duration: reduce ? 0.01 : closing ? 0.95 : 1.1, ease: EASE }}
+              animate={
+                coverPhase === "part"
+                  ? { x: reduce ? 0 : "-120%", rotate: reduce ? 0 : -8, opacity: 0 }
+                  : { x: 0, rotate: 0, opacity: 1 }
+              }
+              transition={{ duration: reduce ? 0.01 : coverPhase === "part" ? 1.1 : 1.1, ease: IMPERIAL_EASE }}
             >
               <m.img
                 src="/templates/long-phung/dragon.webp"
@@ -363,11 +383,12 @@ function Cover({
             <m.div
               className="h-full w-full"
               initial={reduce ? false : { x: 70, opacity: 0 }}
-              animate={closing ? { x: reduce ? 0 : "115%", rotate: reduce ? 0 : 7, opacity: 0 } : { x: 0, rotate: 0, opacity: 1 }}
-              transition={{ duration: reduce ? 0.01 : closing ? 0.95 : 1.1, ease: EASE, delay: reduce ? 0 : 0.1 }}
-              onAnimationComplete={() => {
-                if (closing) onDoorsClosed();
-              }}
+              animate={
+                coverPhase === "part"
+                  ? { x: reduce ? 0 : "120%", rotate: reduce ? 0 : 8, opacity: 0 }
+                  : { x: 0, rotate: 0, opacity: 1 }
+              }
+              transition={{ duration: reduce ? 0.01 : coverPhase === "part" ? 1.1 : 1.1, ease: IMPERIAL_EASE, delay: reduce ? 0 : 0.08 }}
             >
               <m.img
                 src="/templates/long-phung/phoenix.webp"
@@ -386,20 +407,42 @@ function Cover({
           {/* Nội dung giữa */}
           <m.div
             className="pointer-events-none relative z-10 px-12 py-10 text-center sm:px-14"
-            animate={closing ? { opacity: 0, scale: reduce ? 1 : 0.92 } : { opacity: 1, scale: 1 }}
-            transition={{ duration: reduce ? 0.01 : 0.45, ease: "easeOut" }}
+            animate={coverPhase === "part" ? { opacity: 0, scale: reduce ? 1 : 0.94 } : { opacity: 1, scale: 1 }}
+            transition={{ duration: reduce ? 0.01 : 0.5, ease: "easeOut" }}
           >
-            <span
-              className="mx-auto flex h-14 w-14 items-center justify-center rounded-full text-[26px]"
-              style={{
-                background: `radial-gradient(circle at 34% 28%, #FBF0D6, ${GOLD} 60%, ${GOLD_DEEP})`,
-                color: RED_DEEP,
-                boxShadow: `0 0 26px ${GOLD}66`,
-              }}
-              aria-hidden="true"
-            >
-              囍
-            </span>
+            <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
+              {coverPhase === "seal" && !reduce && (
+                <>
+                  <m.span
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-full border border-[#FBF0D6]/85"
+                    initial={{ scale: 0.8, opacity: 0.9 }}
+                    animate={{ scale: 2.9, opacity: 0 }}
+                    transition={{ duration: 0.9, ease: IMPERIAL_EASE }}
+                  />
+                  <m.span
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-full border border-[#E9CE91]/65"
+                    initial={{ scale: 0.75, opacity: 0.8 }}
+                    animate={{ scale: 2.2, opacity: 0 }}
+                    transition={{ duration: 0.8, delay: 0.16, ease: IMPERIAL_EASE }}
+                  />
+                </>
+              )}
+              <m.span
+                className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full text-[26px]"
+                style={{
+                  background: `radial-gradient(circle at 34% 28%, #FBF0D6, ${GOLD} 60%, ${GOLD_DEEP})`,
+                  color: RED_DEEP,
+                  boxShadow: `0 0 26px ${GOLD}66`,
+                }}
+                animate={coverPhase === "seal" ? { scale: 1.15 } : { scale: 1 }}
+                transition={{ duration: 0.55, ease: IMPERIAL_EASE }}
+                aria-hidden="true"
+              >
+                囍
+              </m.span>
+            </div>
 
             <h1
               className="mt-4 text-[27px] leading-[1.2]"
@@ -426,13 +469,14 @@ function Cover({
             </p>
 
             <span
-              className="relative mt-6 inline-flex h-11 items-center justify-center overflow-hidden rounded-full px-9 text-sm font-medium"
+              className="relative mt-6 inline-flex h-11 items-center justify-center overflow-hidden rounded-full px-9 text-xs font-semibold tracking-[0.2em] uppercase shadow-[0_6px_22px_rgba(233,206,145,0.35)]"
               style={{
                 background: `linear-gradient(180deg, #FBF0D6, ${GOLD} 55%, ${GOLD_DEEP})`,
                 color: RED_DEEP,
               }}
             >
-              Mở thiệp
+              <GoldButtonShimmer active={!closing} />
+              <span className="relative z-10">{closing ? "Đang Mở..." : "Mở Thiệp"}</span>
             </span>
           </m.div>
 
@@ -489,16 +533,18 @@ function Cover({
 /* ------------------------------------------------------------
    Hero: khối đỏ + ảnh vòm
    ------------------------------------------------------------ */
-function Hero({ data, guestName }: { data: TemplateData; guestName: string }) {
+function Hero({ data, guestName, showBody }: { data: TemplateData; guestName: string; showBody: boolean }) {
   return (
     <section className="relative" data-hero>
       <div className="relative overflow-hidden" style={{ backgroundColor: RED }}>
         <div className="mx-auto w-full max-w-[560px] px-5 pt-7 pb-4 text-center">
-          <p className="text-[10px] font-medium uppercase tracking-[0.38em]" style={{ color: ON_RED }}>
-            {data.ui.eyebrow || "WELCOME TO OUR WEDDING"}
-          </p>
+          <HeroReveal showBody={showBody} delay={0.12} y={10}>
+            <p className="text-[10px] font-medium uppercase tracking-[0.38em]" style={{ color: ON_RED }}>
+              {data.ui.eyebrow || "Trân Trọng Kính Mời"}
+            </p>
+          </HeroReveal>
 
-          <div className="mt-3 flex items-start justify-between gap-2">
+          <HeroReveal showBody={showBody} delay={0.24} y={14} className="mt-3 flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1 text-right">
               <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: ON_RED }}>
                 {data.couple.groomTitle || "Chú rể"}
@@ -520,18 +566,20 @@ function Hero({ data, guestName }: { data: TemplateData; guestName: string }) {
                 {data.couple.brideName}
               </p>
             </div>
-          </div>
+          </HeroReveal>
 
           {guestName && (
-            <p
-              className="mx-auto mt-3 inline-block max-w-full truncate rounded-full px-4 py-1 text-[11px]"
-              style={{ border: `1px solid ${GOLD_SOFT}`, color: ON_RED }}
-            >
-              {data.ui.invitePrefix}: <strong className="font-semibold">{guestName}</strong>
-            </p>
+            <HeroReveal showBody={showBody} delay={0.34} y={12}>
+              <p
+                className="mx-auto mt-3 inline-block max-w-full truncate rounded-full px-4 py-1 text-[11px]"
+                style={{ border: `1px solid ${GOLD_SOFT}`, color: ON_RED }}
+              >
+                {data.ui.invitePrefix}: <strong className="font-semibold">{guestName}</strong>
+              </p>
+            </HeroReveal>
           )}
 
-          <div className="relative z-10 mt-8 pb-1">
+          <HeroReveal showBody={showBody} delay={0.44} y={20} scale={0.96} duration={0.95} className="relative z-10 mt-8 pb-1">
             <div className="mb-3 flex items-center justify-center gap-3" aria-hidden="true">
               <span className="h-px w-12" style={{ backgroundColor: GOLD_SOFT }} />
               <span className="text-[13px]" style={{ color: GOLD }}>❦</span>
@@ -543,7 +591,7 @@ function Hero({ data, guestName }: { data: TemplateData; guestName: string }) {
               alt={data.photos.heroAlt || `Ảnh cưới ${data.couple.groomName} & ${data.couple.brideName}`}
               className="mx-auto w-[68%] max-w-[240px] sm:max-w-[300px] md:max-w-[380px]"
             />
-          </div>
+          </HeroReveal>
         </div>
       </div>
     </section>
@@ -589,25 +637,27 @@ function FamilySection({ data }: { data: TemplateData }) {
         <GoldTitle>Thông tin gia đình</GoldTitle>
 
         <div className="mt-6 grid grid-cols-2 gap-0">
-          <div className="min-w-0 px-3 text-center">
+          <ImperialReveal direction="left" delay={0.08} className="min-w-0 px-3 text-center">
             <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: MUTED }}>
               {leftLabel}
             </p>
             <p className="mt-1 text-[13px] leading-relaxed" style={{ color: INK }}>
               <ParentsLine text={leftParents} />
             </p>
-          </div>
+          </ImperialReveal>
           <div className="min-w-0 border-l px-3 text-center" style={{ borderColor: GOLD_SOFT }}>
-            <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: MUTED }}>
-              {rightLabel}
-            </p>
-            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: INK }}>
-              <ParentsLine text={rightParents} />
-            </p>
+            <ImperialReveal direction="right" delay={0.14}>
+              <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: MUTED }}>
+                {rightLabel}
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed" style={{ color: INK }}>
+                <ParentsLine text={rightParents} />
+              </p>
+            </ImperialReveal>
           </div>
         </div>
 
-        <div className="mt-8 text-center">
+        <ImperialReveal direction="up" delay={0.18} className="mt-8 text-center">
           <p className="text-[12px] uppercase tracking-[0.14em]" style={{ color: GOLD }}>
             Trân trọng báo tin lễ thành hôn của con chúng tôi
           </p>
@@ -629,7 +679,7 @@ function FamilySection({ data }: { data: TemplateData }) {
           <p className="mt-1 text-[10px] uppercase tracking-[0.24em]" style={{ color: MUTED }}>
             {data.couple.brideTitle || "Cô dâu"}
           </p>
-        </div>
+        </ImperialReveal>
       </div>
     </section>
   );
@@ -655,13 +705,13 @@ function EventsSection({ data }: { data: TemplateData }) {
               : "grid-cols-1 sm:grid-cols-2 max-w-4xl mx-auto"
           )}
         >
-          {visibleEvents.map((event) => {
+          {visibleEvents.map((event, idx) => {
             const date = formatWeddingDateParts(event.startsAt);
             const directionsUrl = getEventDirectionsUrl(event);
             return (
+              <ImperialReveal key={event.id} direction="up" delay={idx * 0.1}>
               <article
-                key={event.id}
-                className="relative px-5 py-5 text-center flex flex-col justify-between"
+                className="relative px-5 py-5 text-center flex flex-col justify-between h-full"
                 style={{
                   border: `1px solid ${GOLD}`,
                   borderRadius: 12,
@@ -717,6 +767,7 @@ function EventsSection({ data }: { data: TemplateData }) {
                   </a>
                 </div>
               </article>
+              </ImperialReveal>
             );
           })}
         </div>
@@ -781,7 +832,7 @@ function MonthGrid({ iso, eventDays }: { iso: string; eventDays?: Set<number> })
                         ],
                       }
                   }
-                  viewport={{ once: true, amount: 0.6 }}
+                  viewport={IMPERIAL_VIEWPORT}
                   transition={{ duration: 1.3, ease: "easeOut" }}
                 >
                   <svg
@@ -922,18 +973,15 @@ function DressAndTimeline({ data }: { data: TemplateData }) {
         <GoldTitle>Trang phục</GoldTitle>
 
         <div className="mt-5 text-center">
-          <p className="text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD }}>
-            Dress code
-          </p>
-          <p className="mt-1 text-[11px]" style={{ color: MUTED }}>Trang phục dự tiệc</p>
-          <div className="mt-3 flex items-center justify-center gap-3">
-            {colors.map((color) => (
-              <span
-                key={color}
-                className="h-9 w-9 rounded-full"
-                style={{ backgroundColor: color, border: `1px solid ${GOLD_SOFT}` }}
-                aria-label={`Màu ${color}`}
-              />
+          <div className="flex items-center justify-center gap-3">
+            {colors.map((color, idx) => (
+              <ImperialReveal key={color} direction="up" delay={0.08 + idx * 0.08} scale={0.85} blur={false}>
+                <span
+                  className="block h-9 w-9 rounded-full"
+                  style={{ backgroundColor: color, border: `1px solid ${GOLD_SOFT}` }}
+                  aria-label={`Màu ${color}`}
+                />
+              </ImperialReveal>
             ))}
           </div>
         </div>
@@ -943,29 +991,31 @@ function DressAndTimeline({ data }: { data: TemplateData }) {
 
           <ol className="relative mt-5">
             {timeline.map((item, index) => (
-              <li key={`${item.time}-${index}`} className="relative flex gap-4 pb-5 last:pb-0">
-                <span
-                  className="w-12 shrink-0 text-right text-[12px] font-semibold tabular-nums"
-                  style={{ color: GOLD }}
-                >
-                  {item.time}
-                </span>
-                <span className="relative flex w-3 shrink-0 justify-center">
+              <li key={`${item.time}-${index}`} className="relative pb-5 last:pb-0">
+                <ImperialReveal direction="up" delay={index * 0.08} className="flex gap-4">
                   <span
-                    className="absolute top-1.5 h-2 w-2 rounded-full"
-                    style={{ backgroundColor: RED }}
-                  />
-                  {index < timeline.length - 1 && (
+                    className="w-12 shrink-0 text-right text-[12px] font-semibold tabular-nums"
+                    style={{ color: GOLD }}
+                  >
+                    {item.time}
+                  </span>
+                  <span className="relative flex w-3 shrink-0 justify-center">
                     <span
-                      className="absolute top-4 bottom-[-20px] w-px"
-                      style={{ backgroundColor: GOLD_SOFT }}
-                      aria-hidden="true"
+                      className="absolute top-1.5 h-2 w-2 rounded-full"
+                      style={{ backgroundColor: RED }}
                     />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1 pb-1 text-[13px]" style={{ color: INK }}>
-                  {item.label}
-                </span>
+                    {index < timeline.length - 1 && (
+                      <span
+                        className="absolute top-4 bottom-[-20px] w-px"
+                        style={{ backgroundColor: GOLD_SOFT }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 pb-1 text-[13px]" style={{ color: INK }}>
+                    {item.label}
+                  </span>
+                </ImperialReveal>
               </li>
             ))}
           </ol>
@@ -978,14 +1028,14 @@ function DressAndTimeline({ data }: { data: TemplateData }) {
 /* ------------------------------------------------------------
    Album: coverflow 3D + lightbox (phá cách theo thiết kế)
    ------------------------------------------------------------ */
+const emptySubscribe = () => () => {};
+
 function AlbumGrid({ data }: { data: TemplateData }) {
   const reduce = useReducedMotion();
   const limit = data.plan === "free" ? 5 : 30;
   const photos = data.photos.gallery.slice(0, limit);
   const [lightbox, setLightbox] = React.useState<number | null>(null);
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => setMounted(true), []);
+  const mounted = React.useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   React.useEffect(() => {
     if (lightbox === null) return;
@@ -1031,13 +1081,12 @@ function AlbumGrid({ data }: { data: TemplateData }) {
                   wide ? "col-span-2 aspect-[3/2]" : "col-span-1 aspect-[3/4]",
                 )}
                 style={{ border: `1px solid ${GOLD_SOFT}`, backgroundColor: "#3A0807" }}
-                initial={reduce ? false : { opacity: 0, y: 24 }}
-                whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.6, ease: EASE, delay: (index % 3) * 0.15 }}
+                initial={reduce ? false : { opacity: 0, y: 24, filter: "blur(5px)" }}
+                whileInView={reduce ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
+                viewport={IMPERIAL_VIEWPORT}
+                transition={{ duration: 0.65, ease: IMPERIAL_EASE, delay: (index % 3) * 0.12 }}
                 whileHover={reduce ? undefined : { scale: 1.015, rotateX: 1.4, rotateY: -1.4 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo.url}
                   alt={photo.alt}
@@ -1076,8 +1125,7 @@ function AlbumGrid({ data }: { data: TemplateData }) {
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src={photos[lightbox].url}
             alt={photos[lightbox].alt}
             className="max-h-[86vh] max-w-full rounded-lg object-contain"
@@ -1138,7 +1186,6 @@ function GiftBox({ data, onOpen }: { data: TemplateData; onOpen: () => void }) {
           whileTap={reduce ? undefined : { scale: 0.98 }}
           aria-label="Mở hộp quà mừng"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/templates/long-phung/gift-box.webp"
             alt="Hộp quà mừng cưới"
@@ -1187,8 +1234,30 @@ export default function DoTruyenThongTemplate({
   const reduce = useReducedMotion();
   const [opened, setOpened] = React.useState(isOpened);
   const [coverGone, setCoverGone] = React.useState(isOpened);
-  const [closing, setClosing] = React.useState(false);
+  const [coverPhase, setCoverPhase] = React.useState<"idle" | "seal" | "part">("idle");
+  const [prevIsOpened, setPrevIsOpened] = React.useState(isOpened);
   const [giftOpen, setGiftOpen] = React.useState(false);
+  const timeoutsRef = React.useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
+  if (isOpened !== prevIsOpened) {
+    setPrevIsOpened(isOpened);
+    if (isOpened) {
+      setOpened(true);
+      setCoverGone(true);
+      setCoverPhase("idle");
+    } else {
+      setOpened(false);
+      setCoverGone(false);
+      setCoverPhase("idle");
+    }
+  }
+
+  React.useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((id) => clearTimeout(id));
+      timeoutsRef.current = [];
+    };
+  }, []);
 
   const isReadOnlyPreview = mode === "demo" || mode === "preview";
   const resolvedMusicControl = externalMusicControl ?? isReadOnlyPreview;
@@ -1200,7 +1269,7 @@ export default function DoTruyenThongTemplate({
   const hidden = new Set(data.hiddenSections ?? []);
   const order = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "map", "calendar", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = order.indexOf(key);
     return index < 0 ? 99 : index;
@@ -1216,44 +1285,37 @@ export default function DoTruyenThongTemplate({
     };
   }, [contained, opened]);
 
+  const showBody = coverGone || coverPhase === "part";
+
   const handleOpen = () => {
-    if (closing) return;
+    if (coverPhase !== "idle" || opened) return;
     playOpenChime();
-    setClosing(true);
-    setOpened(true);
-    onOpenedChange?.(true);
-    try {
-      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
-    } catch { }
-    // Dự phòng: nếu animation không bắn callback (reduced-motion, tab ẩn)
-    // thì vẫn phải gỡ bìa sau khi hiệu ứng mở chạy xong.
-    window.setTimeout(() => setCoverGone(true), 1100);
-  };
 
-  // Chỉ "đóng bì thư" khi CHA thực sự chuyển từ mở → đóng.
-  // Trang công khai không truyền onOpenedChange nên `isOpened` luôn false;
-  // nếu reset vô điều kiện thì mỗi lần `closing` đổi, effect sẽ huỷ luôn
-  // hiệu ứng mở (mất animation + khoá cuộn — card_exp §22.26).
-  const parentOpenedRef = React.useRef(isOpened);
-
-  React.useEffect(() => {
-    const wasOpened = parentOpenedRef.current;
-    parentOpenedRef.current = isOpened;
-
-    if (isOpened) {
+    if (reduce) {
+      setCoverGone(true);
       setOpened(true);
-      // Chỉ gỡ bìa ngay khi mở từ bên ngoài; nếu chính thiệp đang chạy
-      // hiệu ứng mở thì để animation/timer lo (card_exp §22.21).
-      if (!closing) setCoverGone(true);
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch {}
       return;
     }
 
-    if (!wasOpened) return;
-
-    setClosing(false);
-    setOpened(false);
-    setCoverGone(false);
-  }, [isOpened, closing]);
+    setCoverPhase("seal");
+    const t1 = setTimeout(() => {
+      setCoverPhase("part");
+    }, 700);
+    const t2 = setTimeout(() => {
+      setCoverGone(true);
+      setOpened(true);
+      setCoverPhase("idle");
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch {}
+    }, 2050);
+    timeoutsRef.current.push(t1, t2);
+  };
 
   return (
     <div
@@ -1276,23 +1338,22 @@ export default function DoTruyenThongTemplate({
         <Cover
           data={data}
           guestName={displayGuest}
-          closing={closing}
+          coverPhase={coverPhase}
           contained={contained}
           onOpen={handleOpen}
-          onDoorsClosed={() => setCoverGone(true)}
         />
       )}
 
       <m.div
         className={cn(
           "mx-auto w-full",
-          !coverGone && !closing && "hidden pointer-events-none"
+          !showBody && "hidden pointer-events-none"
         )}
         initial={false}
-        animate={{ scale: closing || coverGone ? 1 : 0.96 }}
+        animate={{ scale: showBody ? 1 : 0.96 }}
         transition={{ duration: 0.7, ease: EASE }}
       >
-        <Hero data={data} guestName={displayGuest} />
+        <Hero data={data} guestName={displayGuest} showBody={showBody} />
 
         <div className="flex flex-col">
           {!hidden.has("family") && (
@@ -1368,12 +1429,14 @@ export default function DoTruyenThongTemplate({
         </div>
 
         <footer className="px-4 pb-10 pt-6 text-center" style={{ backgroundColor: "transparent" }}>
-          <p className="text-[22px]" style={{ fontFamily: NAME_FONT, fontStyle: "italic", color: GOLD }}>
-            {data.couple.groomName} &amp; {data.couple.brideName}
-          </p>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.24em]" style={{ color: MUTED }}>
-            {data.ui.thankYouHeading || "Thank you for celebrating with us"}
-          </p>
+          <ImperialReveal direction="up">
+            <p className="text-[22px]" style={{ fontFamily: NAME_FONT, fontStyle: "italic", color: GOLD }}>
+              {data.couple.groomName} &amp; {data.couple.brideName}
+            </p>
+            <p className="mt-1 text-[10px] uppercase tracking-[0.24em]" style={{ color: MUTED }}>
+              {data.ui.thankYouHeading || "Trân trọng cảm ơn"}
+            </p>
+          </ImperialReveal>
         </footer>
       </m.div>
 

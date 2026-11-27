@@ -74,20 +74,37 @@ export function MobilePreviewFrame({
     if (!iframe) return;
 
     let observer: MutationObserver | null = null;
+    let rafSyncId = 0;
+    let syncedDoc: Document | null = null;
+    const syncedHrefs = new Set<string>();
+    const syncedInlineTexts = new Set<string>();
+    let syncedStyleNodes = new WeakSet<Element>();
 
     const setupIframeDoc = () => {
       try {
         const doc = iframe.contentDocument;
         if (!doc || !doc.body) return;
 
-        // Reset chuẩn cho html & body bên trong iframe
+        // Nếu trình duyệt thay document mới lúc load (Safari/Firefox), reset tracker để đồng bộ lại CSS đầy đủ
+        if (syncedDoc !== doc) {
+          syncedDoc = doc;
+          syncedHrefs.clear();
+          syncedInlineTexts.clear();
+          syncedStyleNodes = new WeakSet<Element>();
+        }
+
+        // Reset chuẩn cho html & body bên trong iframe (khóa maxHeight 100% chống iOS WebKit tự giãn iframe)
+        doc.documentElement.style.position = "relative";
         doc.documentElement.style.height = "100%";
+        doc.documentElement.style.maxHeight = "100%";
         doc.documentElement.style.width = "100%";
         doc.documentElement.style.margin = "0";
         doc.documentElement.style.padding = "0";
         doc.documentElement.style.overflow = "hidden";
 
+        doc.body.style.position = "relative";
         doc.body.style.height = "100%";
+        doc.body.style.maxHeight = "100%";
         doc.body.style.width = "100%";
         doc.body.style.margin = "0";
         doc.body.style.padding = "0";
@@ -102,24 +119,10 @@ export function MobilePreviewFrame({
         }
         doc.body.className = document.body.className;
 
-        // Đồng bộ stylesheet và thẻ style từ document.head
-        const syncStyles = () => {
-          if (!doc.head) return;
-          const parentHeadNodes = document.head.querySelectorAll("link[rel='stylesheet'], style");
-
-          // Xóa các style cũ đã đồng bộ trước đó để tránh trùng lặp
-          const syncedOld = doc.head.querySelectorAll("[data-preview-sync='true']");
-          syncedOld.forEach((n) => n.remove());
-
-          parentHeadNodes.forEach((node) => {
-            const clone = node.cloneNode(true) as HTMLElement;
-            clone.setAttribute("data-preview-sync", "true");
-            doc.head.appendChild(clone);
-          });
-
-          // Tiêm style ẩn scrollbar và mượt font bên trong iframe
+        // Chèn style ẩn scrollbar đúng 1 lần duy nhất trong iframe
+        if (doc.head && !doc.head.querySelector("[data-preview-scrollbar='true']")) {
           const scrollbarStyle = doc.createElement("style");
-          scrollbarStyle.setAttribute("data-preview-sync", "true");
+          scrollbarStyle.setAttribute("data-preview-scrollbar", "true");
           scrollbarStyle.textContent = `
             html,
             body,
@@ -140,16 +143,53 @@ export function MobilePreviewFrame({
             }
           `;
           doc.head.appendChild(scrollbarStyle);
+        }
+
+        // Đồng bộ stylesheet tăng dần (incremental): chỉ append thẻ mới, không gỡ/re-parse CSS cũ
+        const syncStyles = () => {
+          if (!doc.head) return;
+
+          document.head.querySelectorAll("link[rel='stylesheet']").forEach((node) => {
+            const href = node.getAttribute("href");
+            if (!href || syncedHrefs.has(href)) return;
+            syncedHrefs.add(href);
+            const clone = node.cloneNode(true) as HTMLElement;
+            clone.setAttribute("data-preview-sync", "true");
+            doc.head.appendChild(clone);
+          });
+
+          document.head.querySelectorAll("style").forEach((node) => {
+            if (syncedStyleNodes.has(node)) return;
+            syncedStyleNodes.add(node);
+            const text = node.textContent ?? "";
+            if (!text.trim() || syncedInlineTexts.has(text)) return;
+            syncedInlineTexts.add(text);
+            const clone = node.cloneNode(true) as HTMLElement;
+            clone.setAttribute("data-preview-sync", "true");
+            doc.head.appendChild(clone);
+          });
         };
 
         syncStyles();
 
-        // MutationObserver theo dõi style động (Next.js font, HMR styles)
+        // Chỉ theo dõi childList trực tiếp của <head> khi có thêm <link>/<style>, gom vào 1 RAF
         if (observer) observer.disconnect();
-        observer = new MutationObserver(() => {
-          syncStyles();
+        observer = new MutationObserver((mutations) => {
+          const hasStyleAddition = mutations.some((mutation) =>
+            Array.from(mutation.addedNodes).some(
+              (node) =>
+                node.nodeType === 1 &&
+                ((node as Element).tagName === "LINK" || (node as Element).tagName === "STYLE"),
+            ),
+          );
+          if (!hasStyleAddition) return;
+          if (rafSyncId) cancelAnimationFrame(rafSyncId);
+          rafSyncId = requestAnimationFrame(() => {
+            rafSyncId = 0;
+            syncStyles();
+          });
         });
-        observer.observe(document.head, { childList: true, subtree: true });
+        observer.observe(document.head, { childList: true });
 
         setMountNode(doc.body);
       } catch (err) {
@@ -173,19 +213,16 @@ export function MobilePreviewFrame({
     return () => {
       iframe.removeEventListener("load", setupIframeDoc);
       if (rafId) cancelAnimationFrame(rafId);
+      if (rafSyncId) cancelAnimationFrame(rafSyncId);
       if (observer) observer.disconnect();
     };
   }, []);
 
   const portalContent = (
     <div
-      ref={(el) => {
-        if (scrollRef) {
-          (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-        }
-      }}
+      ref={scrollRef}
       className={cn(
-        "relative h-full w-full overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+        "absolute inset-0 h-full max-h-full w-full overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
         lockedScroll ? "overflow-y-hidden" : "overflow-y-auto"
       )}
       style={{
@@ -205,10 +242,16 @@ export function MobilePreviewFrame({
       <iframe
         ref={iframeRef}
         title="Xem trước giao diện điện thoại"
+        scrolling="no"
         className="block border-0 select-auto"
         style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
           width: `${targetWidth}px`,
           height: typeof contentHeight === "number" ? `${contentHeight}px` : "100%",
+          maxHeight: typeof contentHeight === "number" ? `${contentHeight}px` : "100%",
+          overflow: "hidden",
           transform: `scale(${scale})`,
           transformOrigin: "top left",
           pointerEvents: "auto",

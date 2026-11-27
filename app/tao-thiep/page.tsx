@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CreateWeddingBuilder } from "@/components/create/CreateWeddingBuilder";
 import { SITE_NAME } from "@/config/site";
+import { AUTH0_EMAIL_CLAIM } from "@/config/site";
 import { getAuth0 } from "@/lib/auth0";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default async function CreateWeddingPage({
     isAuthenticated = Boolean(session);
     if (session?.user) {
       const userObj = session.user as Record<string, unknown>;
-      const rawEmail = userObj.email ?? userObj["https://thiepcuoi/email"];
+      const rawEmail = userObj.email ?? userObj[AUTH0_EMAIL_CLAIM];
       if (typeof rawEmail === "string" && rawEmail.trim()) {
         userEmail = rawEmail.trim();
       }

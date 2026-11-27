@@ -62,6 +62,14 @@ export const PATCH = authRoute<Ctx>(async (req, user, { params }) => {
     if (body.guestId === null) {
       patch.guest_id = null;
     } else if (isUuid(body.guestId)) {
+      const { data: ownedGuest, error: guestError } = await db()
+        .from("guests")
+        .select("id")
+        .eq("id", body.guestId)
+        .eq("wedding_id", wedding.id)
+        .maybeSingle();
+      if (guestError) throw guestError;
+      if (!ownedGuest) return fail("Khách mời không thuộc thiệp cưới này.", 404);
       patch.guest_id = body.guestId;
     } else {
       return fail("Khách mời không hợp lệ.");

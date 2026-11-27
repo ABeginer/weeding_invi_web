@@ -2,6 +2,7 @@ import { db } from "@/lib/server/supabase";
 import { fail, json, route, SLUG_RE } from "@/lib/server/http";
 import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 import { isLikelyCrawler, trackGuestView } from "@/lib/server/invite-limits";
+import { isWeddingSuspendedRow } from "@/lib/server/weddings";
 
 export const POST = route(
   async (req: Request, { params }: { params: Promise<{ slug: string }> }) => {
@@ -27,14 +28,18 @@ export const POST = route(
       return fail("Khách mời không tồn tại.", 404);
     }
 
-    // Chỉ đếm cho tiệc thuộc gói free
+    // Chỉ đếm cho tiệc thuộc gói free và chưa bị khóa
     const weddingRes = await client
       .from("weddings")
-      .select("plan")
+      .select("plan, suspended, content")
       .eq("id", guestRes.data.wedding_id)
       .maybeSingle();
 
-    if (weddingRes.data?.plan && weddingRes.data.plan !== "free") {
+    if (!weddingRes.data || isWeddingSuspendedRow(weddingRes.data)) {
+      return fail("Link không hợp lệ.", 404);
+    }
+
+    if (weddingRes.data.plan && weddingRes.data.plan !== "free") {
       return json({ ok: true, skipped: true });
     }
 

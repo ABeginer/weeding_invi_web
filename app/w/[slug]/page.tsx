@@ -19,6 +19,14 @@ const getWeddingBySlug = cache((slug: string) =>
   getPublicWeddingBySlug(slug, { includeDesignerTemplate: true }),
 );
 
+function inferOgImageType(url: string): string | undefined {
+  const lower = url.toLowerCase().split("?")[0];
+  if (lower.includes("/api/og/") || lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  return undefined;
+}
+
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
@@ -27,9 +35,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const wedding = await getWeddingBySlug(slug).catch(() => null);
 
-  if (!wedding) {
+  if (!wedding || wedding.plan === "free") {
     return {
-      title: "Không tìm thấy thiệp cưới",
+      title: wedding ? "Thiệp cưới trực tuyến | Inviwedd" : "Không tìm thấy thiệp cưới",
       robots: { index: false, follow: false },
     };
   }
@@ -73,7 +81,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
               url: ogImageUrl,
               width: 1200,
               height: 630,
-              type: "image/png",
+              type: inferOgImageType(ogImageUrl),
               alt: title,
             },
           ]
@@ -104,7 +112,7 @@ export default async function PublicWeddingPage({ params }: PageProps) {
             Thiệp mời trực tuyến
           </p>
           <h1 className="mt-2 font-display text-2xl font-semibold">
-            Link công khai chỉ dành cho gói Pro
+            Link công khai chỉ dành cho gói Standard &amp; Pro
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-text-muted">
             Thiệp miễn phí được chia sẻ bằng link riêng cho từng khách mời.

@@ -40,10 +40,12 @@ export interface InvitationExperienceProviderProps {
   onOpenedChange?: (opened: boolean) => void;
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
   showFloatingControls?: boolean;
+  disableAudio?: boolean;
+  enableAutoScroll?: boolean;
 }
 
-const SPEED_PX_PER_SEC = 42; // Tốc độ cuộn trang trọng 42px / giây
-const AUTO_SCROLL_DELAY_MS = 1100; // Trì hoãn 1.1s sau khi mở thiệp
+const SPEED_PX_PER_SEC = 120; // Bội số chung của 60Hz (2px/frame) & 120Hz (1px/frame) -> cuộn siêu mượt không giật step
+const AUTO_SCROLL_DELAY_MS = 2500; // Trì hoãn 2.5s sau khi mở thiệp để khách kịp đọc Hero
 
 export function InvitationExperienceProvider({
   children,
@@ -54,15 +56,21 @@ export function InvitationExperienceProvider({
   onOpenedChange,
   scrollContainerRef,
   showFloatingControls,
+  disableAudio = false,
+  enableAutoScroll,
 }: InvitationExperienceProviderProps) {
-  const isEnabled = mode === "guest" || mode === "standalone-preview";
+  const isAudioEnabled = !disableAudio && (mode === "guest" || mode === "standalone-preview");
+  const isAutoScrollEnabled =
+    enableAutoScroll ?? (mode === "guest" || mode === "standalone-preview");
   const shouldRenderControls =
     showFloatingControls ?? (mode === "guest" || mode === "standalone-preview");
 
   const [isOpened, setIsOpened] = React.useState<boolean>(Boolean(initialOpened));
   const [isMusicPlaying, setIsMusicPlaying] = React.useState<boolean>(false);
   const [isAutoScrolling, setIsAutoScrolling] = React.useState<boolean>(false);
-  const [audioAvailable, setAudioAvailable] = React.useState<boolean>(Boolean(musicSrc));
+  const [audioAvailable, setAudioAvailable] = React.useState<boolean>(
+    Boolean(!disableAudio && musicSrc),
+  );
 
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const userManuallyPausedMusicRef = React.useRef<boolean>(false);
@@ -72,13 +80,32 @@ export function InvitationExperienceProvider({
   const isAutoScrollingRef = React.useRef<boolean>(false);
   const rafIdRef = React.useRef<number | null>(null);
   const lastTimeRef = React.useRef<number>(0);
-  const accumulatorRef = React.useRef<number>(0);
   const startScrollTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const restoreScrollBehaviorRef = React.useRef<(() => void) | null>(null);
 
-  // Cập nhật audioAvailable khi đổi link nhạc
+  // Dọn dẹp âm thanh khi unmount
   React.useEffect(() => {
-    setAudioAvailable(Boolean(musicSrc));
-  }, [musicSrc]);
+    return () => {
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        } catch { }
+      }
+    };
+  }, []);
+
+  // Cập nhật audioAvailable khi đổi link nhạc hoặc cờ disableAudio
+  React.useEffect(() => {
+    setAudioAvailable(Boolean(!disableAudio && musicSrc));
+    if (disableAudio && audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch { }
+      setIsMusicPlaying(false);
+    }
+  }, [musicSrc, disableAudio]);
 
   // Cập nhật isOpened khi initialOpened từ cha thay đổi
   React.useEffect(() => {
@@ -95,22 +122,29 @@ export function InvitationExperienceProvider({
           detail: { isPlaying: playing },
         }),
       );
-    } catch {}
+    } catch { }
   }, []);
 
   // Broadcast trạng thái auto-scroll
-  const broadcastAutoScrollState = React.useCallback((scrolling: boolean) => {
+  const broadcastAutoScrollState = React.useCallback((scrolling: boolean, manual = false) => {
     try {
       window.dispatchEvent(
         new CustomEvent("inviwedd:autoscroll-state-change", {
-          detail: { isAutoScrolling: scrolling },
+          detail: { isAutoScrolling: scrolling, manual },
         }),
       );
-    } catch {}
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          { type: "inviwedd:demo:autoscroll", isAutoScrolling: scrolling, manual },
+          "*",
+        );
+      }
+    } catch { }
   }, []);
 
   // Phát nhạc
   const playAudio = React.useCallback(() => {
+    if (disableAudio) return;
     const audio = audioRef.current;
     if (!audio || !musicSrc) return;
     try {
@@ -174,13 +208,39 @@ export function InvitationExperienceProvider({
             setIsMusicPlaying(true);
             broadcastMusicState(true);
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     };
     unlockEvents.forEach((ev) => {
       window.addEventListener(ev, handleFirstInteraction, { capture: true, once: true });
     });
   }, [broadcastMusicState]);
+
+  // Tìm container đang thực sự cuộn (hỗ trợ cả wrapper ngoài lẫn thẻ con overflow-x-hidden/overflow-y-auto khi contained)
+  const resolveActiveScroller = React.useCallback((): HTMLElement | null => {
+    const primary = scrollContainerRef?.current;
+    if (primary) {
+      if (primary.scrollHeight > primary.clientHeight + 20) {
+        return primary;
+      }
+      const nestedCandidates = primary.querySelectorAll<HTMLElement>("div, main, section");
+      let bestNested: HTMLElement | null = null;
+      let bestOverflow = 20;
+      for (const el of nestedCandidates) {
+        if (el.scrollHeight <= el.clientHeight + bestOverflow) continue;
+        const style = window.getComputedStyle(el);
+        if (!/(auto|scroll|overlay)/.test(style.overflowY)) continue;
+        const overflow = el.scrollHeight - el.clientHeight;
+        if (overflow > bestOverflow) {
+          bestOverflow = overflow;
+          bestNested = el;
+        }
+      }
+      if (bestNested) return bestNested;
+      return primary;
+    }
+    return null;
+  }, [scrollContainerRef]);
 
   // Dừng Auto-Scroll
   const stopAutoScroll = React.useCallback(
@@ -190,7 +250,7 @@ export function InvitationExperienceProvider({
       }
       isAutoScrollingRef.current = false;
       setIsAutoScrolling(false);
-      broadcastAutoScrollState(false);
+      broadcastAutoScrollState(false, manual);
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;
@@ -199,55 +259,122 @@ export function InvitationExperienceProvider({
         clearTimeout(startScrollTimerRef.current);
         startScrollTimerRef.current = null;
       }
+      if (restoreScrollBehaviorRef.current) {
+        restoreScrollBehaviorRef.current();
+        restoreScrollBehaviorRef.current = null;
+      }
     },
     [broadcastAutoScrollState],
   );
 
-  // Bắt đầu Auto-Scroll với Float Accumulator (chuẩn 60fps / 120Hz)
+  // Bắt đầu Auto-Scroll mượt 60/120fps bằng vị trí thực (virtualY) & cache maxScroll tránh layout thrashing
   const startAutoScroll = React.useCallback(() => {
     if (isAutoScrollingRef.current) return;
+    if (startScrollTimerRef.current) {
+      clearTimeout(startScrollTimerRef.current);
+      startScrollTimerRef.current = null;
+    }
     userManuallyStoppedScrollRef.current = false;
     isAutoScrollingRef.current = true;
     setIsAutoScrolling(true);
-    broadcastAutoScrollState(true);
+    broadcastAutoScrollState(true, false);
     lastTimeRef.current = 0;
-    accumulatorRef.current = 0;
 
-    const container = scrollContainerRef?.current;
+    let hasSeenScrollable = false;
+    let cachedContainer: HTMLElement | null = null;
+    let cachedMaxScroll = 0;
+    let lastResolveAt = 0;
+    let lastMaxMeasureAt = 0;
+    let virtualY = 0;
+    let behaviorOverridden = false;
+    const waitStartedAt = performance.now();
+
+    const measureMaxScroll = (container: HTMLElement | null) => {
+      if (container) {
+        return Math.max(0, container.scrollHeight - container.clientHeight);
+      }
+      if (typeof window !== "undefined") {
+        return Math.max(
+          0,
+          (document.documentElement.scrollHeight || document.body.scrollHeight || 0) -
+            (window.innerHeight || document.documentElement.clientHeight || 0),
+        );
+      }
+      return 0;
+    };
+
+    const ensureBehaviorAuto = (container: HTMLElement | null) => {
+      if (behaviorOverridden) return;
+      const targetEl =
+        container ?? (typeof document !== "undefined" ? document.documentElement : null);
+      if (!targetEl) return;
+      const prevBehavior = targetEl.style.scrollBehavior;
+      targetEl.style.scrollBehavior = "auto";
+      behaviorOverridden = true;
+      restoreScrollBehaviorRef.current = () => {
+        targetEl.style.scrollBehavior = prevBehavior;
+      };
+    };
 
     const step = (currentTime: number) => {
       if (!isAutoScrollingRef.current) return;
-      if (!lastTimeRef.current) lastTimeRef.current = currentTime;
-      const deltaSec = (currentTime - lastTimeRef.current) / 1000;
+
+      if (
+        !hasSeenScrollable &&
+        (!cachedContainer || currentTime - lastResolveAt >= 30)
+      ) {
+        cachedContainer = resolveActiveScroller();
+        lastResolveAt = currentTime;
+        cachedMaxScroll = measureMaxScroll(cachedContainer);
+        lastMaxMeasureAt = currentTime;
+      } else if (hasSeenScrollable && currentTime - lastMaxMeasureAt >= 450) {
+        cachedMaxScroll = measureMaxScroll(cachedContainer);
+        lastMaxMeasureAt = currentTime;
+      }
+
+      const container = cachedContainer;
+      const maxScroll = cachedMaxScroll;
+
+      // Trong lúc bìa đang mở khóa chiều cao (vd Flip 3.3s), chờ mượt mà và không tích lũy delta
+      if (maxScroll <= 20) {
+        lastTimeRef.current = 0;
+        if (!hasSeenScrollable && currentTime - waitStartedAt < 6500) {
+          rafIdRef.current = requestAnimationFrame(step);
+          return;
+        }
+        stopAutoScroll(false);
+        return;
+      }
+
+      if (!hasSeenScrollable) {
+        hasSeenScrollable = true;
+        ensureBehaviorAuto(container);
+        virtualY = container
+          ? container.scrollTop
+          : window.scrollY || document.documentElement.scrollTop || 0;
+        lastTimeRef.current = currentTime - 1000 / 60;
+      }
+
+      const rawDt = (currentTime - lastTimeRef.current) / 1000;
       lastTimeRef.current = currentTime;
+      const safeDelta = Math.min(Math.max(rawDt, 0), 0.05);
 
-      // Giới hạn deltaSec tối đa 0.1s để chống giật khi chuyển tab
-      const safeDelta = Math.min(deltaSec, 0.1);
-      accumulatorRef.current += SPEED_PX_PER_SEC * safeDelta;
+      virtualY = Math.min(maxScroll, virtualY + SPEED_PX_PER_SEC * safeDelta);
 
-      const pixelsToScroll = Math.floor(accumulatorRef.current);
-      if (pixelsToScroll >= 1) {
-        accumulatorRef.current -= pixelsToScroll;
+      if (container) {
+        container.scrollTop = virtualY;
+      } else if (typeof window !== "undefined") {
+        window.scrollTo(0, virtualY);
+      }
 
-        if (container) {
-          container.scrollBy({ top: pixelsToScroll, behavior: "instant" as ScrollBehavior });
-          const isAtBottom =
-            container.scrollTop + container.clientHeight >= container.scrollHeight - 4;
-          if (isAtBottom) {
-            stopAutoScroll(false);
-            return;
-          }
-        } else if (typeof window !== "undefined") {
-          window.scrollBy({ top: pixelsToScroll, behavior: "instant" as ScrollBehavior });
-          const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-          const clientHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-          const scrollHeight =
-            document.documentElement.scrollHeight || document.body.scrollHeight || 0;
-          const isAtBottom = scrollTop + clientHeight >= scrollHeight - 4;
-          if (isAtBottom) {
-            stopAutoScroll(false);
-            return;
-          }
+      if (virtualY >= maxScroll - 1) {
+        // Đo lại lần cuối đề phòng ảnh lazy-load làm trang dài thêm
+        const latestMax = measureMaxScroll(container);
+        cachedMaxScroll = latestMax;
+        lastMaxMeasureAt = currentTime;
+        if (virtualY >= latestMax - 1) {
+          stopAutoScroll(false);
+          return;
         }
       }
 
@@ -255,7 +382,7 @@ export function InvitationExperienceProvider({
     };
 
     rafIdRef.current = requestAnimationFrame(step);
-  }, [broadcastAutoScrollState, scrollContainerRef, stopAutoScroll]);
+  }, [broadcastAutoScrollState, resolveActiveScroller, stopAutoScroll]);
 
   // Bắt đầu Auto-Scroll có độ trễ
   const startAutoScrollWithDelay = React.useCallback(
@@ -264,6 +391,7 @@ export function InvitationExperienceProvider({
         clearTimeout(startScrollTimerRef.current);
       }
       startScrollTimerRef.current = setTimeout(() => {
+        startScrollTimerRef.current = null;
         startAutoScroll();
       }, delayMs);
     },
@@ -272,20 +400,23 @@ export function InvitationExperienceProvider({
 
   // Toggle Auto-Scroll thủ công
   const toggleAutoScroll = React.useCallback(() => {
-    if (isAutoScrollingRef.current) {
+    if (isAutoScrollingRef.current || startScrollTimerRef.current !== null) {
       stopAutoScroll(true);
     } else {
       userManuallyStoppedScrollRef.current = false;
-      const container = scrollContainerRef?.current;
+      const container = resolveActiveScroller();
       let isAtBottom = false;
       if (container) {
-        isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 8;
+        const hasOverflow = container.scrollHeight > container.clientHeight + 8;
+        isAtBottom =
+          hasOverflow && container.scrollTop + container.clientHeight >= container.scrollHeight - 8;
       } else if (typeof window !== "undefined") {
         const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
         const clientHeight = window.innerHeight || document.documentElement.clientHeight || 0;
         const scrollHeight =
           document.documentElement.scrollHeight || document.body.scrollHeight || 0;
-        isAtBottom = scrollTop + clientHeight >= scrollHeight - 8;
+        const hasOverflow = scrollHeight > clientHeight + 8;
+        isAtBottom = hasOverflow && scrollTop + clientHeight >= scrollHeight - 8;
       }
 
       if (isAtBottom) {
@@ -301,14 +432,14 @@ export function InvitationExperienceProvider({
         startAutoScroll();
       }
     }
-  }, [scrollContainerRef, startAutoScroll, stopAutoScroll]);
+  }, [resolveActiveScroller, startAutoScroll, stopAutoScroll]);
 
   // Trigger mở thiệp đồng bộ (Synchronous Gesture Unlock)
   const triggerInvitationOpened = React.useCallback(() => {
     setIsOpened(true);
     onOpenedChange?.(true);
 
-    if (isEnabled && audioRef.current && musicSrc && !userManuallyPausedMusicRef.current) {
+    if (isAudioEnabled && audioRef.current && musicSrc && !userManuallyPausedMusicRef.current) {
       try {
         const audio = audioRef.current;
         audio.volume = 0.55;
@@ -333,28 +464,44 @@ export function InvitationExperienceProvider({
       }
     }
 
-    if (isEnabled && !userManuallyStoppedScrollRef.current) {
+    if (isAutoScrollEnabled && !userManuallyStoppedScrollRef.current) {
       startAutoScrollWithDelay(AUTO_SCROLL_DELAY_MS);
     }
   }, [
     armOneTimeUnlockListener,
     broadcastMusicState,
-    isEnabled,
+    isAudioEnabled,
+    isAutoScrollEnabled,
     musicSrc,
     onOpenedChange,
     startAutoScrollWithDelay,
   ]);
 
-  // Lắng nghe sự kiện mở phong bì toàn cục (inviwedd:open-envelope)
+  // Lắng nghe sự kiện mở phong bì toàn cục (inviwedd:open-envelope) và kết thúc zoom bìa (inviwedd:cover-settled)
   React.useEffect(() => {
     const handleEnvelopeOpen = () => {
       triggerInvitationOpened();
     };
+    const handleCoverSettled = () => {
+      if (isAutoScrollEnabled && !userManuallyStoppedScrollRef.current && !isAutoScrollingRef.current) {
+        if (startScrollTimerRef.current) {
+          clearTimeout(startScrollTimerRef.current);
+          startScrollTimerRef.current = null;
+        }
+        requestAnimationFrame(() => {
+          if (isAutoScrollEnabled && !userManuallyStoppedScrollRef.current) {
+            startAutoScroll();
+          }
+        });
+      }
+    };
     window.addEventListener("inviwedd:open-envelope", handleEnvelopeOpen);
+    window.addEventListener("inviwedd:cover-settled", handleCoverSettled);
     return () => {
       window.removeEventListener("inviwedd:open-envelope", handleEnvelopeOpen);
+      window.removeEventListener("inviwedd:cover-settled", handleCoverSettled);
     };
-  }, [triggerInvitationOpened]);
+  }, [isAutoScrollEnabled, startAutoScroll, triggerInvitationOpened]);
 
   // Lắng nghe lệnh bật/tắt nhạc từ Desktop Utility Rail hoặc toolbar ngoài
   React.useEffect(() => {
@@ -367,37 +514,68 @@ export function InvitationExperienceProvider({
     };
   }, [toggleMusic]);
 
-  // Lắng nghe lệnh bật/tắt autoscroll từ bên ngoài
+  // Lắng nghe lệnh bật/tắt autoscroll từ bên ngoài & postMessage từ cửa sổ cha (iframe modal / preview)
   React.useEffect(() => {
     const handleToggleScrollFromExternal = () => {
       toggleAutoScroll();
     };
+    const handleParentAutoScrollMessage = (e: MessageEvent) => {
+      if (e.data?.type !== "inviwedd:preview:set-autoscroll") return;
+      const shouldPause = Boolean(e.data.paused);
+      if (shouldPause) {
+        stopAutoScroll(true);
+      } else {
+        const container = resolveActiveScroller();
+        let isAtBottom = false;
+        if (container) {
+          const hasOverflow = container.scrollHeight > container.clientHeight + 8;
+          isAtBottom =
+            hasOverflow && container.scrollTop + container.clientHeight >= container.scrollHeight - 8;
+        }
+        if (isAtBottom && container) {
+          container.scrollTo({ top: 0, behavior: "smooth" });
+          setTimeout(() => {
+            startAutoScroll();
+          }, 500);
+        } else {
+          startAutoScroll();
+        }
+      }
+    };
     window.addEventListener("inviwedd:toggle-autoscroll", handleToggleScrollFromExternal);
+    window.addEventListener("message", handleParentAutoScrollMessage);
     return () => {
       window.removeEventListener("inviwedd:toggle-autoscroll", handleToggleScrollFromExternal);
+      window.removeEventListener("message", handleParentAutoScrollMessage);
     };
-  }, [toggleAutoScroll]);
+  }, [resolveActiveScroller, startAutoScroll, stopAutoScroll, toggleAutoScroll]);
 
   // Tự động unlock âm thanh & auto-scroll nếu template mở sẵn (initialOpened = true)
   React.useEffect(() => {
-    if (isEnabled && initialOpened && !userManuallyPausedMusicRef.current) {
-      if (audioRef.current && audioRef.current.paused) {
-        audioRef.current.volume = 0.55;
-        audioRef.current
-          .play()
-          .then(() => {
-            setIsMusicPlaying(true);
-            broadcastMusicState(true);
-          })
-          .catch(() => {
-            armOneTimeUnlockListener();
-          });
-      }
-      if (!userManuallyStoppedScrollRef.current) {
-        startAutoScrollWithDelay(1400);
-      }
+    if (!initialOpened) return;
+    if (isAudioEnabled && !userManuallyPausedMusicRef.current && audioRef.current && audioRef.current.paused) {
+      audioRef.current.volume = 0.55;
+      audioRef.current
+        .play()
+        .then(() => {
+          setIsMusicPlaying(true);
+          broadcastMusicState(true);
+        })
+        .catch(() => {
+          armOneTimeUnlockListener();
+        });
     }
-  }, [armOneTimeUnlockListener, broadcastMusicState, initialOpened, isEnabled, startAutoScrollWithDelay]);
+    if (isAutoScrollEnabled && !userManuallyStoppedScrollRef.current) {
+      startAutoScrollWithDelay(AUTO_SCROLL_DELAY_MS);
+    }
+  }, [
+    armOneTimeUnlockListener,
+    broadcastMusicState,
+    initialOpened,
+    isAudioEnabled,
+    isAutoScrollEnabled,
+    startAutoScrollWithDelay,
+  ]);
 
   // Quản lý vòng đời audio khi người dùng chuyển tab hoặc ẩn ứng dụng Zalo/Messenger
   React.useEffect(() => {
@@ -457,7 +635,7 @@ export function InvitationExperienceProvider({
     if (typeof window === "undefined") return;
 
     const handleUserScrollInteraction = () => {
-      if (isAutoScrollingRef.current) {
+      if (isAutoScrollingRef.current || startScrollTimerRef.current !== null) {
         stopAutoScroll(true);
       }
     };
@@ -474,7 +652,7 @@ export function InvitationExperienceProvider({
           "End",
         ].includes(e.code)
       ) {
-        if (isAutoScrollingRef.current) {
+        if (isAutoScrollingRef.current || startScrollTimerRef.current !== null) {
           stopAutoScroll(true);
         }
       }
@@ -489,7 +667,7 @@ export function InvitationExperienceProvider({
           target.tagName === "SELECT" ||
           target.isContentEditable)
       ) {
-        if (isAutoScrollingRef.current) {
+        if (isAutoScrollingRef.current || startScrollTimerRef.current !== null) {
           stopAutoScroll(true);
         }
       }
@@ -497,27 +675,30 @@ export function InvitationExperienceProvider({
 
     const handleModalState = (e: Event) => {
       const customEvent = e as CustomEvent<{ isOpen: boolean }>;
-      if (customEvent.detail?.isOpen && isAutoScrollingRef.current) {
+      if (
+        customEvent.detail?.isOpen &&
+        (isAutoScrollingRef.current || startScrollTimerRef.current !== null)
+      ) {
         stopAutoScroll(true);
       }
     };
 
-    window.addEventListener("wheel", handleUserScrollInteraction, { passive: true });
-    window.addEventListener("touchstart", handleUserScrollInteraction, { passive: true });
+    window.addEventListener("wheel", handleUserScrollInteraction, { passive: true, capture: true });
+    window.addEventListener("touchstart", handleUserScrollInteraction, { passive: true, capture: true });
     window.addEventListener("keydown", handleKeyDown, { passive: true });
     window.addEventListener("focusin", handleFocusIn, { passive: true });
     window.addEventListener("inviwedd:modal-state", handleModalState);
 
     return () => {
-      window.removeEventListener("wheel", handleUserScrollInteraction);
-      window.removeEventListener("touchstart", handleUserScrollInteraction);
+      window.removeEventListener("wheel", handleUserScrollInteraction, { capture: true });
+      window.removeEventListener("touchstart", handleUserScrollInteraction, { capture: true });
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("focusin", handleFocusIn);
       window.removeEventListener("inviwedd:modal-state", handleModalState);
     };
   }, [stopAutoScroll]);
 
-  // Dọn dẹp RAF và timer khi unmount
+  // Dọn dẹp RAF, timer và scroll-behavior khi unmount
   React.useEffect(() => {
     return () => {
       if (rafIdRef.current !== null) {
@@ -525,6 +706,10 @@ export function InvitationExperienceProvider({
       }
       if (startScrollTimerRef.current) {
         clearTimeout(startScrollTimerRef.current);
+      }
+      if (restoreScrollBehaviorRef.current) {
+        restoreScrollBehaviorRef.current();
+        restoreScrollBehaviorRef.current = null;
       }
     };
   }, []);
@@ -561,7 +746,7 @@ export function InvitationExperienceProvider({
   return (
     <InvitationExperienceContext.Provider value={contextValue}>
       {/* 1 thẻ audio trung tâm duy nhất cho toàn bộ template */}
-      {musicSrc && (
+      {!disableAudio && musicSrc && (
         <audio
           ref={audioRef}
           src={musicSrc}
@@ -580,7 +765,7 @@ export function InvitationExperienceProvider({
 
       {/* Cụm nút điều khiển nổi (Floating Experience Controls) */}
       {shouldRenderControls && isOpened && (
-        <FloatingExperienceControls />
+        <FloatingExperienceControls hideOnDesktop={mode === "guest"} />
       )}
     </InvitationExperienceContext.Provider>
   );
@@ -591,7 +776,11 @@ export function InvitationExperienceProvider({
  * Thiết kế kính mờ sang trọng, tối giản, thích hợp với 100% template thiệp cưới.
  * Tuyệt đối không dùng icon ngôi sao / sparkles.
  */
-export function FloatingExperienceControls() {
+export function FloatingExperienceControls({
+  hideOnDesktop = false,
+}: {
+  hideOnDesktop?: boolean;
+} = {}) {
   const exp = useInvitationExperience();
   if (!exp) return null;
 
@@ -607,7 +796,10 @@ export function FloatingExperienceControls() {
   return (
     <nav
       aria-label="Điều khiển trải nghiệm thiệp"
-      className="fixed right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2.5 sm:right-6 sm:bottom-6 touch-manipulation"
+      className={cn(
+        "fixed right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2.5 sm:right-6 sm:bottom-6 touch-manipulation",
+        hideOnDesktop && "lg:hidden",
+      )}
     >
       {/* Nút Auto-Scroll (Bật / Tạm dừng cuộn tự động) */}
       <button

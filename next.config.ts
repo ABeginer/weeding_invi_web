@@ -92,10 +92,10 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // Next.js chèn bootstrap inline; Turnstile và Cloudflare Analytics cần domain riêng.
       `script-src ${scriptSrc}`,
-      "connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com",
+      "connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com",
       "frame-src 'self' https://www.google.com https://maps.google.com https://challenges.cloudflare.com",
       "worker-src 'self' blob:",
-      "media-src 'self' blob:",
+      "media-src 'self' blob: https:",
     ].join("; ");
 
     return [
@@ -138,11 +138,29 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/(templates|photos|images|sfx)/:path*",
+        source: "/(templates|photos|images|sfx|demo|fonts)/:path*",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/thiep-cuoi",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
           },
         ],
       },

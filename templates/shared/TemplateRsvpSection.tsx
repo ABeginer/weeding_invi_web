@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Lock, Send, XCircle } from "lucide-react";
+import { Check, CheckCircle2, Lock, Send, X, XCircle } from "lucide-react";
 import { submitRsvp, submitWish } from "@/lib/api";
 import { WishMarquee } from "@/components/invitation/WishMarquee";
 import { WishOverlay } from "@/components/invitation/WishOverlay";
@@ -103,7 +103,10 @@ export function TemplateRsvpSection({
   const [name, setName] = React.useState(guestName ?? (isReadOnlyPreview ? (data.ui.defaultGuestName ?? "") : ""));
   const [message, setMessage] = React.useState("");
   const [honeypot, setHoneypot] = React.useState("");
-  const formLoadedAtRef = React.useRef<number>(Date.now());
+  const formLoadedAtRef = React.useRef<number>(0);
+  React.useEffect(() => {
+    formLoadedAtRef.current = Date.now();
+  }, []);
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
 
@@ -351,126 +354,174 @@ export function TemplateRsvpSection({
         alert: "border-[#D4AF37]/50 bg-[#1A1811] text-[#E6C670]",
         badge: "border-[#2E3545] bg-[#1E2536] text-[#E2E8F0]",
       }
-      : tone === "amethyst"
+      : tone === "sapphire"
         ? {
-          wrap: "bg-transparent text-[#595638]",
-          eyebrow: "text-[#8A8460]",
-          heading: "text-[#464E25] font-display",
-          subtext: "text-[#8A8460]",
-          card: "border border-[#464E25]/30 bg-[#FDFAF5] text-[#595638]",
+          wrap: "bg-transparent text-[#F4E8CE]",
+          eyebrow: "text-[#E5CFA3]",
+          heading: "text-[#F4E8CE] font-display",
+          subtext: "text-[#C5D2E0]",
+          card: "border border-[#E5CFA3]/35 bg-[#0E2238]/90 text-[#F4E8CE]",
           input:
-            "border border-[#464E25]/45 bg-[#F7F4EB] text-[#595638] placeholder:text-[#8A8460] focus:border-[#464E25] focus:ring-[#464E25]",
-          primaryBtn: "bg-[#464E25] text-[#FDFAF5] hover:bg-[#3A411E] font-semibold",
+            "border border-[#E5CFA3]/45 bg-[#07111F]/90 text-[#F4E8CE] placeholder:text-[#94A8BF] focus:border-[#E5CFA3] focus:ring-[#E5CFA3]",
+          primaryBtn:
+            "bg-gradient-to-r from-[#C8AC78] via-[#E5CFA3] to-[#C8AC78] text-[#07111F] hover:brightness-105 font-semibold",
           outlineBtn:
-            "border border-[#464E25]/80 bg-[#F7F4EB] text-[#464E25] hover:bg-[#EFEAD8]",
-          alert: "border-[#464E25]/40 bg-[#F7F4EB] text-[#595638]",
-          badge: "border-[#464E25]/40 bg-[#F7F4EB] text-[#464E25]",
+            "border border-[#E5CFA3]/75 bg-transparent text-[#F4E8CE] hover:bg-[#E5CFA3]/15 hover:border-[#E5CFA3]",
+          alert: "border-[#E5CFA3]/45 bg-[#0E2238] text-[#F4E8CE]",
+          badge: "border-[#E5CFA3]/40 bg-[#0E2238] text-[#E5CFA3]",
         }
-        : tone === "minbrown"
+        : tone === "midnight-ink"
           ? {
-            wrap: "bg-transparent text-[#7D4E2D]",
-            eyebrow: "text-[#7D4E2D]",
-            heading: "text-[#7D4E2D] font-display",
-            subtext: "text-[#7D4E2D]/85",
-            label: "text-[#7D4E2D]",
-            card: "border border-[#7D4E2D]/35 bg-[#FAF7F4] text-[#7D4E2D]",
+            wrap: "bg-transparent text-[#F1EAE0]",
+            eyebrow: "text-[#D8B878]",
+            heading: "text-[#F1DDB0] font-display",
+            subtext: "text-[#B8C4D8]",
+            card: "border border-[#D8B878]/35 bg-[#0B2042]/90 text-[#F1EAE0]",
             input:
-              "border border-[#7D4E2D]/50 bg-[#F3EDE6] text-[#7D4E2D] placeholder:text-[#7D4E2D]/60 focus:border-[#7D4E2D] focus:ring-[#7D4E2D]",
-            primaryBtn: "bg-[#7D4E2D] text-white hover:bg-[#653E23] font-semibold",
+              "border border-[#D8B878]/45 bg-[#07152C]/90 text-[#F1EAE0] placeholder:text-[#8FA0BC] focus:border-[#D8B878] focus:ring-[#D8B878]",
+            primaryBtn:
+              "bg-gradient-to-r from-[#C8A45D] via-[#F1DDB0] to-[#C8A45D] text-[#07152C] hover:brightness-105 font-semibold",
             outlineBtn:
-              "border border-[#7D4E2D]/90 bg-[#F3EDE6] text-[#7D4E2D] hover:bg-[#EAE0D6]",
-            alert: "border-[#7D4E2D]/45 bg-[#F3EDE6] text-[#7D4E2D]",
-            badge: "border-[#7D4E2D]/45 bg-[#F3EDE6] text-[#7D4E2D]",
+              "border border-[#D8B878]/75 bg-transparent text-[#F1DDB0] hover:bg-[#D8B878]/15 hover:border-[#D8B878]",
+            alert: "border-[#D8B878]/45 bg-[#0B2042] text-[#F1DDB0]",
+            badge: "border-[#D8B878]/40 bg-[#0B2042] text-[#F1DDB0]",
           }
-          : tone === "minred"
+          : tone === "emerald"
             ? {
-              wrap: "bg-transparent text-[#E9D4AE]",
-              eyebrow: "text-[#B89667]",
-              heading: "text-[#E1BC7C] font-display",
-              subtext: "text-[#B89667]",
-              card: "border border-[#E1BC7C]/35 bg-[#2C0102]/70 text-[#E9D4AE]",
+              wrap: "bg-transparent text-[#FAF7F2]",
+              eyebrow: "text-[#D4B26A]",
+              heading: "text-[#F0D89C] font-display",
+              subtext: "text-[#C6D2C9]",
+              card: "border border-[#D4B26A]/35 bg-[#122B20]/90 text-[#FAF7F2]",
               input:
-                "border border-[#E1BC7C]/45 bg-[#1E0101]/80 text-[#E9D4AE] placeholder:text-[#B89667]/80 focus:border-[#E1BC7C] focus:ring-[#E1BC7C]",
-              primaryBtn: "bg-[#E1BC7C] text-[#390102] hover:bg-[#F0D3A0] font-semibold",
+                "border border-[#D4B26A]/45 bg-[#0B1D15]/90 text-[#FAF7F2] placeholder:text-[#98ABA0] focus:border-[#D4B26A] focus:ring-[#D4B26A]",
+              primaryBtn:
+                "bg-gradient-to-r from-[#C8A45D] via-[#E8CC88] to-[#C8A45D] text-[#0B1D15] hover:brightness-105 font-semibold",
               outlineBtn:
-                "border border-[#E1BC7C] bg-transparent text-[#E1BC7C] hover:bg-[#2C0102]",
-              alert: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E9D4AE]",
-              badge: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E1BC7C]",
+                "border border-[#D4B26A]/75 bg-transparent text-[#F0D89C] hover:bg-[#D4B26A]/15 hover:border-[#D4B26A]",
+              alert: "border-[#D4B26A]/45 bg-[#122B20] text-[#F0D89C]",
+              badge: "border-[#D4B26A]/40 bg-[#122B20] text-[#F0D89C]",
             }
-            : tone === "ruby"
+            : tone === "amethyst"
               ? {
-                wrap: "bg-transparent text-[#E5E4D0]",
-                eyebrow: "text-[#E5C787]",
-                heading: "text-[#F7E7CE] font-display",
-                subtext: "text-[#B3B2A0]",
-                card: "border border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
+                wrap: "bg-transparent text-[#595638]",
+                eyebrow: "text-[#8A8460]",
+                heading: "text-[#464E25] font-display",
+                subtext: "text-[#8A8460]",
+                card: "border border-[#464E25]/30 bg-[#FDFAF5] text-[#595638]",
                 input:
-                  "border border-[#E5C787]/60 bg-[#2E0409] text-[#E5E4D0] placeholder:text-[#9C9B8A] focus:border-[#E5C787] focus:ring-[#E5C787]",
-                primaryBtn: "bg-[#F7E7CE] text-[#390202] hover:bg-[#FFF6E6] font-semibold",
+                  "border border-[#464E25]/45 bg-[#F7F4EB] text-[#595638] placeholder:text-[#8A8460] focus:border-[#464E25] focus:ring-[#464E25]",
+                primaryBtn: "bg-[#464E25] text-[#FDFAF5] hover:bg-[#3A411E] font-semibold",
                 outlineBtn:
-                  "border border-[#E5C787] bg-transparent text-[#E5C787] hover:bg-[#4A060C]",
-                alert: "border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
-                badge: "border-[#E5C787]/50 bg-[#390202] text-[#E5C787]",
+                  "border border-[#464E25]/80 bg-[#F7F4EB] text-[#464E25] hover:bg-[#EFEAD8]",
+                alert: "border-[#464E25]/40 bg-[#F7F4EB] text-[#595638]",
+                badge: "border-[#464E25]/40 bg-[#F7F4EB] text-[#464E25]",
               }
-              : tone === "velvet"
+              : tone === "minbrown"
                 ? {
-                  wrap: "bg-transparent text-[#E9CE91]",
-                  eyebrow: "text-[#E9CE91]",
-                  heading: "text-[#E9CE91] font-display",
-                  subtext: "text-[#BFA478]",
-                  card: "border border-[#8A6A3A]/60 bg-[#5A0D0C] text-[#E9CE91]",
+                  wrap: "bg-transparent text-[#7D4E2D]",
+                  eyebrow: "text-[#7D4E2D]",
+                  heading: "text-[#7D4E2D] font-display",
+                  subtext: "text-[#7D4E2D]/85",
+                  label: "text-[#7D4E2D]",
+                  card: "border border-[#7D4E2D]/35 bg-[#FAF7F4] text-[#7D4E2D]",
                   input:
-                    "border border-[#8A6A3A]/70 bg-[#3A0807] text-[#E9CE91] placeholder:text-[#A98F6C] focus:border-[#E9CE91] focus:ring-[#E9CE91]",
-                  primaryBtn: "bg-[#E9CE91] text-[#3B0A0D] hover:bg-[#F2E0B6] font-semibold",
+                    "border border-[#7D4E2D]/50 bg-[#F3EDE6] text-[#7D4E2D] placeholder:text-[#7D4E2D]/60 focus:border-[#7D4E2D] focus:ring-[#7D4E2D]",
+                  primaryBtn: "bg-[#7D4E2D] text-white hover:bg-[#653E23] font-semibold",
                   outlineBtn:
-                    "border border-[#E9CE91]/70 bg-transparent text-[#E9CE91] hover:bg-[#5A0D0C]",
-                  alert: "border-[#8A6A3A] bg-[#5A0D0C] text-[#E9CE91]",
-                  badge: "border-[#8A6A3A] bg-[#4A0B0A] text-[#E9CE91]",
+                    "border border-[#7D4E2D]/90 bg-[#F3EDE6] text-[#7D4E2D] hover:bg-[#EAE0D6]",
+                  alert: "border-[#7D4E2D]/45 bg-[#F3EDE6] text-[#7D4E2D]",
+                  badge: "border-[#7D4E2D]/45 bg-[#F3EDE6] text-[#7D4E2D]",
                 }
-                : tone === "red"
+                : tone === "minred"
                   ? {
-                    wrap: "bg-transparent text-[#4a1010]",
-                    eyebrow: "text-[#800000]",
-                    heading: "text-[#800000] font-display",
-                    subtext: "text-[#8a6a63]",
-                    card: "border border-[#e0cba4] bg-white text-[#4a1010]",
+                    wrap: "bg-transparent text-[#E9D4AE]",
+                    eyebrow: "text-[#B89667]",
+                    heading: "text-[#E1BC7C] font-display",
+                    subtext: "text-[#B89667]",
+                    card: "border border-[#E1BC7C]/35 bg-[#2C0102]/70 text-[#E9D4AE]",
                     input:
-                      "border border-[#c9a24a] bg-[#FFFBF5] text-[#4a1010] placeholder:text-[#a98d7d] focus:border-[#800000] focus:ring-[#800000]",
-                    primaryBtn: "bg-[#800000] text-[#ffeed2] hover:bg-[#5c0000] font-medium",
+                      "border border-[#E1BC7C]/45 bg-[#1E0101]/80 text-[#E9D4AE] placeholder:text-[#B89667]/80 focus:border-[#E1BC7C] focus:ring-[#E1BC7C]",
+                    primaryBtn: "bg-[#E1BC7C] text-[#390102] hover:bg-[#F0D3A0] font-semibold",
                     outlineBtn:
-                      "border border-[#c9a24a] bg-[#FFFBF5] text-[#800000] hover:bg-[#fff1dd]",
-                    alert: "border-[#e0cba4] bg-[#fff1dd] text-[#4a1010]",
-                    badge: "border-[#e0cba4] bg-[#fff7eb] text-[#7a0b0b]",
+                      "border border-[#E1BC7C] bg-transparent text-[#E1BC7C] hover:bg-[#2C0102]",
+                    alert: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E9D4AE]",
+                    badge: "border-[#E1BC7C]/40 bg-[#2C0102] text-[#E1BC7C]",
                   }
-                  : tone === "sunset"
+                  : tone === "ruby"
                     ? {
-                      wrap: "bg-transparent text-[#322424]",
-                      eyebrow: "text-[#8A4444]",
-                      heading: "text-[#7A3535] font-display",
-                      subtext: "text-[#6B504B]",
-                      card: "border border-[#E7CFC3] bg-white text-[#322424]",
+                      wrap: "bg-transparent text-[#E5E4D0]",
+                      eyebrow: "text-[#E5C787]",
+                      heading: "text-[#F7E7CE] font-display",
+                      subtext: "text-[#B3B2A0]",
+                      card: "border border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
                       input:
-                        "border border-[#C99C8B] bg-[#FCF7F5] text-[#322424] placeholder:text-[#8E6F68] focus:border-[#7A3535] focus:ring-[#7A3535]",
-                      primaryBtn: "bg-[#7A3535] text-white hover:bg-[#612828] font-medium",
+                        "border border-[#E5C787]/60 bg-[#2E0409] text-[#E5E4D0] placeholder:text-[#9C9B8A] focus:border-[#E5C787] focus:ring-[#E5C787]",
+                      primaryBtn: "bg-[#F7E7CE] text-[#390202] hover:bg-[#FFF6E6] font-semibold",
                       outlineBtn:
-                        "border border-[#B77C72] bg-[#FCF7F5] text-[#6A2E2E] hover:bg-[#F5E6DF]",
-                      alert: "border-[#D5B2A3] bg-[#F5E6DF] text-[#4B2626]",
-                      badge: "border-[#E7CFC3] bg-[#FCF5F0] text-[#5C2626]",
+                        "border border-[#E5C787] bg-transparent text-[#E5C787] hover:bg-[#4A060C]",
+                      alert: "border-[#E5C787]/50 bg-[#4A060C] text-[#E5E4D0]",
+                      badge: "border-[#E5C787]/50 bg-[#390202] text-[#E5C787]",
                     }
-                    : {
-                      wrap: "bg-transparent text-[#1F1D1A]",
-                      eyebrow: "text-[#706040]",
-                      heading: "text-[#1F1D1A] font-display",
-                      subtext: "text-[#5E574B]",
-                      card: "border border-[#DFD5C3] bg-white text-[#1F1D1A]",
-                      input:
-                        "border border-[#C9BFA9] bg-[#FAF8F5] text-[#1F1D1A] placeholder:text-[#786E5C] focus:border-[#706040] focus:ring-[#706040]",
-                      primaryBtn: "bg-[#23201C] text-[#FAF7F0] hover:bg-[#3A342D] font-medium",
-                      outlineBtn:
-                        "border border-[#9A8966] bg-[#FAF8F5] text-[#23201C] hover:bg-[#EFEAE0]",
-                      alert: "border-[#D4C7AE] bg-[#EFEAE0] text-[#23201C]",
-                      badge: "border-[#DFD5C3] bg-[#FAF7F0] text-[#23201C]",
-                    };
+                    : tone === "velvet"
+                      ? {
+                        wrap: "bg-transparent text-[#E9CE91]",
+                        eyebrow: "text-[#E9CE91]",
+                        heading: "text-[#E9CE91] font-display",
+                        subtext: "text-[#BFA478]",
+                        card: "border border-[#8A6A3A]/60 bg-[#5A0D0C] text-[#E9CE91]",
+                        input:
+                          "border border-[#8A6A3A]/70 bg-[#3A0807] text-[#E9CE91] placeholder:text-[#A98F6C] focus:border-[#E9CE91] focus:ring-[#E9CE91]",
+                        primaryBtn: "bg-[#E9CE91] text-[#3B0A0D] hover:bg-[#F2E0B6] font-semibold",
+                        outlineBtn:
+                          "border border-[#E9CE91]/70 bg-transparent text-[#E9CE91] hover:bg-[#5A0D0C]",
+                        alert: "border-[#8A6A3A] bg-[#5A0D0C] text-[#E9CE91]",
+                        badge: "border-[#8A6A3A] bg-[#4A0B0A] text-[#E9CE91]",
+                      }
+                      : tone === "red"
+                        ? {
+                          wrap: "bg-transparent text-[#4a1010]",
+                          eyebrow: "text-[#800000]",
+                          heading: "text-[#800000] font-display",
+                          subtext: "text-[#8a6a63]",
+                          card: "border border-[#e0cba4] bg-white text-[#4a1010]",
+                          input:
+                            "border border-[#c9a24a] bg-[#FFFBF5] text-[#4a1010] placeholder:text-[#a98d7d] focus:border-[#800000] focus:ring-[#800000]",
+                          primaryBtn: "bg-[#800000] text-[#ffeed2] hover:bg-[#5c0000] font-medium",
+                          outlineBtn:
+                            "border border-[#c9a24a] bg-[#FFFBF5] text-[#800000] hover:bg-[#fff1dd]",
+                          alert: "border-[#e0cba4] bg-[#fff1dd] text-[#4a1010]",
+                          badge: "border-[#e0cba4] bg-[#fff7eb] text-[#7a0b0b]",
+                        }
+                        : tone === "sunset"
+                          ? {
+                            wrap: "bg-transparent text-[#322424]",
+                            eyebrow: "text-[#8A4444]",
+                            heading: "text-[#7A3535] font-display",
+                            subtext: "text-[#6B504B]",
+                            card: "border border-[#E7CFC3] bg-white text-[#322424]",
+                            input:
+                              "border border-[#C99C8B] bg-[#FCF7F5] text-[#322424] placeholder:text-[#8E6F68] focus:border-[#7A3535] focus:ring-[#7A3535]",
+                            primaryBtn: "bg-[#7A3535] text-white hover:bg-[#612828] font-medium",
+                            outlineBtn:
+                              "border border-[#B77C72] bg-[#FCF7F5] text-[#6A2E2E] hover:bg-[#F5E6DF]",
+                            alert: "border-[#D5B2A3] bg-[#F5E6DF] text-[#4B2626]",
+                            badge: "border-[#E7CFC3] bg-[#FCF5F0] text-[#5C2626]",
+                          }
+                          : {
+                            wrap: "bg-transparent text-[#1F1D1A]",
+                            eyebrow: "text-[#706040]",
+                            heading: "text-[#1F1D1A] font-display",
+                            subtext: "text-[#5E574B]",
+                            card: "border border-[#DFD5C3] bg-white text-[#1F1D1A]",
+                            input:
+                              "border border-[#C9BFA9] bg-[#FAF8F5] text-[#1F1D1A] placeholder:text-[#786E5C] focus:border-[#706040] focus:ring-[#706040]",
+                            primaryBtn: "bg-[#23201C] text-[#FAF7F0] hover:bg-[#3A342D] font-medium",
+                            outlineBtn:
+                              "border border-[#9A8966] bg-[#FAF8F5] text-[#23201C] hover:bg-[#EFEAE0]",
+                            alert: "border-[#D4C7AE] bg-[#EFEAE0] text-[#23201C]",
+                            badge: "border-[#DFD5C3] bg-[#FAF7F0] text-[#23201C]",
+                          };
 
   const styles = customTheme
     ? {
@@ -497,6 +548,13 @@ export function TemplateRsvpSection({
     tone === "sapphire" ||
     tone === "midnight-ink" ||
     tone === "emerald";
+
+  const hasStaticOutlineBg = /(?:^|\s)bg-(?!transparent\b)\S+/.test(styles.outlineBtn);
+  const outlineFallbackBg = hasStaticOutlineBg
+    ? ""
+    : isDarkTone
+      ? "bg-white/[0.07]"
+      : "bg-black/[0.03]";
 
   const selectColorScheme = isDarkTone ? "dark" : "light";
   const optionBg = customTheme
@@ -562,27 +620,15 @@ export function TemplateRsvpSection({
         <span id="rsvp-wishes" className="sr-only" aria-hidden="true" />
         <div className="mx-auto max-w-[440px]">
           <div className="text-center">
-            <p className={cn("text-[11px] font-medium uppercase tracking-[0.2em]", styles.eyebrow)}>
-              Phản Hồi &amp; Chúc Phúc
-            </p>
             <h2
               className={cn(
-                "mt-1.5 font-semibold",
+                "font-semibold",
                 contained ? "text-2xl" : "text-3xl",
                 styles.heading,
               )}
             >
               Gửi Lời Chúc Phúc
             </h2>
-            <p
-              className={cn(
-                "mx-auto mt-2 max-w-[380px] leading-relaxed",
-                contained ? "text-xs" : "text-sm",
-                styles.subtext,
-              )}
-            >
-              Gửi đôi lời yêu thương để cùng lưu giữ những kỷ niệm đẹp nhất trong ngày cưới của chúng mình.
-            </p>
           </div>
 
           {publicWishSent ? (
@@ -598,7 +644,8 @@ export function TemplateRsvpSection({
                 type="button"
                 onClick={() => setPublicWishSent(false)}
                 className={cn(
-                  "mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full px-4 text-xs font-medium transition-colors",
+                  "mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full border px-4 text-xs font-medium transition-colors",
+                  outlineFallbackBg,
                   styles.outlineBtn,
                 )}
               >
@@ -715,27 +762,15 @@ export function TemplateRsvpSection({
       <span id="rsvp-wishes" className="sr-only" aria-hidden="true" />
       <div className="mx-auto max-w-[440px]">
         <div className="text-center">
-          <p className={cn("text-[11px] font-medium uppercase tracking-[0.2em]", styles.eyebrow)}>
-            Phản Hồi &amp; Chúc Phúc
-          </p>
           <h2
             className={cn(
-              "mt-1.5 font-semibold",
+              "font-semibold",
               contained ? "text-2xl" : "text-3xl",
               styles.heading,
             )}
           >
-            Xác Nhận Tham Dự &amp; Gửi Lời Chúc
+            Xác nhận tham dự
           </h2>
-          <p
-            className={cn(
-              "mx-auto mt-2 max-w-[380px] leading-relaxed",
-              contained ? "text-xs" : "text-sm",
-              styles.subtext,
-            )}
-          >
-            Vui lòng cho chúng mình biết bạn có thể thu xếp tham dự nhé. Bạn có thể đính kèm thêm lời chúc phúc ngay bên dưới.
-          </p>
         </div>
 
         {showSavedSummary && activeChoice ? (
@@ -776,11 +811,25 @@ export function TemplateRsvpSection({
                 Lời chúc của bạn cũng đã được gửi tới cô dâu &amp; chú rể.
               </p>
             )}
-            {activeChoice === "accepted" && (inviteSlug || walkInGuest?.slug) && (
+            {activeChoice === "accepted" && inviteSlug && (
+              <div className="mt-3 flex justify-center">
+                <a
+                  href="#the-moi-boarding-pass"
+                  className={cn(
+                    "inline-flex h-9 items-center justify-center gap-1.5 rounded-full border px-4 text-xs font-semibold transition-colors",
+                    outlineFallbackBg,
+                    styles.outlineBtn,
+                  )}
+                >
+                  <span>🎫 Xem thẻ mời &amp; số bàn (Boarding Pass)</span>
+                </a>
+              </div>
+            )}
+            {activeChoice === "accepted" && !inviteSlug && walkInGuest?.slug && (
               <div className="pt-2 text-left">
                 <GuestBoardingPass
                   guestName={name || guestName || "Quý khách"}
-                  slug={inviteSlug || walkInGuest?.slug || ""}
+                  slug={walkInGuest.slug}
                   plusOnes={summaryPlusOnes}
                   diet={summaryDiet}
                   weddingDate={data.events?.[0]?.startsAt ?? data.date}
@@ -805,7 +854,8 @@ export function TemplateRsvpSection({
                 setIsEditingRsvp(true);
               }}
               className={cn(
-                "mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full px-4 text-xs font-medium transition-colors",
+                "mt-4 inline-flex h-9 cursor-pointer items-center justify-center rounded-full border px-4 text-xs font-medium transition-colors",
+                outlineFallbackBg,
                 styles.outlineBtn,
               )}
             >
@@ -883,7 +933,7 @@ export function TemplateRsvpSection({
                 role="group"
                 aria-label="Lựa chọn tham dự"
                 className={cn(
-                  "grid grid-cols-1 gap-2",
+                  "grid grid-cols-1 gap-2.5",
                   !contained && "sm:grid-cols-2",
                 )}
               >
@@ -896,11 +946,16 @@ export function TemplateRsvpSection({
                     setSelectedChoice("accepted");
                   }}
                   className={cn(
-                    "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-center text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
-                    selectedChoice === "accepted" ? styles.primaryBtn : styles.outlineBtn,
+                    "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-sm font-medium shadow-sm transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55",
+                    selectedChoice === "accepted"
+                      ? styles.primaryBtn
+                      : cn(outlineFallbackBg, styles.outlineBtn),
+                    "border-[1.5px] border-solid",
+                    selectedChoice === null && submitting === null && "rsvp-choice-nudge",
                   )}
                 >
-                  Tôi sẽ tham dự
+                  <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Tôi sẽ tham dự</span>
                 </button>
                 <button
                   type="button"
@@ -911,11 +966,18 @@ export function TemplateRsvpSection({
                     setSelectedChoice("declined");
                   }}
                   className={cn(
-                    "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-center text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55",
-                    selectedChoice === "declined" ? styles.primaryBtn : styles.outlineBtn,
+                    "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-sm font-medium shadow-sm transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55",
+                    selectedChoice === "declined"
+                      ? styles.primaryBtn
+                      : cn(outlineFallbackBg, styles.outlineBtn),
+                    "border-[1.5px] border-solid",
+                    selectedChoice === null &&
+                    submitting === null &&
+                    "rsvp-choice-nudge rsvp-choice-nudge-delayed",
                   )}
                 >
-                  Tiếc quá, mình bận mất rồi
+                  <X className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Tiếc quá, tôi bận mất rồi</span>
                 </button>
               </div>
             </div>
@@ -978,8 +1040,8 @@ export function TemplateRsvpSection({
                           aria-pressed={active}
                           onClick={() => setDiet(opt.value)}
                           className={cn(
-                            "inline-flex h-9 cursor-pointer items-center justify-center rounded-lg text-xs font-medium transition-colors",
-                            active ? styles.primaryBtn : styles.outlineBtn,
+                            "inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border text-xs font-medium transition-colors",
+                            active ? styles.primaryBtn : cn(outlineFallbackBg, styles.outlineBtn),
                             locked && "cursor-default opacity-90",
                           )}
                         >

@@ -5,7 +5,7 @@
  * Tương thích ngược và tích hợp liền mạch với lib/sfx.ts.
  */
 
-import { playCoverSfx, CoverSfxType } from "./sfx";
+import { playCoverSfx, CoverSfxType, wasPureCoverFoleyPlayedRecently } from "./sfx";
 
 export { playCoverSfx, playGiftSfx } from "./sfx";
 export type { CoverSfxType, GiftSfxType } from "./sfx";
@@ -20,6 +20,9 @@ let lastSfxPlayTimestamp = 0;
  */
 export function playOpenCardSound(volume = 0.42, coverType: CoverSfxType = "envelope"): void {
   if (typeof window === "undefined") return;
+  if (coverType === "envelope" && wasPureCoverFoleyPlayedRecently()) {
+    return;
+  }
 
   const now = Date.now();
   if (now - lastSfxPlayTimestamp < 250) {

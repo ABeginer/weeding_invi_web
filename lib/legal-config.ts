@@ -33,9 +33,9 @@ export const LEGAL_INFO: LegalInfo = {
   businessLicense: "", // Điền số đăng ký kinh doanh khi có
   moitBadgeUrl: "", // Logo "Đã thông báo Bộ Công Thương" khi hoàn tất duyệt
   moitRegistrationUrl: "", // Link xác nhận trên online.gov.vn
-  effectiveDate: "20/11/2026",
+  effectiveDate: "01/04/2026",
   serviceType: "Nền tảng thiệp cưới điện tử trực tuyến (SaaS)",
-  operatingHours: "08:30 – 21:00 (Thứ Hai – Chủ Nhật, hỗ trợ trực tuyến 24/7)",
+  operatingHours: "08:30 – 21:00 (Thứ Hai – Chủ Nhật)",
 };
 
 export interface LegalPolicyMeta {

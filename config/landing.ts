@@ -2,9 +2,9 @@ import { SITE_NAME } from "./site";
 
 export const LANDING_COPY = {
   seo: {
-    title: `Thiệp cưới online | ${SITE_NAME}`,
+    title: `Thiệp Cưới Online & Thiệp Cưới Điện Tử | ${SITE_NAME}`,
     description:
-      "Tạo thiệp cưới online cá nhân hóa tên từng khách, chỉ trong vài phút. Miễn phí cho 20 khách, không cần thẻ.",
+      "Tạo thiệp cưới online hiện đại, cá nhân hóa tên từng khách gửi qua Zalo. Tích hợp xác nhận tham dự RSVP, mừng cưới QR và check-in chuyên nghiệp cùng Inviwedd.",
     ogAlt: `Thiệp cưới online ${SITE_NAME}`,
   },
   navbar: {
@@ -98,7 +98,7 @@ export const LANDING_COPY = {
     ],
     dashboardCtaTitle: "Trải nghiệm trọn bộ Dashboard quản lý cưới ngay hôm nay",
     dashboardCtaDescription:
-      "Bắt đầu miễn phí cho 20 khách mời đầu tiên — không cần thẻ, dùng thử thực tế trước khi nâng cấp gói Pro/VIP.",
+      "Bắt đầu miễn phí cho 20 khách mời đầu tiên — không cần thẻ, dùng thử thực tế trước khi nâng cấp gói Standard / Pro.",
     dashboardPrimaryCta: "Tạo thiệp miễn phí",
     dashboardSecondaryCta: "Xem bảng giá",
   },
@@ -126,7 +126,7 @@ export const LANDING_COPY = {
     copiedCodeLabel: "Đã chép mã",
     closeLabel: "Đóng",
     notice:
-      "Đây là giao diện đặt gói tạm thời — chưa thực hiện thanh toán trực tuyến tự động.",
+      "Chuyển khoản theo đúng mã đơn để hệ thống tự động kích hoạt gói trong 1–3 giây.",
   },
   planUpgradeModal: {
     title: "Mẫu thuộc gói nâng cao",
@@ -173,7 +173,7 @@ export const LANDING_COPY = {
     privacyTitle: "Chính sách bảo mật",
     termsTitle: "Điều khoản sử dụng",
     placeholderNote:
-      "Nội dung văn bản pháp lý đang được biên soạn và sẽ được cập nhật chính thức trước ngày phát hành.",
+      "Các điều khoản và chính sách được cập nhật định kỳ để bảo vệ quyền lợi khách hàng.",
     backHomeLabel: "← Quay lại trang chủ",
   },
 } as const;

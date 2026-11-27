@@ -14,6 +14,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
@@ -61,10 +62,10 @@ const BODY_FONT = "var(--font-be-vietnam), sans-serif";
 const EASE_IMPERIAL = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_TIMELINE = [
-  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm tại tiền sảnh Song Phụng Bích Đào" },
-  { time: "17:30", label: "Nghi thức Thành Hôn Vũ Điệu Phụng Hoàng & Trao lời hẹn ước trăm năm" },
+  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
+  { time: "17:30", label: "Cử hành Lễ Thành Hôn & Trao lời hẹn ước trăm năm" },
   { time: "18:00", label: "Khai tiệc mừng giao bôi & Nâng ly chúc phúc đôi uyên ương" },
-  { time: "19:30", label: "Giai điệu cung đình hoàng gia & Gắn kết thân tình hai họ" },
+  { time: "19:30", label: "Âm nhạc & Gắn kết thân tình hai họ" },
   { time: "20:30", label: "Tiễn khách & Trao quà cảm tạ tri ân" },
 ];
 
@@ -278,19 +279,7 @@ export default function SongPhungBichDaoTemplate({
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const defaultOrder = React.useMemo(
-    () => [
-      "family",
-      "calendar",
-      "map",
-      "dresscode",
-      "album",
-      "albumQr",
-      "gift",
-      "rsvp",
-    ],
-    []
-  );
+  const defaultOrder = CANONICAL_SECTION_ORDER;
 
   const sectionOrder = React.useMemo(() => {
     const order = data.sectionOrder || defaultOrder;
@@ -384,7 +373,7 @@ export default function SongPhungBichDaoTemplate({
                   media="(min-width: 768px)"
                   srcSet="/templates/song-phung-bich-dao/bg_desktop.webp"
                 />
-                <img
+                <img decoding="async"
                   src="/templates/song-phung-bich-dao/bg_mobile.webp"
                   alt="Nền nhung xanh ngọc Song Phụng Bích Đào"
                   className="w-full h-full object-cover"
@@ -446,13 +435,13 @@ export default function SongPhungBichDaoTemplate({
               />
 
               {/* Hoa Văn Lông Phụng Góc phoenix_corner.webp */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/song-phung-bich-dao/phoenix_corner.webp"
                 alt=""
                 aria-hidden="true"
                 className="pointer-events-none absolute top-2.5 left-2.5 w-11 sm:w-12 object-contain opacity-85 z-10"
               />
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/song-phung-bich-dao/phoenix_corner.webp"
                 alt=""
                 aria-hidden="true"
@@ -461,7 +450,7 @@ export default function SongPhungBichDaoTemplate({
 
               {/* Con Dấu Sáp Song Phụng Ngọc Lục & Vàng 24K */}
               <div className="relative z-20 mt-1 mb-3">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/song-phung-bich-dao/wax_seal_phoenix.webp"
                   alt="Song Phụng Hoàng Kim"
                   className="w-14 sm:w-16 h-auto object-contain drop-shadow-[0_4px_12px_rgba(17,56,42,0.35)]"
@@ -474,12 +463,6 @@ export default function SongPhungBichDaoTemplate({
                 style={{ fontFamily: BODY_FONT }}
               >
                 Trân Trọng Kính Mời
-              </p>
-              <p
-                className="text-[10px] sm:text-[11px] tracking-[0.15em] uppercase text-[#5D6E66] mb-3"
-                style={{ fontFamily: BODY_FONT }}
-              >
-                Vũ Điệu Phụng Hoàng
               </p>
 
               {/* Tên cặp đôi 3 dòng chuẩn với break-words */}
@@ -497,7 +480,7 @@ export default function SongPhungBichDaoTemplate({
               </div>
 
               {/* Dải phân cách Song Phụng vàng đồng */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/song-phung-bich-dao/divider_phoenix_gold.webp"
                 alt=""
                 aria-hidden="true"
@@ -585,16 +568,16 @@ export default function SongPhungBichDaoTemplate({
             {/* Khung Vòm Song Phụng ôm ảnh cưới */}
             <div className="relative w-full max-w-[320px] sm:max-w-[360px] aspect-[680/875] mx-auto flex items-center justify-center">
               {/* Lõi bên trong: Ảnh cặp đôi bo vòm khớp lòng khung vòm */}
-              <div className="absolute inset-x-[11%] top-[12%] bottom-[12%] rounded-t-full overflow-hidden bg-[#F7ECE6]">
+              <div className="absolute left-[9.5%] right-[11%] top-[1.8%] bottom-[2.5%] rounded-t-[999px] overflow-hidden bg-[#F7ECE6]">
                 {heroPhotoUrl ? (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={heroPhotoUrl}
                     alt={`${groomDisplayName} & ${brideDisplayName}`}
                     className="w-full h-full object-cover object-top transition-transform duration-700 hover:scale-105"
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#F7ECE6] to-[#EAE0D8]">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/song-phung-bich-dao/wax_seal_phoenix.webp"
                       alt="Song Phụng"
                       className="w-20 h-auto mb-3 opacity-90 drop-shadow-md"
@@ -603,14 +586,14 @@ export default function SongPhungBichDaoTemplate({
                       className="text-[#11382A] text-sm font-serif tracking-wider font-medium"
                       style={{ fontFamily: TITLE_FONT }}
                     >
-                      Vũ Điệu Phụng Hoàng
+                      Lễ Thành Hôn
                     </p>
                   </div>
                 )}
               </div>
 
               {/* Lớp khung vòm Phù Điêu Song Phụng & Hoa Đào đè lên trên (pointer-events-none) */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/song-phung-bich-dao/twin_phoenix_arch.webp"
                 alt="Khung vòm Song Phụng 24K"
                 aria-hidden="true"
@@ -619,7 +602,7 @@ export default function SongPhungBichDaoTemplate({
             </div>
 
             {/* Dải phân cách dưới Hero */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/song-phung-bich-dao/divider_phoenix_gold.webp"
               alt=""
               aria-hidden="true"
@@ -645,13 +628,13 @@ export default function SongPhungBichDaoTemplate({
                 />
 
                 {/* Góc lông phụng trang trí */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/song-phung-bich-dao/phoenix_corner.webp"
                   alt=""
                   aria-hidden="true"
                   className="pointer-events-none absolute top-2.5 left-2.5 w-10 sm:w-11 object-contain opacity-75"
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/song-phung-bich-dao/phoenix_corner.webp"
                   alt=""
                   aria-hidden="true"
@@ -680,7 +663,7 @@ export default function SongPhungBichDaoTemplate({
                     {/* Ảnh chân dung tròn viền vàng đồng 24K */}
                     <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 border-2 border-[#C69D4B] shadow-[0_4px_16px_rgba(198,157,75,0.25)] mb-4 bg-white overflow-hidden">
                       {groomPhotoUrl ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={groomPhotoUrl}
                           alt={groomDisplayName}
                           className="w-full h-full object-cover rounded-full"
@@ -725,7 +708,7 @@ export default function SongPhungBichDaoTemplate({
                     {/* Ảnh chân dung tròn viền vàng đồng 24K */}
                     <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 border-2 border-[#C69D4B] shadow-[0_4px_16px_rgba(198,157,75,0.25)] mb-4 bg-white overflow-hidden">
                       {bridePhotoUrl ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={bridePhotoUrl}
                           alt={brideDisplayName}
                           className="w-full h-full object-cover rounded-full"
@@ -882,6 +865,29 @@ export default function SongPhungBichDaoTemplate({
                   </div>
                 )}
 
+              </section>
+            )}
+
+            {/* ----------------------------------------------------
+                SECTION: SỰ KIỆN & ĐỊA ĐIỂM (map)
+                ---------------------------------------------------- */}
+            {!hiddenSections.has("map") && visibleEvents.length > 0 && (
+              <section
+                style={{ order: orderOf("map") }}
+                className="relative rounded-3xl p-6 sm:p-8 bg-white border border-[#E5CFA0]/70 shadow-[0_16px_40px_rgba(17,56,42,0.08)] overflow-hidden"
+              >
+                <div
+                  className="pointer-events-none absolute inset-2.5 rounded-2xl border border-dashed border-[#C69D4B]/30"
+                  aria-hidden="true"
+                />
+                <div className="relative z-10 text-center mb-6">
+                  <h3
+                    className="text-2xl sm:text-3xl text-[#11382A] font-serif"
+                    style={{ fontFamily: TITLE_FONT }}
+                  >
+                    Sự Kiện Cưới
+                  </h3>
+                </div>
                 {/* THỜI GIAN & ĐỊA ĐIỂM TIỆC (hỗ trợ đa lễ) */}
                 <div
                   className={cn(
@@ -919,18 +925,16 @@ export default function SongPhungBichDaoTemplate({
 
                         {/* Nút chỉ đường & Thêm vào lịch */}
                         <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-                          {!hiddenSections.has("map") && (
-                            <a
-                              href={directionsUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#11382A] text-white text-xs font-semibold tracking-wider uppercase transition-transform active:scale-95 hover:brightness-110 shadow-sm"
-                              style={{ fontFamily: BODY_FONT }}
-                            >
-                              <MapPin className="w-3.5 h-3.5 text-[#C69D4B]" />
-                              <span>Chỉ Đường</span>
-                            </a>
-                          )}
+                          <a
+                            href={directionsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#11382A] text-white text-xs font-semibold tracking-wider uppercase transition-transform active:scale-95 hover:brightness-110 shadow-sm"
+                            style={{ fontFamily: BODY_FONT }}
+                          >
+                            <MapPin className="w-3.5 h-3.5 text-[#C69D4B]" />
+                            <span>Chỉ Đường</span>
+                          </a>
                           <a
                             href={calendarLinks.google}
                             target="_blank"
@@ -1012,13 +1016,13 @@ export default function SongPhungBichDaoTemplate({
                 />
 
                 {/* Góc lông phụng trang trí */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/song-phung-bich-dao/phoenix_corner.webp"
                   alt=""
                   aria-hidden="true"
                   className="pointer-events-none absolute top-2.5 left-2.5 w-10 sm:w-11 object-contain opacity-75"
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/song-phung-bich-dao/phoenix_corner.webp"
                   alt=""
                   aria-hidden="true"
@@ -1046,7 +1050,7 @@ export default function SongPhungBichDaoTemplate({
                     className="relative aspect-[3/4] sm:aspect-[4/5] rounded-2xl overflow-hidden border border-[#E5CFA0]/80 shadow-[0_12px_36px_rgba(17,56,42,0.12)] cursor-pointer group bg-[#F7ECE6]"
                     onClick={() => setLightboxIndex(activePhotoIdx)}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={albumPhotos[activePhotoIdx]?.url}
                       alt={albumPhotos[activePhotoIdx]?.alt || `Ảnh cưới ${activePhotoIdx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1125,7 +1129,7 @@ export default function SongPhungBichDaoTemplate({
                               : "border-transparent opacity-60 hover:opacity-100"
                           )}
                         >
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={photo.url}
                             alt=""
                             className="w-full h-full object-cover"
@@ -1136,17 +1140,21 @@ export default function SongPhungBichDaoTemplate({
                   )}
                 </div>
 
-                {/* QR Album dành cho khách tải ảnh lên (chỉ hiện khi có url & không phải gói Free) */}
-                {data.plan !== "free" && !hiddenSections.has("albumQr") && (
-                  <div className="mt-8 pt-6 border-t border-[#E5CFA0]/40 flex flex-col items-center">
-                    <GuestAlbumQr
-                      slug={inviteSlug || weddingSlug}
-                      accentColor="#11382A"
-                      textColor="#163026"
-                      mutedColor="#5D6E66"
-                    />
-                  </div>
-                )}
+              </section>
+            )}
+
+            {/* QR Album dành cho khách tải ảnh lên (chỉ hiện khi có url & không phải gói Free) */}
+            {data.plan !== "free" && !hiddenSections.has("albumQr") && (inviteSlug || weddingSlug) && (
+              <section
+                style={{ order: orderOf("albumQr") }}
+                className="relative rounded-3xl p-6 sm:p-8 bg-white border border-[#E5CFA0]/70 shadow-[0_16px_40px_rgba(17,56,42,0.08)] overflow-hidden flex flex-col items-center"
+              >
+                <GuestAlbumQr
+                  slug={inviteSlug || weddingSlug}
+                  accentColor="#11382A"
+                  textColor="#163026"
+                  mutedColor="#5D6E66"
+                />
               </section>
             )}
 
@@ -1174,14 +1182,11 @@ export default function SongPhungBichDaoTemplate({
                     Gửi Gắm Yêu Thương
                   </span>
                   <h3
-                    className="text-2xl sm:text-3xl text-[#11382A] font-serif mt-1 mb-2"
+                    className="text-2xl sm:text-3xl text-[#11382A] font-serif mt-1 mb-4"
                     style={{ fontFamily: TITLE_FONT }}
                   >
                     Hộp Quà Chúc Phúc
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#5D6E66] leading-relaxed mb-4">
-                    Sự hiện diện của Quý khách là niềm hạnh phúc trọn vẹn nhất của hai gia đình. Nếu ở xa không tiện ghé chung vui, Quý khách có thể gửi lời chúc qua hộp quà nhỏ bên dưới.
-                  </p>
 
                   {/* Hộp quà nhung xanh ngọc 3 trạng thái tương tác */}
                   <div
@@ -1193,7 +1198,7 @@ export default function SongPhungBichDaoTemplate({
                     onMouseEnter={() => setBoxState("glow")}
                     onMouseLeave={() => setBoxState("normal")}
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={
                         boxState === "open"
                           ? "/templates/song-phung-bich-dao/gift_box_open.webp"
@@ -1270,7 +1275,7 @@ export default function SongPhungBichDaoTemplate({
               Lời cảm ơn ấm áp, không lặp lại ngày cưới
               ======================================================== */}
           <footer className="relative z-10 text-center pt-8 sm:pt-12 pb-16 border-t border-[#E5CFA0]/40">
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/song-phung-bich-dao/wax_seal_phoenix.webp"
               alt="Song Phụng"
               className="w-10 sm:w-12 h-auto mx-auto mb-4 opacity-85"

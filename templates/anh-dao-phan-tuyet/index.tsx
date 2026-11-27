@@ -15,6 +15,7 @@ import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playCoverSfx } from "@/lib/sfx";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import {
   getVisibleEvents,
   getNearestUpcomingEvent,
@@ -298,7 +299,7 @@ export default function AnhDaoPhanTuyetTemplate({
     const map = new Map<string, number>();
     const orderList = data.sectionOrder && data.sectionOrder.length > 0
       ? data.sectionOrder
-      : ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+      : CANONICAL_SECTION_ORDER;
     orderList.forEach((key, idx) => map.set(key, idx + 1));
     return map;
   }, [data.sectionOrder]);
@@ -376,7 +377,7 @@ export default function AnhDaoPhanTuyetTemplate({
                 srcSet="/templates/anh-dao-phan-tuyet/background.webp"
               />
             )}
-            <img
+            <img decoding="async"
               src="/templates/anh-dao-phan-tuyet/background-mobile.webp"
               alt="Mùa hoa anh đào"
               className="w-full h-full object-cover object-center"
@@ -395,13 +396,13 @@ export default function AnhDaoPhanTuyetTemplate({
             className="relative z-20 my-auto w-full max-w-[328px] sm:max-w-[380px] mx-auto rounded-3xl border border-[#D9A7A0]/50 bg-white/94 p-6 sm:p-8 text-center shadow-[0_20px_56px_rgba(122,52,71,0.10)] backdrop-blur-sm"
           >
             {/* Nhánh hoa góc trang trí bất đối xứng (trên-trái & dưới-phải lật 180°) */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/anh-dao-phan-tuyet/corner-sakura.webp"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute -top-3 -left-3 w-14 sm:w-16 object-contain z-10 opacity-90 drop-shadow-sm"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/anh-dao-phan-tuyet/corner-sakura.webp"
               alt=""
               aria-hidden="true"
@@ -410,7 +411,7 @@ export default function AnhDaoPhanTuyetTemplate({
 
             {/* Con dấu sáp phấn ngọc khắc bông anh đào */}
             <div className="relative mx-auto mb-3 w-16 h-16 sm:w-20 sm:h-20">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/anh-dao-phan-tuyet/wax-seal.webp"
                 alt="Con Dấu Sáp Hoa Anh Đào"
                 className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(122,52,71,0.18)]"
@@ -419,10 +420,10 @@ export default function AnhDaoPhanTuyetTemplate({
 
             {/* Tiêu đề thiệp */}
             <p
-              className="text-[11px] sm:text-xs uppercase tracking-[0.24em] font-medium text-[#D48A9B]"
+              className="text-[11px] sm:text-xs uppercase tracking-[0.16em] font-medium text-[#D48A9B]"
               style={{ fontFamily: BODY_FONT }}
             >
-              THIỆP BÁO HỶ &middot; MÙA YÊU
+              Thiệp mời tham dự lễ cưới
             </p>
 
             {/* Tên cặp đôi 3 dòng: Chú rể / & / Cô dâu */}
@@ -453,7 +454,7 @@ export default function AnhDaoPhanTuyetTemplate({
 
             {/* Dải nhánh hoa anh đào ngang */}
             <div className="my-3">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                 alt=""
                 aria-hidden="true"
@@ -553,7 +554,7 @@ export default function AnhDaoPhanTuyetTemplate({
 
             {/* Dải phân cách hoa anh đào */}
             <div className="my-4">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                 alt=""
                 aria-hidden="true"
@@ -566,7 +567,7 @@ export default function AnhDaoPhanTuyetTemplate({
               {/* Lớp ảnh cặp đôi đặt bên dưới */}
               {heroPhotoUrl ? (
                 <div className="absolute inset-[5%_7%_4%_7%] rounded-t-[140px] sm:rounded-t-[175px] overflow-hidden shadow-inner bg-[#FCEFF2]">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={heroPhotoUrl}
                     alt="Ảnh cưới đôi uyên ương"
                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
@@ -574,7 +575,7 @@ export default function AnhDaoPhanTuyetTemplate({
                 </div>
               ) : (
                 <div className="absolute inset-[5%_7%_4%_7%] rounded-t-[140px] sm:rounded-t-[175px] overflow-hidden flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#FFF0F3] to-[#FCEFF2] text-center border border-[#F5DCE2]">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/anh-dao-phan-tuyet/wax-seal.webp"
                     alt=""
                     className="w-16 h-16 sm:w-20 sm:h-20 opacity-85 mb-3"
@@ -586,13 +587,13 @@ export default function AnhDaoPhanTuyetTemplate({
                     {groomName} &amp; {brideName}
                   </p>
                   <p className="mt-1 text-xs text-[#8C6872] font-serif italic">
-                    Mùa Hoa Anh Đào
+                    Lễ Thành Hôn
                   </p>
                 </div>
               )}
 
               {/* Lớp vòm hoa anh đào sakura-arch.webp nằm trên ảnh */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/anh-dao-phan-tuyet/sakura-arch.webp"
                 alt="Khung Vòm Cành Anh Đào"
                 className="pointer-events-none absolute inset-0 w-full h-full object-contain z-10 drop-shadow-[0_10px_24px_rgba(122,52,71,0.12)]"
@@ -633,7 +634,7 @@ export default function AnhDaoPhanTuyetTemplate({
                     Trong niềm hân hoan và phúc lành của hai gia đình
                   </p>
                   <div className="my-3">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                       alt=""
                       aria-hidden="true"
@@ -772,7 +773,7 @@ export default function AnhDaoPhanTuyetTemplate({
                   Đếm Ngược Tới Ngày Chung Đôi
                 </h2>
                 <div className="my-3">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                     alt=""
                     aria-hidden="true"
@@ -892,7 +893,7 @@ export default function AnhDaoPhanTuyetTemplate({
                   Sự Kiện Cưới
                 </h2>
                 <div className="my-3">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                     alt=""
                     aria-hidden="true"
@@ -990,7 +991,7 @@ export default function AnhDaoPhanTuyetTemplate({
                     Nhịp Điệu Ngày Chung Vui
                   </h2>
                   <div className="my-3">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                       alt=""
                       aria-hidden="true"
@@ -1025,10 +1026,7 @@ export default function AnhDaoPhanTuyetTemplate({
                 {dressCodeSwatches.length > 0 && (
                   <div className="mt-8 pt-6 border-t border-[#F5DCE2] text-center">
                     <p className="text-xs uppercase tracking-widest font-semibold text-[#D48A9B]">
-                      DRESS CODE GỢI Ý
-                    </p>
-                    <p className="text-xs text-[#8C6872] mt-1 font-serif italic">
-                      Gợi ý sắc phục dịu nhẹ để cùng lưu giữ những khung hình tươi đẹp nhất
+                      TRANG PHỤC GỢI Ý
                     </p>
                     <div className="mt-4 flex items-center justify-center gap-4">
                       {dressCodeSwatches.map((color, i) => (
@@ -1064,7 +1062,7 @@ export default function AnhDaoPhanTuyetTemplate({
                   Lưu Giữ Mùa Yêu
                 </h2>
                 <div className="my-3">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                     alt=""
                     aria-hidden="true"
@@ -1078,7 +1076,7 @@ export default function AnhDaoPhanTuyetTemplate({
                     onClick={() => setLightboxIndex(activePhotoIdx)}
                     className="group relative aspect-[3/2] sm:aspect-[16/10] overflow-hidden rounded-2xl border border-[#F5DCE2] bg-[#FFF0F3] shadow-md cursor-pointer"
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={albumPhotos[activePhotoIdx]?.url}
                       alt={albumPhotos[activePhotoIdx]?.alt || `Ảnh kỷ niệm ${activePhotoIdx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1148,7 +1146,7 @@ export default function AnhDaoPhanTuyetTemplate({
                 style={{ order: orderOf("albumQr", 6) }}
                 className="relative rounded-3xl border border-[#F2D5DC] bg-white/80 p-6 sm:p-10 shadow-[0_12px_36px_rgba(217,167,160,0.10)] backdrop-blur-sm text-center"
               >
-                <GuestAlbumQr />
+                <GuestAlbumQr slug={weddingSlug} />
               </section>
             )}
 
@@ -1158,7 +1156,7 @@ export default function AnhDaoPhanTuyetTemplate({
                 ------------------------------------------------------------ */}
             {!hiddenSections.has("gift") && (
               <section
-                style={{ order: orderOf("gift", 5) }}
+                style={{ order: orderOf("gift", 7) }}
                 className="relative rounded-3xl border border-[#F2D5DC] bg-white/80 p-6 sm:p-10 shadow-[0_12px_36px_rgba(217,167,160,0.10)] backdrop-blur-sm text-center"
               >
                 <p className="text-[11px] sm:text-xs uppercase tracking-[0.24em] font-medium text-[#D48A9B]">
@@ -1171,7 +1169,7 @@ export default function AnhDaoPhanTuyetTemplate({
                   Gửi Trao Lời Chúc
                 </h2>
                 <div className="my-3">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                     alt=""
                     aria-hidden="true"
@@ -1191,7 +1189,7 @@ export default function AnhDaoPhanTuyetTemplate({
                     onClick={handleGiftClick}
                     className="group cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={
                         activeParcel === "active" || activeParcel === "open"
                           ? "/templates/anh-dao-phan-tuyet/gift-active.webp"
@@ -1222,29 +1220,6 @@ export default function AnhDaoPhanTuyetTemplate({
                 style={{ order: orderOf("rsvp", 8) }}
                 className="relative rounded-3xl border border-[#F2D5DC] bg-white/80 p-6 sm:p-10 shadow-[0_12px_36px_rgba(217,167,160,0.10)] backdrop-blur-sm"
               >
-                <div className="text-center mb-6">
-                  <p className="text-[11px] sm:text-xs uppercase tracking-[0.24em] font-medium text-[#D48A9B]">
-                    XÁC NHẬN THAM DỰ
-                  </p>
-                  <h2
-                    className="text-2xl sm:text-3xl font-bold text-[#7A3447] mt-1"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Gửi Lời Hồi Đáp &amp; Chúc Phúc
-                  </h2>
-                  <div className="my-3">
-                    <img
-                      src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
-                      alt=""
-                      aria-hidden="true"
-                      className="mx-auto w-32 sm:w-40 object-contain opacity-75"
-                    />
-                  </div>
-                  <p className="text-xs sm:text-sm text-[#8C6872] italic font-serif">
-                    Để gia đình chuẩn bị chu đáo nhất cho sự hiện diện của bạn
-                  </p>
-                </div>
-
                 <div className="[&_select]:!bg-white [&_select]:!text-[#6D4550] [&_option]:!bg-white [&_option]:!text-[#6D4550] [&_input]:!bg-[#FFF9FA] [&_input]:!text-[#6D4550] [&_textarea]:!bg-[#FFF9FA] [&_textarea]:!text-[#6D4550]">
                   <TemplateRsvpSection
                     data={data}
@@ -1283,7 +1258,7 @@ export default function AnhDaoPhanTuyetTemplate({
               ------------------------------------------------------------ */}
           <footer className="pt-8 sm:pt-12 pb-4 text-center">
             <div className="mb-4">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/anh-dao-phan-tuyet/divider-sakura.webp"
                 alt=""
                 aria-hidden="true"

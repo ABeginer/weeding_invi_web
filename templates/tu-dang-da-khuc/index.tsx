@@ -14,6 +14,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-types";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -53,11 +54,11 @@ const BODY_FONT = "var(--font-be-vietnam), sans-serif";
 const EASE_AMETHYST = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_TIMELINE = [
-  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm tại tiền sảnh Dạ Khúc Tử Đằng" },
-  { time: "17:30", label: "Nghi lễ Thành Hôn dưới rèm hoa tử đằng & Lời thề sắt son" },
-  { time: "18:00", label: "Dạ tiệc hoàng gia & Nâng ly rượu nồng chúc phúc" },
-  { time: "19:30", label: "Vũ khúc tình yêu & Hòa tấu thạch anh du dương" },
-  { time: "20:30", label: "Tiễn khách & Trao quà cảm tạ tri ân" },
+  { time: "16:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
+  { time: "17:30", label: "Cử hành Lễ Thành Hôn & Trao nhẫn cưới" },
+  { time: "18:00", label: "Khai tiệc & Nâng ly chúc phúc" },
+  { time: "19:30", label: "Hòa tấu âm nhạc & Giao lưu cùng khách mời" },
+  { time: "20:30", label: "Tiễn khách & Trao quà cảm tạ" },
 ];
 
 const DEFAULT_DRESS = ["#2B143D", "#D9B675", "#A882D6", "#F5EFFA"];
@@ -237,7 +238,7 @@ export function TuDangDaKhucTemplate({
   );
   const eventDateStr = targetEvent?.startsAt || data.date || "2027-03-20T10:00:00+07:00";
   const dateParts = formatWeddingDateParts(eventDateStr);
-  const lunarClean = formatLunarDateClean(eventDateStr);
+  const lunarClean = targetEvent?.lunarDate ? formatLunarDateClean(targetEvent.lunarDate) : "";
 
   const eventDays = React.useMemo(() => {
     const set = new Set<number>();
@@ -317,19 +318,7 @@ export function TuDangDaKhucTemplate({
     return new Set(data.hiddenSections || []);
   }, [data.hiddenSections]);
 
-  const defaultOrder = React.useMemo(
-    () => [
-      "family",
-      "map",
-      "album",
-      "albumQr",
-      "calendar",
-      "dresscode",
-      "gift",
-      "rsvp",
-    ],
-    []
-  );
+  const defaultOrder = CANONICAL_SECTION_ORDER;
 
   const sectionOrder = React.useMemo(() => {
     const order = data.sectionOrder || defaultOrder;
@@ -421,7 +410,7 @@ export function TuDangDaKhucTemplate({
                     }
                 }
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/tu-dang-da-khuc/wisteria-canopy.webp"
                   alt=""
                   aria-hidden="true"
@@ -430,7 +419,7 @@ export function TuDangDaKhucTemplate({
               </m.div>
 
               {/* Cụm hoa diên vĩ đặt gọn gàng ở góc dưới phải */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/tu-dang-da-khuc/iris-corner.webp"
                 alt=""
                 aria-hidden="true"
@@ -451,7 +440,7 @@ export function TuDangDaKhucTemplate({
                       : { scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4], transition: { duration: 3, repeat: Infinity, ease: "easeInOut" } }
                   }
                 />
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/tu-dang-da-khuc/amethyst-crest.webp"
                   alt="Trâm Thạch Anh Tử Đằng"
                   className="relative z-10 w-full h-full object-contain drop-shadow-md"
@@ -460,10 +449,10 @@ export function TuDangDaKhucTemplate({
 
               {/* Phụ đề phong cách */}
               <p
-                className="relative z-20 text-[11px] uppercase tracking-[0.3em] text-[#D9B675] font-semibold mb-2"
+                className="relative z-20 text-[11px] uppercase tracking-[0.15em] text-[#D9B675] font-semibold mb-2"
                 style={{ fontFamily: BODY_FONT }}
               >
-                {data.ui?.eyebrow || "The Wedding Invitation"}
+                {data.ui?.eyebrow || "Thiệp mời tham dự lễ cưới"}
               </p>
 
               {/* Tên cặp đôi 3 dòng Trắng Ngọc Ánh Tím #F8F4FC sắc nét */}
@@ -480,7 +469,7 @@ export function TuDangDaKhucTemplate({
 
               {/* Dải phân cách hoa văn vàng cổ & chùm tử đằng tím */}
               <div className="relative z-20 my-2.5 w-36 sm:w-44 flex justify-center">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/tu-dang-da-khuc/divider-wisteria.webp"
                   alt=""
                   aria-hidden="true"
@@ -548,7 +537,7 @@ export function TuDangDaKhucTemplate({
           <section className="relative w-full rounded-3xl bg-[#221230]/92 border border-[#D9B675]/50 p-6 sm:p-12 shadow-[0_20px_50px_rgba(8,3,14,0.7)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
             {/* Rèm hoa tử đằng rủ ở đỉnh khung */}
             <div className="pointer-events-none absolute -top-1 left-0 right-0 w-full flex justify-center z-10">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/tu-dang-da-khuc/wisteria-canopy.webp"
                 alt=""
                 aria-hidden="true"
@@ -557,13 +546,13 @@ export function TuDangDaKhucTemplate({
             </div>
 
             {/* 2 góc chéo trên-trái và dưới-phải gắn iris-corner.webp đối xứng */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/tu-dang-da-khuc/iris-corner.webp"
               alt=""
               aria-hidden="true"
               className="pointer-events-none absolute -top-3 -left-3 w-16 sm:w-20 object-contain opacity-80 z-10"
             />
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/tu-dang-da-khuc/iris-corner.webp"
               alt=""
               aria-hidden="true"
@@ -582,7 +571,7 @@ export function TuDangDaKhucTemplate({
                   filter: "blur(6px)",
                 }}
               />
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/tu-dang-da-khuc/amethyst-crest.webp"
                 alt="Trâm Thạch Anh Tử Đằng"
                 className="relative z-10 w-full h-full object-contain drop-shadow-md"
@@ -618,7 +607,7 @@ export function TuDangDaKhucTemplate({
 
             {/* Dải phân cách hoa văn vàng cổ */}
             <div className="relative z-20 w-full max-w-[280px] sm:max-w-[340px] mx-auto mt-6">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/tu-dang-da-khuc/divider-wisteria.webp"
                 alt="Divider"
                 className="w-full object-contain opacity-85"
@@ -635,13 +624,13 @@ export function TuDangDaKhucTemplate({
               <div style={{ order: orderOf("family") }}>
                 <section className="relative w-full rounded-3xl bg-[#221230]/92 border border-[#D9B675]/45 p-6 sm:p-10 shadow-[0_16px_40px_rgba(8,3,14,0.6)] backdrop-blur-md overflow-hidden">
                   {/* Hoa diên vĩ trang trí góc */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/tu-dang-da-khuc/iris-corner.webp"
                     alt=""
                     aria-hidden="true"
                     className="absolute -top-3 -left-3 w-16 sm:w-20 object-contain pointer-events-none opacity-40"
                   />
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/tu-dang-da-khuc/iris-corner.webp"
                     alt=""
                     aria-hidden="true"
@@ -653,14 +642,11 @@ export function TuDangDaKhucTemplate({
                       Hai Bên Gia Đình
                     </span>
                     <h2
-                      className="text-2xl sm:text-3xl text-[#F8F4FC] font-normal mb-2"
+                      className="text-2xl sm:text-3xl text-[#F8F4FC] font-normal mb-6"
                       style={{ fontFamily: TITLE_FONT }}
                     >
-                      Trân Trọng Báo Tin
+                      Thông Tin Gia Đình
                     </h2>
-                    <p className="text-xs sm:text-sm text-[#DFD3EC] max-w-[420px] mb-8">
-                      Lễ Thành Hôn của con chúng tôi được tổ chức với sự chứng kiến và chúc phúc của hai họ:
-                    </p>
 
                     {/* 2 Cột gia đình cao bằng nhau (items-stretch) */}
                     <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-stretch">
@@ -754,7 +740,7 @@ export function TuDangDaKhucTemplate({
                       const evtDateParts = formatWeddingDateParts(evtDateStr);
                       const evtLunar = evt.lunarDate
                         ? formatLunarDateClean(evt.lunarDate)
-                        : formatLunarDateClean(evtDateStr);
+                        : "";
                       const directionsUrl = getEventDirectionsUrl(evt);
 
                       return (
@@ -912,7 +898,7 @@ export function TuDangDaKhucTemplate({
                       className="relative w-full aspect-[4/5] sm:aspect-[3/4] max-w-[400px] rounded-2xl overflow-hidden shadow-2xl border border-[#D9B675]/60 cursor-pointer group"
                       onClick={() => setLightboxIndex(activePhotoIdx)}
                     >
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={albumPhotos[activePhotoIdx]?.url || "/photos/hero2.webp"}
                         alt="Ảnh cưới"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -956,12 +942,15 @@ export function TuDangDaKhucTemplate({
                     </div>
                   )}
 
-                  {/* QR tải ảnh khách mời (chỉ hiện ở gói trả phí) */}
-                  {!isFree && !hiddenSections.has("albumQr") && (
-                    <div className="mt-8 pt-6 border-t border-[#D9B675]/30 w-full flex justify-center">
-                      <GuestAlbumQr slug={weddingSlug} accentColor="#D9B675" textColor="#F8F4FC" mutedColor="#DFD3EC" />
-                    </div>
-                  )}
+                </section>
+              </div>
+            )}
+
+            {/* QR tải ảnh khách mời (chỉ hiện ở gói trả phí) */}
+            {!isFree && !hiddenSections.has("albumQr") && weddingSlug && (
+              <div style={{ order: orderOf("albumQr") }}>
+                <section className="relative w-full rounded-3xl bg-[#221230]/92 border border-[#D9B675]/45 p-6 sm:p-10 shadow-[0_16px_40px_rgba(8,3,14,0.6)] backdrop-blur-md flex flex-col items-center text-center overflow-hidden">
+                  <GuestAlbumQr slug={weddingSlug} accentColor="#D9B675" textColor="#F8F4FC" mutedColor="#DFD3EC" />
                 </section>
               </div>
             )}
@@ -1079,14 +1068,11 @@ export function TuDangDaKhucTemplate({
                     Gợi Ý Trang Phục
                   </span>
                   <h2
-                    className="text-2xl sm:text-3xl text-[#F8F4FC] font-normal mb-3"
+                    className="text-2xl sm:text-3xl text-[#F8F4FC] font-normal mb-6"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    Dress Code
+                    Trang Phục Gợi Ý
                   </h2>
-                  <p className="text-xs sm:text-sm text-[#DFD3EC] max-w-[420px] mb-6">
-                    Để buổi tiệc thêm phần trang trọng và đồng điệu, quý khách có thể chọn trang phục theo tông màu:
-                  </p>
 
                   {/* 4 vòng tròn màu Dress Code động có viền chỉ vàng mảnh */}
                   <div className="flex items-center justify-center gap-4 sm:gap-6 mb-12">
@@ -1154,14 +1140,11 @@ export function TuDangDaKhucTemplate({
                     Gửi Lời Chúc Phúc
                   </span>
                   <h2
-                    className="text-2xl sm:text-3xl text-[#F8F4FC] font-normal mb-3"
+                    className="text-2xl sm:text-3xl text-[#F8F4FC] font-normal mb-6"
                     style={{ fontFamily: TITLE_FONT }}
                   >
                     Hộp Mừng Cưới
                   </h2>
-                  <p className="text-xs sm:text-sm text-[#DFD3EC] max-w-[420px] mb-8">
-                    Sự hiện diện của quý khách là món quà quý giá nhất. Nếu muốn gửi tặng món quà chúc phúc từ phương xa, quý khách có thể chạm vào phong bì bên dưới:
-                  </p>
 
                   {/* Phong bì nhung tím hoa diên vĩ tương tác 3 trạng thái */}
                   <div
@@ -1180,7 +1163,7 @@ export function TuDangDaKhucTemplate({
                         filter: "blur(12px)",
                       }}
                     />
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={`/templates/tu-dang-da-khuc/gift-${activeParcel}.webp`}
                       alt="Hộp mừng cưới nhung tím"
                       className="relative z-10 w-full h-full object-contain drop-shadow-2xl"
@@ -1225,7 +1208,7 @@ export function TuDangDaKhucTemplate({
               ============================================================ */}
           <footer className="w-full flex flex-col items-center text-center pt-8 pb-12 border-t border-[#D9B675]/40">
             <div className="w-full max-w-[240px] sm:max-w-[300px] mb-4">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/tu-dang-da-khuc/divider-wisteria.webp"
                 alt="Divider"
                 className="w-full object-contain opacity-85"

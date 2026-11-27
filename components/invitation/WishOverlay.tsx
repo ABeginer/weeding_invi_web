@@ -55,7 +55,7 @@ export function WishOverlay() {
   );
 
   const node = (
-    <div className="pointer-events-none fixed bottom-1 left-1 z-50 w-[360px] max-w-[94%] sm:w-[400px]">
+    <div className="pointer-events-none fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 z-30 w-[340px] max-w-[calc(100vw-5rem)] sm:w-[360px]">
       <div className="mb-1 flex items-center justify-between gap-2 px-1">
         <span
           className="text-[9px] font-semibold uppercase tracking-[0.18em]"

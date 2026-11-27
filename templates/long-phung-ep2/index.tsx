@@ -8,6 +8,7 @@ import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
+import type { GuestDiet, GuestStatus } from "@/lib/types";
 import type { TemplateData, WeddingEvent } from "@/lib/wedding-types";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
@@ -154,7 +155,7 @@ function EnvelopeCover({
           {/* Ảnh phong bì */}
           <div className="relative aspect-[16/10.5] w-full overflow-hidden rounded-xl shadow-2xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <img decoding="async"
               src="/templates/long-phung-ep2/envelope-front.webp"
               alt="Thiệp cưới Long Phụng"
               className="h-full w-full object-cover"
@@ -169,7 +170,7 @@ function EnvelopeCover({
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/long-phung-ep2/seal-gold.webp"
                   alt="Mở thiệp"
                   className="h-full w-full object-contain drop-shadow-md"
@@ -234,19 +235,19 @@ function RoyalHeroSection({ data }: { data: TemplateData }) {
         {/* 4 Góc hoa văn vàng */}
         <div className="absolute top-0 left-0 w-12 h-12 p-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
+          <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
         </div>
         <div className="absolute top-0 right-0 w-12 h-12 p-1 -scale-x-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
+          <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
         </div>
         <div className="absolute bottom-0 left-0 w-12 h-12 p-1 -scale-y-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
+          <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
         </div>
         <div className="absolute bottom-0 right-0 w-12 h-12 p-1 -scale-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
+          <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
         </div>
       </div>
 
@@ -260,7 +261,7 @@ function RoyalHeroSection({ data }: { data: TemplateData }) {
           transition={{ duration: 0.8, ease: EASE }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep2/seal-gold.webp"
             alt="Song Hỷ"
             className="w-full h-full object-contain drop-shadow"
@@ -306,7 +307,7 @@ function RoyalHeroSection({ data }: { data: TemplateData }) {
         <div className="my-5 flex items-center justify-center">
           <div className="w-48 h-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/templates/long-phung-ep2/divider-gold.webp" alt="" className="w-full h-full object-contain" />
+            <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/divider-gold.webp" alt="" className="w-full h-full object-contain" />
           </div>
         </div>
 
@@ -348,7 +349,7 @@ function RoyalHeroSection({ data }: { data: TemplateData }) {
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep2/dragon.webp"
             alt="Rồng vàng"
             className="w-full object-contain drop-shadow"
@@ -377,7 +378,7 @@ function RoyalHeroSection({ data }: { data: TemplateData }) {
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/long-phung-ep2/phoenix.webp"
             alt="Phụng vàng"
             className="w-full object-contain drop-shadow"
@@ -410,19 +411,19 @@ function FormalInvitationSection({ data }: { data: TemplateData }) {
         {/* 4 Góc hoa văn vàng */}
         <div className="absolute top-2 left-2 w-8 h-8 opacity-75">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
+          <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
         </div>
         <div className="absolute top-2 right-2 w-8 h-8 opacity-75 -scale-x-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
+          <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
         </div>
         <div className="absolute bottom-2 left-2 w-8 h-8 opacity-75 -scale-y-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
+          <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
         </div>
         <div className="absolute bottom-2 right-2 w-8 h-8 opacity-75 -scale-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
+          <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/corner-gold.webp" alt="" className="w-full h-full object-contain" />
         </div>
 
         {/* Tiêu đề mục */}
@@ -460,7 +461,7 @@ function FormalInvitationSection({ data }: { data: TemplateData }) {
         <div className="my-6 flex justify-center">
           <div className="w-40 h-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/templates/long-phung-ep2/divider-gold.webp" alt="" className="w-full h-full object-contain" />
+            <img loading="lazy" decoding="async" src="/templates/long-phung-ep2/divider-gold.webp" alt="" className="w-full h-full object-contain" />
           </div>
         </div>
 
@@ -811,14 +812,14 @@ function TimelineGiftRsvpSection({
   initialRideNeeded,
 }: {
   data: TemplateData;
-  mode: any;
+  mode: "demo" | "preview" | "live";
   inviteSlug?: string;
   weddingSlug?: string;
   invitationMode?: "personal" | "public";
   guestName?: string | null;
-  initialStatus?: any;
+  initialStatus?: GuestStatus;
   initialPlusOnes?: number;
-  initialDiet?: any;
+  initialDiet?: GuestDiet | null;
   initialSongRequest?: string | null;
   initialRideNeeded?: boolean;
 }) {
@@ -936,7 +937,7 @@ function TimelineGiftRsvpSection({
                 {/* 3 Trạng thái cùng kích thước 330x446 chuẩn */}
                 <div className="relative h-48 w-36 sm:h-56 sm:w-40 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={
                       giftBoxState === "active"
                         ? "/templates/long-phung-ep2/gift-active.webp"

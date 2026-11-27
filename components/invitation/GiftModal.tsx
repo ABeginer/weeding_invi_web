@@ -70,6 +70,9 @@ export function GiftModal({
   const [copiedSide, setCopiedSide] = React.useState<"groom" | "bride" | null>(
     null,
   );
+  const [copyFailedSide, setCopyFailedSide] = React.useState<"groom" | "bride" | null>(
+    null,
+  );
   const closeButtonRef = React.useRef<HTMLButtonElement | null>(null);
 
   React.useEffect(() => {
@@ -82,6 +85,12 @@ export function GiftModal({
     document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
 
+    try {
+      window.dispatchEvent(
+        new CustomEvent("inviwedd:modal-state", { detail: { isOpen: true } }),
+      );
+    } catch {}
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
@@ -91,6 +100,11 @@ export function GiftModal({
     return () => {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      try {
+        window.dispatchEvent(
+          new CustomEvent("inviwedd:modal-state", { detail: { isOpen: false } }),
+        );
+      } catch {}
     };
   }, [open, onClose]);
 
@@ -129,11 +143,18 @@ export function GiftModal({
 
   /** VietQR tự sinh = tính năng Pro/VIP; Free chỉ được xem số tài khoản.
       Bên nào đã có ảnh QR tự tải thì không sinh VietQR cho bên đó nữa. */
-  const showVietQr =
-    allowQrImages &&
-    sides.some(
-      (side) => !side.qrUrl && Boolean(side.bankName) && Boolean(side.accountNumber),
-    );
+  const vietQrSides =
+    allowQrImages && coupleName
+      ? sides.filter(
+          (side) => !side.qrUrl && Boolean(side.bankName) && Boolean(side.accountNumber),
+        )
+      : [];
+  const vietQrSideIds = new Set(vietQrSides.map((s) => s.id));
+  // Không lặp lại thẻ tài khoản đã có trong VietQRGiftBox
+  const manualSides = sides.filter((side) => !vietQrSideIds.has(side.id));
+  const showVietQr = vietQrSides.length > 0;
+  const isDarkTone =
+    tone === "obsidian" || tone === "minred" || tone === "ruby" || tone === "velvet";
 
   const toneTheme =
     tone === "obsidian"
@@ -279,7 +300,11 @@ export function GiftModal({
   const handleCopyAccount = async (side: GiftSideData) => {
     if (!side.accountNumber) return;
     const ok = await copyTextSafe(side.accountNumber);
-    if (!ok) return;
+    if (!ok) {
+      setCopyFailedSide(side.id);
+      return;
+    }
+    setCopyFailedSide(null);
     setCopiedSide(side.id);
     window.setTimeout(() => {
       setCopiedSide((prev) => (prev === side.id ? null : prev));
@@ -390,14 +415,14 @@ export function GiftModal({
               </button>
             )}
           </div>
-        ) : (
+        ) : manualSides.length > 0 ? (
           <div
             className={cn(
               "mt-5 grid gap-4",
-              sides.length > 1 ? "sm:grid-cols-2" : "grid-cols-1",
+              manualSides.length > 1 ? "sm:grid-cols-2" : "grid-cols-1",
             )}
           >
-            {sides.map((side) => {
+            {manualSides.map((side) => {
               const isCopied = copiedSide === side.id;
               return (
                 <div
@@ -418,14 +443,19 @@ export function GiftModal({
                     </h3>
 
                     {side.qrUrl && (
-                      <div className="mx-auto w-40 overflow-hidden rounded-xl border border-current/15 bg-white p-2">
-                        <img
-                          src={side.qrUrl}
-                          alt={`Mã QR chuyển khoản ${side.title}`}
-                          width={160}
-                          height={160}
-                          className="aspect-square h-auto w-full object-contain"
-                        />
+                      <div className="space-y-1.5">
+                        <div className="mx-auto w-40 overflow-hidden rounded-xl border border-current/15 bg-white p-2">
+                          <img
+                            src={side.qrUrl}
+                            alt={`Mã QR chuyển khoản ${side.title}`}
+                            width={160}
+                            height={160}
+                            className="aspect-square h-auto w-full object-contain"
+                          />
+                        </div>
+                        <p className={cn("text-center text-[10px]", toneTheme.muted)}>
+                          Trên iPhone / Zalo: nhấn giữ ảnh QR để lưu về máy
+                        </p>
                       </div>
                     )}
 
@@ -451,7 +481,7 @@ export function GiftModal({
                           <dt className={cn("text-[11px]", toneTheme.muted)}>
                             Số tài khoản
                           </dt>
-                          <dd className="font-mono text-sm font-semibold tracking-wide">
+                          <dd className="select-all font-mono text-sm font-semibold tracking-wide">
                             {side.accountNumber}
                           </dd>
                         </div>
@@ -481,6 +511,12 @@ export function GiftModal({
                       </button>
                     )}
 
+                    {copyFailedSide === side.id && (
+                      <p className={cn("text-center text-[10px]", toneTheme.muted)}>
+                        Chạm giữ vào số tài khoản phía trên để sao chép thủ công.
+                      </p>
+                    )}
+
                     {side.qrUrl && (
                       <a
                         href={side.qrUrl}
@@ -500,7 +536,7 @@ export function GiftModal({
               );
             })}
           </div>
-        )}
+        ) : null}
 
         {/* VietQR tự sinh là quyền của gói Pro/VIP: bản Free chỉ hiện số tài khoản.
             Nếu chủ thiệp đã tự tải ảnh QR thì ẩn VietQR của bên đó để không trùng. */}
@@ -508,15 +544,14 @@ export function GiftModal({
           <VietQRGiftBox
             coupleName={coupleName}
             guestName={guestName}
-            sides={sides
-              .filter((side) => !side.qrUrl && side.bankName && side.accountNumber)
-              .map((side) => ({
-                id: side.id,
-                label: side.title,
-                bankName: side.bankName,
-                accountName: side.accountName,
-                accountNumber: side.accountNumber,
-              }))}
+            isDark={isDarkTone}
+            sides={vietQrSides.map((side) => ({
+              id: side.id,
+              label: side.title,
+              bankName: side.bankName,
+              accountName: side.accountName,
+              accountNumber: side.accountNumber,
+            }))}
           />
         )}
 

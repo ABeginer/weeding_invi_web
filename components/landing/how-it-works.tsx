@@ -65,7 +65,10 @@ export function HowItWorks() {
               className="relative flex flex-col justify-between rounded-3xl border border-[#E8E2D9] bg-white p-7 shadow-2xs transition-all duration-300 hover:border-[#B89B72]/60 hover:shadow-sm"
             >
               <div>
-                <span className="font-serif text-5xl font-light text-[#B89B72]/50 select-none">
+                <span
+                  aria-hidden="true"
+                  className="font-serif text-5xl font-light text-[#B89B72]/50 select-none"
+                >
                   {step.number}
                 </span>
 
@@ -78,7 +81,7 @@ export function HowItWorks() {
                 </p>
               </div>
 
-              <div className="mt-6 border-t border-[#E8E2D9]/60 pt-4 text-xs font-medium text-[#B89B72]">
+              <div className="mt-6 border-t border-[#E8E2D9]/60 pt-4 text-xs font-medium text-[#8A6838]">
                 Bước {step.number} / 03
               </div>
             </ScrollReveal>

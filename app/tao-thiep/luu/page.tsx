@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SaveDraftPageClient } from "@/components/create/SaveDraftPageClient";
-import { SITE_NAME } from "@/config/site";
+import { AUTH0_EMAIL_CLAIM, SITE_NAME } from "@/config/site";
 import { getAuth0 } from "@/lib/auth0";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function SaveDraftPage() {
   }
 
   const userObj = session.user as Record<string, unknown> | undefined;
-  const rawEmail = userObj?.email ?? userObj?.["https://thiepcuoi/email"];
+  const rawEmail = userObj?.email ?? userObj?.[AUTH0_EMAIL_CLAIM];
   const userEmail = typeof rawEmail === "string" && rawEmail.trim() ? rawEmail.trim() : null;
 
   return <SaveDraftPageClient userEmail={userEmail} />;

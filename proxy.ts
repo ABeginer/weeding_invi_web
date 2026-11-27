@@ -34,17 +34,25 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(targetUrl, 301);
   }
 
-  const auth0 = getAuth0();
+  const pathname = request.nextUrl.pathname;
 
-  if (request.nextUrl.pathname.startsWith("/auth")) {
-    return auth0.middleware(request);
+  if (pathname.startsWith("/auth")) {
+    const res = await getAuth0().middleware(request);
+    if (pathname === "/auth/profile" && res.status === 401) {
+      return new NextResponse(null, {
+        status: 204,
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
+    return res;
   }
 
-  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+  if (pathname.startsWith("/dashboard")) {
+    const auth0 = getAuth0();
     const session = await auth0.getSession(request);
     if (!session) {
       const returnTo = encodeURIComponent(
-        `${request.nextUrl.pathname}${request.nextUrl.search}`,
+        `${pathname}${request.nextUrl.search}`,
       );
       return NextResponse.redirect(
         new URL(`/auth/login?returnTo=${returnTo}`, request.url),

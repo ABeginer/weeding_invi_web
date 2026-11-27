@@ -15,6 +15,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { isTurnstileEnabled, TurnstileWidget } from "@/components/TurnstileWidget";
 import { compressImage } from "@/lib/image/compress";
 import { cn } from "@/lib/utils";
 
@@ -46,39 +47,71 @@ export function GuestUploadPortal({
   const [successCount, setSuccessCount] = React.useState(0);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [showGuideHelp, setShowGuideHelp] = React.useState(false);
+  const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = React.useState(0);
+  const turnstileRequired = isTurnstileEnabled();
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const selectedItemsRef = React.useRef<SelectedImageItem[]>([]);
 
-  // Dọn dẹp URL.createObjectURL khi unmount hoặc đổi ảnh
+  React.useEffect(() => {
+    selectedItemsRef.current = selectedItems;
+  }, [selectedItems]);
+
+  // Chỉ thu hồi URL.createObjectURL khi unmount (tránh revoke nhầm thumbnail còn lại khi thêm/bớt ảnh)
   React.useEffect(() => {
     return () => {
-      selectedItems.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      selectedItemsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
     };
-  }, [selectedItems]);
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setErrorMessage(null);
-    const newFiles = Array.from(files).slice(0, 5); // Tối đa 5 ảnh mỗi đợt
-
-    const newItems: SelectedImageItem[] = [];
-
-    for (const file of newFiles) {
-      if (!file.type.startsWith("image/")) {
-        setErrorMessage("Vui lòng chỉ chọn các tệp hình ảnh (JPG, PNG, WebP).");
-        continue;
-      }
-      const previewUrl = URL.createObjectURL(file);
-      newItems.push({
-        id: crypto.randomUUID(),
-        file,
-        previewUrl,
-      });
+    const remaining = Math.max(0, 5 - selectedItems.length);
+    if (remaining === 0) {
+      setErrorMessage("Bạn đã chọn đủ tối đa 5 ảnh mỗi đợt. Hãy gửi trước hoặc bỏ bớt ảnh để chọn thêm.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
 
-    setSelectedItems((prev) => [...prev, ...newItems].slice(0, 5));
+    const pickedFiles = Array.from(files);
+    const validFiles: File[] = [];
+    let hasInvalidFile = false;
+
+    for (const file of pickedFiles) {
+      const isImage =
+        file.type.startsWith("image/") ||
+        /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name);
+      if (!isImage) {
+        hasInvalidFile = true;
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    const acceptedFiles = validFiles.slice(0, remaining);
+    const truncatedCount = validFiles.length - acceptedFiles.length;
+
+    const newItems: SelectedImageItem[] = acceptedFiles.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    if (hasInvalidFile) {
+      setErrorMessage("Một số tệp không phải hình ảnh đã bị bỏ qua (hỗ trợ JPG, PNG, WebP, HEIC).");
+    } else if (truncatedCount > 0) {
+      setErrorMessage(
+        `Chỉ chọn tối đa 5 ảnh mỗi đợt — đã lấy ${acceptedFiles.length} ảnh đầu tiên (bỏ qua ${truncatedCount} ảnh vượt giới hạn).`,
+      );
+    }
+
+    if (newItems.length > 0) {
+      setSelectedItems((prev) => [...prev, ...newItems]);
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -92,54 +125,62 @@ export function GuestUploadPortal({
 
   const handleUploadAll = async () => {
     if (selectedItems.length === 0) return;
+    if (turnstileRequired && !turnstileToken) {
+      setErrorMessage("Vui lòng hoàn tất xác thực bảo mật trước khi gửi ảnh.");
+      return;
+    }
     setIsUploading(true);
     setErrorMessage(null);
 
-    let uploadedCount = 0;
-
     try {
+      const formData = new FormData();
       for (const item of selectedItems) {
         // Nén ảnh sang WebP client-side trước khi gửi
         let blobToSend: Blob = item.file;
+        let fileNameToSend = item.file.name;
         try {
           const compressed = await compressImage(item.file, "gallery");
           blobToSend = compressed.blob;
+          fileNameToSend = item.file.name.replace(/\.[^/.]+$/, ".webp");
         } catch {
           blobToSend = item.file;
         }
+        formData.append("files", blobToSend, fileNameToSend);
+      }
+      if (guestName.trim()) formData.append("guestName", guestName.trim());
+      if (wishMessage.trim()) formData.append("wishMessage", wishMessage.trim());
+      if (turnstileToken) formData.append("turnstileToken", turnstileToken);
 
-        const formData = new FormData();
-        formData.append("file", blobToSend, item.file.name.replace(/\.[^/.]+$/, ".webp"));
-        if (guestName.trim()) formData.append("guestName", guestName.trim());
-        if (wishMessage.trim()) formData.append("wishMessage", wishMessage.trim());
+      const res = await fetch(`/api/public/wedding/${encodeURIComponent(weddingSlug)}/photos`, {
+        method: "POST",
+        body: formData,
+      });
 
-        const res = await fetch(`/api/public/wedding/${encodeURIComponent(weddingSlug)}/photos`, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => null);
-          throw new Error(data?.error || "Gặp lỗi khi tải ảnh lên.");
-        }
-
-        uploadedCount += 1;
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Gặp lỗi khi tải ảnh lên.");
       }
 
-      setSuccessCount(uploadedCount);
+      setSuccessCount(selectedItems.length);
+      selectedItems.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       setUploadSuccess(true);
       setSelectedItems([]);
+      setTurnstileToken(null);
+      setTurnstileResetSignal((n) => n + 1);
       onPhotoUploaded?.();
     } catch (err) {
       setErrorMessage(
         err instanceof Error ? err.message : "Không thể gửi ảnh lúc này. Vui lòng thử lại.",
       );
+      setTurnstileToken(null);
+      setTurnstileResetSignal((n) => n + 1);
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleResetForMore = () => {
+    selectedItems.forEach((item) => URL.revokeObjectURL(item.previewUrl));
     setUploadSuccess(false);
     setSelectedItems([]);
     setErrorMessage(null);
@@ -260,9 +301,8 @@ export function GuestUploadPortal({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             multiple
-            capture="environment"
             onChange={handleFileChange}
             className="hidden"
           />
@@ -286,7 +326,7 @@ export function GuestUploadPortal({
             </button>
 
             <p className="mt-2 text-[11px] text-[#6B655E]">
-              Hỗ trợ chọn cùng lúc đến 5 ảnh · JPG, PNG, WebP
+              Hỗ trợ chọn cùng lúc đến 5 ảnh · JPG, PNG, WebP, HEIC
             </p>
           </div>
 
@@ -306,6 +346,7 @@ export function GuestUploadPortal({
                     <img
                       src={item.previewUrl}
                       alt={`Ảnh #${idx + 1}`}
+                      decoding="async"
                       className="h-full w-full object-cover"
                     />
                     <button
@@ -356,6 +397,17 @@ export function GuestUploadPortal({
             </div>
           </div>
 
+          {/* Turnstile Widget */}
+          {turnstileRequired && (
+            <div className="flex justify-center pt-1">
+              <TurnstileWidget
+                theme="light"
+                onTokenChange={setTurnstileToken}
+                resetSignal={turnstileResetSignal}
+              />
+            </div>
+          )}
+
           {/* Error Message */}
           {errorMessage && (
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
@@ -367,11 +419,11 @@ export function GuestUploadPortal({
           <div>
             <button
               type="button"
-              disabled={isUploading || selectedItems.length === 0}
+              disabled={isUploading || selectedItems.length === 0 || (turnstileRequired && !turnstileToken)}
               onClick={handleUploadAll}
               className={cn(
                 "inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full font-semibold text-xs text-white shadow-sm transition-all active:scale-98",
-                selectedItems.length > 0 && !isUploading
+                selectedItems.length > 0 && !isUploading && (!turnstileRequired || turnstileToken)
                   ? "bg-[#7A1C24] hover:bg-[#5E141B]"
                   : "bg-[#7A1C24]/50 cursor-not-allowed",
               )}

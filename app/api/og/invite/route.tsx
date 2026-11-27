@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
-
-export const runtime = "edge";
+import { rateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -10,6 +9,9 @@ function clean(value: string | null, max: number): string {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimit(request, "og-invite", 60, 60_000);
+  if (!limited.ok) return tooManyRequests(limited);
+
   const url = new URL(request.url);
   const couple = clean(url.searchParams.get("couple"), 80) || "Thiệp cưới online";
   const guest = clean(url.searchParams.get("guest"), 60);

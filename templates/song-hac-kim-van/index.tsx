@@ -5,8 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   MapPin,
-  Calendar,
-  Clock,
   Heart,
   ExternalLink,
 } from "lucide-react";
@@ -15,8 +13,15 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
-import type { TemplateData, WeddingEvent, WeddingPlan } from "@/lib/wedding-types";
+import type { TemplateData, WeddingPlan } from "@/lib/wedding-types";
+import {
+  ImperialReveal,
+  HeroReveal,
+  GoldButtonShimmer,
+  IMPERIAL_EASE,
+} from "../shared/ImperialMotion";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateLightboxModal } from "../shared/TemplateOverlays";
@@ -24,37 +29,18 @@ import type { WeddingTemplateProps } from "../types";
 
 /* ============================================================
    BẢNG MÀU CHÍNH THỨC: SONG HẠC KIM VÂN
-   - Đỏ son sơn mài (Imperial Vermilion Lacquer — Nền chính & Bìa): #6E0F14 (sâu #4A080C, nhấn #8C161C)
-   - Vàng kim ánh cổ (Antique Imperial Gold — Viền khung, Song Hỷ, sóng thủy ba, chỉ nhấn): #D4AF6A (sáng #F2DCA6, trầm #A88440)
-   - Lam chàm hoàng cung (Midnight Indigo — Mây tường vân, trái tim lịch, điểm nhấn quý tộc): #12233B
-   - Kem giấy dó (Warm Heritage Ivory — Thẻ nội dung chính): #FAF5EC (thẻ phụ #FFFFFF)
-   - Chữ chính trên nền kem giấy dó: #5C0D12 (tiêu đề) / #2B1B18 (nội dung, tương phản cao)
    ============================================================ */
 
 const LACQUER_RED = "#6E0F14";
 const LACQUER_DARK = "#4A080C";
-const LACQUER_ACCENT = "#8C161C";
 
 const GOLD_ANTIQUE = "#D4AF6A";
 const GOLD_LIGHT = "#F2DCA6";
-const GOLD_DEEP = "#A88440";
 const GOLD_BORDER = "rgba(212, 175, 106, 0.55)";
-const GOLD_SUBTLE = "rgba(212, 175, 106, 0.25)";
-
-const MIDNIGHT_INDIGO = "#12233B";
-
-const HERITAGE_IVORY = "#FAF5EC";
-const CARD_WHITE = "#FFFFFF";
-
-const TEXT_TITLE = "#5C0D12";
-const TEXT_BODY = "#2B1B18";
-const TEXT_MUTED = "#6B5A55";
 
 const TITLE_FONT = "var(--font-playfair), Georgia, serif";
 const NAME_FONT = "var(--font-cormorant), Georgia, serif";
 const BODY_FONT = "var(--font-be-vietnam), sans-serif";
-
-const EASE_IMPERIAL = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_TIMELINE = [
   { time: "17:30", label: "Đón tiếp quan khách & Chụp ảnh lưu niệm" },
@@ -131,24 +117,19 @@ function ImperialGoldDust({ count = 18 }: { count?: number }) {
 }
 
 /* ============================================================
-   LỚP 1: MÀN HÌNH BÌA MỞ THIỆP — HIỆU ỨNG "RẼ MÂY KHAI THIỆP"
-   - Khóa h-full overflow-hidden khi contained / 100dvh trên thật
-   - Thẻ sơn mài đỏ son trầm (#6E0F14 với viền đôi chỉ vàng cổ #D4AF6A)
-   - 4 góc hoa mây tường vân corner-tl.webp đối xứng bằng CSS transforms
-   - Ấn triện sáp vàng wax-seal.webp (Song Hỷ 囍)
-   - Tên cặp đôi 3 dòng chuẩn typographic serif màu vàng champagne
-   - Animation mở bìa: 2 lớp cánh màn sơn mài tách ngang sang 2 bên
+   LỚP 1: MÀN HÌNH BÌA — "BÓC ẤN SÁP RẼ MÂY NGŨ SẮC" (~2.05s)
    ============================================================ */
 interface EnvelopeCoverProps {
   data: TemplateData;
   guestName?: string | null;
   contained: boolean;
-  onOpen: () => void;
+  coverPhase: "idle" | "seal" | "clouds";
+  onOpenStart: () => void;
 }
 
-function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProps) {
-  const [openingStage, setOpeningStage] = React.useState(false);
+function EnvelopeCover({ data, guestName, contained, coverPhase, onOpenStart }: EnvelopeCoverProps) {
   const reduce = useReducedMotion();
+  const closing = coverPhase !== "idle";
 
   const visibleEvents = getVisibleEvents(data);
   const targetEvent = getNearestUpcomingEvent(visibleEvents, data.date);
@@ -160,17 +141,8 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
     ? formatLunarDateClean(targetEvent.lunarDate)
     : "06 tháng 09 năm Ất Tỵ";
 
-  const handleOpenClick = () => {
-    if (openingStage) return;
-    setOpeningStage(true);
-    playOpenCardSound();
-    setTimeout(() => {
-      onOpen();
-    }, 650);
-  };
-
   return (
-    <div
+    <m.div
       className={cn(
         "relative flex w-full flex-col items-center justify-center overflow-hidden select-none",
         contained ? "h-full min-h-full" : "min-h-screen-dvh min-h-screen",
@@ -178,6 +150,11 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
       style={{
         background: `radial-gradient(circle at 50% 35%, #8C161C 0%, ${LACQUER_RED} 55%, ${LACQUER_DARK} 100%)`,
       }}
+      animate={
+        coverPhase === "clouds"
+          ? { opacity: 0, transition: { duration: 0.7, delay: 0.65, ease: IMPERIAL_EASE } }
+          : { opacity: 1 }
+      }
     >
       {/* Background Texture Mobile */}
       <div
@@ -187,21 +164,39 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
 
       <ImperialGoldDust count={18} />
 
-      {/* Hai lớp cánh rèm sơn mài / mây rẽ ngang khi mở (chỉ kích hoạt khi openingStage, nằm dưới thẻ z-20) */}
-      {openingStage && !reduce && (
-        <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden">
+      {/* Hai tầng màn mây đỏ son rẽ mềm sang trái/phải kiểu lụa khi Pha 2 (clouds) kích hoạt */}
+      {closing && !reduce && (
+        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
           <m.div
-            className="absolute inset-y-0 left-0 w-1/2 border-r border-[#D4AF6A]/30 bg-[#4A080C]/90"
+            className="absolute inset-y-0 left-0 w-1/2 border-r border-[#D4AF6A]/45 bg-gradient-to-r from-[#4A080C] to-[#6E0F14]/95 shadow-2xl flex items-center justify-end"
             initial={{ x: "0%" }}
-            animate={{ x: "-100%" }}
-            transition={{ duration: 0.7, ease: EASE_IMPERIAL }}
-          />
+            animate={coverPhase === "clouds" ? { x: "-105%" } : { x: "0%" }}
+            transition={{ duration: 1.25, ease: IMPERIAL_EASE }}
+          >
+            <img
+              loading="eager"
+              decoding="async"
+              src="/templates/song-hac-kim-van/divider-cloud.webp"
+              alt=""
+              aria-hidden="true"
+              className="w-24 opacity-40 -mr-12 object-contain"
+            />
+          </m.div>
           <m.div
-            className="absolute inset-y-0 right-0 w-1/2 border-l border-[#D4AF6A]/30 bg-[#4A080C]/90"
+            className="absolute inset-y-0 right-0 w-1/2 border-l border-[#D4AF6A]/45 bg-gradient-to-l from-[#4A080C] to-[#6E0F14]/95 shadow-2xl flex items-center justify-start"
             initial={{ x: "0%" }}
-            animate={{ x: "100%" }}
-            transition={{ duration: 0.7, ease: EASE_IMPERIAL }}
-          />
+            animate={coverPhase === "clouds" ? { x: "105%" } : { x: "0%" }}
+            transition={{ duration: 1.25, ease: IMPERIAL_EASE }}
+          >
+            <img
+              loading="eager"
+              decoding="async"
+              src="/templates/song-hac-kim-van/divider-cloud.webp"
+              alt=""
+              aria-hidden="true"
+              className="w-24 opacity-40 -ml-12 -scale-x-100 object-contain"
+            />
+          </m.div>
         </div>
       )}
 
@@ -217,36 +212,35 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
         }}
         initial={{ opacity: 0, scale: 0.94, y: 15 }}
         animate={
-          openingStage
-            ? { opacity: 0, scale: 0.92, y: -25 }
-            : { opacity: 1, scale: 1, y: 0 }
+          coverPhase === "clouds"
+            ? { opacity: 0, scale: 0.94, y: -24, transition: { duration: 0.65, ease: IMPERIAL_EASE } }
+            : { opacity: 1, scale: 1, y: 0, transition: { duration: 0.65, ease: IMPERIAL_EASE } }
         }
-        transition={{ duration: 0.65, ease: EASE_IMPERIAL }}
       >
         {/* Khung viền đôi chỉ vàng cổ & 4 góc mây tường vân ôm sát */}
         <div className="pointer-events-none absolute inset-3 rounded-2xl border border-[#D4AF6A]/70">
           <div className="absolute inset-1 rounded-xl border border-[#D4AF6A]/35" />
 
           {/* 4 Góc hoa mây tường vân từ corner-tl.webp dùng CSS transforms */}
-          <img
+          <img loading="eager" decoding="async"
             src="/templates/song-hac-kim-van/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute top-0 left-0 h-auto w-10 opacity-85 sm:w-12 md:w-14"
             aria-hidden="true"
           />
-          <img
+          <img loading="eager" decoding="async"
             src="/templates/song-hac-kim-van/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute top-0 right-0 h-auto w-10 -scale-x-100 opacity-85 sm:w-12 md:w-14"
             aria-hidden="true"
           />
-          <img
+          <img loading="eager" decoding="async"
             src="/templates/song-hac-kim-van/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute bottom-0 left-0 h-auto w-10 -scale-y-100 opacity-85 sm:w-12 md:w-14"
             aria-hidden="true"
           />
-          <img
+          <img loading="eager" decoding="async"
             src="/templates/song-hac-kim-van/corner-tl.webp"
             alt=""
             className="pointer-events-none absolute bottom-0 right-0 h-auto w-10 -scale-100 opacity-85 sm:w-12 md:w-14"
@@ -254,39 +248,49 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
           />
         </div>
 
-        {/* Ấn triện Song Hỷ vàng kim (Wax Seal) */}
+        {/* Ấn triện Song Hỷ vàng kim (Wax Seal) xoay 14° nứt tia sáng ấm áp Pha 1 */}
         <m.div
           className="relative my-1 flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={
-            openingStage
-              ? { scale: 1.15, rotate: 8, opacity: 0 }
-              : { scale: 1, rotate: 0, opacity: 1 }
+            coverPhase === "seal"
+              ? { scale: 1.12, rotate: 14, opacity: 1 }
+              : coverPhase === "clouds"
+                ? { scale: 1.15, rotate: 14, opacity: 0 }
+                : { scale: 1, rotate: 0, opacity: 1 }
           }
-          transition={{ duration: 0.7, delay: 0.1, ease: EASE_IMPERIAL }}
+          transition={{ duration: 0.65, ease: IMPERIAL_EASE }}
         >
-          {/* Quầng sáng hào quang ấm */}
-          <m.div
-            className="pointer-events-none absolute inset-0 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(242,220,166,0.45) 0%, rgba(212,175,106,0.12) 65%, transparent 80%)",
-            }}
-            animate={
-              reduce
-                ? {}
-                : {
-                  scale: [1, 1.18, 1],
-                  opacity: [0.65, 0.95, 0.65],
-                }
-            }
-            transition={{
-              duration: 3.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          <img
+          {!reduce && (
+            <m.div
+              className="pointer-events-none absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(242,220,166,0.45) 0%, rgba(212,175,106,0.12) 65%, transparent 80%)",
+              }}
+              animate={{ scale: [1, 1.18, 1], opacity: [0.6, 0.95, 0.6] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )}
+          {coverPhase === "seal" && !reduce && (
+            <>
+              <m.span
+                aria-hidden="true"
+                className="pointer-events-none absolute h-20 w-20 rounded-full border border-[#F2DCA6]/85"
+                initial={{ scale: 0.75, opacity: 0.9 }}
+                animate={{ scale: 2.7, opacity: 0 }}
+                transition={{ duration: 0.85, ease: IMPERIAL_EASE }}
+              />
+              <m.span
+                aria-hidden="true"
+                className="pointer-events-none absolute h-16 w-16 rounded-full border border-[#D4AF6A]/65"
+                initial={{ scale: 0.65, opacity: 0.8 }}
+                animate={{ scale: 2.1, opacity: 0 }}
+                transition={{ duration: 0.8, delay: 0.16, ease: IMPERIAL_EASE }}
+              />
+            </>
+          )}
+          <img loading="eager" decoding="async"
             src="/templates/song-hac-kim-van/wax-seal.webp"
             alt="Ấn triện Song Hỷ"
             className="relative z-10 h-full w-full object-contain drop-shadow-lg"
@@ -306,7 +310,7 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
           <div
             className="my-2 rounded-full px-4 py-1"
             style={{
-              backgroundColor: "rgba(18, 35, 59, 0.75)",
+              backgroundColor: "rgba(18, 35, 59, 0.78)",
               border: `1px solid ${GOLD_BORDER}`,
             }}
           >
@@ -324,7 +328,7 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
         {/* Tên Cô Dâu & Chú Rể: Chia 3 dòng trang nhã màu vàng champagne */}
         <div className="my-3 flex flex-col items-center">
           <span
-            className="text-2xl font-bold tracking-wide text-[#F2DCA6] sm:text-3xl"
+            className="text-2xl font-normal tracking-wide text-[#F2DCA6] sm:text-3xl"
             style={{ fontFamily: NAME_FONT }}
           >
             {data.couple?.groomName ?? "Quốc Thái"}
@@ -336,7 +340,7 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
             &amp;
           </span>
           <span
-            className="text-2xl font-bold tracking-wide text-[#F2DCA6] sm:text-3xl"
+            className="text-2xl font-normal tracking-wide text-[#F2DCA6] sm:text-3xl"
             style={{ fontFamily: NAME_FONT }}
           >
             {data.couple?.brideName ?? "Huyền Trang"}
@@ -344,14 +348,21 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
         </div>
 
         {/* Dải phân cách mây tường vân */}
-        <div className="my-2 flex w-full justify-center">
-          <img
+        <m.div
+          className="my-2 flex w-full justify-center"
+          animate={
+            coverPhase === "clouds"
+              ? { scaleX: 1.4, opacity: 0, transition: { duration: 0.7, ease: IMPERIAL_EASE } }
+              : { scaleX: 1, opacity: 1 }
+          }
+        >
+          <img loading="eager" decoding="async"
             src="/templates/song-hac-kim-van/divider-cloud.webp"
             alt=""
             className="h-auto w-40 object-contain opacity-90 sm:w-48"
             aria-hidden="true"
           />
-        </div>
+        </m.div>
 
         {/* Ngày cưới & Ngày âm lịch */}
         <div className="my-2 flex flex-col items-center gap-1">
@@ -369,41 +380,36 @@ function EnvelopeCover({ data, guestName, contained, onOpen }: EnvelopeCoverProp
           </p>
         </div>
 
-        {/* Nút Mở Thiệp ánh vàng cổ */}
+        {/* Nút Mở Thiệp ánh vàng cổ + shimmer */}
         <m.button
-          onClick={handleOpenClick}
-          className="group relative mt-5 flex items-center justify-center overflow-hidden rounded-full px-8 py-2.5 shadow-lg transition-all active:scale-95"
+          type="button"
+          onClick={onOpenStart}
+          disabled={closing}
+          className="group relative mt-5 flex cursor-pointer items-center justify-center overflow-hidden rounded-full px-9 py-2.5 shadow-lg transition-all active:scale-95"
           style={{
             backgroundColor: GOLD_ANTIQUE,
             border: `1.5px solid ${GOLD_LIGHT}`,
           }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
+          whileHover={reduce ? {} : { scale: 1.04 }}
+          whileTap={reduce ? {} : { scale: 0.96 }}
         >
-          {/* Quét ánh sáng mượt trên nút */}
-          <div
-            className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#FFFFFF]/35 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
-            aria-hidden="true"
-          />
+          <GoldButtonShimmer active={!closing} />
           <span
             className="relative z-10 text-xs font-bold tracking-[0.25em] uppercase text-[#4A080C]"
             style={{ fontFamily: BODY_FONT }}
           >
-            Mở Thiệp
+            {closing ? "Đang Rẽ Mây..." : "Mở Thiệp"}
           </span>
         </m.button>
       </m.div>
-    </div>
+    </m.div>
   );
 }
 
 /* ============================================================
    SECTION 1: HERO SECTION — HIỆU ỨNG "NHẬT NGUYỆT SONG HẠC"
-   - Biểu tượng sơn mài hero-cranes.webp làm trung tâm nghệ thuật
-   - Vòng hào quang chỉ vàng xoay chậm + nhịp thở đôi hạc
-   - KHÔNG lặp ngày cưới ở Hero
    ============================================================ */
-function HeroSection({ data }: { data: TemplateData }) {
+function HeroSection({ data, showBody }: { data: TemplateData; showBody: boolean }) {
   const reduce = useReducedMotion();
 
   return (
@@ -416,42 +422,28 @@ function HeroSection({ data }: { data: TemplateData }) {
 
       <div className="relative z-10 mx-auto max-w-lg">
         {/* Ấn Song Hỷ ở đỉnh */}
-        <m.div
-          className="mx-auto mb-3 flex h-14 w-14 items-center justify-center sm:h-16 sm:w-16"
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-        >
-          <img
+        <HeroReveal showBody={showBody} delay={0.1} scale={0.88} className="mx-auto mb-3 flex h-14 w-14 items-center justify-center sm:h-16 sm:w-16">
+          <img loading="eager" decoding="async"
             src="/templates/song-hac-kim-van/wax-seal.webp"
             alt="Song Hỷ"
             className="h-full w-full object-contain drop-shadow-md"
           />
-        </m.div>
+        </HeroReveal>
 
         {/* Lời tựa mở đầu */}
-        <m.p
-          className="text-xs uppercase tracking-[0.35em] text-[#D4AF6A]"
-          style={{ fontFamily: BODY_FONT }}
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          {data.ui?.eyebrow || "Imperial Wedding Invitation"}
-        </m.p>
+        <HeroReveal showBody={showBody} delay={0.2} y={14}>
+          <p
+            className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-[#D4AF6A]"
+            style={{ fontFamily: BODY_FONT }}
+          >
+            {data.ui?.eyebrow || "Thiệp mời tham dự lễ cưới"}
+          </p>
+        </HeroReveal>
 
         {/* Tên cặp đôi: 3 dòng màu vàng champagne */}
-        <m.div
-          className="my-4 flex flex-col items-center"
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.15 }}
-        >
+        <HeroReveal showBody={showBody} delay={0.3} y={16} className="my-4 flex flex-col items-center">
           <h1
-            className="text-3xl font-bold tracking-tight text-[#F2DCA6] sm:text-4xl md:text-5xl"
+            className="text-3xl font-normal tracking-tight text-[#F2DCA6] sm:text-4xl md:text-5xl"
             style={{ fontFamily: NAME_FONT }}
           >
             {data.couple?.groomName ?? "Quốc Thái"}
@@ -463,21 +455,15 @@ function HeroSection({ data }: { data: TemplateData }) {
             &amp;
           </span>
           <h1
-            className="text-3xl font-bold tracking-tight text-[#F2DCA6] sm:text-4xl md:text-5xl"
+            className="text-3xl font-normal tracking-tight text-[#F2DCA6] sm:text-4xl md:text-5xl"
             style={{ fontFamily: NAME_FONT }}
           >
             {data.couple?.brideName ?? "Huyền Trang"}
           </h1>
-        </m.div>
+        </HeroReveal>
 
         {/* Tác phẩm Song Hạc Kim Vân trên vòng hào quang xoay siêu chậm */}
-        <m.div
-          className="relative mx-auto my-6 flex max-w-sm items-center justify-center sm:max-w-md"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, delay: 0.25, ease: EASE_IMPERIAL }}
-        >
+        <HeroReveal showBody={showBody} delay={0.42} scale={0.93} duration={1.0} className="relative mx-auto my-6 flex max-w-sm items-center justify-center sm:max-w-md">
           {/* Vòng hào quang chỉ vàng xoay chậm */}
           <m.div
             className="pointer-events-none absolute h-64 w-64 rounded-full border border-[#D4AF6A]/30 border-dashed sm:h-80 sm:w-80"
@@ -497,42 +483,26 @@ function HeroSection({ data }: { data: TemplateData }) {
           {/* Biểu tượng Song Hạc Kim Vân với chuyển động thở êm dịu */}
           <m.div
             className="relative z-10 w-full"
-            animate={
-              reduce
-                ? {}
-                : {
-                  y: [-4, 4, -4],
-                }
-            }
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
+            animate={reduce ? {} : { y: [-4, 4, -4] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
-            <img
+            <img loading="eager" decoding="async"
               src="/templates/song-hac-kim-van/hero-cranes.webp"
               alt="Song Hạc Kim Vân — Tranh Sơn Mài Cung Đình"
               className="mx-auto h-auto w-full max-w-xs object-contain drop-shadow-2xl sm:max-w-sm"
             />
           </m.div>
-        </m.div>
+        </HeroReveal>
 
         {/* Câu trích dẫn tình yêu */}
-        <m.div
-          className="mx-auto mt-6 max-w-sm px-4"
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.35 }}
-        >
+        <HeroReveal showBody={showBody} delay={0.56} y={12} className="mx-auto mt-6 max-w-sm px-4">
           <p
             className="text-xs italic leading-relaxed text-[#F2DCA6]/90 sm:text-sm"
             style={{ fontFamily: BODY_FONT }}
           >
             &ldquo;Song hạc tề phi, mây lành hội tụ — Nguyện ước trăm năm gắn bó sắt son như gấm dệt thêu hoa.&rdquo;
           </p>
-        </m.div>
+        </HeroReveal>
       </div>
     </section>
   );
@@ -561,120 +531,112 @@ function FamilySection({ data }: { data: TemplateData }) {
   return (
     <section className="relative overflow-hidden px-4 py-16 md:py-20">
       <div className="relative z-10 mx-auto max-w-xl text-center">
-        <div className="mb-4 flex justify-center">
-          <img
-            src="/templates/song-hac-kim-van/divider-cloud.webp"
-            alt=""
-            className="h-auto w-36 object-contain opacity-85 sm:w-44"
-            aria-hidden="true"
-          />
-        </div>
+        <ImperialReveal direction="up">
+          <div className="mb-4 flex justify-center">
+            <img loading="lazy" decoding="async"
+              src="/templates/song-hac-kim-van/divider-cloud.webp"
+              alt=""
+              className="h-auto w-36 object-contain opacity-85 sm:w-44"
+              aria-hidden="true"
+            />
+          </div>
 
-        <h2
-          className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
-          style={{ fontFamily: TITLE_FONT }}
-        >
-          Thông Tin Gia Đình
-        </h2>
-        <p
-          className="mt-1 text-xs text-[#6B5A55]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Trân trọng báo tin lễ thành hôn của con chúng tôi
-        </p>
+          <h2
+            className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
+            style={{ fontFamily: TITLE_FONT }}
+          >
+            Thông Tin Gia Đình
+          </h2>
+        </ImperialReveal>
 
         {/* Lưới 2 nhà: Nhà Trai & Nhà Gái (Cao bằng nhau) */}
         <div className="mt-8 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2">
           {/* Nhà Trai */}
-          <m.div
-            className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-6 text-center shadow-md"
-            initial={{ opacity: 0, x: -15 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            {/* Viền góc cung đình */}
-            <div className="pointer-events-none absolute inset-1.5 rounded-xl border border-[#D4AF6A]/30" />
+          <ImperialReveal direction="left" delay={0.08} className="h-full">
+            <div
+              className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-6 text-center shadow-md"
+            >
+              {/* Viền góc cung đình */}
+              <div className="pointer-events-none absolute inset-1.5 rounded-xl border border-[#D4AF6A]/30" />
 
-            <div>
-              <span
-                className="text-xs font-semibold tracking-widest uppercase text-[#5C0D12]"
-                style={{ fontFamily: TITLE_FONT }}
-              >
-                Nhà Trai
-              </span>
-              <div className="my-3 space-y-1">
-                {groomParents.map((name, i) => (
-                  <p
-                    key={i}
-                    className="text-sm font-medium text-[#2B1B18]"
-                    style={{ fontFamily: BODY_FONT }}
-                  >
-                    {name}
-                  </p>
-                ))}
+              <div>
+                <span
+                  className="text-xs font-semibold tracking-widest uppercase text-[#5C0D12]"
+                  style={{ fontFamily: TITLE_FONT }}
+                >
+                  Nhà Trai
+                </span>
+                <div className="my-3 space-y-1">
+                  {groomParents.map((name, i) => (
+                    <p
+                      key={i}
+                      className="text-sm font-medium text-[#2B1B18]"
+                      style={{ fontFamily: BODY_FONT }}
+                    >
+                      {name}
+                    </p>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-4 border-t border-[#D4AF6A]/30 pt-4">
+                <p
+                  className="text-xs text-[#6B5A55]"
+                  style={{ fontFamily: BODY_FONT }}
+                >
+                  {couple?.groomTitle || "Trưởng Nam"}
+                </p>
+                <p
+                  className="text-base font-bold text-[#5C0D12]"
+                  style={{ fontFamily: NAME_FONT }}
+                >
+                  {couple?.groomFullName || couple?.groomName || "Nguyễn Quốc Thái"}
+                </p>
               </div>
             </div>
-            <div className="mt-4 border-t border-[#D4AF6A]/30 pt-4">
-              <p
-                className="text-xs text-[#6B5A55]"
-                style={{ fontFamily: BODY_FONT }}
-              >
-                {couple?.groomTitle || "Trưởng Nam"}
-              </p>
-              <p
-                className="text-base font-bold text-[#5C0D12]"
-                style={{ fontFamily: NAME_FONT }}
-              >
-                {couple?.groomFullName || couple?.groomName || "Nguyễn Quốc Thái"}
-              </p>
-            </div>
-          </m.div>
+          </ImperialReveal>
 
           {/* Nhà Gái */}
-          <m.div
-            className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-6 text-center shadow-md"
-            initial={{ opacity: 0, x: 15 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <div className="pointer-events-none absolute inset-1.5 rounded-xl border border-[#D4AF6A]/30" />
+          <ImperialReveal direction="right" delay={0.14} className="h-full">
+            <div
+              className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-6 text-center shadow-md"
+            >
+              <div className="pointer-events-none absolute inset-1.5 rounded-xl border border-[#D4AF6A]/30" />
 
-            <div>
-              <span
-                className="text-xs font-semibold tracking-widest uppercase text-[#5C0D12]"
-                style={{ fontFamily: TITLE_FONT }}
-              >
-                Nhà Gái
-              </span>
-              <div className="my-3 space-y-1">
-                {brideParents.map((name, i) => (
-                  <p
-                    key={i}
-                    className="text-sm font-medium text-[#2B1B18]"
-                    style={{ fontFamily: BODY_FONT }}
-                  >
-                    {name}
-                  </p>
-                ))}
+              <div>
+                <span
+                  className="text-xs font-semibold tracking-widest uppercase text-[#5C0D12]"
+                  style={{ fontFamily: TITLE_FONT }}
+                >
+                  Nhà Gái
+                </span>
+                <div className="my-3 space-y-1">
+                  {brideParents.map((name, i) => (
+                    <p
+                      key={i}
+                      className="text-sm font-medium text-[#2B1B18]"
+                      style={{ fontFamily: BODY_FONT }}
+                    >
+                      {name}
+                    </p>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-4 border-t border-[#D4AF6A]/30 pt-4">
+                <p
+                  className="text-xs text-[#6B5A55]"
+                  style={{ fontFamily: BODY_FONT }}
+                >
+                  {couple?.brideTitle || "Ái Nữ"}
+                </p>
+                <p
+                  className="text-base font-bold text-[#5C0D12]"
+                  style={{ fontFamily: NAME_FONT }}
+                >
+                  {couple?.brideFullName || couple?.brideName || "Phan Huyền Trang"}
+                </p>
               </div>
             </div>
-            <div className="mt-4 border-t border-[#D4AF6A]/30 pt-4">
-              <p
-                className="text-xs text-[#6B5A55]"
-                style={{ fontFamily: BODY_FONT }}
-              >
-                {couple?.brideTitle || "Ái Nữ"}
-              </p>
-              <p
-                className="text-base font-bold text-[#5C0D12]"
-                style={{ fontFamily: NAME_FONT }}
-              >
-                {couple?.brideFullName || couple?.brideName || "Phan Huyền Trang"}
-              </p>
-            </div>
-          </m.div>
+          </ImperialReveal>
         </div>
       </div>
     </section>
@@ -692,18 +654,20 @@ function EventsSection({ data }: { data: TemplateData }) {
   return (
     <section className="relative overflow-hidden px-4 py-16 md:py-24">
       <div className={`relative z-10 mx-auto text-center ${visibleEvents.length > 1 ? "max-w-4xl" : "max-w-xl"}`}>
-        <h2
-          className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
-          style={{ fontFamily: TITLE_FONT }}
-        >
-          Sự Kiện Cưới
-        </h2>
-        <p
-          className="mt-1 text-xs text-[#6B5A55]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Kính mời quý khách tới tham dự chung vui cùng gia đình
-        </p>
+        <ImperialReveal direction="up">
+          <h2
+            className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
+            style={{ fontFamily: TITLE_FONT }}
+          >
+            Sự Kiện Cưới
+          </h2>
+          <p
+            className="mt-1 text-xs text-[#6B5A55]"
+            style={{ fontFamily: BODY_FONT }}
+          >
+            Kính mời quý khách tới tham dự chung vui cùng gia đình
+          </p>
+        </ImperialReveal>
 
         <div className={`mt-8 ${visibleEvents.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}`}>
           {visibleEvents.map((evt, idx) => {
@@ -712,95 +676,92 @@ function EventsSection({ data }: { data: TemplateData }) {
             const directionsUrl = getEventDirectionsUrl(evt);
 
             return (
-              <m.div
-                key={evt.id || idx}
-                className="relative overflow-hidden rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-6 text-center shadow-md md:p-8"
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: idx * 0.15 }}
-              >
-                {/* 4 Góc hoa mây tường vân tinh xảo */}
-                <img
-                  src="/templates/song-hac-kim-van/corner-tl.webp"
-                  alt=""
-                  className="pointer-events-none absolute top-0 left-0 h-auto w-8 opacity-70"
-                  aria-hidden="true"
-                />
-                <img
-                  src="/templates/song-hac-kim-van/corner-tl.webp"
-                  alt=""
-                  className="pointer-events-none absolute top-0 right-0 h-auto w-8 -scale-x-100 opacity-70"
-                  aria-hidden="true"
-                />
-
-                <span
-                  className="inline-block rounded-full bg-[#12233B] px-4 py-1 text-xs font-semibold tracking-wider uppercase text-[#F2DCA6]"
-                  style={{ fontFamily: TITLE_FONT }}
+              <ImperialReveal key={evt.id || idx} direction="up" delay={idx * 0.12} className="h-full">
+                <div
+                  className="relative h-full overflow-hidden rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-6 text-center shadow-md md:p-8"
                 >
-                  {evt.title}
-                </span>
-
-                {dateParts && (
-                  <div className="my-4">
-                    <p
-                      className="text-base font-bold text-[#5C0D12] sm:text-lg"
-                      style={{ fontFamily: TITLE_FONT }}
-                    >
-                      {dateParts.weekday} · {dateParts.dotDate}
-                    </p>
-                    {lunarStr && (
-                      <p
-                        className="text-xs text-[#6B5A55]"
-                        style={{ fontFamily: BODY_FONT }}
-                      >
-                        (Tức ngày {lunarStr})
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Dải phân cách mây */}
-                <div className="my-2 flex justify-center">
-                  <img
-                    src="/templates/song-hac-kim-van/divider-cloud.webp"
+                  {/* 4 Góc hoa mây tường vân tinh xảo */}
+                  <img loading="lazy" decoding="async"
+                    src="/templates/song-hac-kim-van/corner-tl.webp"
                     alt=""
-                    className="h-auto w-28 object-contain opacity-80"
+                    className="pointer-events-none absolute top-0 left-0 h-auto w-8 opacity-70"
                     aria-hidden="true"
                   />
-                </div>
+                  <img loading="lazy" decoding="async"
+                    src="/templates/song-hac-kim-van/corner-tl.webp"
+                    alt=""
+                    className="pointer-events-none absolute top-0 right-0 h-auto w-8 -scale-x-100 opacity-70"
+                    aria-hidden="true"
+                  />
 
-                {/* Địa điểm */}
-                <div className="my-4 space-y-1">
-                  <p
-                    className="text-base font-semibold text-[#5C0D12]"
+                  <span
+                    className="inline-block rounded-full bg-[#12233B] px-4 py-1 text-xs font-semibold tracking-wider uppercase text-[#F2DCA6]"
                     style={{ fontFamily: TITLE_FONT }}
                   >
-                    {evt.venueName}
-                  </p>
-                  <p
-                    className="text-xs text-[#2B1B18]"
-                    style={{ fontFamily: BODY_FONT }}
-                  >
-                    {evt.venueAddress}
-                  </p>
-                </div>
+                    {evt.title}
+                  </span>
 
-                {/* Nút chỉ đường Google Maps */}
-                {directionsUrl && (
-                  <a
-                    href={directionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D4AF6A] bg-[#6E0F14] px-5 py-2 text-xs font-medium text-[#FAF5EC] shadow-sm transition-colors hover:bg-[#4A080C]"
-                    style={{ fontFamily: BODY_FONT }}
-                  >
-                    <MapPin className="h-3.5 w-3.5 text-[#D4AF6A]" />
-                    <span>Xem vị trí trên Google Maps</span>
-                    <ExternalLink className="h-3 w-3 opacity-70" />
-                  </a>
-                )}
-              </m.div>
+                  {dateParts && (
+                    <div className="my-4">
+                      <p
+                        className="text-base font-bold text-[#5C0D12] sm:text-lg"
+                        style={{ fontFamily: TITLE_FONT }}
+                      >
+                        {dateParts.weekday} · {dateParts.dotDate}
+                      </p>
+                      {lunarStr && (
+                        <p
+                          className="text-xs text-[#6B5A55]"
+                          style={{ fontFamily: BODY_FONT }}
+                        >
+                          (Tức ngày {lunarStr})
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Dải phân cách mây */}
+                  <div className="my-2 flex justify-center">
+                    <img loading="lazy" decoding="async"
+                      src="/templates/song-hac-kim-van/divider-cloud.webp"
+                      alt=""
+                      className="h-auto w-28 object-contain opacity-80"
+                      aria-hidden="true"
+                    />
+                  </div>
+
+                  {/* Địa điểm */}
+                  <div className="my-4 space-y-1">
+                    <p
+                      className="text-base font-semibold text-[#5C0D12]"
+                      style={{ fontFamily: TITLE_FONT }}
+                    >
+                      {evt.venueName}
+                    </p>
+                    <p
+                      className="text-xs text-[#2B1B18]"
+                      style={{ fontFamily: BODY_FONT }}
+                    >
+                      {evt.venueAddress}
+                    </p>
+                  </div>
+
+                  {/* Nút chỉ đường Google Maps */}
+                  {directionsUrl && (
+                    <a
+                      href={directionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D4AF6A] bg-[#6E0F14] px-5 py-2 text-xs font-medium text-[#FAF5EC] shadow-sm transition-colors hover:bg-[#4A080C]"
+                      style={{ fontFamily: BODY_FONT }}
+                    >
+                      <MapPin className="h-3.5 w-3.5 text-[#D4AF6A]" />
+                      <span>Xem vị trí trên Google Maps</span>
+                      <ExternalLink className="h-3 w-3 opacity-70" />
+                    </a>
+                  )}
+                </div>
+              </ImperialReveal>
             );
           })}
         </div>
@@ -830,30 +791,32 @@ function GallerySection({ data }: { data: TemplateData }) {
   return (
     <section className="relative overflow-hidden px-4 py-16 md:py-24">
       <div className="relative z-10 mx-auto max-w-xl text-center">
-        <div className="mb-4 flex justify-center">
-          <img
-            src="/templates/song-hac-kim-van/divider-cloud.webp"
-            alt=""
-            className="h-auto w-36 object-contain opacity-85 sm:w-44"
-            aria-hidden="true"
-          />
-        </div>
+        <ImperialReveal direction="up">
+          <div className="mb-4 flex justify-center">
+            <img loading="lazy" decoding="async"
+              src="/templates/song-hac-kim-van/divider-cloud.webp"
+              alt=""
+              className="h-auto w-36 object-contain opacity-85 sm:w-44"
+              aria-hidden="true"
+            />
+          </div>
 
-        <h2
-          className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
-          style={{ fontFamily: TITLE_FONT }}
-        >
-          Album Ảnh Cưới
-        </h2>
-        <p
-          className="mt-1 text-xs text-[#6B5A55]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Khoảnh khắc tình yêu sắt son đơm hoa kết trái
-        </p>
+          <h2
+            className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
+            style={{ fontFamily: TITLE_FONT }}
+          >
+            Album Ảnh Cưới
+          </h2>
+          <p
+            className="mt-1 text-xs text-[#6B5A55]"
+            style={{ fontFamily: BODY_FONT }}
+          >
+            Khoảnh khắc tình yêu sắt son đơm hoa kết trái
+          </p>
+        </ImperialReveal>
 
         {/* Carousel Coverflow */}
-        <div className="relative mx-auto mt-8 flex max-w-md items-center justify-center">
+        <ImperialReveal direction="up" delay={0.12} scale={0.96} className="relative mx-auto mt-8 flex max-w-md items-center justify-center">
           <button
             onClick={prevPhoto}
             aria-label="Ảnh trước"
@@ -866,7 +829,7 @@ function GallerySection({ data }: { data: TemplateData }) {
             onClick={() => setLightboxIndex(activeIndex)}
             className="relative aspect-[3/4] w-full max-w-xs cursor-pointer overflow-hidden rounded-2xl border-2 border-[#D4AF6A]/60 shadow-xl"
           >
-            <img
+            <img loading="lazy" decoding="async"
               src={photos[activeIndex]?.url}
               alt={photos[activeIndex]?.alt || "Ảnh cưới"}
               className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
@@ -880,7 +843,7 @@ function GallerySection({ data }: { data: TemplateData }) {
           >
             <ChevronRight className="h-5 w-5" />
           </button>
-        </div>
+        </ImperialReveal>
 
         {/* Bộ đếm & Dots */}
         <p className="mt-3 text-xs font-medium text-[#2B1B18]">
@@ -921,6 +884,7 @@ function GallerySection({ data }: { data: TemplateData }) {
    - Trái tim màu lam chàm hoàng cung #12233B
    ============================================================ */
 function CalendarCountdownSection({ data }: { data: TemplateData }) {
+  const reduce = useReducedMotion();
   const visibleEvents = getVisibleEvents(data);
   const targetEvent = getNearestUpcomingEvent(visibleEvents, data.date);
   const targetDate = React.useMemo(() => {
@@ -949,11 +913,14 @@ function CalendarCountdownSection({ data }: { data: TemplateData }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayIndex = new Date(year, month, 1).getDay();
 
-  const [timeLeft, setTimeLeft] = React.useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [isClient, setIsClient] = React.useState(false);
+  const [timeLeft, setTimeLeft] = React.useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  } | null>(null);
 
   React.useEffect(() => {
-    setIsClient(true);
     const updateCountdown = () => {
       const now = new Date().getTime();
       const diff = targetDate.getTime() - now;
@@ -968,68 +935,75 @@ function CalendarCountdownSection({ data }: { data: TemplateData }) {
         seconds: Math.floor((diff / 1000) % 60),
       });
     };
-    updateCountdown();
+    const boot = setTimeout(updateCountdown, 0);
     const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(boot);
+      clearInterval(interval);
+    };
   }, [targetDate]);
 
   return (
     <section className="relative overflow-hidden px-4 py-16 md:py-24">
       <div className="relative z-10 mx-auto max-w-lg text-center">
-        <h2
-          className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
-          style={{ fontFamily: TITLE_FONT }}
-        >
-          Lịch Ngày Vui
-        </h2>
-        <p
-          className="mt-1 text-xs text-[#6B5A55]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Tháng {month + 1} Năm {year}
-        </p>
+        <ImperialReveal direction="up">
+          <h2
+            className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
+            style={{ fontFamily: TITLE_FONT }}
+          >
+            Lịch Ngày Vui
+          </h2>
+          <p
+            className="mt-1 text-xs text-[#6B5A55]"
+            style={{ fontFamily: BODY_FONT }}
+          >
+            Tháng {month + 1} Năm {year}
+          </p>
+        </ImperialReveal>
 
         {/* Lưới lịch tháng viền bo góc cung đình */}
-        <div className="mx-auto mt-6 max-w-xs rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-5 shadow-md">
-          <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-[#12233B]">
-            <span>CN</span>
-            <span>T2</span>
-            <span>T3</span>
-            <span>T4</span>
-            <span>T5</span>
-            <span>T6</span>
-            <span>T7</span>
-          </div>
+        <ImperialReveal direction="up" delay={0.1}>
+          <div className="mx-auto mt-6 max-w-xs rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-5 shadow-md">
+            <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-[#12233B]">
+              <span>CN</span>
+              <span>T2</span>
+              <span>T3</span>
+              <span>T4</span>
+              <span>T5</span>
+              <span>T6</span>
+              <span>T7</span>
+            </div>
 
-          <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs">
-            {Array.from({ length: firstDayIndex }).map((_, i) => (
-              <div key={`empty-${i}`} className="h-8 w-8" />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const isWeddingDay = eventDays.has(day);
-              return (
-                <div
-                  key={`day-${day}`}
-                  className="flex h-8 w-8 items-center justify-center font-medium"
-                >
-                  {isWeddingDay ? (
-                    <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#12233B] text-xs font-bold text-[#F2DCA6] shadow-md">
-                      <span>{day}</span>
-                      <Heart className="absolute -top-1 -right-1 h-3 w-3 fill-[#D4AF6A] text-[#D4AF6A] animate-pulse" />
-                    </div>
-                  ) : (
-                    <span className="text-[#2B1B18]">{day}</span>
-                  )}
-                </div>
-              );
-            })}
+            <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs">
+              {Array.from({ length: firstDayIndex }).map((_, i) => (
+                <div key={`empty-${i}`} className="h-8 w-8" />
+              ))}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const isWeddingDay = eventDays.has(day);
+                return (
+                  <div
+                    key={`day-${day}`}
+                    className="flex h-8 w-8 items-center justify-center font-medium"
+                  >
+                    {isWeddingDay ? (
+                      <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#12233B] text-xs font-bold text-[#F2DCA6] shadow-md">
+                        <span>{day}</span>
+                        <Heart className={cn("absolute -top-1 -right-1 h-3 w-3 fill-[#D4AF6A] text-[#D4AF6A]", !reduce && "animate-pulse")} />
+                      </div>
+                    ) : (
+                      <span className="text-[#2B1B18]">{day}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </ImperialReveal>
 
         {/* Khối đếm ngược lam chàm hoàng cung */}
-        {isClient && (
-          <div className="mt-8 flex justify-center gap-3 text-center sm:gap-4">
+        {timeLeft && (
+          <ImperialReveal direction="up" delay={0.14} className="mt-8 flex justify-center gap-3 text-center sm:gap-4">
             {[
               { val: timeLeft.days, label: "Ngày" },
               { val: timeLeft.hours, label: "Giờ" },
@@ -1054,7 +1028,7 @@ function CalendarCountdownSection({ data }: { data: TemplateData }) {
                 </span>
               </div>
             ))}
-          </div>
+          </ImperialReveal>
         )}
       </div>
     </section>
@@ -1074,18 +1048,20 @@ function TimelineSection({ data }: { data: TemplateData }) {
   return (
     <section className="relative overflow-hidden px-4 py-16 md:py-24">
       <div className="relative z-10 mx-auto max-w-lg text-center">
-        <h2
-          className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
-          style={{ fontFamily: TITLE_FONT }}
-        >
-          Lịch Trình Hôn Lễ
-        </h2>
-        <p
-          className="mt-1 text-xs text-[#6B5A55]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Các mốc thời gian quan trọng trong ngày vui
-        </p>
+        <ImperialReveal direction="up">
+          <h2
+            className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
+            style={{ fontFamily: TITLE_FONT }}
+          >
+            Lịch Trình Hôn Lễ
+          </h2>
+          <p
+            className="mt-1 text-xs text-[#6B5A55]"
+            style={{ fontFamily: BODY_FONT }}
+          >
+            Các mốc thời gian quan trọng trong ngày vui
+          </p>
+        </ImperialReveal>
 
         {/* Timeline dọc với trục chỉ vàng tự vẽ mượt */}
         <div className="relative mx-auto mt-8 max-w-sm pl-6 text-left">
@@ -1093,7 +1069,7 @@ function TimelineSection({ data }: { data: TemplateData }) {
 
           <div className="space-y-6">
             {timeline.map((item, idx) => (
-              <div key={idx} className="relative flex items-start gap-4">
+              <ImperialReveal key={idx} direction="up" delay={idx * 0.08} className="relative flex items-start gap-4">
                 <div className="relative z-10 -ml-5.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#D4AF6A] bg-[#12233B]">
                   <div className="h-2 w-2 rounded-full bg-[#F2DCA6]" />
                 </div>
@@ -1111,38 +1087,33 @@ function TimelineSection({ data }: { data: TemplateData }) {
                     {item.label}
                   </p>
                 </div>
-              </div>
+              </ImperialReveal>
             ))}
           </div>
         </div>
 
         {/* Dress Code Section */}
         {dressColors && dressColors.length > 0 && (
-          <div className="mt-12 rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-6 text-center shadow-md">
+          <ImperialReveal direction="up" delay={0.12} className="mt-12 rounded-2xl border border-[#D4AF6A]/60 bg-[#FAF5EC] p-6 text-center shadow-md">
             <h3
               className="text-sm font-bold tracking-widest uppercase text-[#5C0D12]"
               style={{ fontFamily: TITLE_FONT }}
             >
-              Trang Phục Gợi Ý (Dress Code)
+              Trang Phục Gợi Ý
             </h3>
-            <p
-              className="mt-1 text-xs text-[#6B5A55]"
-              style={{ fontFamily: BODY_FONT }}
-            >
-              Quý khách có thể lựa chọn các tone màu trang nhã dưới đây
-            </p>
             <div className="mt-5 flex items-center justify-center gap-4 sm:gap-6">
               {dressColors.map((hex, idx) => (
-                <div
-                  key={idx}
-                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-[#D4AF6A] shadow-md transition-transform hover:scale-110"
-                  style={{ backgroundColor: hex }}
-                  title={hex}
-                  aria-label={`Màu trang phục ${idx + 1}`}
-                />
+                <ImperialReveal key={idx} direction="up" delay={0.08 + idx * 0.08} scale={0.85} blur={false}>
+                  <div
+                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-[#D4AF6A] shadow-md transition-transform hover:scale-110"
+                    style={{ backgroundColor: hex }}
+                    title={hex}
+                    aria-label={`Màu trang phục ${idx + 1}`}
+                  />
+                </ImperialReveal>
               ))}
             </div>
-          </div>
+          </ImperialReveal>
         )}
       </div>
     </section>
@@ -1178,59 +1149,63 @@ function GiftSection({
   return (
     <section className="relative overflow-hidden px-4 py-16 md:py-24">
       <div className="relative z-10 mx-auto max-w-lg text-center">
-        <h2
-          className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
-          style={{ fontFamily: TITLE_FONT }}
-        >
-          Hộp Mừng Cưới
-        </h2>
-        <p
-          className="mt-1 text-xs text-[#6B5A55]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          Gửi trọn yêu thương và lời chúc phúc đến cô dâu & chú rể
-        </p>
+        <ImperialReveal direction="up">
+          <h2
+            className="text-xl font-bold tracking-widest uppercase text-[#5C0D12] sm:text-2xl"
+            style={{ fontFamily: TITLE_FONT }}
+          >
+            Hộp Mừng Cưới
+          </h2>
+          <p
+            className="mt-1 text-xs text-[#6B5A55]"
+            style={{ fontFamily: BODY_FONT }}
+          >
+            Gửi trọn yêu thương và lời chúc phúc đến cô dâu & chú rể
+          </p>
+        </ImperialReveal>
 
         {/* Hộp quà 3 trạng thái có baseline và kích thước đồng nhất */}
-        <div
-          onClick={handleBoxClick}
-          onMouseEnter={() => setGiftState("hover")}
-          onMouseLeave={() => setGiftState("normal")}
-          className="group relative mx-auto my-6 flex h-[350px] w-[180px] cursor-pointer items-end justify-center transition-transform hover:scale-105 active:scale-95 sm:h-[390px] sm:w-[200px]"
-        >
-          <img
-            src="/templates/song-hac-kim-van/gift-normal.webp"
-            alt="Hộp mừng cưới Song Hạc"
-            className={cn(
-              "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
-              giftState === "normal" ? "opacity-100" : "opacity-0",
-            )}
-          />
-          <img
-            src="/templates/song-hac-kim-van/gift-hover.webp"
-            alt="Hộp mừng cưới mở nắp"
-            className={cn(
-              "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
-              giftState === "hover" ? "opacity-100" : "opacity-0",
-            )}
-          />
-          <img
-            src="/templates/song-hac-kim-van/gift-active.webp"
-            alt="Hộp mừng cưới trao lì xì"
-            className={cn(
-              "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
-              giftState === "active" ? "opacity-100" : "opacity-0",
-            )}
-          />
-        </div>
+        <ImperialReveal direction="up" delay={0.12} scale={0.95}>
+          <div
+            onClick={handleBoxClick}
+            onMouseEnter={() => setGiftState("hover")}
+            onMouseLeave={() => setGiftState("normal")}
+            className="group relative mx-auto my-6 flex h-[350px] w-[180px] cursor-pointer items-end justify-center transition-transform hover:scale-105 active:scale-95 sm:h-[390px] sm:w-[200px]"
+          >
+            <img loading="lazy" decoding="async"
+              src="/templates/song-hac-kim-van/gift-normal.webp"
+              alt="Hộp mừng cưới Song Hạc"
+              className={cn(
+                "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
+                giftState === "normal" ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <img loading="lazy" decoding="async"
+              src="/templates/song-hac-kim-van/gift-hover.webp"
+              alt="Hộp mừng cưới mở nắp"
+              className={cn(
+                "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
+                giftState === "hover" ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <img loading="lazy" decoding="async"
+              src="/templates/song-hac-kim-van/gift-active.webp"
+              alt="Hộp mừng cưới trao lì xì"
+              className={cn(
+                "absolute bottom-0 h-full w-full object-contain transition-opacity duration-300",
+                giftState === "active" ? "opacity-100" : "opacity-0",
+              )}
+            />
+          </div>
 
-        <button
-          onClick={handleBoxClick}
-          className="mt-2 inline-flex items-center gap-2 rounded-full border border-[#D4AF6A] bg-[#6E0F14] px-6 py-2.5 text-xs font-semibold tracking-wider uppercase text-[#FAF5EC] shadow-md transition-all hover:bg-[#4A080C]"
-          style={{ fontFamily: BODY_FONT }}
-        >
-          <span>Gửi Quà Mừng Cưới</span>
-        </button>
+          <button
+            onClick={handleBoxClick}
+            className="mt-2 inline-flex items-center gap-2 rounded-full border border-[#D4AF6A] bg-[#6E0F14] px-6 py-2.5 text-xs font-semibold tracking-wider uppercase text-[#FAF5EC] shadow-md transition-all hover:bg-[#4A080C]"
+            style={{ fontFamily: BODY_FONT }}
+          >
+            <span>Gửi Quà Mừng Cưới</span>
+          </button>
+        </ImperialReveal>
       </div>
 
       {/* Modal Mừng Cưới qua Portal */}
@@ -1261,33 +1236,66 @@ export function SongHacKimVanTemplate({
   inviteSlug,
   invitationMode = "public",
 }: WeddingTemplateProps) {
+  const reduce = useReducedMotion();
   const [openState, setOpenState] = React.useState(isOpened);
   const [coverGone, setCoverGone] = React.useState(isOpened);
-  const parentOpenedRef = React.useRef(isOpened);
+  const [coverPhase, setCoverPhase] = React.useState<"idle" | "seal" | "clouds">("idle");
+  const [prevIsOpened, setPrevIsOpened] = React.useState(isOpened);
+  const timeoutsRef = React.useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
+  if (isOpened !== prevIsOpened) {
+    setPrevIsOpened(isOpened);
+    if (isOpened) {
+      setOpenState(true);
+      setCoverGone(true);
+      setCoverPhase("idle");
+    } else {
+      setOpenState(false);
+      setCoverGone(false);
+      setCoverPhase("idle");
+    }
+  }
 
   React.useEffect(() => {
-    if (isOpened !== parentOpenedRef.current) {
-      parentOpenedRef.current = isOpened;
-      setOpenState(isOpened);
-      if (isOpened) {
-        setCoverGone(true);
-      } else {
-        setCoverGone(false);
+    return () => {
+      timeoutsRef.current.forEach((id) => clearTimeout(id));
+      timeoutsRef.current = [];
+    };
+  }, []);
+
+  const showBody = coverGone || coverPhase === "clouds";
+
+  const handleOpenStart = () => {
+    if (coverPhase !== "idle" || openState) return;
+    playOpenCardSound();
+
+    if (reduce) {
+      setOpenState(true);
+      setCoverGone(true);
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch { }
+      return;
+    }
+
+    setCoverPhase("seal");
+    const t1 = setTimeout(() => {
+      setCoverPhase("clouds");
+    }, 700);
+    const t2 = setTimeout(() => {
+      setOpenState(true);
+      setCoverGone(true);
+      setCoverPhase("idle");
+      onOpenedChange?.(true);
+      try {
+        window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
+      } catch { }
+      if (!contained && typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
-    }
-  }, [isOpened]);
-
-  const handleOpenInvitation = () => {
-    setOpenState(true);
-    setCoverGone(true);
-    onOpenedChange?.(true);
-    try {
-      window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
-    } catch { }
-
-    if (!contained && typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    }, 2050);
+    timeoutsRef.current.push(t1, t2);
   };
 
   const safeGuestName = guestName || null;
@@ -1295,7 +1303,7 @@ export function SongHacKimVanTemplate({
   const hidden = new Set(data.hiddenSections ?? []);
   const order = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "map", "calendar", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = order.indexOf(key);
     return index < 0 ? 99 : index;
@@ -1317,13 +1325,14 @@ export function SongHacKimVanTemplate({
             className="absolute inset-0 z-50 flex items-center justify-center"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.65 }}
+            transition={{ duration: 0.45 }}
           >
             <EnvelopeCover
               data={data}
               guestName={safeGuestName}
               contained={contained}
-              onOpen={handleOpenInvitation}
+              coverPhase={coverPhase}
+              onOpenStart={handleOpenStart}
             />
           </m.div>
         )}
@@ -1333,21 +1342,19 @@ export function SongHacKimVanTemplate({
           LỚP 2: NÚT NHẠC NỀN NỔI
           -------------------------------------------------------- */}
       <LiveMusicFloatingButton
-        src={data.music?.src}
+        src={(data.hiddenSections ?? []).includes("music") ? undefined : data.music?.src}
         title={data.music?.title || "Khúc Ca Song Hạc"}
-        visible={openState}
+        visible={openState && !(data.hiddenSections ?? []).includes("music")}
         tone="obsidian"
       />
 
       {/* --------------------------------------------------------
-          LỚP 3: RUỘT THIỆP CƯỚI CHÍNH (Ẩn khi chưa mở thiệp)
-          - Nền đỏ son sơn mài #6E0F14
-          - Cột thẻ giấy dó cung đình max-w-[840px]
+          LỚP 3: RUỘT THIỆP CƯỚI CHÍNH (Hiện mượt khi Pha 2 clouds)
           -------------------------------------------------------- */}
       <main
         className={cn(
           "relative z-10 transition-opacity duration-700",
-          !openState ? "hidden opacity-0 pointer-events-none" : "opacity-100",
+          !showBody ? "hidden opacity-0 pointer-events-none" : "opacity-100",
         )}
       >
         {/* Nền cố định phía sau ruột thiệp */}
@@ -1360,7 +1367,7 @@ export function SongHacKimVanTemplate({
         <div className="relative mx-auto my-6 w-full max-w-[840px] rounded-3xl border border-[#D4AF6A]/50 bg-[#FAF5EC] shadow-2xl">
           {/* Section 1: Hero — Nhật Nguyệt Song Hạc (luôn ở đầu thẻ) */}
           <div className="rounded-t-3xl bg-[#6E0F14]">
-            <HeroSection data={data} />
+            <HeroSection data={data} showBody={showBody} />
           </div>
 
           {/* Container các section động theo orderOf và hiddenSections */}
@@ -1417,7 +1424,7 @@ export function SongHacKimVanTemplate({
                   />
                   <ImperialGoldDust count={16} />
 
-                  <div className="relative z-10 mx-auto max-w-xl">
+                  <ImperialReveal direction="up" className="relative z-10 mx-auto max-w-xl">
                     <TemplateRsvpSection
                       data={data}
                       mode={mode}
@@ -1428,19 +1435,23 @@ export function SongHacKimVanTemplate({
                       invitationMode={invitationMode}
                       guestName={guestName}
                     />
+                  </ImperialReveal>
+                </section>
+              </div>
+            )}
 
-                    {/* QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
-                    {data.plan !== "free" && !hidden.has("albumQr") && weddingSlug && (
-                      <div className="mt-12 flex justify-center">
-                        <GuestAlbumQr
-                          slug={weddingSlug}
-                          accentColor="#6E0F14"
-                          textColor="#FAF5EC"
-                          mutedColor="#D4AF6A"
-                        />
-                      </div>
-                    )}
-                  </div>
+            {/* Section 10: QR Album chia sẻ ảnh tiệc cưới cho gói trả phí */}
+            {data.plan !== "free" && !hidden.has("albumQr") && weddingSlug && (
+              <div style={{ order: orderOf("albumQr") }}>
+                <section className="relative overflow-hidden bg-[#6E0F14] px-4 py-12 text-[#FAF5EC] md:py-16">
+                  <ImperialReveal direction="up" delay={0.1} className="relative z-10 mx-auto flex max-w-xl justify-center">
+                    <GuestAlbumQr
+                      slug={weddingSlug}
+                      accentColor="#6E0F14"
+                      textColor="#FAF5EC"
+                      mutedColor="#D4AF6A"
+                    />
+                  </ImperialReveal>
                 </section>
               </div>
             )}
@@ -1449,8 +1460,8 @@ export function SongHacKimVanTemplate({
 
         {/* Footer chúc phúc chân trang (Đặt ngoài flex container có order) */}
         <footer className="border-t border-[#D4AF6A]/25 bg-[#4A080C] px-4 py-12 text-center text-xs text-[#FAF5EC]/70">
-          <div className="mx-auto flex max-w-sm flex-col items-center gap-2">
-            <img
+          <ImperialReveal direction="up" className="mx-auto flex max-w-sm flex-col items-center gap-2">
+            <img loading="lazy" decoding="async"
               src="/templates/song-hac-kim-van/divider-cloud.webp"
               alt=""
               className="h-auto w-24 object-contain opacity-65"
@@ -1462,7 +1473,7 @@ export function SongHacKimVanTemplate({
             <p className="text-[11px] text-[#FAF5EC]/60">
               Cảm ơn quý khách đã gửi trọn yêu thương và chung vui cùng chúng tôi
             </p>
-          </div>
+          </ImperialReveal>
         </footer>
       </main>
     </div>

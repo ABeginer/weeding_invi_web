@@ -13,11 +13,13 @@ import { DesignerAlbum } from "@/components/designer/designer-album";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { SakuraPetals } from "@/components/designer/sakura-petals";
 import { playOpenCardSound } from "@/lib/sound-effects";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import type { WeddingTemplateProps } from "../types";
+import "@/styles/invitation-templates.css";
 import { ThemeMotif } from "./ThemeMotif";
 import { ThemedCalendar } from "./ThemedCalendar";
 import { ThemedDressCode } from "./ThemedDressCode";
@@ -113,7 +115,7 @@ export function ThemedTemplate({
   const hiddenSections = new Set(data.hiddenSections ?? []);
   const sectionOrder = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = sectionOrder.indexOf(key);
     return index < 0 ? 99 : index;
@@ -123,7 +125,7 @@ export function ThemedTemplate({
     playOpenCardSound();
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
-    } catch {}
+    } catch { }
     setOpened(true);
     onOpenedChange?.(true);
   };
@@ -139,9 +141,9 @@ export function ThemedTemplate({
         "themed-invitation relative w-full min-w-0 font-sans antialiased overflow-x-hidden selection:bg-white/20 selection:text-white transition-colors",
         contained ? "min-h-full" : "min-h-screen-dvh",
         !coverDismissed &&
-          (contained
-            ? "h-full overflow-hidden"
-            : "h-screen-dvh max-h-full overflow-hidden"),
+        (contained
+          ? "h-full overflow-hidden"
+          : "h-screen-dvh max-h-full overflow-hidden"),
       )}
     >
       {/* ==================== COVER SCREEN (BÌ THƯ HOÀNG GIA & KHÁCH MỜI) ==================== */}
@@ -242,7 +244,7 @@ export function ThemedTemplate({
                   style={{ backgroundColor: theme.badgeTextColor }}
                   aria-hidden="true"
                 />
-                <span>{theme.subtitle}</span>
+                <span>Thiệp mời tham dự lễ cưới</span>
               </div>
 
               {/* Decorative Theme Motif */}
@@ -350,13 +352,15 @@ export function ThemedTemplate({
         )}
 
         {/* 1. HERO SECTION (Custom Layouts based on theme.heroLayout) */}
-        <ThemedHero
-          theme={theme}
-          couple={data.couple}
-          photos={data.photos}
-          dateParts={heroDate}
-          quote={data.quote}
-        />
+        <div style={{ order: -1 }}>
+          <ThemedHero
+            theme={theme}
+            couple={data.couple}
+            photos={data.photos}
+            dateParts={heroDate}
+            quote={data.quote}
+          />
+        </div>
 
         {/* 2. THÔNG TIN LỄ CƯỚI & HAI BÊN GIA ĐÌNH */}
         {!hiddenSections.has("family") && (
@@ -499,7 +503,7 @@ export function ThemedTemplate({
           </div>
         )}
 
-        {!hiddenSections.has("albumQr") && data.weddingSlug && (
+        {!hiddenSections.has("albumQr") && data.plan !== "free" && data.weddingSlug && (
           <div style={{ order: orderOf("albumQr") }}>
             <GuestAlbumQr
               slug={data.weddingSlug}
@@ -545,7 +549,7 @@ export function ThemedTemplate({
         )}
 
         {/* 9. FOOTER */}
-        <footer className="pt-8 pb-6 text-center">
+        <footer style={{ order: 999 }} className="pt-8 pb-6 text-center">
           <ThemeMotif
             type={theme.motif}
             color={theme.accentTextColor}

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Lock, Music2, Pause, Play, Upload, Volume2 } from "lucide-react";
 import { uploadWeddingMusic } from "@/lib/api";
+import { globalAudio } from "@/lib/global-audio";
 import type { WeddingContent, WeddingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -87,7 +88,6 @@ export function MusicEditor({
 }: MusicEditorProps) {
   const { showToast } = useToast();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -95,8 +95,14 @@ export function MusicEditor({
   const selected = content.musicPreset ?? "default";
 
   React.useEffect(() => {
+    const unsub = globalAudio.subscribe((state) => {
+      if (!state.isPlaying) {
+        setPlayingId(null);
+      }
+    });
     return () => {
-      audioRef.current?.pause();
+      unsub();
+      globalAudio.stop();
     };
   }, []);
 
@@ -104,16 +110,10 @@ export function MusicEditor({
     e.stopPropagation();
     e.preventDefault();
     if (playingId === id) {
-      audioRef.current?.pause();
+      globalAudio.pause();
       setPlayingId(null);
     } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      const audio = new Audio(src);
-      audioRef.current = audio;
-      audio.play().catch(() => {});
-      audio.onended = () => setPlayingId(null);
+      void globalAudio.play(src);
       setPlayingId(id);
     }
   };
@@ -147,7 +147,13 @@ export function MusicEditor({
     setBusy(true);
     try {
       const result = await uploadWeddingMusic(weddingId, file, file.name.replace(/\.mp3$/i, ""));
-      onChange(result.wedding.content);
+      // Chỉ cập nhật các trường nhạc để không làm mất các thay đổi chưa lưu khác trong Tab 1
+      onChange({
+        ...content,
+        musicPreset: result.wedding.content.musicPreset ?? "custom",
+        musicUrl: result.wedding.content.musicUrl ?? result.url,
+        musicTitle: result.wedding.content.musicTitle ?? file.name.replace(/\.mp3$/i, ""),
+      });
       showToast("Đã tải nhạc nền lên", "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không tải được file nhạc.");

@@ -15,6 +15,7 @@ import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playCoverSfx } from "@/lib/sfx";
 import { useGiftBoxInteraction } from "@/hooks/useGiftBoxInteraction";
 import { cn, formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type {
   TemplateData,
@@ -305,7 +306,7 @@ export default function YenChiMauDonTemplate({
     const map = new Map<string, number>();
     const orderList = data.sectionOrder && data.sectionOrder.length > 0
       ? data.sectionOrder
-      : ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+      : CANONICAL_SECTION_ORDER;
     orderList.forEach((key, idx) => map.set(key, idx + 1));
     return map;
   }, [data.sectionOrder]);
@@ -366,7 +367,7 @@ export default function YenChiMauDonTemplate({
                   media="(min-width: 768px)"
                   srcSet="/templates/yen-chi-mau-don/bg_desktop.webp"
                 />
-                <img
+                <img decoding="async"
                   src="/templates/yen-chi-mau-don/bg_mobile.webp"
                   alt="Nền nhung đỏ Yên Chi Mẫu Đơn"
                   className="w-full h-full object-cover"
@@ -396,7 +397,7 @@ export default function YenChiMauDonTemplate({
               />
 
               {/* Hoa mẫu đơn trang trí góc trên trái */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/yen-chi-mau-don/peony_corner_cluster.webp"
                 alt=""
                 className="pointer-events-none absolute -top-3 -left-3 w-20 sm:w-24 h-auto drop-shadow-sm"
@@ -404,7 +405,7 @@ export default function YenChiMauDonTemplate({
               />
 
               {/* Hoa mẫu đơn trang trí góc trên phải (lật ngang scale-x-[-1]) */}
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/yen-chi-mau-don/peony_corner_cluster.webp"
                 alt=""
                 className="pointer-events-none absolute -top-3 -right-3 w-20 sm:w-24 h-auto scale-x-[-1] drop-shadow-sm"
@@ -415,7 +416,7 @@ export default function YenChiMauDonTemplate({
               <div className="relative z-20 flex flex-col items-center w-full pt-2">
                 {/* Con dấu sáp vàng cổ */}
                 <div className="w-16 h-16 sm:w-18 sm:h-18 mb-3 flex items-center justify-center drop-shadow-md">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/yen-chi-mau-don/wax_seal_gold.webp"
                     alt="Kim Ấn Hoàng Gia"
                     className="w-full h-full object-contain"
@@ -448,7 +449,7 @@ export default function YenChiMauDonTemplate({
 
                 {/* Dải phân cách trái tim vàng */}
                 <div className="w-36 sm:w-44 my-2.5 opacity-90">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/yen-chi-mau-don/divider_heart_gold.webp"
                     alt=""
                     className="w-full h-auto object-contain"
@@ -524,7 +525,7 @@ export default function YenChiMauDonTemplate({
             <div className="relative w-full max-w-[320px] sm:max-w-[340px] aspect-[4/5] flex items-center justify-center p-3">
               {/* Lớp sau: Ảnh túi phong bì nhung đỏ */}
               <div className="absolute inset-0 z-0 flex items-center justify-center">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/yen-chi-mau-don/peony_envelope_pocket.webp"
                   alt="Túi phong bì hoa mẫu đơn"
                   className="w-full h-full object-contain drop-shadow-[0_15px_30px_rgba(56,9,17,0.3)]"
@@ -535,7 +536,7 @@ export default function YenChiMauDonTemplate({
               <div className="relative z-10 w-[78%] -mt-6 rotate-[-2deg] bg-[#FFFFFF] p-2.5 pb-6 rounded-lg shadow-xl border border-[#E4D1A7]/80 flex flex-col items-center transition-transform duration-500 hover:rotate-0">
                 <div className="w-full aspect-[4/5] overflow-hidden rounded bg-[#F4ECE2]">
                   {heroPhotoUrl ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={heroPhotoUrl}
                       alt={`${groomName} & ${brideName}`}
                       className="w-full h-full object-cover"
@@ -559,7 +560,7 @@ export default function YenChiMauDonTemplate({
 
               {/* Lớp trước: Con dấu sáp vàng cổ đính tại mép miệng phong bì */}
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-14 h-14 sm:w-16 sm:h-16 drop-shadow-lg">
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/yen-chi-mau-don/wax_seal_gold.webp"
                   alt="Kim ấn sáp vàng"
                   className="w-full h-full object-contain"
@@ -605,7 +606,7 @@ export default function YenChiMauDonTemplate({
 
                 {/* Dải phân cách trái tim vàng */}
                 <div className="w-32 sm:w-40 mx-auto my-3 opacity-80">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/yen-chi-mau-don/divider_heart_gold.webp"
                     alt=""
                     className="w-full h-auto object-contain"
@@ -918,7 +919,7 @@ export default function YenChiMauDonTemplate({
                 </h3>
 
                 <div className="w-32 sm:w-40 mx-auto my-3 opacity-80">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src="/templates/yen-chi-mau-don/divider_heart_gold.webp"
                     alt=""
                     className="w-full h-auto object-contain"
@@ -1009,12 +1010,9 @@ export default function YenChiMauDonTemplate({
                   transition={{ duration: 0.6 }}
                   className="bg-[#FFFFFF] rounded-3xl p-6 sm:p-7 border border-[#E4D1A7] shadow-sm max-w-lg mx-auto"
                 >
-                  <span className="text-xs tracking-[0.25em] text-[#C6A052] uppercase font-semibold">
+                  <span className="text-xs tracking-[0.25em] text-[#C6A052] uppercase font-semibold block mb-5">
                     Trang Phục Gợi Ý
                   </span>
-                  <p className="text-xs sm:text-sm italic text-[#7A5C61] mt-1.5 mb-5">
-                    “Gửi gắm vài sắc màu dịu ấm để ngày chung vui thêm phần hài hòa.”
-                  </p>
 
                   <div className="flex flex-wrap items-center justify-center gap-6">
                     {dressCodeColors.map((dc, i) => (
@@ -1038,7 +1036,7 @@ export default function YenChiMauDonTemplate({
                     transition={{ duration: 0.6 }}
                     className="bg-gradient-to-b from-[#4A0E17] to-[#380911] text-[#FBF7F2] rounded-3xl p-6 sm:p-8 border border-[#C6A052]/40 shadow-lg relative overflow-hidden"
                   >
-                    <img
+                    <img loading="lazy" decoding="async"
                       src="/templates/yen-chi-mau-don/peony_corner_cluster.webp"
                       alt=""
                       className="pointer-events-none absolute -bottom-8 -right-8 w-32 sm:w-44 h-auto opacity-20 scale-x-[-1]"
@@ -1138,7 +1136,7 @@ export default function YenChiMauDonTemplate({
                             }
                           }}
                         >
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={photo.url}
                             alt="Ảnh cưới"
                             className="w-full h-full object-cover"
@@ -1240,17 +1238,14 @@ export default function YenChiMauDonTemplate({
                   Hộp Quà Chúc Phúc
                 </span>
                 <h3
-                  className="text-2xl sm:text-3xl text-[#4A0E17] font-normal my-2"
+                  className="text-2xl sm:text-3xl text-[#4A0E17] font-normal my-2 mb-5"
                   style={{ fontFamily: TITLE_FONT }}
                 >
                   Gửi Mừng Yêu Thương
                 </h3>
-                <p className="text-xs sm:text-sm text-[#7A5C61] leading-relaxed max-w-xs mb-5">
-                  “Sự hiện diện của Quý khách là niềm hạnh phúc trọn vẹn nhất của hai gia đình. Nếu ở xa không tiện ghé chung vui, Quý khách có thể gửi lời chúc qua hộp quà nhỏ bên dưới.”
-                </p>
 
                 {/* Preload ảnh gift_box_open chống giật/nháy */}
-                <img
+                <img loading="lazy" decoding="async"
                   src="/templates/yen-chi-mau-don/gift_box_open.webp"
                   className="hidden"
                   aria-hidden="true"
@@ -1268,7 +1263,7 @@ export default function YenChiMauDonTemplate({
                     }`}
                   aria-label="Mở hộp mừng cưới"
                 >
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={
                       giftBoxStage === "open"
                         ? "/templates/yen-chi-mau-don/gift_box_open.webp"
@@ -1281,9 +1276,6 @@ export default function YenChiMauDonTemplate({
                   />
                 </button>
 
-                <span className="text-xs italic text-[#C6A052] mt-3 font-medium">
-                  Chạm vào hộp quà để gửi lời chúc & mừng cưới
-                </span>
               </m.div>
             </section>
           )}
@@ -1305,18 +1297,6 @@ export default function YenChiMauDonTemplate({
                 transition={{ duration: 0.6 }}
                 className="w-full max-w-lg mx-auto"
               >
-                <div className="text-center mb-5">
-                  <span className="text-xs tracking-[0.25em] text-[#C6A052] uppercase font-semibold">
-                    Xác Nhận Tham Dự & Sổ Lưu Bút
-                  </span>
-                  <h3
-                    className="text-2xl sm:text-3xl text-[#4A0E17] font-normal mt-1"
-                    style={{ fontFamily: TITLE_FONT }}
-                  >
-                    Gửi Lời Chúc Phúc
-                  </h3>
-                </div>
-
                 <TemplateRsvpSection
                   data={data}
                   mode={mode}
@@ -1358,7 +1338,7 @@ export default function YenChiMauDonTemplate({
           <div className="max-w-md mx-auto flex flex-col items-center">
             {/* Con dấu sáp vàng cổ nhỏ */}
             <div className="w-12 h-12 mb-3 drop-shadow-sm">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/templates/yen-chi-mau-don/wax_seal_gold.webp"
                 alt=""
                 className="w-full h-full object-contain"
@@ -1375,7 +1355,7 @@ export default function YenChiMauDonTemplate({
               Chân thành cảm ơn tình cảm và sự hiện diện quý báu của Quý khách trong ngày hạnh phúc nhất của chúng tôi.
             </p>
             <span className="text-[11px] tracking-[0.2em] text-[#C6A052] uppercase font-medium">
-              Yên Chi Mẫu Đơn • Forever & Always
+              Trân Trọng Cảm Ơn
             </span>
           </div>
         </footer>

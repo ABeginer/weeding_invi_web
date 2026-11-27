@@ -1,22 +1,9 @@
 "use client";
 
 import * as React from "react";
-import dynamic from "next/dynamic";
-import { MotionProvider } from "@/components/theme/MotionProvider";
-import { playOpenCardSound } from "@/lib/sound-effects";
 import type { GuestDiet, GuestStatus, TemplateData } from "@/lib/types";
 import { TemplatePreviewRenderer } from "./TemplatePreviewRenderer";
-
-const DynamicBasic1 = dynamic(() => import("./basic-1"), {
-  loading: () => (
-    <div className="flex h-full min-h-[320px] w-full items-center justify-center bg-[#FAF8F5]/90 text-[#5C554E] backdrop-blur-xs">
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#B89B72] border-t-transparent" />
-        <p className="font-serif text-sm tracking-wide">Đang tải giao diện thiệp...</p>
-      </div>
-    </div>
-  ),
-});
+import "@/styles/invitation-templates.css";
 
 interface LiveTemplateRendererProps {
   templateId?: string;
@@ -45,16 +32,6 @@ export function LiveTemplateRenderer({
   initialSongRequest = null,
   initialRideNeeded = false,
 }: LiveTemplateRendererProps) {
-  React.useEffect(() => {
-    const handleEnvelopeOpen = () => {
-      playOpenCardSound();
-    };
-    window.addEventListener("inviwedd:open-envelope", handleEnvelopeOpen);
-    return () => {
-      window.removeEventListener("inviwedd:open-envelope", handleEnvelopeOpen);
-    };
-  }, []);
-
   return (
     <TemplatePreviewRenderer
       templateId={templateId}

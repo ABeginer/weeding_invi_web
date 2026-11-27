@@ -12,13 +12,14 @@ import {
   X,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
 import { TemplateRsvpSection } from "../shared/TemplateRsvpSection";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { LiveMusicFloatingButton } from "../shared/LiveMusicFloatingButton";
 import type { WeddingTemplateProps } from "../types";
-import { formatWeddingDateParts } from "@/lib/utils";
+import { formatLunarDateClean, formatWeddingDateParts } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 
@@ -234,7 +235,7 @@ function SaveTheDateHero({ data }: { data: WeddingTemplateProps["data"] }) {
   return (
     <section className="relative overflow-hidden px-4 pb-10 pt-9 text-center sm:pb-14 sm:pt-12" style={{ backgroundColor: "#F9F2EE" }}>
       <p className="text-[10px] font-semibold uppercase tracking-[0.32em]" style={{ color: RED }}>
-        The wedding of
+        Lễ Thành Hôn
       </p>
       <p
         className="mx-auto mt-4 max-w-[360px] break-words text-[clamp(27px,7vw,38px)] leading-[1.15]"
@@ -510,9 +511,9 @@ function MapSection({ data }: { data: WeddingTemplateProps["data"] }) {
                 <p className="mt-3 text-sm font-semibold" style={{ color: INK }}>
                   {parts.time} · {parts.weekday}, {parts.day} tháng {parts.month}, {parts.year}
                 </p>
-                {evt.lunarDate && (
+                {formatLunarDateClean(evt.lunarDate) && (
                   <p className="mt-1 text-xs italic text-[#7C5B4B]">
-                    (Nhằm {evt.lunarDate})
+                    (Nhằm {formatLunarDateClean(evt.lunarDate)})
                   </p>
                 )}
                 <p className="mt-3 text-lg font-semibold leading-snug" style={{ color: INK }}>
@@ -577,11 +578,8 @@ function DressAndTimeline({ data }: { data: WeddingTemplateProps["data"] }) {
               className="text-[13px] font-bold uppercase tracking-[0.2em]"
               style={{ fontFamily: "var(--font-playfair)", color: RED }}
             >
-              Dress code
+              Trang Phục Gợi Ý
             </h2>
-            <p className="mt-1 text-[11px]" style={{ color: "#7C5B4B" }}>
-              Trang phục dự tiệc
-            </p>
             <div className="mt-4 flex justify-center gap-3">
               {colors.map((color, index) => (
                 <span
@@ -903,7 +901,7 @@ function GiftEnvelopes({ data }: { data: WeddingTemplateProps["data"] }) {
                     </p>
                     {account.qr && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={account.qr} alt={`QR ${account.label}`} className="mx-auto mt-2 h-28 w-28 object-contain" />
+                      <img loading="lazy" decoding="async" src={account.qr} alt={`QR ${account.label}`} className="mx-auto mt-2 h-28 w-28 object-contain" />
                     )}
                     <p className="mt-3 break-words text-sm font-semibold">{account.bank}</p>
                     <p className="break-all text-xs tabular-nums" style={{ color: "#7C5B4B" }}>
@@ -978,7 +976,7 @@ export default function NauToiGianTemplate(props: WeddingTemplateProps) {
   const hidden = new Set(data.hiddenSections ?? []);
   const order = data.sectionOrder?.length
     ? data.sectionOrder
-    : ["family", "calendar", "map", "dresscode", "album", "albumQr", "gift", "rsvp"];
+    : CANONICAL_SECTION_ORDER;
   const orderOf = (key: string) => {
     const index = order.indexOf(key);
     return index < 0 ? 99 : index;
@@ -1105,7 +1103,7 @@ export default function NauToiGianTemplate(props: WeddingTemplateProps) {
               {data.couple.groomName} &amp; {data.couple.brideName}
             </p>
             <p className="mt-1 text-[10px] tracking-[0.2em]" style={{ color: "#8D6A58" }}>
-              THANK YOU FOR CELEBRATING WITH US
+              TRÂN TRỌNG CẢM ƠN
             </p>
           </footer>
 

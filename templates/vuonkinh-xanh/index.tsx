@@ -17,6 +17,7 @@ import { GiftModal } from "@/components/invitation/GiftModal";
 import { GuestAlbumQr } from "@/components/invitation/GuestAlbumQr";
 import { playOpenCardSound } from "@/lib/sound-effects";
 import { cn, formatWeddingDateParts } from "@/lib/utils";
+import { CANONICAL_SECTION_ORDER } from "@/config/template-sections";
 import { getVisibleEvents, getNearestUpcomingEvent, getEventDirectionsUrl } from "@/lib/events";
 import type { TemplateData, WeddingEvent } from "@/lib/wedding-types";
 import { TemplatePhotoPlaceholder } from "../shared/TemplatePhotoPlaceholder";
@@ -104,7 +105,7 @@ function GlasshouseTitle({
       <div className="mt-2.5 flex items-center justify-center gap-2">
         <span className="h-px w-12" style={{ backgroundColor: GOLD_MUTED }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <img loading="lazy" decoding="async"
           src="/templates/vuonkinh-xanh/flourish-divider.webp"
           alt=""
           aria-hidden="true"
@@ -131,14 +132,14 @@ function SectionReveal({ children }: { children: React.ReactNode }) {
     >
       {/* Cánh hoa vàng kim trang trí chìm ở góc */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/vuonkinh-xanh/corner-tl.webp"
         alt=""
         aria-hidden="true"
         className="pointer-events-none absolute -left-2 -top-4 w-16 opacity-35 sm:w-20"
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <img loading="lazy" decoding="async"
         src="/templates/vuonkinh-xanh/corner-tl.webp"
         alt=""
         aria-hidden="true"
@@ -278,7 +279,7 @@ function VuonkinhCover({
         {/* Top Branch Motif */}
         <div className="relative mx-auto mt-1 flex justify-center sm:mt-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/vuonkinh-xanh/branch-motif.webp"
             alt=""
             aria-hidden="true"
@@ -311,7 +312,7 @@ function VuonkinhCover({
         {/* Flourish Divider */}
         <div className="relative mx-auto mt-2 flex justify-center sm:mt-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src="/templates/vuonkinh-xanh/flourish-divider.webp"
             alt=""
             aria-hidden="true"
@@ -581,7 +582,7 @@ export default function VuonkinhXanhTemplate({
     onOpenedChange?.(true);
     try {
       window.dispatchEvent(new CustomEvent("inviwedd:open-envelope"));
-    } catch {}
+    } catch { }
     setTimeout(() => {
       setOpened(true);
       setCoverGone(true);
@@ -608,6 +609,11 @@ export default function VuonkinhXanhTemplate({
   };
 
   const hidden = React.useMemo(() => new Set(data.hiddenSections ?? []), [data.hiddenSections]);
+  const order = data.sectionOrder?.length ? data.sectionOrder : CANONICAL_SECTION_ORDER;
+  const orderOf = (key: string) => {
+    const idx = order.indexOf(key);
+    return idx === -1 ? 99 : idx;
+  };
   const visibleEvents = getVisibleEvents(data);
   const targetEvent = getNearestUpcomingEvent(visibleEvents, data.date);
   const targetDateIso = targetEvent?.startsAt ?? data.date;
@@ -698,10 +704,10 @@ export default function VuonkinhXanhTemplate({
           <SectionReveal>
             <div className="mx-auto max-w-xs">
               <p
-                className="text-xs font-semibold uppercase tracking-[0.3em]"
+                className="text-xs font-semibold uppercase tracking-[0.16em]"
                 style={{ color: GOLD_CHAMPAGNE, fontFamily: SERIF }}
               >
-                SAVE THE DATE
+                Thiệp mời tham dự lễ cưới
               </p>
               <h1
                 className="mt-3 text-3xl font-normal tracking-wide sm:text-4xl"
@@ -734,7 +740,7 @@ export default function VuonkinhXanhTemplate({
               >
                 {data.photos.heroUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={data.photos.heroUrl}
                     alt="Ảnh cưới"
                     className="h-full w-full object-cover object-center"
@@ -761,521 +767,516 @@ export default function VuonkinhXanhTemplate({
         </section>
 
         {/* SECTION: LỊCH CƯỚI & ĐẾM NGƯỢC (key: "calendar") */}
-        {!hidden.has("calendar") && (
-          <section className="mt-16">
-            <SectionReveal>
-              <GlasshouseTitle sub="Save Our Date" title="Thời Khắc Hạnh Phúc" />
+        <div className="flex flex-col">
+          {!hidden.has("calendar") && (
+            <section className="mt-16" style={{ order: orderOf("calendar") }}>
+              <SectionReveal>
+                <GlasshouseTitle title="Thời Khắc Hạnh Phúc" />
 
-              <div className="mt-6">
-                <CountdownBlock targetDateIso={targetDateIso} />
-              </div>
+                <div className="mt-6">
+                  <CountdownBlock targetDateIso={targetDateIso} />
+                </div>
 
-              <div className="mt-8">
-                <CalendarBlock dateIso={targetDateIso} eventDays={eventDays} />
-              </div>
-            </SectionReveal>
-          </section>
-        )}
+                <div className="mt-8">
+                  <CalendarBlock dateIso={targetDateIso} eventDays={eventDays} />
+                </div>
+              </SectionReveal>
+            </section>
+          )}
 
-        {/* SECTION: THÔNG TIN GIA ĐÌNH HAI HỌ (key: "family") */}
-        {!hidden.has("family") && (
-          <section className="mt-16">
-            <SectionReveal>
-              <GlasshouseTitle sub="Hai Bên Gia Đình" title="Thông Tin Gia Đình" />
+          {/* SECTION: THÔNG TIN GIA ĐÌNH HAI HỌ (key: "family") */}
+          {!hidden.has("family") && (
+            <section className="mt-16" style={{ order: orderOf("family") }}>
+              <SectionReveal>
+                <GlasshouseTitle sub="Hai Bên Gia Đình" title="Thông Tin Gia Đình" />
 
-              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-stretch">
-                {/* Nhà Trai */}
+                <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-stretch">
+                  {/* Nhà Trai */}
+                  <div
+                    className="flex h-full flex-col justify-between rounded-3xl p-6 text-center shadow-lg"
+                    style={{
+                      backgroundColor: EMERALD_CARD,
+                      border: `1px solid ${GOLD_MUTED}`,
+                    }}
+                  >
+                    <div>
+                      <span
+                        className="inline-block rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
+                        style={{
+                          backgroundColor: "rgba(125, 157, 133, 0.18)",
+                          color: GOLD_CHAMPAGNE,
+                          border: `1px solid ${GOLD_MUTED}`,
+                        }}
+                      >
+                        Nhà Trai · {data.couple.groomTitle || "Chú rể"}
+                      </span>
+                      <h3
+                        className="mt-3 text-lg font-normal"
+                        style={{ color: TEXT_CREAM, fontFamily: SERIF }}
+                      >
+                        {data.couple.groomName}
+                      </h3>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-[#C6A45E]/20 text-xs text-[#C6D8CC]">
+                      <p className="font-semibold text-white">Thân sinh:</p>
+                      {groomParentsList.length > 0 ? (
+                        groomParentsList.map((p, idx) => (
+                          <p key={idx} className={idx === 0 ? "mt-1" : ""}>
+                            {p}
+                          </p>
+                        ))
+                      ) : (
+                        <>
+                          <p className="mt-1">Ông: {data.couple.groomFullName || "Nguyễn Văn A"}</p>
+                          <p>Bà: Trần Thị B</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Nhà Gái */}
+                  <div
+                    className="flex h-full flex-col justify-between rounded-3xl p-6 text-center shadow-lg"
+                    style={{
+                      backgroundColor: EMERALD_CARD,
+                      border: `1px solid ${GOLD_MUTED}`,
+                    }}
+                  >
+                    <div>
+                      <span
+                        className="inline-block rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
+                        style={{
+                          backgroundColor: "rgba(125, 157, 133, 0.18)",
+                          color: GOLD_CHAMPAGNE,
+                          border: `1px solid ${GOLD_MUTED}`,
+                        }}
+                      >
+                        Nhà Gái · {data.couple.brideTitle || "Cô dâu"}
+                      </span>
+                      <h3
+                        className="mt-3 text-lg font-normal"
+                        style={{ color: TEXT_CREAM, fontFamily: SERIF }}
+                      >
+                        {data.couple.brideName}
+                      </h3>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-[#C6A45E]/20 text-xs text-[#C6D8CC]">
+                      <p className="font-semibold text-white">Thân sinh:</p>
+                      {brideParentsList.length > 0 ? (
+                        brideParentsList.map((p, idx) => (
+                          <p key={idx} className={idx === 0 ? "mt-1" : ""}>
+                            {p}
+                          </p>
+                        ))
+                      ) : (
+                        <>
+                          <p className="mt-1">Ông: {data.couple.brideFullName || "Lê Văn C"}</p>
+                          <p>Bà: Phạm Thị D</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </SectionReveal>
+            </section>
+          )}
+
+          {/* SECTION: LỊCH TRÌNH TIỆC CƯỚI (key: "dresscode" / timeline) */}
+          {!hidden.has("dresscode") && timeline.length > 0 && (
+            <section className="mt-16" style={{ order: orderOf("dresscode") }}>
+              <SectionReveal>
+                <GlasshouseTitle sub="Chương Trình Hôn Lễ" title="Lịch Trình Dạ Tiệc" />
+
                 <div
-                  className="flex h-full flex-col justify-between rounded-3xl p-6 text-center shadow-lg"
+                  className="relative mt-6 rounded-3xl p-6 shadow-lg"
                   style={{
                     backgroundColor: EMERALD_CARD,
                     border: `1px solid ${GOLD_MUTED}`,
                   }}
                 >
-                  <div>
-                    <span
-                      className="inline-block rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
-                      style={{
-                        backgroundColor: "rgba(125, 157, 133, 0.18)",
-                        color: GOLD_CHAMPAGNE,
-                        border: `1px solid ${GOLD_MUTED}`,
-                      }}
-                    >
-                      Nhà Trai · {data.couple.groomTitle || "Chú rể"}
-                    </span>
-                    <h3
-                      className="mt-3 text-lg font-normal"
-                      style={{ color: TEXT_CREAM, fontFamily: SERIF }}
-                    >
-                      {data.couple.groomName}
-                    </h3>
+                  {/* Đường nối timeline dọc */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute left-9 top-8 bottom-8 w-px"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(212,175,55,0.6) 0%, rgba(212,175,55,0.2) 100%)",
+                    }}
+                  />
+
+                  <div className="space-y-6">
+                    {timeline.map((item, idx) => (
+                      <div key={idx} className="relative flex items-start gap-4 pl-2">
+                        <div
+                          className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm"
+                          style={{
+                            backgroundColor: SAGE_BTN,
+                            color: SAGE_TEXT,
+                            border: `1px solid ${GOLD_CHAMPAGNE}`,
+                          }}
+                        >
+                          <Clock className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="pt-0.5">
+                          <span className="font-mono text-xs font-bold text-[#E5C787]">
+                            {item.time}
+                          </span>
+                          <p className="mt-0.5 text-sm font-medium text-[#FAF6F0]">
+                            {item.label}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-[#C6A45E]/20 text-xs text-[#C6D8CC]">
-                    <p className="font-semibold text-white">Thân sinh:</p>
-                    {groomParentsList.length > 0 ? (
-                      groomParentsList.map((p, idx) => (
-                        <p key={idx} className={idx === 0 ? "mt-1" : ""}>
-                          {p}
-                        </p>
-                      ))
-                    ) : (
-                      <>
-                        <p className="mt-1">Ông: {data.couple.groomFullName || "Nguyễn Văn A"}</p>
-                        <p>Bà: Trần Thị B</p>
-                      </>
-                    )}
-                  </div>
+                  {/* Dress Code Palette */}
+                  {dressColors.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-[#C6A45E]/20 text-center">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-[#E5C787]">
+                        Trang Phục Gợi Ý
+                      </p>
+                      <div className="mt-3 flex items-center justify-center gap-3">
+                        {dressColors.map((color, i) => (
+                          <div
+                            key={i}
+                            className="h-8 w-8 rounded-full border border-white/40 shadow-md transition-transform hover:scale-110"
+                            style={{ backgroundColor: color }}
+                            title={color}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </SectionReveal>
+            </section>
+          )}
 
-                {/* Nhà Gái */}
-                <div
-                  className="flex h-full flex-col justify-between rounded-3xl p-6 text-center shadow-lg"
-                  style={{
-                    backgroundColor: EMERALD_CARD,
-                    border: `1px solid ${GOLD_MUTED}`,
-                  }}
-                >
-                  <div>
-                    <span
-                      className="inline-block rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
-                      style={{
-                        backgroundColor: "rgba(125, 157, 133, 0.18)",
-                        color: GOLD_CHAMPAGNE,
-                        border: `1px solid ${GOLD_MUTED}`,
-                      }}
-                    >
-                      Nhà Gái · {data.couple.brideTitle || "Cô dâu"}
-                    </span>
-                    <h3
-                      className="mt-3 text-lg font-normal"
-                      style={{ color: TEXT_CREAM, fontFamily: SERIF }}
-                    >
-                      {data.couple.brideName}
-                    </h3>
-                  </div>
+          {/* SECTION: SỰ KIỆN & CHỈ ĐƯỜNG (key: "map") */}
+          {!hidden.has("map") && visibleEvents.length > 0 && (
+            <section className="mt-16" style={{ order: orderOf("map") }}>
+              <SectionReveal>
+                <GlasshouseTitle sub="Địa Điểm & Thời Gian" title="Sự Kiện & Chỉ Đường" />
 
-                  <div className="mt-4 pt-4 border-t border-[#C6A45E]/20 text-xs text-[#C6D8CC]">
-                    <p className="font-semibold text-white">Thân sinh:</p>
-                    {brideParentsList.length > 0 ? (
-                      brideParentsList.map((p, idx) => (
-                        <p key={idx} className={idx === 0 ? "mt-1" : ""}>
-                          {p}
-                        </p>
-                      ))
-                    ) : (
-                      <>
-                        <p className="mt-1">Ông: {data.couple.brideFullName || "Lê Văn C"}</p>
-                        <p>Bà: Phạm Thị D</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </SectionReveal>
-          </section>
-        )}
-
-        {/* SECTION: LỊCH TRÌNH TIỆC CƯỚI (key: "dresscode" / timeline) */}
-        {!hidden.has("dresscode") && timeline.length > 0 && (
-          <section className="mt-16">
-            <SectionReveal>
-              <GlasshouseTitle sub="Chương Trình Hôn Lễ" title="Lịch Trình Dạ Tiệc" />
-
-              <div
-                className="relative mt-6 rounded-3xl p-6 shadow-lg"
-                style={{
-                  backgroundColor: EMERALD_CARD,
-                  border: `1px solid ${GOLD_MUTED}`,
-                }}
-              >
-                {/* Đường nối timeline dọc */}
-                <div
-                  aria-hidden="true"
-                  className="absolute left-9 top-8 bottom-8 w-px"
-                  style={{
-                    background: "linear-gradient(180deg, rgba(212,175,55,0.6) 0%, rgba(212,175,55,0.2) 100%)",
-                  }}
-                />
-
-                <div className="space-y-6">
-                  {timeline.map((item, idx) => (
-                    <div key={idx} className="relative flex items-start gap-4 pl-2">
+                <div className={`mt-6 ${visibleEvents.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto" : "space-y-4 max-w-xl mx-auto"}`}>
+                  {visibleEvents.map((evt, idx) => {
+                    const parts = formatWeddingDateParts(evt.startsAt);
+                    const directionsUrl = getEventDirectionsUrl(evt);
+                    return (
                       <div
-                        className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm"
+                        key={evt.id || idx}
+                        className="rounded-3xl p-6 text-center shadow-lg flex flex-col justify-between"
+                        style={{
+                          backgroundColor: EMERALD_CARD,
+                          border: `1px solid ${GOLD_MUTED}`,
+                        }}
+                      >
+                        <div>
+                          <span
+                            className="inline-block rounded-full px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider"
+                            style={{
+                              backgroundColor: "rgba(125, 157, 133, 0.2)",
+                              color: GOLD_CHAMPAGNE,
+                              border: `1px solid ${GOLD_MUTED}`,
+                            }}
+                          >
+                            {evt.title || "Lễ Thành Hôn"}
+                          </span>
+
+                          <p
+                            className="mt-3 text-lg font-normal"
+                            style={{ color: TEXT_CREAM, fontFamily: SERIF }}
+                          >
+                            {evt.venueName || "Nhà hàng tiệc cưới"}
+                          </p>
+
+                          <p className="mt-1 text-xs text-[#C5D8CC]">
+                            {evt.venueAddress || "Địa chỉ hôn lễ"}
+                          </p>
+
+                          <div className="mt-3 inline-flex items-center gap-2 font-mono text-xs text-[#E5C787]">
+                            <CalendarIcon className="h-3.5 w-3.5" />
+                            <span>
+                              {parts.weekday} · {parts.dotDate} {parts.time ? `(${parts.time})` : ""}
+                            </span>
+                          </div>
+                        </div>
+
+                        {directionsUrl && (
+                          <div className="mt-5">
+                            <a
+                              href={directionsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider shadow-md transition-transform hover:scale-105"
+                              style={{
+                                backgroundColor: SAGE_BTN,
+                                color: SAGE_TEXT,
+                              }}
+                            >
+                              <MapPin className="h-3.5 w-3.5" />
+                              <span>Xem bản đồ chỉ đường</span>
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </SectionReveal>
+            </section>
+          )}
+
+          {/* SECTION: ALBUM ẢNH CƯỚI (key: "album") */}
+          {!hidden.has("album") && galleryPhotos.length > 0 && (
+            <section className="mt-16" style={{ order: orderOf("album") }}>
+              <SectionReveal>
+                <GlasshouseTitle sub="Khoảnh Khắc Yêu Thương" title="Album Ảnh Cưới" />
+
+                <div className="mt-6">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {galleryPhotos.map((photo, i) => (
+                      <button
+                        key={photo.id || i}
+                        type="button"
+                        onClick={() => setActivePhotoIndex(i)}
+                        className="group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-2xl shadow-md transition-transform hover:scale-[1.02]"
+                        style={{ border: `1px solid ${GOLD_MUTED}` }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img decoding="async"
+                          src={photo.url}
+                          alt={`Ảnh cưới ${i + 1}`}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </SectionReveal>
+            </section>
+          )}
+
+          {/* Lightbox Zoom Modal (createPortal) */}
+          {activePhotoIndex !== null &&
+            typeof document !== "undefined" &&
+            createPortal(
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+                onClick={() => setActivePhotoIndex(null)}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActivePhotoIndex(null)}
+                  className="absolute right-4 top-4 rounded-full bg-white/20 p-2 text-white hover:bg-white/30"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                <div
+                  className="relative max-h-[85vh] max-w-[90vw] overflow-hidden rounded-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img loading="lazy" decoding="async"
+                    src={galleryPhotos[activePhotoIndex]?.url}
+                    alt="Ảnh cưới phóng to"
+                    className="max-h-[85vh] w-auto object-contain"
+                  />
+                </div>
+
+                {galleryPhotos.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActivePhotoIndex((prev) =>
+                          prev === null ? 0 : (prev - 1 + galleryPhotos.length) % galleryPhotos.length,
+                        );
+                      }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30"
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActivePhotoIndex((prev) =>
+                          prev === null ? 0 : (prev + 1) % galleryPhotos.length,
+                        );
+                      }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30"
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </button>
+                  </>
+                )}
+              </div>,
+              document.body,
+            )}
+
+          {/* SECTION: GUEST ALBUM QR (key: "albumQr" - Pro gated) */}
+          {!hidden.has("albumQr") && data.plan !== "free" && (
+            <section className="mt-16" style={{ order: orderOf("albumQr") }}>
+              <SectionReveal>
+                <GuestAlbumQr slug={weddingSlug || data.weddingSlug || ""} />
+              </SectionReveal>
+            </section>
+          )}
+
+          {/* SECTION: HỘP QUÀ MỪNG CƯỚI (key: "gift") */}
+          {!hidden.has("gift") && (
+            <section className="mt-16" style={{ order: orderOf("gift") }}>
+              <SectionReveal>
+                <GlasshouseTitle sub="Gửi Lời Chúc Phúc" title="Hộp Quà Mừng Cưới" />
+
+                <div
+                  className="mt-6 rounded-3xl p-6 text-center shadow-lg"
+                  style={{
+                    backgroundColor: EMERALD_CARD,
+                    border: `1px solid ${GOLD_MUTED}`,
+                  }}
+                >
+                  <div className="mt-2 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={handleGiftBoxClick}
+                      className="group relative flex flex-col items-center cursor-pointer p-2 transition-transform active:scale-95 focus-visible:outline-none"
+                      aria-label="Mở hộp quà mừng cưới"
+                    >
+                      {/* Khung chứa ảnh hộp quà 2 trạng thái chồng lên nhau */}
+                      <div className="relative mx-auto h-32 w-32 sm:h-40 sm:w-40 select-none">
+                        {/* Vầng sáng vàng kim tỏa rộng phía sau khi mở hộp */}
+                        <div
+                          aria-hidden="true"
+                          className={cn(
+                            "pointer-events-none absolute inset-0 -m-3 rounded-full transition-all duration-700 blur-xl",
+                            giftBoxOpened
+                              ? "bg-[#E5C787]/35 scale-125 opacity-100"
+                              : "bg-[#E5C787]/0 scale-90 opacity-0 group-hover:bg-[#E5C787]/30 group-hover:scale-110 group-hover:opacity-100",
+                          )}
+                        />
+
+                        {/* Hộp quà ĐÓNG (Closed) */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img loading="lazy" decoding="async"
+                          src="/templates/vuonkinh-xanh/gift-box-closed.webp"
+                          alt="Hộp quà mừng cưới"
+                          className={cn(
+                            "absolute inset-0 h-full w-full object-contain transition-all duration-500 ease-out drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]",
+                            giftBoxOpened
+                              ? "scale-90 opacity-0 pointer-events-none"
+                              : "scale-100 opacity-100 group-hover:scale-95 group-hover:opacity-0",
+                          )}
+                        />
+
+                        {/* Hộp quà MỞ (Open with sparkles & golden light) */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img loading="lazy" decoding="async"
+                          src="/templates/vuonkinh-xanh/gift-box-open.webp"
+                          alt="Hộp quà phát sáng"
+                          className={cn(
+                            "absolute inset-0 h-full w-full object-contain transition-all duration-500 ease-out drop-shadow-[0_12px_30px_rgba(212,175,55,0.45)]",
+                            giftBoxOpened
+                              ? "scale-110 opacity-100"
+                              : "scale-100 opacity-0 group-hover:scale-105 group-hover:opacity-100",
+                          )}
+                        />
+                      </div>
+
+                      {/* Nhãn nút bấm sang trọng */}
+                      <div
+                        className="mt-3 flex items-center justify-center gap-2 rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider shadow-md transition-all group-hover:scale-105"
                         style={{
                           backgroundColor: SAGE_BTN,
                           color: SAGE_TEXT,
                           border: `1px solid ${GOLD_CHAMPAGNE}`,
+                          boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
                         }}
                       >
-                        <Clock className="h-3.5 w-3.5" />
+                        <span>{giftBoxOpened ? "Đang Mở Hộp Quà..." : "Mở Hộp Quà Mừng"}</span>
                       </div>
-                      <div className="pt-0.5">
-                        <span className="font-mono text-xs font-bold text-[#E5C787]">
-                          {item.time}
-                        </span>
-                        <p className="mt-0.5 text-sm font-medium text-[#FAF6F0]">
-                          {item.label}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Dress Code Palette */}
-                {dressColors.length > 0 && (
-                  <div className="mt-8 pt-6 border-t border-[#C6A45E]/20 text-center">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#E5C787]">
-                      Gợi Ý Trang Phục (Dress Code)
-                    </p>
-                    <div className="mt-3 flex items-center justify-center gap-3">
-                      {dressColors.map((color, i) => (
-                        <div
-                          key={i}
-                          className="h-8 w-8 rounded-full border border-white/40 shadow-md transition-transform hover:scale-110"
-                          style={{ backgroundColor: color }}
-                          title={color}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </SectionReveal>
-          </section>
-        )}
-
-        {/* SECTION: SỰ KIỆN & CHỈ ĐƯỜNG (key: "map") */}
-        {!hidden.has("map") && visibleEvents.length > 0 && (
-          <section className="mt-16">
-            <SectionReveal>
-              <GlasshouseTitle sub="Địa Điểm & Thời Gian" title="Sự Kiện & Chỉ Đường" />
-
-              <div className={`mt-6 ${visibleEvents.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto" : "space-y-4 max-w-xl mx-auto"}`}>
-                {visibleEvents.map((evt, idx) => {
-                  const parts = formatWeddingDateParts(evt.startsAt);
-                  const directionsUrl = getEventDirectionsUrl(evt);
-                  return (
-                    <div
-                      key={evt.id || idx}
-                      className="rounded-3xl p-6 text-center shadow-lg flex flex-col justify-between"
-                      style={{
-                        backgroundColor: EMERALD_CARD,
-                        border: `1px solid ${GOLD_MUTED}`,
-                      }}
-                    >
-                      <div>
-                        <span
-                          className="inline-block rounded-full px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider"
-                          style={{
-                            backgroundColor: "rgba(125, 157, 133, 0.2)",
-                            color: GOLD_CHAMPAGNE,
-                            border: `1px solid ${GOLD_MUTED}`,
-                          }}
-                        >
-                          {evt.title || "Lễ Thành Hôn"}
-                        </span>
-
-                        <p
-                          className="mt-3 text-lg font-normal"
-                          style={{ color: TEXT_CREAM, fontFamily: SERIF }}
-                        >
-                          {evt.venueName || "Nhà hàng tiệc cưới"}
-                        </p>
-
-                        <p className="mt-1 text-xs text-[#C5D8CC]">
-                          {evt.venueAddress || "Địa chỉ hôn lễ"}
-                        </p>
-
-                        <div className="mt-3 inline-flex items-center gap-2 font-mono text-xs text-[#E5C787]">
-                          <CalendarIcon className="h-3.5 w-3.5" />
-                          <span>
-                            {parts.weekday} · {parts.dotDate} {parts.time ? `(${parts.time})` : ""}
-                          </span>
-                        </div>
-                      </div>
-
-                      {directionsUrl && (
-                        <div className="mt-5">
-                          <a
-                            href={directionsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider shadow-md transition-transform hover:scale-105"
-                            style={{
-                              backgroundColor: SAGE_BTN,
-                              color: SAGE_TEXT,
-                            }}
-                          >
-                            <MapPin className="h-3.5 w-3.5" />
-                            <span>Xem bản đồ chỉ đường</span>
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </SectionReveal>
-          </section>
-        )}
-
-        {/* SECTION: ALBUM ẢNH CƯỚI (key: "album") */}
-        {!hidden.has("album") && galleryPhotos.length > 0 && (
-          <section className="mt-16">
-            <SectionReveal>
-              <GlasshouseTitle sub="Khoảnh Khắc Yêu Thương" title="Album Ảnh Cưới" />
-
-              <div className="mt-6">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {galleryPhotos.map((photo, i) => (
-                    <button
-                      key={photo.id || i}
-                      type="button"
-                      onClick={() => setActivePhotoIndex(i)}
-                      className="group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-2xl shadow-md transition-transform hover:scale-[1.02]"
-                      style={{ border: `1px solid ${GOLD_MUTED}` }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.url}
-                        alt={`Ảnh cưới ${i + 1}`}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
                     </button>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </SectionReveal>
-          </section>
-        )}
-
-        {/* Lightbox Zoom Modal (createPortal) */}
-        {activePhotoIndex !== null &&
-          typeof document !== "undefined" &&
-          createPortal(
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
-              onClick={() => setActivePhotoIndex(null)}
-            >
-              <button
-                type="button"
-                onClick={() => setActivePhotoIndex(null)}
-                className="absolute right-4 top-4 rounded-full bg-white/20 p-2 text-white hover:bg-white/30"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              <div
-                className="relative max-h-[85vh] max-w-[90vw] overflow-hidden rounded-2xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={galleryPhotos[activePhotoIndex]?.url}
-                  alt="Ảnh cưới phóng to"
-                  className="max-h-[85vh] w-auto object-contain"
-                />
-              </div>
-
-              {galleryPhotos.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActivePhotoIndex((prev) =>
-                        prev === null ? 0 : (prev - 1 + galleryPhotos.length) % galleryPhotos.length,
-                      );
-                    }}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30"
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActivePhotoIndex((prev) =>
-                        prev === null ? 0 : (prev + 1) % galleryPhotos.length,
-                      );
-                    }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/20 p-2.5 text-white hover:bg-white/30"
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-                </>
-              )}
-            </div>,
-            document.body,
+              </SectionReveal>
+            </section>
           )}
 
-        {/* SECTION: GUEST ALBUM QR (key: "albumQr" - Pro gated) */}
-        {!hidden.has("albumQr") && (
-          <section className="mt-16">
-            <SectionReveal>
-              <GuestAlbumQr slug={weddingSlug || data.weddingSlug || ""} />
-            </SectionReveal>
-          </section>
-        )}
+          {/* Gift Modal Portal */}
+          {giftModalOpen && (
+            <GiftModal
+              open={giftModalOpen}
+              onClose={() => {
+                setGiftModalOpen(false);
+                setGiftBoxOpened(false);
+              }}
+              gift={data.gift}
+              plan={data.plan}
+              coupleName={`${data.couple.groomName} & ${data.couple.brideName}`}
+              guestName={guestName}
+              tone="olive"
+            />
+          )}
 
-        {/* SECTION: HỘP QUÀ MỪNG CƯỚI (key: "gift") */}
-        {!hidden.has("gift") && (
-          <section className="mt-16">
-            <SectionReveal>
-              <GlasshouseTitle sub="Gửi Lời Chúc Phúc" title="Hộp Quà Mừng Cưới" />
-
-              <div
-                className="mt-6 rounded-3xl p-6 text-center shadow-lg"
-                style={{
-                  backgroundColor: EMERALD_CARD,
-                  border: `1px solid ${GOLD_MUTED}`,
-                }}
-              >
-                <p className="text-xs leading-relaxed text-[#D2E2D6]">
-                  Sự hiện diện của bạn là niềm vinh hạnh lớn nhất của chúng tôi. Nếu muốn gửi quà mừng
-                  từ phương xa, xin mời mở hộp quà bên dưới.
-                </p>
-
-                <div className="mt-5 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={handleGiftBoxClick}
-                    className="group relative flex flex-col items-center cursor-pointer p-2 transition-transform active:scale-95 focus-visible:outline-none"
-                    aria-label="Mở hộp quà mừng cưới"
-                  >
-                    {/* Khung chứa ảnh hộp quà 2 trạng thái chồng lên nhau */}
-                    <div className="relative mx-auto h-32 w-32 sm:h-40 sm:w-40 select-none">
-                      {/* Vầng sáng vàng kim tỏa rộng phía sau khi mở hộp */}
-                      <div
-                        aria-hidden="true"
-                        className={cn(
-                          "pointer-events-none absolute inset-0 -m-3 rounded-full transition-all duration-700 blur-xl",
-                          giftBoxOpened
-                            ? "bg-[#E5C787]/35 scale-125 opacity-100"
-                            : "bg-[#E5C787]/0 scale-90 opacity-0 group-hover:bg-[#E5C787]/30 group-hover:scale-110 group-hover:opacity-100",
-                        )}
-                      />
-
-                      {/* Hộp quà ĐÓNG (Closed) */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/templates/vuonkinh-xanh/gift-box-closed.webp"
-                        alt="Hộp quà mừng cưới"
-                        className={cn(
-                          "absolute inset-0 h-full w-full object-contain transition-all duration-500 ease-out drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]",
-                          giftBoxOpened
-                            ? "scale-90 opacity-0 pointer-events-none"
-                            : "scale-100 opacity-100 group-hover:scale-95 group-hover:opacity-0",
-                        )}
-                      />
-
-                      {/* Hộp quà MỞ (Open with sparkles & golden light) */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/templates/vuonkinh-xanh/gift-box-open.webp"
-                        alt="Hộp quà phát sáng"
-                        className={cn(
-                          "absolute inset-0 h-full w-full object-contain transition-all duration-500 ease-out drop-shadow-[0_12px_30px_rgba(212,175,55,0.45)]",
-                          giftBoxOpened
-                            ? "scale-110 opacity-100"
-                            : "scale-100 opacity-0 group-hover:scale-105 group-hover:opacity-100",
-                        )}
-                      />
-                    </div>
-
-                    {/* Nhãn nút bấm sang trọng */}
-                    <div
-                      className="mt-3 flex items-center justify-center gap-2 rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider shadow-md transition-all group-hover:scale-105"
-                      style={{
-                        backgroundColor: SAGE_BTN,
-                        color: SAGE_TEXT,
-                        border: `1px solid ${GOLD_CHAMPAGNE}`,
-                        boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
-                      }}
-                    >
-                      <span>{giftBoxOpened ? "Đang Mở Hộp Quà..." : "Mở Hộp Quà Mừng"}</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </SectionReveal>
-          </section>
-        )}
-
-        {/* Gift Modal Portal */}
-        {giftModalOpen && (
-          <GiftModal
-            open={giftModalOpen}
-            onClose={() => {
-              setGiftModalOpen(false);
-              setGiftBoxOpened(false);
-            }}
-            gift={data.gift}
-            plan={data.plan}
-            coupleName={`${data.couple.groomName} & ${data.couple.brideName}`}
-            guestName={guestName}
-            tone="olive"
-          />
-        )}
-
-        {/* SECTION: XÁC NHẬN THAM DỰ & LỜI CHÚC (key: "rsvp") */}
-        {!hidden.has("rsvp") && (
-          <section className="mt-16">
-            <SectionReveal>
-              <GlasshouseTitle sub="RSVP & Wishes" title="Xác Nhận & Lời Chúc" />
-
-              <div
-                className="mt-6 overflow-hidden rounded-3xl shadow-xl"
-                style={{
-                  backgroundColor: EMERALD_CARD,
-                  border: `1px solid ${GOLD_MUTED}`,
-                }}
-              >
+          {/* SECTION: XÁC NHẬN THAM DỰ & LỜI CHÚC (key: "rsvp") */}
+          {!hidden.has("rsvp") && (
+            <section className="mt-16" style={{ order: orderOf("rsvp") }}>
+              <SectionReveal>
                 <div
-                  style={
-                    {
-                      "--color-inv-primary": "#7D9D85",
-                      "--color-inv-primary-foreground": "#0D1A12",
-                      "--color-inv-background": "#1B3627",
-                      "--color-inv-foreground": "#FAF6F0",
-                      "--color-inv-muted": "#20402E",
-                      "--color-inv-muted-foreground": "#95B09E",
-                      "--color-inv-border": "rgba(198, 164, 94, 0.4)",
-                      "--color-inv-card": "#173022",
-                      "--color-inv-card-foreground": "#FAF6F0",
-                    } as React.CSSProperties
-                  }
+                  className="overflow-hidden rounded-3xl shadow-xl"
+                  style={{
+                    backgroundColor: EMERALD_CARD,
+                    border: `1px solid ${GOLD_MUTED}`,
+                  }}
                 >
-                  <TemplateRsvpSection
-                    data={data}
-                    mode={mode}
-                    tone="obsidian"
-                    contained={contained}
-                    inviteSlug={inviteSlug}
-                    weddingSlug={weddingSlug}
-                    invitationMode={invitationMode}
-                    guestName={guestName}
-                    initialStatus={initialStatus}
-                    initialPlusOnes={initialPlusOnes}
-                    initialDiet={initialDiet}
-                    initialSongRequest={initialSongRequest}
-                    initialRideNeeded={initialRideNeeded}
-                  />
+                  <div
+                    style={
+                      {
+                        "--color-inv-primary": "#7D9D85",
+                        "--color-inv-primary-foreground": "#0D1A12",
+                        "--color-inv-background": "#1B3627",
+                        "--color-inv-foreground": "#FAF6F0",
+                        "--color-inv-muted": "#20402E",
+                        "--color-inv-muted-foreground": "#95B09E",
+                        "--color-inv-border": "rgba(198, 164, 94, 0.4)",
+                        "--color-inv-card": "#173022",
+                        "--color-inv-card-foreground": "#FAF6F0",
+                      } as React.CSSProperties
+                    }
+                  >
+                    <TemplateRsvpSection
+                      data={data}
+                      mode={mode}
+                      tone="obsidian"
+                      contained={contained}
+                      inviteSlug={inviteSlug}
+                      weddingSlug={weddingSlug}
+                      invitationMode={invitationMode}
+                      guestName={guestName}
+                      initialStatus={initialStatus}
+                      initialPlusOnes={initialPlusOnes}
+                      initialDiet={initialDiet}
+                      initialSongRequest={initialSongRequest}
+                      initialRideNeeded={initialRideNeeded}
+                    />
+                  </div>
                 </div>
-              </div>
-            </SectionReveal>
-          </section>
-        )}
+              </SectionReveal>
+            </section>
+          )}
+        </div>
 
         {/* FOOTER */}
         <footer className="mt-20 text-center">
           <div className="mx-auto flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <img loading="lazy" decoding="async"
               src="/templates/vuonkinh-xanh/branch-motif.webp"
               alt=""
               aria-hidden="true"

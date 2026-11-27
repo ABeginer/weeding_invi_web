@@ -175,7 +175,7 @@ export function InvitePageClient({
             coupleTitle={coupleTitle}
             venueName={primaryEvent?.venueName}
             venueTime={eventTime}
-            gift={displayData.gift}
+            gift={displayData.hiddenSections?.includes("gift") ? undefined : displayData.gift}
             plan={plan}
           />
         </div>

@@ -64,6 +64,7 @@ export interface OpsMember {
 async function getOpsMember(req: Request): Promise<OpsMember | null> {
   const user = await getUser(req);
   if (!user || !user.email) return null;
+  if (user.emailVerified === false) return null;
   const role = await resolveOpsRole(user.email);
   if (!role) return null;
   return { user, role };
