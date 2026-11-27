@@ -3,12 +3,15 @@ import Link from "next/link";
 import { BossAddressingDecisionTree } from "@/components/blog/BossAddressingDecisionTree";
 import { BossInvitationEtiquetteTimeline } from "@/components/blog/BossInvitationEtiquetteTimeline";
 import { BossZaloTemplatesCard } from "@/components/blog/BossZaloTemplatesCard";
+import { FourWeekWeddingSprint } from "@/components/blog/FourWeekWeddingSprint";
 import { GroomCardLayoutDiagram } from "@/components/blog/GroomCardLayoutDiagram";
 import { GroomSpecialFamilyCases } from "@/components/blog/GroomSpecialFamilyCases";
 import { GroomVsBrideComparisonCard } from "@/components/blog/GroomVsBrideComparisonCard";
 import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
+import { LastWeekForgottenItems } from "@/components/blog/LastWeekForgottenItems";
 import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
 import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
+import { SprintCritical72hCard } from "@/components/blog/SprintCritical72hCard";
 import { slugifyHeading } from "@/lib/blog";
 
 const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
@@ -21,6 +24,9 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   GroomCardLayoutDiagram,
   GroomVsBrideComparisonCard,
   GroomSpecialFamilyCases,
+  SprintCritical72hCard,
+  FourWeekWeddingSprint,
+  LastWeekForgottenItems,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
