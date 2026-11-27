@@ -6,7 +6,10 @@ import { BossZaloTemplatesCard } from "@/components/blog/BossZaloTemplatesCard";
 import { GroomCardLayoutDiagram } from "@/components/blog/GroomCardLayoutDiagram";
 import { GroomSpecialFamilyCases } from "@/components/blog/GroomSpecialFamilyCases";
 import { GroomVsBrideComparisonCard } from "@/components/blog/GroomVsBrideComparisonCard";
+import { HybridInviteAllocationCard } from "@/components/blog/HybridInviteAllocationCard";
+import { InvitationCostBreakdown250 } from "@/components/blog/InvitationCostBreakdown250";
 import { KinshipPrefixMatrix } from "@/components/blog/KinshipPrefixMatrix";
+import { PaperVsOnlineScorecard } from "@/components/blog/PaperVsOnlineScorecard";
 import { SalutationHierarchyFlow } from "@/components/blog/SalutationHierarchyFlow";
 import { SalutationMistakeSplit } from "@/components/blog/SalutationMistakeSplit";
 import { slugifyHeading } from "@/lib/blog";
@@ -21,6 +24,9 @@ const BLOG_VISUAL_COMPONENTS: Record<string, React.ComponentType> = {
   GroomCardLayoutDiagram,
   GroomVsBrideComparisonCard,
   GroomSpecialFamilyCases,
+  PaperVsOnlineScorecard,
+  InvitationCostBreakdown250,
+  HybridInviteAllocationCard,
 };
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
