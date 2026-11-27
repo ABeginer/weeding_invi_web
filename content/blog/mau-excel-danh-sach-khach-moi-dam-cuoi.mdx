@@ -1,0 +1,81 @@
+---
+title: "Mẫu Excel danh sách khách mời đám cưới chuẩn chia lễ và hướng dẫn nhập nhanh 500 khách"
+description: "Hướng dẫn thiết kế mẫu Excel danh sách khách mời đám cưới chuẩn Việt Nam với 8 cột chia buổi lễ Vu Quy, Thành Hôn, Tiệc Cưới và cách dán nhanh 500 khách lên Inviwedd."
+date: "2026-11-27"
+author: "Inviwedd"
+category: "Cẩm nang cưới"
+tags:
+  - mẫu excel danh sách khách mời đám cưới
+  - quản lý khách mời đám cưới
+  - sơ đồ bàn tiệc cưới
+  - thiệp cưới online
+cover: "/blog/covers/mau-excel-danh-sach-khach-moi-dam-cuoi.webp"
+faqs:
+  - question: "File Excel danh sách khách mời đám cưới cần tối thiểu những cột nào?"
+    answer: "Tối thiểu nên có 6 cột gồm Tên hiển thị trên thiệp, Nhóm quan hệ hoặc vai vế, Bên mời (nhà trai hay nhà gái), Buổi lễ tham dự, Số người dự kiến đi kèm và Số bàn dự kiến. Thêm cột trạng thái RSVP và ghi chú ăn chay sẽ giúp chốt cỗ chính xác hơn."
+  - question: "Làm sao phân biệt khách chỉ đi tiệc nhà hàng với khách dự cả lễ gia tiên?"
+    answer: "Hãy tách một cột riêng cho Buổi lễ tham dự hoặc dùng 3 cột đánh dấu X cho Vu Quy, Thành Hôn và Tiệc Cưới. Khi chốt mâm cỗ sáng tại tư gia, bạn chỉ lọc những dòng có đánh dấu lễ gia tiên thay vì cộng gộp toàn bộ danh sách nhà hàng."
+  - question: "Có cần điền số bàn tiệc ngay từ đầu trong file Excel không?"
+    answer: "Chưa bắt buộc ở giai đoạn mới lên danh sách. Bạn chỉ cần gán nhóm quan hệ (ví dụ họ hàng, đồng nghiệp, bạn đại học), sau khi chốt được khoảng 80% xác nhận tham dự mới bắt đầu đánh số Bàn 01, Bàn 02 theo từng cụm 10 người."
+  - question: "Dán danh sách từ Excel vào Inviwedd hỗ trợ tối đa bao nhiêu khách một lần?"
+    answer: "Trình nhập nhanh của Inviwedd hỗ trợ dán tối đa 500 khách mỗi lượt theo định dạng 3 cột (Cột 1 Tên khách, Cột 2 Vai vế hoặc Số bàn, Cột 3 Số bàn hoặc Ghi chú) được ngăn cách bằng dấu Tab khi copy trực tiếp từ Excel hoặc Google Sheets."
+  - question: "Nếu trong file Excel có dòng bị trùng tên khách thì hệ thống xử lý thế nào?"
+    answer: "Bộ đọc danh sách tự động bỏ qua dòng trống và gắn cờ loại bớt các tên trùng lặp trong cùng lần dán hoặc trùng với khách đã tồn tại, tránh phát sinh hai đường link thiệp cho cùng một người."
+---
+
+import { ExcelGuestSchemaGrid } from "@/components/blog/ExcelGuestSchemaGrid";
+import { CeremonyGuestSplitMatrix } from "@/components/blog/CeremonyGuestSplitMatrix";
+import { BulkPasteMappingDiagram } from "@/components/blog/BulkPasteMappingDiagram";
+
+Một file Excel danh sách khách mời đám cưới chuẩn Việt Nam không chỉ có cột họ tên, mà cần tách rõ nhóm vai vế hai họ, buổi lễ tham dự (Vu Quy, Thành Hôn, Tiệc Cưới), số người đi kèm và cột bàn tiệc để khớp trực tiếp với khâu chốt mâm 10 người ở nhà hàng. Khi bảng tính được dựng đúng cấu trúc ngay từ đầu, hai vợ chồng vừa theo dõi được tổng tiền cỗ ước tính vừa sao chép cả danh sách sang công cụ tạo thiệp online mà không phải gõ lại từng người.
+
+> **Tóm tắt nhanh:** Thiết lập đủ 8 cột chuẩn (đặc biệt là cột *Buổi lễ tham dự* và *Số người dự kiến*), tách riêng danh sách lễ gia tiên sáng với tiệc nhà hàng tối, giữ mỗi tên khách dưới 100 ký tự kèm vai vế rõ ràng để khi cần có thể copy 3 cột dán thẳng tối đa 500 khách vào Inviwedd trong một thao tác.
+
+## File Excel danh sách khách mời đám cưới chuẩn cần có những cột nào?
+
+Phần lớn mẫu bảng tính tải trôi nổi trên mạng chỉ có tên khách, số điện thoại và ô tích "Đã mời", khiến tới sát tuần cưới hai gia đình vẫn phải ngồi đếm tay xem bàn nào thiếu ghế hay ai đưa theo vợ con. Một bảng tính dùng được từ lúc lên ngân sách đến ngày đón khách tại sảnh tiệc cần giữ gọn 8 cột dữ liệu sau:
+
+<ExcelGuestSchemaGrid />
+
+Trong cột B (*Vai vế / Nhóm quan hệ*), bạn nên quy ước sẵn 4 nhãn nhất quán là `Họ hàng`, `Gia đình`, `Đồng nghiệp` và `Bạn thân`. Việc thống nhất cách đặt nhãn ngay từ bảng tính giúp bước kiểm tra xưng hô ngoài bìa thiệp đồng bộ hoàn toàn với quy chuẩn trong bài [cách xưng hô ghi thiệp cưới chuẩn lễ nghĩa](/blog/cach-xung-ho-ghi-thiep-cuoi).
+
+## Phân tách khách theo 3 buổi lễ Vu Quy, Thành Hôn và Tiệc Cưới sao cho không sót mâm
+
+Đám cưới truyền thống thường gồm lễ gia tiên buổi sáng tại tư gia và tiệc chiêu đãi buổi trưa hoặc tối tại nhà hàng. Nếu chỉ dùng một cột đếm tổng số thiệp, rất nhiều cặp đôi đặt thừa mâm cỗ sáng tại nhà hoặc quên đếm khách từ nhà gái sang dự Lễ Thành Hôn bên nhà trai.
+
+<CeremonyGuestSplitMatrix />
+
+Nếu hai bên gia đình in riêng hai bộ thiệp cho từng buổi lễ hoặc tổ chức khác ngày, bạn có thể tham khảo thêm cách bố trí giờ lễ gia tiên và tiệc mặn trong hướng dẫn [mẫu thiệp cưới nhà trai chuẩn Lễ Thành Hôn](/blog/mau-thiep-cuoi-nha-trai) trước khi khóa danh sách khách cho từng bên.
+
+## 4 sai sót khi nhập bảng Excel khiến nhà hàng thừa mâm hoặc thiếu ghế
+
+Sai lệch phổ biến nhất khi quản lý khách bằng bảng tính thủ công không nằm ở công thức `SUM`, mà ở cách nhập dữ liệu thiếu đồng nhất giữa cô dâu, chú rể và bố mẹ hai bên:
+
+| Sai sót khi nhập bảng tính | Hệ quả thực tế tại tiệc cưới | Cách chỉnh dứt điểm trên file |
+| :--- | :--- | :--- |
+| Đếm số dòng thiệp thay vì đếm tổng đầu người | Khách đi hai vợ chồng hoặc mang theo con nhỏ làm bàn 10 người bị chật 11–12 ghế | Tách riêng cột `Số người dự kiến` (`1`, `2`, `4`) và dùng hàm `SUM` tính theo từng buổi lễ |
+| Nhập chung tên khách hai họ không ghi rõ bên mời | Xuất hiện cùng một người quen chung trên cả danh sách nhà trai lẫn nhà gái | Thêm cột `Bên mời` và dùng Conditional Formatting tô màu giá trị trùng |
+| Viết tắt hoặc thiếu danh xưng ở cột tên | Tới lúc in thiệp hoặc nhắn Zalo phải mở từng dòng sửa lại chữ `"A. Tuấn"` thành `"Anh Tuấn"` | Nhập luôn tên đầy đủ có dấu kèm danh xưng (`Chú Bảy`, `Chị Lan`) ngay từ đầu |
+| Không cập nhật trạng thái đã gửi và phản hồi | Gửi thiệp trùng hai lần cho cùng một khách hoặc quên nhắn nhắc bàn chưa chốt chỗ | Giữ cột trạng thái tách bạch giữa `Chưa gửi`, `Đã gửi` và `Đã xác nhận` |
+
+Để quy đổi nhanh tổng số khách dự kiến thành số mâm chính thức, mâm dự phòng và ngân sách từng bàn, bạn có thể đối chiếu ngay với [bảng tính chi phí đám cưới](/cong-cu/bang-tinh-dam-cuoi) trước khi đặt cọc sảnh tiệc.
+
+## Quy tắc 3 cột để copy từ Excel dán thẳng 500 khách vào Inviwedd trong một lần
+
+Khi danh sách trên Excel hoặc Google Sheets đã tạm ổn định, bạn không cần tải file lên phức tạp hay tự gõ tay lại từng vị khách để làm thiệp online. Bộ nhập hàng loạt trên hệ thống Inviwedd đọc trực tiếp dữ liệu bạn sao chép (`Ctrl+C` / `Ctrl+V`) theo đúng quy tắc 3 cột phân tách bằng phím Tab (hoặc dấu phẩy CSV):
+
+<BulkPasteMappingDiagram />
+
+Một vài giới hạn kỹ thuật cần lưu ý trước khi dán dữ liệu từ bảng tính: mỗi lượt nhập nhận tối đa **500 dòng khách**, mỗi tên hiển thị giới hạn **100 ký tự**, cột 2 và cột 3 có thể hoán đổi vị trí giữa từ khóa vai vế (`Họ hàng`, `Gia đình`, `Đồng nghiệp`, `Bạn thân`) với số bàn (`Bàn 1`, `Table 2` hoặc số nguyên). Toàn bộ dòng trống và tên trùng lặp đều được tự động lọc sạch trước khi sinh đường link mời riêng `/m/ten-khach`. Sau khi tạo xong, nếu cần chuẩn bị thêm câu nhắn gửi từng người qua chat, bạn có thể lấy sẵn văn mẫu theo vai vế tại [công cụ tạo lời mời cưới Zalo](/cong-cu/tao-loi-moi-zalo) hoặc xem gợi ý câu chữ ở bài [cách ghi thiệp cưới mời sếp tinh tế](/blog/cach-ghi-thiep-cuoi-moi-sep).
+
+## Trường hợp nào nên dùng công cụ web ngay thay vì tự dựng công thức Excel?
+
+Bảng tính Excel rất mạnh khi bạn cần tùy biến công thức ngân sách sâu hoặc trao đổi file in giấy với người lớn tuổi không quen dùng ứng dụng web. Tuy nhiên, tự dựng file Excel sẽ trở nên cồng kềnh trong 3 tình huống dưới đây:
+
+* **Hai vợ chồng cùng cập nhật danh sách trên điện thoại:** Chỉnh sửa file bảng tính nhiều cột trên màn hình nhỏ rất dễ kéo nhầm ô hoặc mất định dạng; lúc này [công cụ lập danh sách khách mời đám cưới](/cong-cu/tao-danh-sach-khach-moi) trên trình duyệt giúp thêm khách, gán buổi lễ và chia bàn theo từng thẻ chạm gọn gàng hơn.
+* **Muốn thu xác nhận tham dự tự động thay vì gọi hỏi từng bàn:** File Excel tĩnh không tự biết khách nào bấm đi hay vắng nếu bạn không tự điền tay lại từ tin nhắn Zalo.
+* **Cần chia bàn trực quan kèm xuất ngược CSV sau khi chốt:** Khi số khách vượt trên 150 người, tách nhóm theo buổi lễ trên giao diện web rồi mới xuất ngược lại file CSV mở bằng Excel sẽ ít sai số hơn hẳn việc kéo lọc bằng tay.
+
+Khi bảng tính của hai gia đình đã hoàn chỉnh danh sách đầu tiên, bạn có thể xem trước các [mẫu thiệp cưới online](/thiep-cuoi) hoặc mở trang [tạo thiệp cưới miễn phí](/tao-thiep) (dùng thử miễn phí cho danh sách tới 20 khách, không yêu cầu thẻ) để dán thử 3 cột từ Excel, tự sinh link mời riêng cho từng vị khách và nhận thống kê RSVP chuẩn xác từng bàn tiệc.
+
+<span data-dispatchseo="02f7cc93-b979-437e-8f10-933feb157694" hidden></span>
