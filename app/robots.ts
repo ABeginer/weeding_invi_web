@@ -12,6 +12,8 @@ export default function robots(): MetadataRoute.Robots {
           "/",
           "/thiep-cuoi",
           "/mau-thiep",
+          "/blog",
+          "/blog/*",
           "/cong-cu",
           "/cong-cu/*",
           "/mau/*",
